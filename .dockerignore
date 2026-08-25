@@ -1,0 +1,18 @@
+# Root build context (used by central-api and both VMS services).
+.git
+.venv
+.pytest_cache
+.pytest-sentinel.sqlite
+__pycache__
+*.pyc
+node_modules
+.next
+services/dashboard/node_modules
+services/dashboard/.next
+tests
+docs
+infra
+scripts
+README.md
+*.md
+.env

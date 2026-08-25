@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.pytest-sentinel.sqlite
+
+# Node / Next.js
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# Local configuration - never commit real credentials
+.env
+.env.local
+.env.*.local
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local demo binaries and video fixtures
+*.mp4
+cloudflared.exe
+weights/*.pt
+
+# Local agent configuration and scratch files
+.claude/settings.local.json
+.claude/_scratch/

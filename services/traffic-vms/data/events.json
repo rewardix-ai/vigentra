@@ -1,0 +1,35 @@
+[
+  {
+    "evt_id": "traffic_evt_001",
+    "cam": "TRF-AHM-0001",
+    "kind": "motion_detected",
+    "ts": "19-08-2026 11:40:00",
+    "severity": "info",
+    "meta": {
+      "zone": "lane-2",
+      "trigger": "pixel-delta",
+      "duration_s": 6
+    }
+  },
+  {
+    "evt_id": "traffic_evt_002",
+    "cam": "TRF-AHM-0001",
+    "kind": "line_crossing",
+    "ts": "19-08-2026 11:44:18",
+    "severity": "info",
+    "meta": {
+      "zone": "stop-line",
+      "direction": "eastbound"
+    }
+  },
+  {
+    "evt_id": "traffic_evt_003",
+    "cam": "TRF-AHM-0001",
+    "kind": "video_loss_recovered",
+    "ts": "19-08-2026 11:49:05",
+    "severity": "warning",
+    "meta": {
+      "outage_seconds": 34
+    }
+  }
+]

@@ -1,0 +1,13 @@
+# ANPR extra - number-plate reading. Requires requirements-yolo.txt as well.
+#
+#   pip install -r requirements.txt -r requirements-yolo.txt -r requirements-anpr.txt
+#
+# EasyOCR runs on CPU and needs no system package. Its recognition models are
+# downloaded once on first use; on a network that intercepts TLS that download
+# fails, and you must place these two files in ~/.EasyOCR/model/ yourself:
+#
+#   craft_mlt_25k.pth   https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip
+#   english_g2.pth      https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/english_g2.zip
+#
+# Plate text is personal data. Read docs/anpr.md before enabling this.
+easyocr>=1.7,<2.0

@@ -1,0 +1,24 @@
+[
+  {
+    "ref": "muni-evt-9001",
+    "cam_ref": "SMC-AHM-0101",
+    "type": "motion",
+    "at_ms": 1755603900000,
+    "level": 1,
+    "attributes": {
+      "region": "north-kerb",
+      "sensitivity": "medium"
+    }
+  },
+  {
+    "ref": "muni-evt-9002",
+    "cam_ref": "SMC-AHM-0101",
+    "type": "tamper_alarm",
+    "at_ms": 1755604140000,
+    "level": 3,
+    "attributes": {
+      "cause": "lens-obstruction",
+      "auto_cleared": false
+    }
+  }
+]

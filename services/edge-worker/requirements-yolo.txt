@@ -1,0 +1,16 @@
+# Analytics extras - real inference. Pulls ~2 GB (torch + CUDA userspace).
+# Install only on a machine that will actually run a model.
+#
+#   pip install -r requirements.txt -r requirements-yolo.txt
+#
+# Pinned deliberately: a detection records the exact build that produced it,
+# so the version must not drift underneath a stored result.
+# Verified latest stable at time of writing: ultralytics 8.4.123.
+ultralytics==8.4.123
+opencv-python-headless>=4.10,<5.0
+numpy>=1.26,<3.0
+
+# torch is installed by ultralytics. For CPU-only or a specific CUDA build,
+# install it FIRST from the correct index, then install this file:
+#   CPU:      pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   CUDA 12:  pip install torch --index-url https://download.pytorch.org/whl/cu121

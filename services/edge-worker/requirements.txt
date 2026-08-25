@@ -1,0 +1,3 @@
+# Base edge-worker dependencies (no CV stack).
+# Enough to run the MOCK detector and the full ingestion path.
+httpx>=0.27,<1.0

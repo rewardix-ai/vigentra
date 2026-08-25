@@ -1,0 +1,154 @@
+[
+  {
+    "ref": "SMC-REQ-9001",
+    "lifecycle": "synchronized",
+    "raisedBy": "municipal.operator",
+    "createdAtMs": 1785578400000,
+    "updatedAtMs": 1786010400000,
+    "submittedAtMs": 1785589200000,
+    "submittedBy": "municipal.operator",
+    "approval": {
+      "by": "municipal.approver",
+      "role": "video_access_approver",
+      "atMs": 1786010400000
+    },
+    "rejection": null,
+    "syncedAtMs": 1786010520000,
+    "validationIssues": [],
+    "seedAvailability": "UP",
+    "seedReconnects": 1,
+    "submission": {
+      "identity": {
+        "label": "Municipal Junction 1",
+        "deviceId": "SMC-AHM-0101",
+        "serial": "SMCX7781200341",
+        "vendor": "CityEye Systems",
+        "model": "CityEye-DX220",
+        "kind": "dome",
+        "purpose": "public safety"
+      },
+      "ownership": {
+        "department": "Municipal Corporation",
+        "unit": "West Zone Civic Control Room",
+        "district": "Ahmedabad",
+        "zone": "West Zone / Vasna Ward",
+        "adminContact": "+91 79 2755 4410",
+        "maintenanceAgency": "CityEye Managed Services",
+        "installationVendor": "Sabarmati Electricals"
+      },
+      "geo": {
+        "latitude": 23.0502,
+        "longitude": 72.5311,
+        "landmark": "Vasna Ward Office crossing",
+        "junction": "Vasna Junction",
+        "facing": "north",
+        "coverage": "Junction approach and pedestrian island",
+        "entryExit": "Northern entry arm"
+      },
+      "tech": {
+        "transport": "VMS_API",
+        "vmsName": "SMC CityEye",
+        "vmsVendor": "CityEye Systems",
+        "resolution": "1920x1080",
+        "framesPerSecond": 25,
+        "codec": "H.264",
+        "retentionDays": 21,
+        "timezone": "Asia/Kolkata",
+        "installedOnMs": 1785578400000,
+        "commissionedOnMs": 1785924000000,
+        "liveSupported": true,
+        "playbackSupported": true,
+        "localStream": "/videos/municipal_01.mp4"
+      },
+      "policy": {
+        "localRoles": [
+          "department_operator",
+          "district_supervisor"
+        ]
+      }
+    },
+    "attachments": [
+      {
+        "type": "site_survey",
+        "reference": "DOC-SMC-SS-9001",
+        "filename": "survey-vasna-junction.pdf"
+      },
+      {
+        "type": "installation_certificate",
+        "reference": "DOC-SMC-IC-9001",
+        "filename": "cert-9001.pdf"
+      },
+      {
+        "type": "camera_photograph",
+        "reference": "DOC-SMC-PH-9001",
+        "filename": "mast-9001.jpg"
+      }
+    ]
+  },
+  {
+    "ref": "SMC-REQ-9005",
+    "lifecycle": "draft",
+    "raisedBy": "municipal.installer",
+    "createdAtMs": 1786100000000,
+    "updatedAtMs": 1786100000000,
+    "submittedAtMs": null,
+    "submittedBy": null,
+    "approval": null,
+    "rejection": null,
+    "syncedAtMs": null,
+    "validationIssues": [],
+    "seedAvailability": "UP",
+    "seedReconnects": 1,
+    "submission": {
+      "identity": {
+        "label": "Paldi Ward Office Gate",
+        "deviceId": "SMC-AHM-0105",
+        "serial": "SMCX7781200345",
+        "vendor": "CityEye Systems",
+        "model": "CityEye-DX220",
+        "kind": "dome",
+        "purpose": "public safety"
+      },
+      "ownership": {
+        "department": "Municipal Corporation",
+        "unit": "West Zone Civic Control Room",
+        "district": "Ahmedabad",
+        "zone": "West Zone / Vasna Ward",
+        "adminContact": "+91 79 2755 4410",
+        "maintenanceAgency": "CityEye Managed Services",
+        "installationVendor": "Sabarmati Electricals"
+      },
+      "geo": {
+        "latitude": 23.0106,
+        "longitude": 72.5588,
+        "landmark": "Paldi Ward Office main gate",
+        "junction": "Paldi Cross Roads",
+        "facing": "north",
+        "coverage": "Junction approach and pedestrian island",
+        "entryExit": "Northern entry arm"
+      },
+      "tech": {
+        "transport": "VMS_API",
+        "vmsName": "SMC CityEye",
+        "vmsVendor": "CityEye Systems",
+        "resolution": "1920x1080",
+        "framesPerSecond": 25,
+        "codec": "H.264",
+        "retentionDays": 21,
+        "timezone": "Asia/Kolkata",
+        "installedOnMs": 1785578400000,
+        "commissionedOnMs": 1785924000000,
+        "liveSupported": false,
+        "playbackSupported": false,
+        "localStream": null
+      },
+      "policy": {
+        "localRoles": [
+          "department_operator",
+          "district_supervisor"
+        ]
+      }
+    },
+    "attachments": []
+  }
+]

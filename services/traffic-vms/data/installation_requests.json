@@ -1,0 +1,149 @@
+[
+  {
+    "request_ref": "TRF-REQ-0001",
+    "state": "SYNCED",
+    "created_by": "traffic.operator",
+    "created_on": "01-08-2026 09:14:00",
+    "updated_on": "06-08-2026 09:30:00",
+    "submitted_by": "traffic.operator",
+    "submitted_on": "01-08-2026 11:02:00",
+    "approved_by": "traffic.approver",
+    "approved_by_role": "video_access_approver",
+    "approved_on": "06-08-2026 09:30:00",
+    "rejected_by": null,
+    "rejected_on": null,
+    "rejection_reason": null,
+    "synced_on": "06-08-2026 09:32:00",
+    "validation_errors": [],
+    "seed_health": "UP",
+    "seed_reconnects": 0,
+    "seed_uptime_pct": 99.4,
+    "form": {
+      "cam_name": "CG Road East",
+      "cam_code": "TRF-AHM-0001",
+      "serial_no": "GTPX9920145577",
+      "make": "Demo Vendor",
+      "model_no": "Demo IP Camera X1",
+      "cam_kind": "fixed",
+      "purpose": "traffic monitoring",
+      "dept": "Traffic Police",
+      "unit": "Ahmedabad Traffic Zone 1",
+      "district": "Ahmedabad",
+      "ps_zone": "Navrangpura PS",
+      "admin_contact": "+91 79 2650 1001",
+      "maint_agency": "Gujarat Infotech Services",
+      "install_vendor": "Metro Systems Pvt Ltd",
+      "lat": 23.0225,
+      "lng": 72.5714,
+      "address": "CG Road East Junction, near Municipal Market",
+      "road": "CG Road",
+      "direction": "eastbound",
+      "coverage": "Eastbound carriageway and pedestrian crossing",
+      "entry_exit": "Junction entry from Panchvati approach",
+      "feed_type": "VMS_API",
+      "vms": "Traffic VMS Demo",
+      "vms_make": "GTP-VMS",
+      "res": "1280x720",
+      "fps": 25,
+      "codec": "H.264",
+      "live_ok": true,
+      "playback_ok": true,
+      "retention": 30,
+      "tz": "Asia/Kolkata",
+      "installed_on": "01-08-2026",
+      "commissioned_on": "05-08-2026",
+      "firmware": "GTP-VMS 2.0.1",
+      "local_stream": "/videos/traffic_live.mp4",
+      "roles_allowed": [
+        "department_operator",
+        "district_supervisor",
+        "investigator"
+      ]
+    },
+    "docs": [
+      {
+        "kind": "site_survey",
+        "ref": "DOC-TRF-SS-0001",
+        "filename": "site-survey-cg-road-east.pdf"
+      },
+      {
+        "kind": "installation_certificate",
+        "ref": "DOC-TRF-IC-0001",
+        "filename": "install-cert-0001.pdf"
+      },
+      {
+        "kind": "camera_photograph",
+        "ref": "DOC-TRF-PH-0001",
+        "filename": "pole-view-0001.jpg"
+      },
+      {
+        "kind": "approval_document",
+        "ref": "DOC-TRF-AP-0001",
+        "filename": "zone1-approval-0001.pdf"
+      }
+    ]
+  },
+  {
+    "request_ref": "TRF-REQ-0003",
+    "state": "DRAFT",
+    "created_by": "traffic.operator",
+    "created_on": "18-08-2026 16:45:00",
+    "updated_on": "18-08-2026 17:10:00",
+    "submitted_by": null,
+    "submitted_on": null,
+    "approved_by": null,
+    "approved_by_role": null,
+    "approved_on": null,
+    "rejected_by": null,
+    "rejected_on": null,
+    "rejection_reason": null,
+    "synced_on": null,
+    "validation_errors": [],
+    "form": {
+      "cam_name": "Nehru Bridge South",
+      "cam_code": "TRF-AHM-0003",
+      "serial_no": "GTPX9920145644",
+      "make": "Demo Vendor",
+      "model_no": "Demo IP Camera X1",
+      "cam_kind": "bullet",
+      "purpose": "traffic monitoring",
+      "dept": "Traffic Police",
+      "unit": "Ahmedabad Traffic Zone 2",
+      "district": "Ahmedabad",
+      "ps_zone": "Karanj PS",
+      "admin_contact": "+91 79 2650 1003",
+      "maint_agency": "Gujarat Infotech Services",
+      "install_vendor": null,
+      "lat": 23.0258,
+      "lng": 72.5789,
+      "address": "Nehru Bridge south landing",
+      "road": "Nehru Bridge",
+      "direction": "southbound",
+      "coverage": "Bridge southbound lanes",
+      "entry_exit": null,
+      "feed_type": "RTSP",
+      "vms": "Traffic VMS Demo",
+      "vms_make": "GTP-VMS",
+      "res": "1920x1080",
+      "fps": 25,
+      "codec": "H.264",
+      "live_ok": true,
+      "playback_ok": false,
+      "retention": 15,
+      "tz": "Asia/Kolkata",
+      "installed_on": "18-08-2026",
+      "commissioned_on": null,
+      "local_stream": "/videos/traffic_01.mp4",
+      "roles_allowed": [
+        "department_operator"
+      ]
+    },
+    "docs": [
+      {
+        "kind": "site_survey",
+        "ref": "DOC-TRF-SS-0003",
+        "filename": "site-survey-nehru-bridge.pdf"
+      }
+    ]
+  }
+]

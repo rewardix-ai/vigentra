@@ -22,6 +22,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { href: "/", label: "Overview" },
       { href: "/registry", label: "Camera registry", permission: "registry:read" },
+      { href: "/live", label: "Live wall", permission: "video:live" },
       { href: "/events", label: "Federated events", permission: "registry:read" },
       { href: "/detections", label: "Object detections", permission: "detection:read" },
     ],

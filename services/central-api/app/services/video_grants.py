@@ -26,7 +26,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config import DemoUser, Settings
+from ..config import CENTRAL_OVERSIGHT_ROLES, DemoUser, Settings
 from ..models import Camera as CameraRow
 from ..models import VideoAccessGrant
 from .normalization import to_utc
@@ -81,6 +81,18 @@ async def active_grant_for(
     return None
 
 
+def _owns_camera(user: DemoUser, owning_department: str) -> bool:
+    """Whether this account speaks for the unit that owns the camera.
+
+    Scope alone is not enough: central oversight roles see the whole
+    federation, but seeing it is not owning it. They neither hold footage by
+    default nor decide who else may.
+    """
+    if user.role in CENTRAL_OVERSIGHT_ROLES:
+        return False
+    return user.may_access_department(owning_department)
+
+
 async def request_access(
     db: AsyncSession,
     *,
@@ -91,7 +103,11 @@ async def request_access(
     modes: list[str] | None = None,
 ) -> VideoAccessGrant:
     """Raise a request against the unit that owns the camera."""
-    if user.may_access_department(camera.owning_department):
+    # A central oversight account is never "the owning unit", however wide its
+    # scope - so it always has a request to make. Without this exception the
+    # statewide check below would tell a state admin that every camera in the
+    # federation already belongs to it, leaving it no way to ask at all.
+    if _owns_camera(user, camera.owning_department):
         raise GrantError(
             f"'{camera.camera_id}' already belongs to your own unit "
             f"({camera.owning_department}); no cross-unit request is needed."
@@ -150,7 +166,10 @@ async def decide(
     days: int | None = None,
 ) -> VideoAccessGrant:
     """Grant or refuse. Only the OWNING unit may decide."""
-    if not decider.may_access_department(grant.owning_department):
+    # Deciding is the operator's job. A central account cannot approve its own
+    # request by virtue of being statewide - that would make the whole
+    # conversation a formality.
+    if not _owns_camera(decider, grant.owning_department):
         raise GrantError(
             f"Only {grant.owning_department} may decide requests for its own cameras."
         )

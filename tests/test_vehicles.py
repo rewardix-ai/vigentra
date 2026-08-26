@@ -13,6 +13,8 @@ import json
 
 import pytest
 
+from conftest import password_for_headers
+
 pytestmark = pytest.mark.asyncio
 
 REGISTRY_FILE = "data/reference/vehicle_registry.json"
@@ -193,6 +195,9 @@ async def test_registry_viewer_cannot_reach_cameras_or_video(api, login, traffic
             "camera_id": traffic_camera["camera_id"],
             "mode": "live",
             "reason": "Should never be permitted",
+            # Supplied so the refusal below is a permission decision and not a
+            # body-validation error that would pass for the wrong reason.
+            "password": password_for_headers(headers),
         },
     )
     assert session.status_code == 403

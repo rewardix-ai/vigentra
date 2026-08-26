@@ -182,6 +182,12 @@ export const api = {
     camera_id: string;
     mode: VideoMode;
     reason: string;
+    /**
+     * Re-entered at the moment of viewing. Passed straight through and never
+     * stored, never put in component state that outlives the request, and
+     * never written to the URL.
+     */
+    password: string;
     case_id?: string;
     start_time_utc?: string;
     end_time_utc?: string;

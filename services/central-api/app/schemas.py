@@ -777,6 +777,12 @@ class VideoSessionCreate(BaseModel):
 
     camera_id: str
     mode: VideoMode = VideoMode.LIVE
+    #: Re-entered at the moment of viewing, not just at sign-in. A bearer token
+    #: left open on an unattended workstation is enough to browse the registry;
+    #: it must not also be enough to open somebody's camera. The value is
+    #: verified and discarded - it is never stored, never audited and never
+    #: echoed back, and `repr=False` keeps it out of tracebacks and logs.
+    password: str = Field(repr=False, min_length=1)
     start_time_utc: datetime | None = None
     end_time_utc: datetime | None = None
     reason: str = Field(min_length=5, max_length=500)
@@ -804,6 +810,10 @@ class VideoSessionOut(BaseModel):
     city: str | None = None
     mode: VideoMode
     stream_url: str = Field(description="Protected Sentinel route - the only URL a client may use")
+    #: How the bytes behind `stream_url` are packaged, so the player can pick a
+    #: strategy without guessing from the URL. `hls` needs a JS player in most
+    #: browsers; `http-mp4` plays natively in a <video> element.
+    stream_protocol: str = "http-mp4"
     status: str = "active"
     expires_at_utc: datetime
     expires_in_seconds: int = 0

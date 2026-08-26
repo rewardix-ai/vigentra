@@ -12,7 +12,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from conftest import assert_no_secrets
+from conftest import assert_no_secrets, open_video_session, password_for_headers
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,8 +21,7 @@ LIVE = {"mode": "live", "reason": "Routine department monitoring"}
 
 
 async def open_session(api, headers, camera_id: str, **overrides):
-    payload = {"camera_id": camera_id, **LIVE, **overrides}
-    return await api.post("/api/v1/video-sessions", headers=headers, json=payload)
+    return await open_video_session(api, headers, camera_id, **{**LIVE, **overrides})
 
 
 # 9. Authorized Traffic operator can view permitted Traffic video
@@ -81,15 +80,22 @@ async def test_state_admin_video_is_opt_in(api, login, traffic_camera):
     """Breadth of oversight is not breadth of viewing.
 
     A statewide admin sees every camera exists without being able to watch any
-    of them, unless a deployment explicitly opts them in.
+    of them. What stands between it and the footage is not a deployment flag
+    but the owning unit: it has to ask, and an operator has to agree.
     """
     headers = await login("state.admin")
     detail = await api.get(f"/api/v1/cameras/{traffic_camera['camera_id']}", headers=headers)
     assert detail.status_code == 200, "state admin reads metadata"
-    assert detail.json()["video_access"] == "denied"
+    # Not a flat `denied`: there is a route to the footage, and it runs through
+    # the owning unit. Collapsing the two answers costs the operator a call.
+    assert detail.json()["video_access"] == "needs_unit_approval"
 
     response = await open_session(api, headers, traffic_camera["camera_id"])
     assert response.status_code == 403
+    body = response.json()["detail"]
+    assert body["state"] == "needs_unit_approval"
+    assert body["owning_department"] == traffic_camera["owning_department"]
+    assert body["request_access_at"] == "/api/v1/video-access-requests"
 
 
 # 14. Health monitor cannot create a video session
@@ -288,6 +294,7 @@ async def test_playback_window_is_validated(api, login, traffic_camera):
         "/api/v1/video-sessions",
         headers=headers,
         json={
+            "password": password_for_headers(headers),
             "camera_id": traffic_camera["camera_id"],
             "mode": "playback",
             "reason": "Authorized incident review",
@@ -300,6 +307,7 @@ async def test_playback_window_is_validated(api, login, traffic_camera):
         "/api/v1/video-sessions",
         headers=headers,
         json={
+            "password": password_for_headers(headers),
             "camera_id": traffic_camera["camera_id"],
             "mode": "playback",
             "reason": "Authorized incident review",
@@ -314,6 +322,7 @@ async def test_playback_window_is_validated(api, login, traffic_camera):
         "/api/v1/video-sessions",
         headers=headers,
         json={
+            "password": password_for_headers(headers),
             "camera_id": traffic_camera["camera_id"],
             "mode": "playback",
             "reason": "Authorized incident review",
@@ -377,36 +386,40 @@ async def test_official_video_adapter_reports_not_configured():
 # Platform and oversight accounts
 # ---------------------------------------------------------------------------
 
-async def test_system_admin_can_view_any_department(api, login, traffic_camera, municipal_camera):
-    """The platform account holds video, on both departments, without a grant.
+async def test_system_admin_must_still_ask_the_owning_unit(
+    api, login, traffic_camera, municipal_camera
+):
+    """Being the platform account is not a way around the owning unit.
 
-    It is statewide, so `may_access_department` never sends it down the
-    request-a-grant path. That is a deliberate concession for the account that
-    has to diagnose the broker itself - "video is broken" cannot be answered
-    from metadata. The control on it is the audit trail, tested below.
+    The system admin is statewide and holds every video permission, which used
+    to put it straight through on any camera. It no longer does: a central
+    account never counts as "inside the unit", so the request reaches a human
+    on both departments before any footage moves.
     """
     headers = await login("system.admin")
 
     for camera in (traffic_camera, municipal_camera):
         response = await open_session(api, headers, camera["camera_id"])
-        assert response.status_code == 201, response.text
-        stream = await api.get(response.json()["stream_url"], headers=headers)
-        assert stream.status_code == 200
-        assert len(stream.content) > 1000
+        assert response.status_code == 403, response.text
+        assert response.json()["detail"]["state"] == "needs_unit_approval"
 
 
-async def test_system_admin_viewing_is_audited_like_anyone_else(api, login, traffic_camera):
-    """No quiet path for the privileged account."""
+async def test_system_admin_refusal_is_audited_like_anyone_else(api, login, traffic_camera):
+    """No quiet path for the privileged account - including when it is refused.
+
+    A refusal that leaves no trace is how a privileged account gets probed
+    without anyone noticing, so the denial is recorded as carefully as a grant.
+    """
     headers = await login("system.admin")
-    opened = await open_session(api, headers, traffic_camera["camera_id"])
-    assert opened.status_code == 201
+    refused = await open_session(api, headers, traffic_camera["camera_id"])
+    assert refused.status_code == 403
 
     entries = (await api.get("/api/v1/audit", headers=await login("auditor"))).json()
     mine = [
         entry for entry in entries
-        if entry["username"] == "system.admin" and entry["action"] == "video_session_opened"
+        if entry["username"] == "system.admin" and entry["action"] == "video_access_denied"
     ]
-    assert mine, "a system admin session must appear in the audit trail"
+    assert mine, "a refused system admin request must appear in the audit trail"
 
 
 async def test_oversight_roles_stay_metadata_only_by_default(api, login, traffic_camera):
@@ -417,11 +430,15 @@ async def test_oversight_roles_stay_metadata_only_by_default(api, login, traffic
         assert response.status_code == 403, f"{username} should not hold video by default"
 
 
-async def test_state_admin_opt_in_actually_grants_video(monkeypatch, traffic_camera):
-    """The deployment flag has to do something.
+async def test_state_admin_opt_in_still_cannot_bypass_the_owning_unit(
+    monkeypatch, traffic_camera
+):
+    """A deployment flag cannot stand in for the owner's consent.
 
-    It previously opened the role gate and was then refused by the permission
-    check immediately after, so the switch was decorative. This pins both ends.
+    `SENTINEL_STATE_ADMIN_VIDEO` decides whether the role may hold footage at
+    all. It deliberately does NOT decide whose footage: a central account still
+    reaches every camera through the owning unit. Flipping a switch in a config
+    file is not a person agreeing.
     """
     from app.config import Role, get_settings
     from app.services import video_permissions
@@ -442,9 +459,15 @@ async def test_state_admin_opt_in_actually_grants_video(monkeypatch, traffic_cam
         zone=traffic_camera["location"].get("zone"),
         capabilities=["metadata", "health", "live", "playback"],
     )
+    # The flag opens the role gate...
     decision = video_permissions.evaluate(user, camera, settings)
-    assert decision.allowed is True, decision.reason
-    assert "live" in decision.allowed_modes
+    assert decision.allowed is False
+    assert decision.state.value == "needs_unit_approval", decision.reason
+
+    # ...and the owning unit's grant is what actually opens the footage.
+    granted = video_permissions.evaluate(user, camera, settings, grant=["live"])
+    assert granted.allowed is True, granted.reason
+    assert "live" in granted.allowed_modes
 
 
 # ---------------------------------------------------------------------------
@@ -471,7 +494,8 @@ async def test_playback_returns_the_segment_for_the_window(api, login, traffic_c
     first = await api.post(
         "/api/v1/video-sessions",
         headers=headers,
-        json={"camera_id": traffic_camera["camera_id"], **_window(2)},
+        json={"camera_id": traffic_camera["camera_id"],
+              "password": password_for_headers(headers), **_window(2)},
     )
     assert first.status_code == 201, first.text
     a = first.json()
@@ -482,7 +506,8 @@ async def test_playback_returns_the_segment_for_the_window(api, login, traffic_c
     second = await api.post(
         "/api/v1/video-sessions",
         headers=headers,
-        json={"camera_id": traffic_camera["camera_id"], **_window(30)},
+        json={"camera_id": traffic_camera["camera_id"],
+              "password": password_for_headers(headers), **_window(30)},
     )
     assert second.status_code == 201
     b = second.json()
@@ -495,7 +520,8 @@ async def test_playback_returns_the_segment_for_the_window(api, login, traffic_c
     repeat = await api.post(
         "/api/v1/video-sessions",
         headers=headers,
-        json={"camera_id": traffic_camera["camera_id"], **_window(30)},
+        json={"camera_id": traffic_camera["camera_id"],
+              "password": password_for_headers(headers), **_window(30)},
     )
     assert repeat.json()["segment_start_seconds"] == b["segment_start_seconds"]
 
@@ -511,7 +537,8 @@ async def test_playback_can_be_requested_repeatedly(api, login, traffic_camera):
         response = await api.post(
             "/api/v1/video-sessions",
             headers=headers,
-            json={"camera_id": traffic_camera["camera_id"], **_window(hours)},
+            json={"camera_id": traffic_camera["camera_id"],
+              "password": password_for_headers(headers), **_window(hours)},
         )
         assert response.status_code == 201, f"{hours}h window refused: {response.text}"
         body = response.json()
@@ -538,7 +565,9 @@ async def test_playback_beyond_retention_is_refused_with_the_reason(
         "/api/v1/video-sessions",
         headers=headers,
         json={
+            "password": password_for_headers(headers),
             "camera_id": traffic_camera["camera_id"],
+            "password": password_for_headers(headers),
             **_window(hours_ago=(retention + 5) * 24),
         },
     )
@@ -554,6 +583,7 @@ async def test_playback_requires_both_ends_of_the_window(api, login, traffic_cam
         "/api/v1/video-sessions",
         headers=headers,
         json={
+            "password": password_for_headers(headers),
             "camera_id": traffic_camera["camera_id"],
             "mode": "playback",
             "reason": "Missing the end of the window",

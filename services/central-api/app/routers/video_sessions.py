@@ -30,6 +30,7 @@ from ..dependencies import (
     AdaptersDep,
     CurrentUser,
     SettingsDep,
+    authenticate,
     client_ip,
     get_media_client,
     require_permission,
@@ -112,6 +113,33 @@ async def create_video_session(
     """
     camera = await _load_camera(db, payload.camera_id)
     mode = payload.mode if isinstance(payload.mode, str) else payload.mode.value
+
+    # Step-up authentication. Holding a valid token proves who signed in; it
+    # does not prove who is at the keyboard now. Opening a camera is the point
+    # where that difference matters, so the operator re-enters their password
+    # here and the refusal is audited like any other.
+    if authenticate(user.username, payload.password, settings) is None:
+        await audit_service.record(
+            db,
+            username=user.username,
+            role=user.role,
+            action=AuditAction.VIDEO_ACCESS_DENIED,
+            outcome=AuditOutcome.DENIED,
+            resource_type=ResourceType.VIDEO,
+            resource_id=camera.camera_id,
+            department=camera.owning_department,
+            source_system=camera.source_system,
+            case_or_reason=payload.reason,
+            client_ip=client_ip(request),
+            details={"code": "STEP_UP_FAILED", "denial_reason": "password_reauth_failed"},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "STEP_UP_FAILED",
+                "message": "That password is not correct. Re-enter it to open the camera.",
+            },
+        )
 
     async def _audit_denial(reason: str, code: str = "VIDEO_ACCESS_DENIED") -> None:
         await audit_service.record(
@@ -402,9 +430,18 @@ async def read_stream(
             session,
             request.headers.get("range"),
             media_root=getattr(request.app.state, "media_root", None),
+            # HLS playlists are rewritten to point back here with ?p=<ref>, so
+            # every segment request re-enters this route and is re-authorised.
+            sub_path=request.query_params.get("p"),
         )
     except HTTPException:
         raise
+    except video_broker.HTTPExceptionLike as exc:
+        # A malformed or escaping sub-path is the caller's fault, not upstream's.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_STREAM_PATH", "message": str(exc)},
+        ) from exc
     except Exception as exc:
         # Never echo the upstream URL into the error.
         logger.warning("stream proxy failed for %s: %s", session.session_id, exc)

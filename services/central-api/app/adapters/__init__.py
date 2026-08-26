@@ -21,12 +21,14 @@ from .base import (
     SurveillanceAdapter,
     UpstreamProtocolError,
 )
+from .grid_adapter import GridAdapter
 from .municipal_adapter import MunicipalAdapter
 from .traffic_adapter import TrafficAdapter
 
 ADAPTER_REGISTRY: dict[str, type[SurveillanceAdapter]] = {
     "traffic_adapter": TrafficAdapter,
     "municipal_adapter": MunicipalAdapter,
+    "grid_adapter": GridAdapter,
 }
 
 
@@ -62,6 +64,7 @@ async def close_adapters(adapters: dict[str, SurveillanceAdapter]) -> None:
 __all__ = [
     "ADAPTER_REGISTRY",
     "AdapterError",
+    "GridAdapter",
     "MunicipalAdapter",
     "ResourceNotFoundError",
     "SourceAuthError",

@@ -28,6 +28,13 @@ COPY --from=builder --chown=dashboard:dashboard /app/.next/static ./.next/static
 USER dashboard
 EXPOSE 3000
 
+# Next's standalone server.js uses $HOSTNAME as its BIND ADDRESS, and Docker
+# sets HOSTNAME to the container id. Left alone it binds only to the container's
+# own IP, so the port mapping works from outside while 127.0.0.1 inside the
+# container is refused - which is exactly what the healthcheck below probes,
+# leaving the service permanently "unhealthy" while serving traffic normally.
+ENV HOSTNAME=0.0.0.0
+
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --spider -q http://127.0.0.1:3000/login || exit 1
 

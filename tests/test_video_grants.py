@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import pytest
 
+from conftest import open_video_session
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -21,11 +23,7 @@ REASON = "Chain-snatching follow-up on Vasna approach, FIR 214/2026"
 
 
 async def open_session(api, headers, camera_id: str, **overrides):
-    return await api.post(
-        "/api/v1/video-sessions",
-        headers=headers,
-        json={"camera_id": camera_id, **LIVE, **overrides},
-    )
+    return await open_video_session(api, headers, camera_id, **{**LIVE, **overrides})
 
 
 async def ask(api, headers, camera_id: str, **overrides) -> dict:
@@ -83,7 +81,7 @@ async def test_video_without_a_grant_says_to_ask_the_unit(api, login, municipal_
 async def test_grant_opens_video_for_the_requester_only(api, login, municipal_camera):
     camera_id = municipal_camera["camera_id"]
     requester = await login("traffic.operator")
-    owner = await login("municipal.approver")
+    owner = await login("municipal.state")
 
     grant = await ask(api, requester, camera_id)
     assert grant["status"] == "requested"
@@ -106,7 +104,7 @@ async def test_grant_opens_video_for_the_requester_only(api, login, municipal_ca
 async def test_denial_leaves_video_shut(api, login, municipal_camera):
     camera_id = municipal_camera["camera_id"]
     requester = await login("traffic.operator")
-    owner = await login("municipal.approver")
+    owner = await login("municipal.state")
 
     grant = await ask(api, requester, camera_id)
     refused = await decide(
@@ -124,8 +122,8 @@ async def test_only_the_owning_unit_may_decide(api, login, municipal_camera):
     requester = await login("traffic.operator")
     grant = await ask(api, requester, camera_id)
 
-    # A Traffic approver holds `video:grant`, but not over Municipal cameras.
-    traffic_side = await login("traffic.approver")
+    # A Traffic operator holds `video:grant`, but not over Municipal cameras.
+    traffic_side = await login("traffic.state")
     assert (await decide(api, traffic_side, grant["grant_id"], "grant")).status_code == 403
 
     # And the requester cannot self-serve: no `video:grant` permission at all.
@@ -136,7 +134,7 @@ async def test_a_grant_can_be_narrowed_on_the_way_through(api, login, municipal_
     """Asking for live and playback does not mean receiving both."""
     camera_id = municipal_camera["camera_id"]
     requester = await login("traffic.operator")
-    owner = await login("municipal.approver")
+    owner = await login("municipal.state")
 
     grant = await ask(api, requester, camera_id, modes=["live", "playback"])
     approved = await decide(
@@ -152,7 +150,7 @@ async def test_a_grant_can_be_narrowed_on_the_way_through(api, login, municipal_
 async def test_revocation_ends_a_live_grant(api, login, municipal_camera):
     camera_id = municipal_camera["camera_id"]
     requester = await login("traffic.operator")
-    owner = await login("municipal.approver")
+    owner = await login("municipal.state")
 
     grant = await ask(api, requester, camera_id)
     await decide(api, owner, grant["grant_id"], "grant")
@@ -217,7 +215,7 @@ async def test_each_side_sees_the_request_and_nobody_else_does(
 ):
     camera_id = municipal_camera["camera_id"]
     requester = await login("traffic.operator")
-    owner = await login("municipal.approver")
+    owner = await login("municipal.state")
     grant = await ask(api, requester, camera_id)
 
     async def ids(headers) -> set[str]:
@@ -235,7 +233,7 @@ async def test_each_side_sees_the_request_and_nobody_else_does(
 async def test_the_decision_is_audited(api, login, municipal_camera):
     camera_id = municipal_camera["camera_id"]
     requester = await login("traffic.operator")
-    owner = await login("municipal.approver")
+    owner = await login("municipal.state")
 
     grant = await ask(api, requester, camera_id)
     await decide(api, owner, grant["grant_id"], "grant", note="Verified with control room")

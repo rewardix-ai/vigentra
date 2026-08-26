@@ -36,10 +36,56 @@ export function VideoPlayer({
   const [session, setSession] = useState<VideoSession | null>(null);
   const [reason, setReason] = useState("");
   const [caseId, setCaseId] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number>(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Live grid cameras arrive as HLS. Safari plays a playlist natively; every
+  // other browser needs hls.js, which is loaded only when a session actually
+  // turns out to be HLS so the MP4 path costs nothing.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!session || !video || session.stream_protocol !== "hls") return;
+
+    const src = api.streamUrl(session);
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = src;
+      return;
+    }
+
+    let destroyed = false;
+    let hls: { destroy: () => void } | null = null;
+
+    void import("hls.js").then(({ default: Hls }) => {
+      if (destroyed || !Hls.isSupported()) return;
+      const instance = new Hls({
+        // The grid is a low-latency feed and the session is short. Chasing the
+        // live edge matters more than a deep buffer here.
+        lowLatencyMode: true,
+        backBufferLength: 30,
+      });
+      hls = instance;
+      instance.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => {
+        // Transient segment errors are normal on a live feed and hls.js
+        // recovers from them on its own; only a fatal one is worth telling
+        // the operator about.
+        if (data?.fatal) {
+          setError(
+            "The live feed stopped. The session may have expired, or the owning unit revoked it.",
+          );
+        }
+      });
+      instance.loadSource(src);
+      instance.attachMedia(video);
+    });
+
+    return () => {
+      destroyed = true;
+      hls?.destroy();
+    };
+  }, [session]);
 
   // Tracked in a ref so unmount cleanup can reach it without re-running on
   // every state change.
@@ -104,6 +150,7 @@ export function VideoPlayer({
         camera_id: cameraId,
         mode,
         reason: reason.trim(),
+        password,
         case_id: caseId.trim() || undefined,
       };
 
@@ -124,13 +171,15 @@ export function VideoPlayer({
       }
 
       const opened = await api.openVideoSession(body);
+      // Held only for the length of the request.
+      setPassword("");
       setSession(opened);
     } catch (err) {
       setError(describe(err));
     } finally {
       setBusy(false);
     }
-  }, [cameraId, mode, reason, caseId, isPlayback, date, fromTime, toTime]);
+  }, [cameraId, mode, reason, caseId, password, isPlayback, date, fromTime, toTime]);
 
   const endSession = useCallback(
     async (keepForm: boolean) => {
@@ -219,6 +268,19 @@ export function VideoPlayer({
           />
         </label>
         <label className="block max-w-xs">
+          <span className="field-label">
+            Confirm your password <span className="text-bad">*</span>
+          </span>
+          <input
+            className="input mt-1"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Re-enter to open the camera"
+          />
+        </label>
+        <label className="block max-w-xs">
           <span className="field-label">Case / FIR reference (optional)</span>
           <input
             className="input mt-1"
@@ -229,13 +291,14 @@ export function VideoPlayer({
         </label>
 
         <p className="text-2xs text-ink-500">
-          The session is short-lived, watermarked with your username, and written to the audit
-          trail. The owning unit can end it at any time.
+          Your password is re-checked at this point: a signed-in tab left unattended must not be
+          enough to open a camera. The session is short-lived, watermarked with your username, and
+          written to the audit trail. The owning unit can end it at any time.
         </p>
         {error && <Notice tone="bad">{error}</Notice>}
         <button
           className="btn btn-primary"
-          disabled={busy || reason.trim().length < 5}
+          disabled={busy || reason.trim().length < 5 || password.length === 0}
           onClick={open}
         >
           {busy && <Spinner />} {isPlayback ? "Retrieve footage" : "Start live"}
@@ -247,6 +310,7 @@ export function VideoPlayer({
   // ----------------------------------------------------------------- player
 
   const expired = remaining <= 0;
+  const isHls = session.stream_protocol === "hls";
   const fragment =
     session.segment_start_seconds != null && session.segment_end_seconds != null
       ? `#t=${session.segment_start_seconds},${session.segment_end_seconds}`
@@ -297,13 +361,16 @@ export function VideoPlayer({
             ref={videoRef}
             key={session.session_id}
             className="block max-h-[60vh] w-full"
-            src={`${api.streamUrl(session)}${fragment}`}
+            // HLS is attached by the effect above (hls.js, or natively on
+            // Safari). Setting src here as well would start a second, competing
+            // load of the same playlist.
+            src={isHls ? undefined : `${api.streamUrl(session)}${fragment}`}
             controls
             autoPlay
             playsInline
             // Live is a continuous feed, so it does not stop at the end of the
             // buffer. Recorded footage does - it is a finite segment.
-            loop={!isPlayback}
+            loop={!isPlayback && !isHls}
             onError={() =>
               setError(
                 "The stream stopped. The session may have expired or been revoked by the owning unit.",

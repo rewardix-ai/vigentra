@@ -17,8 +17,10 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaf
 import Link from "next/link";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 
-// Leaflet's CSS is handled by the framework bundler and has no TypeScript declarations.
-// @ts-expect-error -- side-effect CSS import
+// Leaflet's CSS is handled by the framework bundler. Next's own ambient types
+// already declare side-effect CSS imports, so no suppression is needed here -
+// and a `@ts-expect-error` that suppresses nothing is itself a build error
+// under `next build`, which checks unused directives.
 import "leaflet/dist/leaflet.css";
 import type { Camera, CameraHealthStatus } from "@/lib/types";
 import { calendarDate, relative, titleise } from "@/lib/format";

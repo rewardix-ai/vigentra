@@ -1,0 +1,244 @@
+SENTINEL CAMERA GRID - 30 CAMERAS
+snapshot 2026-08-25 07:21 UTC   source https://live.corp8.cloud/api/ingest
+==============================================================================
+
+Camera 1  [LIVE]
+  https://live.corp8.cloud/live/stream/1/index.m3u8?cookieCheck=1
+  Lat Long: 23.068493, 72.580767   (verified)
+  Name: Chimanbhai Patel Bridge, RTO Circle, Ranip   [Ahmedabad]
+  Direction: West Facing   (operator survey)
+  Map: https://www.google.com/maps?q=23.068493,72.580767
+  Evidence: your survey; OSM 'RTO Circle' bus stop 12.3 m away confirms it
+
+Camera 2  [LIVE]
+  https://live.corp8.cloud/live/stream/2/index.m3u8?cookieCheck=1
+  Lat Long: 23.030000, 72.570000   (estimated)
+  Name: Janpath T-Junction   [Ahmedabad]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.030000,72.570000
+  Evidence: no OSM match for 'Janpath'; overlay CSITMS-10_PTZ2
+
+Camera 3  [LIVE]
+  https://live.corp8.cloud/live/stream/3/index.m3u8?cookieCheck=1
+  Lat Long: 23.103638, 72.586766   (geocoded)
+  Name: O.N.G.C. Office   [Ahmedabad]
+  Direction: East Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.103638,72.586766
+  Evidence: OSM bus stop 'ONGC'
+
+Camera 4  [LIVE]
+  https://live.corp8.cloud/live/stream/4/index.m3u8?cookieCheck=1
+  Lat Long: 23.016500, 72.565500   (landmark_derived)
+  Name: Paldi Junction (V.S. Hospital approach)   [Ahmedabad]
+  Direction: North Facing   (sign 'V.S. Hospital <-')
+  Map: https://www.google.com/maps?q=23.016500,72.565500
+  Evidence: OSM Paldi cluster; Gujarat Blood Bank / VS Hospital 23.016535,72.566382
+
+Camera 5  [LIVE]
+  https://live.corp8.cloud/live/stream/5/index.m3u8?cookieCheck=1
+  Lat Long: 23.103000, 72.587500   (landmark_derived)
+  Name: Visat Three-Way Junction (Motera)   [Ahmedabad]
+  Direction: North Facing   (oncoming traffic on image right (left-hand drive))
+  Map: https://www.google.com/maps?q=23.103000,72.587500
+  Evidence: gantry GANDHINAGAR/RTO CIRCLE/SABARMATI + MOTERA; anchored to ONGC hit
+
+Camera 6  [LIVE]
+  https://live.corp8.cloud/live/stream/6/index.m3u8?cookieCheck=1
+  Lat Long: 21.769769, 72.145940   (geocoded)
+  Name: Madhuram Bypass Road (from Aksharvadi)   [Bhavnagar]
+  Direction: South Facing   (overlay 'From Aksharvadi')
+  Map: https://www.google.com/maps?q=21.769769,72.145940
+  Evidence: OSM 'Madhuram Hospital' Bhavnagar - overlay beats catalogue label
+
+Camera 7  [LIVE]
+  https://live.corp8.cloud/live/stream/7/index.m3u8?cookieCheck=1
+  Lat Long: 20.910000, 70.367000   (estimated)
+  Name: Hero Showroom (Bhavani Char Rasta approach)   [Gir Somnath]
+  Direction: East Facing   (overlay 'Bhavani Char Rasta to Hero')
+  Map: https://www.google.com/maps?q=20.910000,70.367000
+  Evidence: no OSM match for 'Bhavani'
+
+Camera 8  [LIVE]
+  https://live.corp8.cloud/live/stream/8/index.m3u8?cookieCheck=1
+  Lat Long: 21.517000, 70.467000   (estimated)
+  Name: Majevadi Gate   [Junagadh]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=21.517000,70.467000
+  Evidence: OSM 'Majevadi' is a village 10 km away - REJECTED, frame shows city gate
+
+Camera 9  [LIVE]
+  https://live.corp8.cloud/live/stream/9/index.m3u8?cookieCheck=1
+  Lat Long: 21.496747, 70.402476   (geocoded)
+  Name: New Bypass at 66KV Substation (from Vadla Fatak)   [Junagadh]
+  Direction: South Facing   (overlay 'From Vadla Fatak')
+  Map: https://www.google.com/maps?q=21.496747,70.402476
+  Evidence: OSM node named 'Vadla fatak' - exact name match to overlay
+
+Camera 10  [LIVE]
+  https://live.corp8.cloud/live/stream/10/index.m3u8?cookieCheck=1
+  Lat Long: 21.518500, 70.460000   (estimated)
+  Name: Char Chowk (from Diparti Furniture)   [Junagadh]
+  Direction: East Facing   (overlay 'From Diparti Furniture')
+  Map: https://www.google.com/maps?q=21.518500,70.460000
+  Evidence: no OSM match for 'Char Chowk'
+
+Camera 11  [LIVE]
+  https://live.corp8.cloud/live/stream/11/index.m3u8?cookieCheck=1
+  Lat Long: 21.558757, 70.465922   (geocoded)
+  Name: Dolatpara Gate   [Junagadh]
+  Direction: West Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=21.558757,70.465922
+  Evidence: OSM suburb + marketyard, two independent Dolatpara nodes
+
+Camera 12  [LIVE]
+  https://live.corp8.cloud/live/stream/12/index.m3u8?cookieCheck=1
+  Lat Long: 23.164692, 72.582105   (landmark_derived)
+  Name: Tri Mandir Adalaj Toll Plaza, Lane 9   [Gandhinagar]
+  Direction: North Facing   (toll lane direction)
+  Map: https://www.google.com/maps?q=23.164692,72.582105
+  Evidence: OSM Adalaj town; Adalaj Circle 23.168342,72.586684
+
+Camera 13  [LIVE]
+  https://live.corp8.cloud/live/stream/13/index.m3u8?cookieCheck=1
+  Lat Long: 23.020838, 72.552041   (geocoded)
+  Name: C.N. Vidyalaya Junction   [Ahmedabad]
+  Direction: South Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.020838,72.552041
+  Evidence: OSM way named 'Vidyalaya'
+
+Camera 14  [LIVE]
+  https://live.corp8.cloud/live/stream/14/index.m3u8?cookieCheck=1
+  Lat Long: 23.047000, 72.562000   (estimated)
+  Name: Delight Circle   [Ahmedabad]
+  Direction: East Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.047000,72.562000
+  Evidence: 'WEST BANK' facade legible in frame but absent from OSM
+
+Camera 15  [LIVE]
+  https://live.corp8.cloud/live/stream/15/index.m3u8?cookieCheck=1
+  Lat Long: 23.014680, 72.559172   (geocoded)
+  Name: Suvidha Park Junction   [Ahmedabad]
+  Direction: West Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.014680,72.559172
+  Evidence: OSM node 'Suvidha Crossroads' - exact junction match
+
+Camera 16  [LIVE]
+  https://live.corp8.cloud/live/stream/16/index.m3u8?cookieCheck=1
+  Lat Long: 23.103500, 72.588000   (landmark_derived)
+  Name: Visat T-Junction   [Ahmedabad]
+  Direction: South Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.103500,72.588000
+  Evidence: ONGC hoarding in frame anchors to camera 3
+
+Camera 17  [DOWN (catalogue says live)]
+  https://live.corp8.cloud/live/stream/17/index.m3u8?cookieCheck=1
+  Lat Long: 22.295499, 70.798950   (geocoded)
+  Name: Rajkot Bus Port   [Rajkot]
+  Direction: Unknown Facing   (stream down, never seen)
+  Map: https://www.google.com/maps?q=22.295499,70.798950
+  Evidence: OSM 'Rajkot New Bus Station'
+
+Camera 18  [DOWN (catalogue says live)]
+  https://live.corp8.cloud/live/stream/18/index.m3u8?cookieCheck=1
+  Lat Long: 22.303900, 70.802200   (district_centroid)
+  Name: Rajkot City Camera   [Rajkot]
+  Direction: Unknown Facing   (stream down, never seen)
+  Map: https://www.google.com/maps?q=22.303900,70.802200
+  Evidence: no location detail available
+
+Camera 19  [LIVE]
+  https://live.corp8.cloud/live/stream/19/index.m3u8?cookieCheck=1
+  Lat Long: 20.830000, 72.990000   (estimated)
+  Name: Khaparia Gram Panchayat   [Navsari]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=20.830000,72.990000
+  Evidence: no OSM match; Gandevi taluka per catalogue label
+
+Camera 20  [LIVE]
+  https://live.corp8.cloud/live/stream/20/index.m3u8?cookieCheck=1
+  Lat Long: 20.850000, 73.000000   (estimated)
+  Name: Mohanpura (AI IPC)   [Navsari]
+  Direction: East Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=20.850000,73.000000
+  Evidence: no OSM match; S-Gujarat vegetation in frame
+
+Camera 21  [LIVE]
+  https://live.corp8.cloud/live/stream/21/index.m3u8?cookieCheck=1
+  Lat Long: 23.916593, 72.361148   (geocoded)
+  Name: Dethali Char Rasta   [Patan]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.916593,72.361148
+  Evidence: OSM 'Dethali Circle' - exact junction match
+
+Camera 22  [DOWN (catalogue says live)]
+  https://live.corp8.cloud/live/stream/22/index.m3u8?cookieCheck=1
+  Lat Long: 24.170000, 72.430000   (district_centroid)
+  Name: Mervada Three-Way Junction   [Banaskantha]
+  Direction: Unknown Facing   (stream unreachable)
+  Map: https://www.google.com/maps?q=24.170000,72.430000
+  Evidence: no OSM match; never captured a frame
+
+Camera 23  [LIVE]
+  https://live.corp8.cloud/live/stream/23/index.m3u8?cookieCheck=1
+  Lat Long: 20.860000, 73.050000   (estimated)
+  Name: Kheram village road   [Navsari]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=20.860000,73.050000
+  Evidence: no OSM match; overlay is generic 'Camera 01'
+
+Camera 24  [LIVE]
+  https://live.corp8.cloud/live/stream/24/index.m3u8?cookieCheck=1
+  Lat Long: 23.164033, 72.881832   (geocoded)
+  Name: Dehgam town road   [Gandhinagar]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.164033,72.881832
+  Evidence: OSM Dehgam
+
+Camera 25  [LIVE]
+  https://live.corp8.cloud/live/stream/25/index.m3u8?cookieCheck=1
+  Lat Long: 20.838862, 73.023955   (geocoded)
+  Name: Dhanori Gram Panchayat   [Navsari]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=20.838862,73.023955
+  Evidence: OSM 'Civil Hospital, Dhanori'
+
+Camera 26  [LIVE]
+  https://live.corp8.cloud/live/stream/26/index.m3u8?cookieCheck=1
+  Lat Long: 20.859893, 73.115038   (geocoded)
+  Name: Tankal village junction   [Navsari]
+  Direction: East Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=20.859893,73.115038
+  Evidence: OSM way 'Tankal' village centre
+
+Camera 27  [LIVE]
+  https://live.corp8.cloud/live/stream/27/index.m3u8?cookieCheck=1
+  Lat Long: 20.767169, 72.969345   (landmark_derived)
+  Name: Bilimora Bus Station - bay apron   [Navsari]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=20.767169,72.969345
+  Evidence: OSM Bilimora town; bus station not mapped in OSM
+
+Camera 28  [LIVE]
+  https://live.corp8.cloud/live/stream/28/index.m3u8?cookieCheck=1
+  Lat Long: 20.766635, 72.970008   (landmark_derived)
+  Name: Bilimora Bus Station - concourse   [Navsari]
+  Direction: North Facing   (indoor camera)
+  Map: https://www.google.com/maps?q=20.766635,72.970008
+  Evidence: OSM node 'Bilimora Junction'
+
+Camera 29  [LIVE]
+  https://live.corp8.cloud/live/stream/29/index.m3u8?cookieCheck=1
+  Lat Long: 20.766635, 72.970008   (landmark_derived)
+  Name: Bilimora Bus Station - waiting hall   [Navsari]
+  Direction: South Facing   (indoor camera)
+  Map: https://www.google.com/maps?q=20.766635,72.970008
+  Evidence: OSM node 'Bilimora Junction'
+
+Camera 30  [LIVE]
+  https://live.corp8.cloud/live/stream/30/index.m3u8?cookieCheck=1
+  Lat Long: 23.075403, 70.090851   (geocoded)
+  Name: Hiralal Parakh Circle, Rambaug   [Kutch]
+  Direction: North Facing   (unconfirmed)
+  Map: https://www.google.com/maps?q=23.075403,70.090851
+  Evidence: OSM 'Rambaug' Gandhidham; circle nameplate legible in frame
+

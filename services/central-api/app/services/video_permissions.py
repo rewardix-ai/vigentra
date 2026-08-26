@@ -11,6 +11,7 @@ The conditions, all of which must hold, in the order they are checked:
     3. role permits video          (and, for oversight roles, is opt-in)
     4. camera is commissioned, owner-enabled and healthy
     5. the camera is in the user's own unit, OR the owning unit granted access
+       (a CENTRAL oversight account is never "own unit" - it always asks)
     6. city / zone scope matches   (own-unit access only)
     7. the requested mode is allowed by role, camera and grant
 
@@ -24,7 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..config import DemoUser, Permission, Settings
+from ..config import CENTRAL_OVERSIGHT_ROLES, DemoUser, Permission, Settings
 from ..models import Camera as CameraRow
 from ..schemas import CameraStatus, InstallationStatus, VideoAccessState, VideoMode
 
@@ -60,6 +61,11 @@ _DENY_NO_MODE = "No viewing mode is available to you for this camera."
 _NEEDS_GRANT = (
     "This camera belongs to another unit. Request access from the owning "
     "department; footage is shared only when that unit agrees."
+)
+_NEEDS_OPERATOR_APPROVAL = (
+    "Central accounts do not hold footage by default. Request access and the "
+    "operator who owns this camera decides; you get a time-boxed, revocable "
+    "grant only if they agree."
 )
 
 
@@ -121,9 +127,19 @@ def evaluate(
     # Metadata federates automatically; footage does not. Inside your own unit
     # the normal scope rules apply. Outside it, you must have asked the owning
     # unit and been granted access.
-    if not user.may_access_department(camera.owning_department):
+    #
+    # A central oversight account never counts as "inside the unit", however
+    # wide its scope. State-level visibility is what lets it see that a camera
+    # exists; watching what that camera sees stays the operator's decision, and
+    # the request has to reach a human in the owning unit first.
+    is_central = user.role in CENTRAL_OVERSIGHT_ROLES
+    if is_central or not user.may_access_department(camera.owning_department):
         if grant is None:
-            return VideoDecision(False, VideoAccessState.NEEDS_UNIT_APPROVAL, _NEEDS_GRANT)
+            return VideoDecision(
+                False,
+                VideoAccessState.NEEDS_UNIT_APPROVAL,
+                _NEEDS_OPERATOR_APPROVAL if is_central else _NEEDS_GRANT,
+            )
         # The owner shared this specific camera deliberately, so the requester's
         # own city and zone no longer apply - the grant is the decision.
         return _decide_modes(user, camera, granted_modes=list(grant), opted_in=opted_in)

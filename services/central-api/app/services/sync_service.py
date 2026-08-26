@@ -365,6 +365,47 @@ async def _upsert_source(
 # Entry point
 # --------------------------------------------------------------------------
 
+async def _retire_unconfigured_sources(
+    db: AsyncSession, configured: set[str]
+) -> dict[str, int]:
+    """Remove registry rows belonging to sources that are no longer federated.
+
+    Turning a department off in configuration is a statement that Sentinel no
+    longer federates it. Leaving its cameras in the registry would contradict
+    that, and for the two demo departments it would leave synthetic cameras on
+    the map with nothing to mark them as such.
+
+    Only rows keyed by `source_system` are touched, so a source that is still
+    configured is never affected. Returns what it removed, per table, so the
+    caller can log and audit it rather than deleting silently.
+    """
+    from ..models import Event as EventRow
+
+    removed: dict[str, int] = {}
+    for label, model in (
+        ("cameras", CameraRow),
+        ("installation_requests", InstallationRequest),
+        ("events", EventRow),
+    ):
+        rows = (
+            await db.execute(
+                select(model).where(model.source_system.notin_(configured or {""}))
+            )
+        ).scalars().all()
+        for row in rows:
+            await db.delete(row)
+        if rows:
+            removed[label] = len(rows)
+
+    if removed:
+        await db.commit()
+        logger.info(
+            "retired rows from de-configured sources: %s",
+            ", ".join(f"{k}={v}" for k, v in removed.items()),
+        )
+    return removed
+
+
 async def sync_all(
     db: AsyncSession,
     adapters: dict[str, SurveillanceAdapter],
@@ -380,6 +421,14 @@ async def sync_all(
     sync_id = f"sync_{uuid.uuid4().hex[:16]}"
     source_configs = {source.source_system: source for source in settings.sources}
     ordered = [(name, adapters[name]) for name in source_configs if name in adapters]
+
+    # A source that has been switched off must take its cameras with it.
+    # Without this, disabling a department leaves its rows behind and the
+    # registry keeps showing cameras from a system it no longer federates -
+    # which for the demo departments means synthetic cameras presented as if
+    # they were real. Deliberately a hard delete: these rows can always be
+    # recreated by re-enabling the source and syncing again.
+    retired = await _retire_unconfigured_sources(db, set(source_configs))
 
     started_at = datetime.now(timezone.utc)
     collected = await asyncio.gather(*(_collect(adapter) for _, adapter in ordered))
@@ -480,9 +529,10 @@ async def sync_all(
     success = any(item.synchronized > 0 for item in results.values())
 
     logger.info(
-        "metadata sync %s complete: %s",
+        "metadata sync %s complete: %s%s",
         sync_id,
         {name: {"synchronized": r.synchronized, "skipped": r.skipped_unregistered} for name, r in results.items()},
+        f" | retired {retired}" if retired else "",
     )
     return SyncResponse(
         success=success,

@@ -98,6 +98,11 @@ export interface VideoSession {
   city: string | null;
   mode: VideoMode;
   stream_url: string;
+  /**
+   * How the bytes behind `stream_url` are packaged. `hls` is a live playlist
+   * and needs hls.js outside Safari; `http-mp4` plays natively.
+   */
+  stream_protocol: "hls" | "http-mp4" | "mock-file" | string;
   status: string;
   expires_at_utc: string;
   expires_in_seconds: number;

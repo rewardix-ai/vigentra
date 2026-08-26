@@ -26,7 +26,7 @@ async def test_traffic_and_municipal_normalise_to_the_same_shape(api, admin_head
 
 
 async def test_cross_department_metadata_is_readable_but_shallower(
-    api, admin_headers, traffic_installer_headers, municipal_approver_headers
+    api, admin_headers, traffic_installer_headers, municipal_admin_headers
 ):
     """The registry is federation-wide; the depth is not.
 
@@ -53,7 +53,7 @@ async def test_cross_department_metadata_is_readable_but_shallower(
     assert seen["location"]["latitude"] is not None
 
     owner = await api.get(
-        f"/api/v1/cameras/{municipal['camera_id']}", headers=municipal_approver_headers
+        f"/api/v1/cameras/{municipal['camera_id']}", headers=municipal_admin_headers
     )
     assert owner.status_code == 200
     assert owner.json()["visibility_level"] == "full"

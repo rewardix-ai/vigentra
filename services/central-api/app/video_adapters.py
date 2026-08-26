@@ -311,3 +311,69 @@ def build_video_adapter(
         return MockVideoAdapter(config, settings, client)
     adapter_cls = VIDEO_ADAPTERS.get(config.source_system, MockVideoAdapter)
     return adapter_cls(config, settings, client)
+
+
+class SentinelGridVideoAdapter(BaseVideoAdapter):
+    """Live HLS from the Sentinel sandbox grid.
+
+    Live only, and that is a property of the source rather than a policy: the
+    grid is a live feed with no archive, no seeking and no byte-range fetching.
+    A playback request is refused here as well as by the camera's capability
+    list, so "there is no recording" never depends on a single check.
+
+    RTSP is what the guide recommends for inference, but it is not a browser
+    protocol and port 8554 is blocked on many networks, so the browser path is
+    always the HLS endpoint. The edge worker takes RTSP directly and falls back
+    to HLS - see services/edge-worker/app/grid.py.
+
+    The manifest URL returned here is INTERNAL. The browser only ever sees
+    /api/v1/streams/{session_id}; the broker rewrites the playlist so no
+    upstream host reaches the page.
+    """
+
+    name = "sentinel_grid_video_adapter"
+
+    #: The gateway 302s to an http:// URL unless this query flag is present,
+    #: which would downgrade the scheme and break the player. Setting it on
+    #: every request keeps the whole chain on https.
+    COOKIE_CHECK = {"cookieCheck": "1"}
+
+    async def create_session(
+        self,
+        external_camera_id: str,
+        mode: str,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        user_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        if mode != "live":
+            raise VideoAdapterError(
+                "The Sentinel grid carries no recorded archive. Only live "
+                "viewing is available for these cameras.",
+                source_system=self.source_system,
+                detail={"requested_mode": mode, "available_modes": ["live"]},
+            )
+
+        # GRID-007 -> 7. The catalogue is the contract, so the id is resolved
+        # back to the grid's own numbering rather than pattern-matched.
+        raw = str(external_camera_id).upper().removeprefix("GRID-").lstrip("0") or "0"
+        if not raw.isdigit():
+            raise VideoAdapterError(
+                f"'{external_camera_id}' is not a Sentinel grid camera id",
+                source_system=self.source_system,
+            )
+
+        base = self.config.base_url.rstrip("/")
+        manifest = f"{base}/live/stream/{raw}/index.m3u8?cookieCheck=1"
+
+        return {
+            "source_session_reference": manifest,
+            "protocol": "hls",
+            # The grid issues no ticket of its own, so the session's lifetime is
+            # Sentinel's own TTL. Returning None lets the broker apply it.
+            "expires_at": None,
+            "is_demo_data": False,
+        }
+
+
+VIDEO_ADAPTERS["sentinel_grid"] = SentinelGridVideoAdapter

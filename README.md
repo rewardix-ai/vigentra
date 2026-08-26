@@ -144,7 +144,6 @@ same canonical `Camera` model either way. See
 | Role | Highlights |
 |---|---|
 | `installation_operator` | raises, edits and submits installation forms |
-| `video_access_approver` | decides who outside the unit may watch its cameras; suspends / decommissions |
 | `traffic_operator`, `municipal_operator` | view their own unit's footage; may request others' |
 | `city_admin` | one city, across departments |
 | `department_admin` | one department, in full |
@@ -205,15 +204,25 @@ Every credential is synthetic. Passwords deliberately stay simple for the demo.
 | `auditor` | `Auditor@2026` | Auditor | All |
 | `system.admin` | `SysAdmin@2026` | System administrator | All |
 | `ahmedabad.cityadmin` | `City@2026` | City admin | Ahmedabad |
-| `traffic.operator` | `Traffic@2026` | Traffic operator | Traffic Police, Ahmedabad |
+| **`traffic.state`** | `Traffic@2026` | Traffic operator | **Traffic Police, statewide** |
+| **`municipal.state`** | `Municipal@2026` | Municipal operator | **Municipal Corp., statewide** |
+| `traffic.operator` | `Traffic@2026` | Traffic operator | Traffic Police, Ahmedabad Zones 1-2 |
 | `traffic.zone3` | `Traffic@2026` | Traffic operator | Traffic Police, Zone 3 only |
 | `municipal.operator` | `Municipal@2026` | Municipal operator | Municipal Corp., Ahmedabad |
 | `dept.admin` | `DeptAdmin@2026` | Department admin | Traffic Police |
-| `ai.operator` | `AiOps@2026` | AI operator | Traffic Police |
+| `municipal.deptadmin` | `DeptAdmin@2026` | Department admin | Municipal Corp. |
+| `ai.operator` | `AiOps@2026` | AI operator | Traffic Police, Ahmedabad |
+| `traffic.ai` | `AiOps@2026` | AI operator | Traffic Police, statewide |
+| `municipal.ai` | `MuniOps@2026` | AI operator | Municipal Corp., Ahmedabad |
 | `traffic.installer` | `Install@2026` | Installation operator | Traffic Police |
-| `traffic.approver` | `Approve@2026` | Video access approver | Traffic Police |
 | `municipal.installer` | `Install@2026` | Installation operator | Municipal Corp. |
-| `municipal.approver` | `Approve@2026` | Video access approver | Municipal Corp. |
+
+The two **statewide** accounts are the ones to use for the live grid: those
+cameras span nine districts, and the city- and zone-limited accounts above are
+deliberately narrow because they are what demonstrates that scope is enforced.
+
+There is no separate approver role. `video:grant` sits with the operators who
+run a unit's cameras, so **the operator is the approver** — see below.
 
 ---
 
@@ -224,8 +233,9 @@ summary: raise a Traffic form → submit → watch it register with no approval
 step → synchronise → sign in as `municipal.operator` and find the Traffic
 camera already in the registry → try to watch it and get
 `needs_unit_approval` → request access with a reason → grant it as
-`traffic.approver` → watch the watermarked session → revoke it and watch the
-stream stop → open the audit log and show the whole conversation.
+`traffic.state`, the operator who owns the camera → watch the watermarked
+session → revoke it and watch the stream stop → open the audit log and show
+the whole conversation.
 
 ---
 

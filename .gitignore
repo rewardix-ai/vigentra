@@ -28,3 +28,13 @@ weights/*.pt
 # Local agent configuration and scratch files
 .claude/settings.local.json
 .claude/_scratch/
+
+# Intermediate research artifacts from compiling the grid reference. The
+# scripts that produced them are committed; the raw geocoder/catalogue dumps
+# are reproducible and just noise in a diff.
+data/reference/_*.json
+
+# Generated copy of the grid reference. The source of truth is
+# data/reference/grid_cameras.json, which the Dockerfile bakes into the image.
+# Two committed copies drift - that is how the wrong-shape file shipped once.
+services/central-api/reference/

@@ -53,6 +53,15 @@ def _env() -> Iterator[None]:
     os.environ.setdefault("AUTO_SYNC_ON_STARTUP", "false")
     os.environ.setdefault("HEALTH_MONITOR_ENABLED", "false")
     os.environ.setdefault("JWT_SECRET", "test-secret-that-is-long-enough-for-hs256")
+    # The two mock departments are OFF in a real deployment - the platform must
+    # not invent cameras - but the suite is built on them: they are what makes
+    # the federation, the cross-unit grant flow and the media proxy testable
+    # in-process. Turned on here explicitly rather than relied on by default.
+    os.environ.setdefault("TRAFFIC_VMS_ENABLED", "true")
+    os.environ.setdefault("MUNICIPAL_VMS_ENABLED", "true")
+    # ...and the live Sentinel grid is OFF, so no test reaches the public
+    # internet or depends on a third-party sandbox being up.
+    os.environ.setdefault("SENTINEL_GRID_ENABLED", "false")
     # Point the mocks at the real bundled clips so the media proxy has bytes.
     os.environ.setdefault("TRAFFIC_VIDEO_DIR", str(VIDEO_TRAFFIC))
     os.environ.setdefault("MUNICIPAL_VIDEO_DIR", str(VIDEO_MUNICIPAL))
@@ -207,13 +216,42 @@ ACCOUNTS = {
     "traffic.operator": "Traffic@2026",
     "traffic.zone3": "Traffic@2026",
     "municipal.operator": "Municipal@2026",
+    "traffic.state": "Traffic@2026",
+    "municipal.state": "Municipal@2026",
     "dept.admin": "DeptAdmin@2026",
+    "municipal.deptadmin": "DeptAdmin@2026",
     "ai.operator": "AiOps@2026",
     "traffic.installer": "Install@2026",
-    "traffic.approver": "Approve@2026",
     "municipal.installer": "Install@2026",
-    "municipal.approver": "Approve@2026",
 }
+
+
+
+def password_for_headers(headers: dict[str, str]) -> str:
+    """The demo password of whoever holds this bearer token.
+
+    Opening a camera requires the operator to re-enter their password, so a
+    test that opens a session has to supply it. Reading the username back out
+    of the token keeps every existing `open_session(api, headers, ...)` call
+    site working unchanged.
+    """
+    import jwt
+
+    token = headers["Authorization"].split(" ", 1)[1]
+    username = jwt.decode(token, options={"verify_signature": False})["sub"]
+    return ACCOUNTS[username]
+
+
+async def open_video_session(api, headers, camera_id: str, **overrides):
+    """POST a video session with the step-up password already filled in."""
+    payload = {
+        "camera_id": camera_id,
+        "mode": "live",
+        "reason": "Routine department monitoring",
+        "password": password_for_headers(headers),
+        **overrides,
+    }
+    return await api.post("/api/v1/video-sessions", headers=headers, json=payload)
 
 
 @pytest_asyncio.fixture
@@ -238,12 +276,24 @@ async def traffic_installer_headers(login) -> dict[str, str]:
 
 @pytest_asyncio.fixture
 async def traffic_approver_headers(login) -> dict[str, str]:
-    return await login("traffic.approver")
+    """Whoever decides Traffic Police video requests.
+
+    There is no separate approver role: `video:grant` sits with the operators
+    who run the unit's cameras, so the operator IS the approver.
+    """
+    return await login("traffic.state")
+
+
+@pytest_asyncio.fixture
+async def municipal_admin_headers(login) -> dict[str, str]:
+    """A Municipal account that reads its own unit's records at full depth."""
+    return await login("municipal.deptadmin")
 
 
 @pytest_asyncio.fixture
 async def municipal_approver_headers(login) -> dict[str, str]:
-    return await login("municipal.approver")
+    """Whoever decides Municipal Corporation video requests."""
+    return await login("municipal.state")
 
 
 @pytest_asyncio.fixture

@@ -161,11 +161,16 @@ async def create_session(
     if mode is VideoMode.PLAYBACK:
         start_time, end_time = _validate_playback_window(request, settings, camera)
 
-    # Ask the owning department for a handle.
-    config = settings.source_for_department(camera.owning_department)
+    # Ask the system the camera actually came through for a handle. Resolving
+    # by source rather than department matters once one gateway federates
+    # assets owned by several departments: the owner decides *whether* you may
+    # watch, but the source decides *who to ask* for the feed.
+    config = settings.source_for_system(camera.source_system) or settings.source_for_department(
+        camera.owning_department
+    )
     if config is None:
         raise VideoAdapterError(
-            f"No federated source is configured for '{camera.owning_department}'",
+            f"No federated source is configured for '{camera.source_system}'",
             source_system=camera.source_system,
         )
 
@@ -274,6 +279,7 @@ def to_out(
         city=row.city,
         mode=VideoMode(row.mode),
         stream_url=f"/api/v1/streams/{row.session_id}",
+        stream_protocol=row.upstream_protocol or "http-mp4",
         status=row.status,
         expires_at_utc=expires,
         expires_in_seconds=max(0, int((expires - now).total_seconds())),
@@ -334,12 +340,157 @@ async def revoke_session(db: AsyncSession, row: VideoSessionRow) -> VideoSession
     return row
 
 
+#: Playlist tags whose URI="..." attribute must be rewritten alongside the
+#: bare URI lines, or the player reaches upstream directly for them.
+_URI_ATTR_TAGS = (
+    "#EXT-X-MAP:",
+    "#EXT-X-PART:",
+    "#EXT-X-PRELOAD-HINT:",
+    "#EXT-X-KEY:",
+    "#EXT-X-SESSION-KEY:",
+    "#EXT-X-RENDITION-REPORT:",
+    "#EXT-X-I-FRAME-STREAM-INF:",
+    "#EXT-X-MEDIA:",
+)
+
+#: The grid's gateway rejects a default client UA, and 302s to http:// unless
+#: the cookieCheck flag rides on every request.
+_GRID_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+}
+
+
+def _resolve_hls_target(reference: str, sub_path: str | None) -> str:
+    """Resolve a playlist-relative reference against the session's manifest.
+
+    `sub_path` arrives from the browser, so it is treated as hostile: it must
+    stay relative and stay under the manifest's own directory. Anything with a
+    scheme, an authority, or a parent traversal is refused rather than
+    normalised, because a permissive resolver here would turn the stream proxy
+    into an open forward proxy.
+    """
+    from urllib.parse import urljoin, urlparse
+
+    if not sub_path:
+        return reference
+
+    if "://" in sub_path or sub_path.startswith("//") or sub_path.startswith("/"):
+        raise HTTPExceptionLike("Stream sub-path must be relative")
+    if ".." in sub_path.split("?")[0].split("/"):
+        raise HTTPExceptionLike("Stream sub-path may not traverse upwards")
+
+    target = urljoin(reference, sub_path)
+    ref_host = urlparse(reference).netloc
+    if urlparse(target).netloc != ref_host:
+        raise HTTPExceptionLike("Stream sub-path may not leave the source host")
+    return target
+
+
+class HTTPExceptionLike(Exception):
+    """Raised for a rejected sub-path; the router turns it into a 400."""
+
+
+def _rewrite_playlist(text: str, session_id: str) -> str:
+    """Point every URI in an HLS playlist back at this service.
+
+    Both bare URI lines and URI="..." attributes are rewritten. What the player
+    receives contains no upstream host, so a saved playlist is useless outside
+    an authorised Sentinel session.
+    """
+    from urllib.parse import quote
+
+    def proxied(ref: str) -> str:
+        # Deliberately relative: a bare `?p=...` resolves against whatever URL
+        # the playlist itself was fetched from. That keeps the rewrite correct
+        # behind the dashboard's /api/sentinel proxy, behind any other reverse
+        # proxy, and when the API is called directly - without this service
+        # needing to know its own public prefix.
+        return f"?p={quote(ref, safe='')}"
+
+    out: list[str] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            out.append(line)
+            continue
+        if stripped.startswith("#"):
+            for tag in _URI_ATTR_TAGS:
+                if stripped.startswith(tag) and 'URI="' in stripped:
+                    head, _, rest = stripped.partition('URI="')
+                    ref, _, tail = rest.partition('"')
+                    if "://" not in ref:
+                        stripped = f'{head}URI="{proxied(ref)}"{tail}'
+                    break
+            out.append(stripped)
+            continue
+        # A bare line is a media/variant URI. Absolute ones are left alone
+        # only because they cannot occur here; the grid emits relatives.
+        out.append(proxied(stripped) if "://" not in stripped else stripped)
+    return "\n".join(out) + "\n"
+
+
+async def _open_hls(
+    client: httpx.AsyncClient,
+    session: VideoSessionRow,
+    range_header: str | None,
+    sub_path: str | None,
+) -> StreamingResponse:
+    """Proxy one HLS artefact: a playlist (rewritten) or a segment (streamed).
+
+    Playlists are small and must be rewritten, so they are read fully. Segments
+    are streamed straight through, so a long session never buffers video in
+    this process.
+    """
+    target = _resolve_hls_target(session.source_session_reference, sub_path)
+
+    headers = dict(_GRID_HEADERS)
+    if range_header:
+        headers["Range"] = range_header
+
+    common = {
+        "Cache-Control": "no-store, private, max-age=0",
+        "X-Sentinel-Session": session.session_id,
+        "X-Sentinel-Watermark": session.watermark_text,
+        "X-Content-Type-Options": "nosniff",
+    }
+
+    is_playlist = ".m3u8" in target.split("?")[0].lower()
+    if is_playlist:
+        upstream = await client.get(target, headers=headers)
+        upstream.raise_for_status()
+        body = _rewrite_playlist(upstream.text, session.session_id).encode()
+        return StreamingResponse(
+            iter((body,)),
+            status_code=200,
+            media_type="application/vnd.apple.mpegurl",
+            headers={**common, "Content-Length": str(len(body))},
+        )
+
+    request = client.build_request("GET", target, headers=headers)
+    upstream = await client.send(request, stream=True)
+    safe = {
+        key: value
+        for key, value in upstream.headers.items()
+        if key.lower() in PASSTHROUGH_HEADERS
+    }
+    return StreamingResponse(
+        upstream.aiter_raw(),
+        status_code=upstream.status_code,
+        headers={**safe, **common},
+        background=BackgroundTask(upstream.aclose),
+    )
+
+
 async def open_stream(
     client: httpx.AsyncClient,
     session: VideoSessionRow,
     range_header: str | None,
     *,
     media_root: str | None = None,
+    sub_path: str | None = None,
 ) -> StreamingResponse:
     """Proxy the department's media through Sentinel, preserving byte ranges.
 
@@ -354,6 +505,10 @@ async def open_stream(
     # Mock mode serves a bundled clip straight off disk.
     if reference.startswith("mock://clip/"):
         return _stream_local_clip(reference.split("/")[-1], range_header, media_root)
+
+    # Live HLS needs its playlists rewritten, so it takes its own path.
+    if session.upstream_protocol == "hls":
+        return await _open_hls(client, session, range_header, sub_path)
 
     headers = {}
     if range_header:

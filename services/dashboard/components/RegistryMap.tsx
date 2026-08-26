@@ -21,6 +21,9 @@ import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 // already declare side-effect CSS imports, so no suppression is needed here -
 // and a `@ts-expect-error` that suppresses nothing is itself a build error
 // under `next build`, which checks unused directives.
+// Leaflet does not expose a TypeScript declaration for its stylesheet.
+// Next.js handles the CSS import at build time.
+
 import "leaflet/dist/leaflet.css";
 import type { Camera, CameraHealthStatus } from "@/lib/types";
 import { calendarDate, relative, titleise } from "@/lib/format";

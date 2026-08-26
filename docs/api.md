@@ -21,19 +21,20 @@ fixed set of permissions:
 
 | Role | Permissions |
 |---|---|
-| `state_admin` | `audit:read`, `detection:read`, `health:read`, `installation:decommission`, `installation:read`, `installation:suspend`, `installation:sync`, `policy:read`, `registry:read` |
+| `state_admin` | `audit:read`, `detection:read`, `health:read`, `installation:decommission`, `installation:read`, `installation:suspend`, `installation:sync`, `policy:read`, `registry:read`, `video:live`, `video:playback`, `video:request` |
 | `state_registry_viewer` | `health:read`, `policy:read`, `registry:read` |
-| `city_admin` | `audit:read`, `detection:read`, `health:read`, `installation:read`, `policy:read`, `registry:read` |
-| `department_admin` | `audit:read`, `detection:read`, `health:read`, `installation:read`, `installation:sync`, `policy:read`, `registry:read`, `video:grant`, `video:live`, `video:playback`, `video:request` |
-| `traffic_operator` | `detection:read`, `health:read`, `policy:read`, `registry:read`, `video:live`, `video:playback`, `video:request` |
-| `municipal_operator` | `detection:read`, `health:read`, `policy:read`, `registry:read`, `video:live`, `video:playback`, `video:request` |
+| `city_admin` | `audit:read`, `detection:read`, `health:read`, `installation:read`, `policy:read`, `registry:read`, `video:live`, `video:playback`, `video:request` |
+| `department_admin` | `alert:acknowledge`, `alert:read`, `audit:read`, `detection:read`, `health:read`, `installation:read`, `installation:sync`, `plate:read`, `policy:read`, `registry:read`, `track:read`, `video:grant`, `video:live`, `video:playback`, `video:request`, `watchlist:manage`, `watchlist:read` |
+| `traffic_operator` | `alert:acknowledge`, `alert:read`, `detection:read`, `health:read`, `installation:decommission`, `installation:suspend`, `plate:read`, `policy:read`, `registry:read`, `track:read`, `video:grant`, `video:live`, `video:playback`, `video:request`, `watchlist:manage`, `watchlist:read` |
+| `municipal_operator` | `detection:read`, `health:read`, `policy:read`, `registry:read`, `video:grant`, `video:live`, `video:playback`, `video:request` |
+| `grid_operator` | `alert:acknowledge`, `alert:read`, `detection:read`, `health:read`, `plate:read`, `policy:read`, `registry:read`, `track:read`, `video:live`, `video:request`, `watchlist:read` |
 | `health_monitor` | `health:read`, `registry:read` |
-| `auditor` | `audit:read`, `detection:read`, `health:read`, `installation:read`, `policy:read`, `registry:read`, `vehicle:read` |
+| `auditor` | `alert:read`, `audit:read`, `detection:read`, `health:read`, `installation:read`, `plate:read`, `policy:read`, `registry:read`, `track:read`, `vehicle:read`, `watchlist:read` |
 | `ai_operator` | `detection:ingest`, `detection:read`, `health:read`, `registry:read`, `video:live`, `video:playback` |
 | `vehicle_registry_viewer` | `vehicle:read` |
 | `installation_operator` | `health:read`, `installation:create`, `installation:read`, `installation:submit`, `installation:update`, `policy:read`, `registry:read` |
-| `video_access_approver` | `health:read`, `installation:decommission`, `installation:read`, `installation:suspend`, `installation:sync`, `policy:read`, `registry:read`, `video:grant` |
-| `system_admin` | `audit:read`, `detection:read`, `health:read`, `installation:decommission`, `installation:read`, `installation:suspend`, `installation:sync`, `policy:read`, `registry:read`, `vehicle:read`, `video:live`, `video:playback`, `video:request` |
+| `system_admin` | `alert:acknowledge`, `alert:read`, `audit:read`, `detection:read`, `health:read`, `installation:create`, `installation:decommission`, `installation:read`, `installation:submit`, `installation:suspend`, `installation:sync`, `installation:update`, `plate:read`, `policy:read`, `registry:read`, `track:read`, `vehicle:read`, `video:grant`, `video:live`, `video:playback`, `video:request`, `watchlist:manage`, `watchlist:read` |
+
 
 Two permissions carry the access model:
 
@@ -97,7 +98,8 @@ can offer the request instead of a dead end:
 - [Overview](#overview) — `/api/v1/overview`
 - [Installation onboarding](#installation-onboarding) — `/api/v1/installation-requests/*`
 - [Events](#events) — `/api/v1/events`, `/api/v1/events/correlation`
-- [Reports](#reports) — `/api/v1/reports/gap-analysis`
+- [Vehicles of interest](#vehicles-of-interest) — `/api/v1/watchlist`, `/api/v1/alerts`, `/api/v1/sightings`, `/api/v1/plates/*`
+- [Reports](#reports) — `/api/v1/reports/gap-analysis`, `/api/v1/reports/anpr`
 - [Audit](#audit) — `/api/v1/audit`
 - [Video (refused)](#video-refused) — the four routes that always return 403
 
@@ -451,6 +453,200 @@ Response:
 ```
 
 ---
+
+---
+
+## Vehicles of interest
+
+Nine routes covering the watchlist, the alerts it produces, and the movement
+history a plate can be assembled into. Four permissions gate them, and they are
+not interchangeable — a `403` from one says nothing about the others.
+
+| Permission | What it allows |
+|---|---|
+| `watchlist:read` | See what is being watched. Oversight. |
+| `watchlist:manage` | Add and stand down entries. A standing statewide instruction. |
+| `alert:read` | See hits. |
+| `alert:acknowledge` | Close a hit. |
+| `track:read` | Search sightings and reconstruct a route. The most revealing query here. |
+
+Camera scope applies throughout, on the **video** rules rather than the
+registry ones: a sighting is derived from footage, so an account only ever sees
+plates read by cameras whose detections it could have listed. Scope is applied
+before a route is assembled, not after — filtering afterwards would leave holes
+that look like the vehicle disappeared rather than like the reader's
+permissions ending.
+
+`plate:read` is orthogonal to all five. An account with `alert:read` but not
+`plate:read` gets the alert with `plate_withheld: true` and both plate fields
+null: it learns that a stolen-category vehicle was flagged at a camera, not
+which vehicle. The row is not refused; the identifying field is.
+
+### `GET /api/v1/watchlist`
+
+Requires: `watchlist:read`. Query: `?active_only=true|false`, `?category=`.
+
+Each entry carries `alert_count`. Read it — an entry firing constantly is
+usually a plate one confusion-pair away from something common, which is a
+tuning problem rather than forty stolen cars.
+
+### `POST /api/v1/watchlist`
+
+Requires: `watchlist:manage`.
+
+```json
+{
+  "plate": "GJ01AB1234",
+  "category": "stolen",
+  "reason": "Reported stolen from Sarkhej on 24 Aug 2026, FIR 118/2026",
+  "case_reference": "FIR 118/2026",
+  "expires_at": "2026-12-31T00:00:00Z"
+}
+```
+
+`category` is one of `stolen`, `wanted`, `blacklist`, `missing`, `suspect` —
+the challenge's own vocabulary, and nothing beyond it. A free-text category is
+one nobody can report on, and it is also how a watchlist quietly acquires uses
+it was never authorised for.
+
+`reason` is mandatory, ≥ 8 characters, non-blank, and goes to the audit trail
+with your username.
+
+- `422 IMPLAUSIBLE_PLATE` — the string is not shaped like an Indian
+  registration, so nothing would ever match it. Refused rather than stored: a
+  string the matcher can never match is a typo, and storing it leaves an
+  operator wondering why it never fires.
+- `409 ALREADY_WATCHED` — an active entry for that plate exists. Re-adding a
+  plate that was previously **stood down** reactivates the original entry
+  rather than creating a second row for the same vehicle.
+
+The matcher's short-lived cache is dropped on write, so a plate added now is
+live for the very next batch rather than after a TTL.
+
+### `DELETE /api/v1/watchlist/{entry_id}`
+
+Requires: `watchlist:manage`. Body: `{ "reason": "Vehicle recovered" }`.
+
+Deactivates. Entries are never deleted — `deactivated_by` and the reason are
+the record of who stood it down and why.
+
+### `GET /api/v1/alerts`
+
+Requires: `alert:read`. Query: `?unacknowledged_only=`, `?exact_only=`,
+`?category=`, `?since_hours=` (default 24), `?limit=`.
+
+`exact_only` defaults to **false** deliberately. A near match is a plate the
+reader could not agree on with the watchlist entry, and hiding those to keep a
+console tidy is how a stolen vehicle passes a camera and nobody hears.
+
+```json
+{
+  "alert_id": "alert_9f2c…",
+  "watch_plate": "GJ01AB1234",
+  "seen_plate": "GJ01AB1284",
+  "category": "stolen",
+  "distance": 0.35,
+  "exact": false,
+  "sighting_id": "sight_71a…",
+  "camera_id": "SENTINEL-TRAFFIC-AHM-0001",
+  "latitude": 23.0281,
+  "longitude": 72.507,
+  "timestamp_utc": "2026-09-01T14:32:07Z",
+  "acknowledged": false,
+  "plate_withheld": false
+}
+```
+
+`distance` is confusion-weighted edit distance: `0.0` is exact, one classic
+misread is `0.35`, and the default acceptance threshold is `1.0` — about two
+plausible OCR errors.
+
+### `POST /api/v1/alerts/{alert_id}/acknowledge`
+
+Requires: `alert:acknowledge`, **and** the alert's camera must be in scope.
+Body: `{ "dismissed_reason": "Reviewed the frame — different vehicle" }`
+(optional).
+
+Supplying `dismissed_reason` records that a human looked and it was not the
+watched vehicle, and audits as `alert_dismissed` rather than
+`alert_acknowledged`. Worth doing: a plate producing a steady stream of
+dismissals is a tuning signal.
+
+- `403 CAMERA_OUT_OF_SCOPE` — the alert belongs to another unit's camera.
+
+### `GET /api/v1/sightings`
+
+Requires: `detection:read`. Query: `?camera_id=`, `?since_hours=`, `?limit=`.
+
+One plate read at one camera. `observations` is how many frames voted for the
+reading — one frame is a guess, twelve frames agreeing is a reading, and the
+field exists so an operator can tell them apart.
+
+Plates are withheld without `plate:read`, and withheld past
+`ANPR_PLATE_RETENTION_DAYS` regardless, enforced on read.
+
+### `GET /api/v1/plates/search`
+
+Requires: `track:read`. Query: `?q=` (≥ 3 chars), `?max_distance=` (0–4,
+default 1.0), `?since_hours=`.
+
+Ranks **distinct plates the network actually saw** near `q`, closest first,
+then by how many times each was seen. The answer to "I have an uncertain
+registration — what did the network see?" An operator picks one of these and
+then asks for its route; going straight from a typed string to a map would
+encourage tracing a plate nobody has seen, on the strength of a typo.
+
+### `GET /api/v1/plates/{plate}/track`
+
+Requires: `track:read`. Query: **`?reason=`** (≥ 8 chars, mandatory),
+`?max_distance=`, `?since_hours=`.
+
+Reconstructs where the vehicle was seen, in time order. The reason is enforced
+here, not in the UI — this is the single most revealing question the platform
+answers, and an unexplained trace is the one that should never have been run.
+It is written to the audit log as `vehicle_movement_viewed` with the plate, the
+account and the time.
+
+```json
+{
+  "query": "GJ01AB1234",
+  "points": [ … ],
+  "cameras_seen": 4,
+  "total_distance_km": 18.42,
+  "exact_reads": 3,
+  "implausible_legs": 1,
+  "caveat": "Built from plate reads only. …"
+}
+```
+
+Each point carries `match_distance`, `exact`, `observations`, the camera's
+coordinates, and — from the second point on — `distance_from_previous_km`,
+`seconds_from_previous` and `implied_speed_kmh`.
+
+Three behaviours worth knowing:
+
+- **Repeated reads at one camera collapse into one pass.** A vehicle waiting at
+  a signal under an ANPR camera would otherwise produce a dozen points and a
+  route that looks like frantic activity in one spot. The surviving point sums
+  the observations.
+- **`implausible_leg` is flagged, never dropped.** A leg implying over
+  200 km/h usually means one of the two reads belongs to a different vehicle.
+  That is a finding about the route's reliability; removing it would make the
+  line look cleaner and be less true.
+- **A camera with no coordinates still appears** on the timeline, with
+  `latitude`/`longitude` null. It contributes nothing to the distance or the
+  map line. Grid cameras publish no coordinates upstream — see
+  [`docs/sentinel-grid.md`](sentinel-grid.md).
+
+### `GET /api/v1/reports/anpr`
+
+Requires: `plate:read`. Query: `?camera_id=`, `?since_hours=`, `?limit=`,
+`?as_csv=true`.
+
+The artefact the challenge asks to be submitted alongside the government-feed
+demonstration: detected plates with timestamps, plus the camera, its location
+and whether the read hit the watchlist. `as_csv=true` returns `text/csv` with a
+`Content-Disposition` attachment header.
 
 ## Reports
 

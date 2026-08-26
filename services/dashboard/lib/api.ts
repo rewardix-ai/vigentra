@@ -7,6 +7,8 @@
  */
 import type {
   AccessPolicy,
+  Alert,
+  AnprReportRow,
   DetectorHealth,
   AuditEntry,
   Camera,
@@ -27,6 +29,10 @@ import type {
   VideoAccessRequest,
   VideoMode,
   VideoSession,
+  PlateSearchHit,
+  Track,
+  WatchCategory,
+  WatchlistEntry,
 } from "./types";
 
 const BASE = "/api/sentinel";
@@ -175,6 +181,69 @@ export const api = {
   } = {}) => request<Detection[]>(`/api/v1/detections${query(filters)}`),
 
   detectorHealth: () => request<DetectorHealth>("/api/v1/detector/health"),
+
+  // -- watchlist, alerts and movement -------------------------------------
+  // Four permissions, not one: reading the list is oversight, adding to it is
+  // a standing instruction to flag a vehicle statewide, acknowledging an alert
+  // is an operational decision, and tracing a plate is the most revealing
+  // question the platform answers. The API refuses each independently, so a
+  // 403 from one of these says nothing about the others.
+
+  watchlist: (filters: { active_only?: string; category?: string } = {}) =>
+    request<WatchlistEntry[]>(`/api/v1/watchlist${query(filters)}`),
+
+  addWatchlistEntry: (body: {
+    plate: string;
+    category: WatchCategory;
+    reason: string;
+    case_reference?: string;
+    expires_at?: string;
+  }) => post<WatchlistEntry>("/api/v1/watchlist", body),
+
+  /** Stands an entry down. Entries are never deleted - the trail is the point. */
+  deactivateWatchlistEntry: (entryId: string, reason: string) =>
+    request<WatchlistEntry>(`/api/v1/watchlist/${encodeURIComponent(entryId)}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    }),
+
+  alerts: (filters: {
+    unacknowledged_only?: string;
+    exact_only?: string;
+    category?: string;
+    since_hours?: string;
+    limit?: string;
+  } = {}) => request<Alert[]>(`/api/v1/alerts${query(filters)}`),
+
+  acknowledgeAlert: (alertId: string, dismissedReason?: string) =>
+    post<Alert>(`/api/v1/alerts/${encodeURIComponent(alertId)}/acknowledge`, {
+      dismissed_reason: dismissedReason || null,
+    }),
+
+  /** Rank plates the network actually saw, tolerating OCR error. */
+  searchPlates: (params: { q: string; max_distance?: string; since_hours?: string }) =>
+    request<PlateSearchHit[]>(`/api/v1/plates/search${query(params)}`),
+
+  /**
+   * Movement history for one registration number.
+   *
+   * `reason` is required by the API, not by convention: this is the single
+   * most revealing query here, and an unexplained trace is the one that should
+   * never have been run. It is recorded against the account.
+   */
+  plateTrack: (
+    plate: string,
+    params: { reason: string; max_distance?: string; since_hours?: string },
+  ) =>
+    request<Track>(`/api/v1/plates/${encodeURIComponent(plate)}/track${query(params)}`),
+
+  anprReport: (filters: { camera_id?: string; since_hours?: string; limit?: string } = {}) =>
+    request<AnprReportRow[]>(`/api/v1/reports/anpr${query(filters)}`),
+
+  /** The CSV artefact submitted alongside the feed demonstration. */
+  anprReportCsvUrl: (filters: { camera_id?: string; since_hours?: string } = {}) =>
+    `${BASE}/api/v1/reports/anpr${query({ ...filters, as_csv: "true" })}`,
 
   // -- authorised viewing -------------------------------------------------
 

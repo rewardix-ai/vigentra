@@ -18,6 +18,8 @@ Footage does not federate. To watch a camera another unit owns, you ask that
 unit, and someone there decides — a personal, time-boxed, revocable grant.
 
 Full narrative: [`docs/access-model.md`](docs/access-model.md).
+High-level design: [`docs/hld.md`](docs/hld.md).
+Scaling to ~80,000 cameras: [`docs/scalability.md`](docs/scalability.md).
 
 ---
 
@@ -38,9 +40,18 @@ Full narrative: [`docs/access-model.md`](docs/access-model.md).
 - Generic object detection (person / vehicle class / bicycle) running at the
   edge, continuously and across many cameras, with results in the dashboard.
 - **ANPR** — number-plate reading at the edge, off by default, behind its own
-  `plate:read` permission, with shorter retention and audited disclosure.
+  `plate:read` permission, with shorter retention and audited disclosure. The
+  reader is a consensus engine: it tracks each vehicle, reads its plate across
+  every frame the vehicle appears in, repairs each reading against the Indian
+  plate grammar, and votes.
+- **Watchlist matching and real-time alerts** — an ingested plate is matched
+  against the active watchlist as it arrives, tolerating OCR error, and a hit
+  raises an alert. Four separate permissions; every act audited.
+- **Cross-camera movement history** — where one registration number has been
+  seen, in time order, on a map. Built from plate reads only, and a trace needs
+  a stated reason that is recorded against the account.
 - Standalone vehicle reference registry, deliberately **not** joined to
-  detections.
+  detections or sightings.
 - Complete audit trail of onboarding, synchronisation, metadata reads, footage
   requests, decisions, sessions and refusals.
 - Two federated department mock systems, each with a deliberately different
@@ -49,12 +60,15 @@ Full narrative: [`docs/access-model.md`](docs/access-model.md).
 **Out of scope**
 
 - Face recognition, biometric identification, gait recognition.
-- Make-model-colour verification, vehicle re-identification, cross-camera
-  identity association, watchlist matching. A plate read is one observation at
-  one camera at one instant — it is never joined into a track, and never joined
-  to the vehicle reference registry.
+- Make-model-colour verification, and vehicle re-identification by appearance.
+  A track is built from **plate reads only**: a vehicle whose plate was not read
+  contributes nothing to its own route, which understates movement rather than
+  inventing it.
+- Any join between a sighting and the vehicle reference registry.
 - VAHAN / Dharmik integration.
-- Automatic enforcement actions.
+- Automatic enforcement actions. An alert reaches a human, and stops.
+- Retroactive alerting. Matching happens at ingest, so a watchlist entry added
+  after a vehicle passed does not manufacture an alert for that pass.
 - Real-department integration or scraping. Every input is synthetic. The
   official-source provider exists as a documented shape and is inert until an
   authorised URL and token are configured.
@@ -149,10 +163,11 @@ same canonical `Camera` model either way. See
 | `department_admin` | one department, in full |
 | `state_admin`, `state_registry_viewer` | statewide registry, health and policy |
 | `health_monitor` | statewide health only — no maintenance or vendor detail |
-| `ai_operator` | ingests detections from the edge worker |
+| `ai_operator` | ingests detections from the edge worker; deliberately holds no watchlist, alert or track permission |
 | `vehicle_registry_viewer` | the standalone vehicle reference set, and nothing else |
 | `system_admin` | registry and sync at platform level; holds video on every camera, so the broker can be verified end to end |
-| `auditor` | statewide audit-log access |
+| `auditor` | statewide audit-log access; reads the watchlist, alerts and traces, but edits none of them |
+| `grid_operator` | the live sandbox grid — live video only, plus plates, alerts and traces on it |
 
 Local roles (each department's own VMS vocabulary) are recorded on the
 access-policy summary. Sentinel does not grant them and never receives a token
@@ -292,16 +307,20 @@ pip install -r services/central-api/requirements.txt pytest pytest-asyncio
 pytest tests
 ```
 
-115 tests cover installation onboarding and validation, ownership and
+183 tests cover installation onboarding and validation, ownership and
 permission, registration-gated sync, source-outage isolation, canonical
 normalisation, redaction depth, the full video permission matrix, cross-unit
 grants, recorded-playback windows and retention, detection ingestion and
-scoping, the vehicle registry, and the edge-worker's detector and
-frame-quality routing.
+scoping, the vehicle registry, every rule in the sandbox grid's integrator
+guide, the plate matcher and its thresholds, watchlist permissions and
+alerting, cross-camera route reconstruction, and the edge-worker's detector,
+consensus ANPR engine and frame-quality routing.
 
 Nine of those run **real YOLO inference** over the bundled CCTV clip. They skip
 automatically unless the analytics extras and weights are installed — see
-[`docs/yolo-setup.md`](docs/yolo-setup.md).
+[`docs/yolo-setup.md`](docs/yolo-setup.md). Four video-streaming tests need the
+bundled `.mp4` fixtures, which are gitignored; they fail on a fresh clone until
+those are placed under `data/videos/`.
 
 ---
 
@@ -313,9 +332,12 @@ sentinel-module1/
 │   ├── central-api/          # Sentinel middleware (FastAPI + SQLAlchemy 2)
 │   ├── traffic-vms/          # Mock Traffic Police department system
 │   ├── municipal-vms/        # Mock Municipal Corporation department system
-│   ├── edge-worker/          # YOLO inference at the edge
+│   ├── edge-worker/          # YOLO inference and consensus ANPR at the edge
+│   │   ├── app/              # worker, grid capture, detectors, engine adapter
+│   │   └── anpr/             # vendored consensus ANPR engine
 │   └── dashboard/            # Next.js 14 registry console
-├── docs/                     # Access model, adapter contract, API, demo, YOLO
+├── docs/                     # Access model, adapter contract, API, ANPR, grid,
+│                             # scalability, demo script, YOLO setup
 ├── tests/                    # pytest suite
 ├── docker-compose.yml
 └── .env.example

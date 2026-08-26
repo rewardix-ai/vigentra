@@ -24,6 +24,7 @@ Environment: see docs/yolo-setup.md.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
 import os
 import signal
@@ -34,6 +35,8 @@ from typing import Any, Iterator
 
 import httpx
 
+from . import grid
+from .anpr_engine import build_engine
 from .detectors import Detection, DetectorError, build_detector
 from .frame_quality import FrameQuality, FrameQualityRouter
 from .plates import (
@@ -58,6 +61,16 @@ EDGE_USERNAME = os.getenv("EDGE_USERNAME", "ai.operator")
 EDGE_PASSWORD = os.getenv("EDGE_PASSWORD", "AiOps@2026")
 FRAME_SAMPLE_INTERVAL = int(os.getenv("YOLO_FRAME_SAMPLE_INTERVAL", "5"))
 BATCH_SIZE = int(os.getenv("EDGE_BATCH_SIZE", "50"))
+
+#: The sandbox camera grid. Frames are pulled from it DIRECTLY rather than
+#: through the broker, because the broker's job is authorising a human viewer
+#: and the grid is a live-only feed with no archive: there is nothing to
+#: download, and `iter_session_frames` below can only work on a source that
+#: answers range requests. See docs/sentinel-grid.md.
+GRID_BASE_URL = os.getenv("SENTINEL_GRID_BASE_URL", "https://live.corp8.cloud")
+GRID_ENABLED = os.getenv("SENTINEL_GRID_ENABLED", "true").lower() != "false"
+#: Canonical camera IDs carry the grid's own id in their external ID.
+GRID_EXTERNAL_PREFIX = "GRID-"
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +135,34 @@ def iter_synthetic_frames(count: int, sample_interval: int) -> Iterator[tuple[in
             yield index, make(palette[(index // max(1, sample_interval)) % len(palette)])
 
 
+def iter_grid_frames(
+    camera: "grid.GridCamera", sample_interval: int, max_frames: int
+) -> Iterator[tuple[int, Any, float, bool]]:
+    """Decode a live grid camera, yielding (index, frame, pts_seconds, cut).
+
+    Every rule from the integrator's guide is already enforced inside
+    `grid.ReconnectingCapture` - TCP transport, PTS timing, backoff, join-time
+    decoder tolerance, loop discontinuity. This function's only job is sampling
+    and unit conversion.
+
+    Sampling is applied to DELIVERED frames, not to a nominal frame rate,
+    because the grid's declared fps routinely disagrees with what actually
+    arrives and computing a stride from it would sample unevenly.
+    """
+    with grid.open_capture(camera) as capture:
+        emitted = 0
+        for frame in capture.frames():
+            if frame.index % max(1, sample_interval) != 0 and not frame.discontinuity:
+                continue
+            # PTS is milliseconds from the start of the stream; the pipeline
+            # wants seconds. Still a stream-relative clock, so the worker adds
+            # the wall-clock instant separately when it builds the payload.
+            yield frame.index, frame.image, frame.pts_ms / 1000.0, frame.discontinuity
+            emitted += 1
+            if emitted >= max_frames:
+                return
+
+
 def iter_session_frames(
     client: "CentralClient", session: dict, sample_interval: int
 ) -> Iterator[tuple[int, Any]]:
@@ -143,6 +184,41 @@ def iter_session_frames(
             os.unlink(handle.name)
         except OSError:  # pragma: no cover - best effort
             pass
+
+
+_GRID_CATALOGUE: dict[str, "grid.GridCamera"] | None = None
+
+
+def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera | None":
+    """The grid camera behind a canonical registry ID, or None.
+
+    Resolution goes through the catalogue rather than through a URL built from
+    the camera id, because the catalogue is the contract and the URL pattern is
+    not - ids and the set of cameras change. Fetched once per process and held,
+    since `grid.fetch_catalogue` is a network call and the worker asks this
+    question once per camera per cycle.
+    """
+    global _GRID_CATALOGUE
+    if not GRID_ENABLED:
+        return None
+
+    reference = (external_id or "").upper()
+    if not reference.startswith(GRID_EXTERNAL_PREFIX):
+        return None
+
+    if _GRID_CATALOGUE is None:
+        try:
+            _GRID_CATALOGUE = grid.fetch_catalogue(GRID_BASE_URL)
+            logger.info("grid catalogue: %d camera(s)", len(_GRID_CATALOGUE))
+        except Exception as exc:
+            # A grid that is unreachable is a normal condition, not a crash:
+            # the worker still has whatever local and departmental cameras it
+            # was given.
+            logger.warning("grid catalogue unavailable (%s); skipping grid cameras", exc)
+            _GRID_CATALOGUE = {}
+
+    grid_id = reference[len(GRID_EXTERNAL_PREFIX):].lstrip("0") or "0"
+    return _GRID_CATALOGUE.get(grid_id) or _GRID_CATALOGUE.get(reference[len(GRID_EXTERNAL_PREFIX):])
 
 
 # ---------------------------------------------------------------------------
@@ -254,6 +330,69 @@ class CentralClient:
 # Run
 # ---------------------------------------------------------------------------
 
+def _plain(frames: Iterator[tuple[int, Any]]) -> Iterator[tuple[int, Any, float, bool]]:
+    """Give a non-grid source the same four-part shape as the live one.
+
+    Clips and synthetic frames have no presentation timestamp, so the capture
+    instant falls back to wall-clock. That is acceptable for a local
+    demonstration and NOT acceptable on a live feed, which is why the grid path
+    carries real PTS rather than reusing this.
+    """
+    for index, frame in frames:
+        yield index, frame, time.time(), False
+
+
+def _sighting_payload(
+    sighting,
+    *,
+    camera_id: str,
+    timestamp_iso: str,
+    source_mode: str,
+    reader_version: str,
+    provenance: dict,
+) -> dict:
+    """Turn a voted plate into an ingest row.
+
+    The detection ID is derived from the camera, the track and the plate text,
+    NOT from the frame. A consensus reading is an assertion about a vehicle
+    across a pass, so replaying the same pass must collapse to one row - and a
+    revised reading for the same track deliberately produces a different id, so
+    the revision is visible rather than overwriting the first answer.
+    """
+    seed = f"{camera_id}|{sighting.track_id}|{sighting.text}|{int(sighting.captured_at)}"
+    detection_id = f"det_{hashlib.sha1(seed.encode()).hexdigest()[:20]}"
+    return {
+        "detection_id": detection_id,
+        "camera_id": camera_id,
+        "timestamp_utc": timestamp_iso,
+        "class_name": "car",
+        "class_id": 2,
+        "confidence": round(float(sighting.confidence), 4),
+        "bbox_xyxy": sighting.vehicle_bbox or sighting.plate_bbox or [0.0, 0.0, 1.0, 1.0],
+        "model_name": "sentinel-anpr-consensus",
+        "model_version": reader_version.split("/", 1)[-1],
+        "source_mode": source_mode,
+        "is_demo_data": source_mode != "authorized_edge",
+        "plate_text": sighting.text,
+        "plate_confidence": round(float(sighting.score), 4),
+        "plate_bbox_xyxy": sighting.plate_bbox or None,
+        "plate_reader": reader_version,
+        "provenance": {
+            **provenance,
+            # Read by the central API to record how many frames voted for this
+            # plate. One frame is a guess; twelve frames agreeing is a reading,
+            # and an operator is entitled to know which they are looking at.
+            "plate_observations": sighting.observations,
+            "plate_confirmed": sighting.confirmed,
+            "plate_state": sighting.state,
+            "plate_format": sighting.plate_format,
+            "track_id": sighting.track_id,
+            "restoration": sighting.method,
+            "captured_at_pts": round(sighting.captured_at, 3),
+        },
+    }
+
+
 def run(
     *,
     camera_id: str,
@@ -264,6 +403,7 @@ def run(
     synthetic: bool,
     source_mode: str,
     detector: Any = None,
+    external_camera_id: str | None = None,
 ) -> int:
     # Loading weights costs seconds and hundreds of megabytes. A supervisor
     # covering several cameras builds the detector once and passes it in;
@@ -272,9 +412,16 @@ def run(
     detector = detector or build_detector()
     router = FrameQualityRouter()
 
-    # ANPR is off unless ANPR_ENABLE is set. A DisabledPlateReader is returned
-    # otherwise, so the loop below needs no special case.
-    plate_reader = build_plate_reader()
+    # ANPR is off unless ANPR_ENABLE is set.
+    #
+    # Two readers, and the choice is not a preference. The consensus engine is
+    # stateful per camera and votes a plate across every frame a vehicle
+    # appears in, so it is built HERE, per run, and never shared between
+    # cameras. The single-frame reader is the fallback for when the analytics
+    # extras are missing - it is worse, and it says so in docs/anpr.md, but a
+    # worker that reads no plates at all is worse still.
+    anpr = build_engine()
+    plate_reader = build_plate_reader() if anpr is None else None
     plates_read = 0
 
     # The supervisor already logged this once for the whole process; repeating
@@ -300,12 +447,23 @@ def run(
     # without a CV stack), then a local clip, then the brokered live session.
     # Falling through to synthetic frames while holding a real session is what
     # made "live" detections meaningless before.
+    # A grid camera is live-only with no archive, so it is captured directly
+    # through the guide-compliant capture rather than downloaded. The session
+    # above is still opened and still audited - the authorisation decision is
+    # unchanged, only the transport differs.
+    grid_camera = None if (synthetic or clip) else grid_camera_for(camera_id, external_camera_id)
+
     if synthetic:
-        frames = iter_synthetic_frames(max_frames * max(1, sample_interval), sample_interval)
+        frames = _plain(
+            iter_synthetic_frames(max_frames * max(1, sample_interval), sample_interval)
+        )
     elif clip:
-        frames = iter_clip_frames(clip, sample_interval)
+        frames = _plain(iter_clip_frames(clip, sample_interval))
+    elif grid_camera is not None:
+        logger.info("live capture: %s", grid_camera.described)
+        frames = iter_grid_frames(grid_camera, sample_interval, max_frames)
     elif session and client:
-        frames = iter_session_frames(client, session, sample_interval)
+        frames = _plain(iter_session_frames(client, session, sample_interval))
     else:
         raise DetectorError(
             "No frame source: pass --clip, or allow a live session, or use "
@@ -317,7 +475,7 @@ def run(
     started = time.perf_counter()
 
     try:
-        for frame_index, frame in frames:
+        for frame_index, frame, pts_seconds, discontinuity in frames:
             if processed >= max_frames:
                 break
             processed += 1
@@ -338,15 +496,46 @@ def run(
                 continue
 
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            detections: list[Detection] = detector.detect(frame_to_detect)
+            plate_sightings = []
+
+            if anpr is not None:
+                # One pass produces both the vehicles in this frame and any
+                # plates that settled on it. Most frames yield vehicles and no
+                # plates - a plate is only reported once its track has voted.
+                try:
+                    detections, plate_sightings = anpr.process(
+                        frame_to_detect,
+                        captured_at=pts_seconds,
+                        discontinuity=discontinuity,
+                    )
+                except Exception as exc:  # pragma: no cover - engine fault
+                    logger.error("ANPR engine failed, falling back to plain detection: %s", exc)
+                    anpr = None
+                    plate_reader = build_plate_reader()
+                    detections = detector.detect(frame_to_detect)
+            else:
+                detections = detector.detect(frame_to_detect)
+
+            base_provenance = {
+                "frame_index": frame_index,
+                "frame_quality": assessment.quality.value,
+                "enhancement_applied": assessment.enhancement_applied,
+                "sample_interval": sample_interval,
+                "worker": "sentinel-edge-worker",
+                # Stream-relative capture time, kept alongside the wall-clock
+                # timestamp. The guide is explicit that PTS is the only
+                # trustworthy clock on these feeds, so it travels with the row.
+                "pts_seconds": round(pts_seconds, 3),
+            }
 
             for position, detection in enumerate(detections):
                 detection.frame_quality = assessment.quality.value
 
-                # Only vehicles, and only on the frame the detector actually
-                # saw. A person is never cropped or read.
+                # The single-frame reader is only used when the consensus
+                # engine is unavailable. Only vehicles, and only on the frame
+                # the detector actually saw - a person is never cropped.
                 plate = None
-                if detection.class_name in PLATE_BEARING_CLASSES:
+                if plate_reader is not None and detection.class_name in PLATE_BEARING_CLASSES:
                     try:
                         plate = plate_reader.read(frame_to_detect, detection.bbox_xyxy)
                     except PlateReadUnavailable as exc:
@@ -369,16 +558,33 @@ def run(
                         plate_confidence=plate.confidence if plate else None,
                         plate_bbox_xyxy=plate.bbox_xyxy if plate else None,
                         plate_reader=plate.reader_version if plate else None,
-                        provenance={
-                            "frame_index": frame_index,
-                            "frame_quality": assessment.quality.value,
-                            "enhancement_applied": assessment.enhancement_applied,
-                            "sample_interval": sample_interval,
-                            "worker": "sentinel-edge-worker",
-                        },
+                        provenance=dict(base_provenance),
                     )
                 )
             produced += len(detections)
+
+            # A voted plate is its own detection row rather than a field on one
+            # of the boxes above. It has to be: the reading settled across many
+            # frames, so there is no single box in THIS frame that it belongs
+            # to, and attaching it to an arbitrary one would misrepresent where
+            # it came from.
+            for sighting in plate_sightings:
+                plates_read += 1
+                pending.append(
+                    _sighting_payload(
+                        sighting,
+                        camera_id=camera_id,
+                        timestamp_iso=timestamp,
+                        source_mode=source_mode,
+                        reader_version=f"{anpr.name}/{anpr.version}",
+                        provenance=base_provenance,
+                    )
+                )
+                logger.info(
+                    "plate %s (score %.2f, %d frames%s) on track %d",
+                    sighting.text, sighting.score, sighting.observations,
+                    "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
+                )
 
             if client and len(pending) >= BATCH_SIZE:
                 result = client.ingest(pending)
@@ -416,22 +622,40 @@ def run(
 
 def resolve_cameras(
     requested: list[str] | None, all_cameras: bool, client: CentralClient
-) -> list[str]:
-    """Which cameras this worker is responsible for.
+) -> list[tuple[str, str | None]]:
+    """Which cameras this worker is responsible for, as (canonical, external).
 
     `--all-cameras` asks the registry rather than a config file, so a camera
     commissioned this morning is picked up on the next cycle without anyone
     editing a deployment. It is still filtered by what this worker's own
     account may watch - discovery is not an escalation.
+
+    The external ID travels with the canonical one because it is what says
+    whether a camera is on the live grid, and therefore whether frames come
+    from a direct capture or through the broker. An explicitly named camera has
+    no external ID to hand, so it is resolved from the registry too.
     """
+    watchable = {"live_and_playback", "live_only"}
+
     if requested:
-        return list(dict.fromkeys(requested))
+        wanted = list(dict.fromkeys(requested))
+        try:
+            known = {
+                camera["camera_id"]: camera.get("external_camera_id")
+                for camera in client.list_cameras()
+            }
+        except Exception as exc:
+            # Naming a camera explicitly must keep working when the registry
+            # listing does not; it just loses the grid fast path.
+            logger.warning("could not resolve external IDs (%s); assuming non-grid", exc)
+            known = {}
+        return [(camera_id, known.get(camera_id)) for camera_id in wanted]
+
     if not all_cameras:
         return []
 
-    watchable = {"live_and_playback", "live_only"}
     found = [
-        camera["camera_id"]
+        (camera["camera_id"], camera.get("external_camera_id"))
         for camera in client.list_cameras()
         if camera.get("video_access") in watchable
     ]
@@ -464,12 +688,21 @@ def supervise(
     a camera is wasteful, not corrupting.
     """
     discovery_client: CentralClient | None = None
-    if all_cameras and not cameras:
-        if dry_run:
-            logger.error("--all-cameras needs the registry; not available with --dry-run")
-            return 2
+    # The registry is consulted whenever there is one to consult - for
+    # discovery, and to learn each named camera's external ID so a grid camera
+    # takes the live path instead of the broker's.
+    if not dry_run:
         discovery_client = CentralClient()
         discovery_client.sign_in(EDGE_USERNAME, EDGE_PASSWORD)
+    elif all_cameras:
+        logger.error("--all-cameras needs the registry; not available with --dry-run")
+        return 2
+
+    targets: list[tuple[str, str | None]] = (
+        resolve_cameras(cameras, False, discovery_client)
+        if cameras and discovery_client is not None
+        else [(camera_id, None) for camera_id in cameras]
+    )
 
     # One model for the whole process, reused across every camera and cycle.
     detector = build_detector()
@@ -494,7 +727,6 @@ def supervise(
     try:
         while not stop:
             cycle += 1
-            targets = cameras
             if all_cameras and discovery_client is not None:
                 # Re-resolve every cycle so new cameras join and withdrawn ones
                 # drop out without a restart.
@@ -506,7 +738,7 @@ def supervise(
                     return 1
 
             worst = 0
-            for camera_id in targets:
+            for camera_id, external_id in targets:
                 if stop:
                     break
                 logger.info("cycle %d: camera %s", cycle, camera_id)
@@ -520,6 +752,7 @@ def supervise(
                         synthetic=synthetic,
                         source_mode=source_mode,
                         detector=detector,
+                        external_camera_id=external_id,
                     )
                 except Exception as exc:
                     # One camera failing must not take the site offline. A

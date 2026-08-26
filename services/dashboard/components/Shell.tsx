@@ -46,8 +46,22 @@ const NAV: { group: string; items: NavItem[] }[] = [
     ],
   },
   {
+    // Four separate permissions, so a role can hold any of these without the
+    // others - an auditor reads alerts and traces but never edits the list,
+    // and the municipal roles hold none of them at all.
+    group: "Vehicles of interest",
+    items: [
+      { href: "/alerts", label: "Alerts", permission: "alert:read" },
+      { href: "/plates", label: "Trace a vehicle", permission: "track:read" },
+      { href: "/watchlist", label: "Watchlist", permission: "watchlist:read" },
+    ],
+  },
+  {
     group: "Reports",
-    items: [{ href: "/reports/gap-analysis", label: "Gap analysis", permission: "registry:read" }],
+    items: [
+      { href: "/reports/gap-analysis", label: "Gap analysis", permission: "registry:read" },
+      { href: "/reports/anpr", label: "ANPR output report", permission: "plate:read" },
+    ],
   },
   {
     group: "Oversight",

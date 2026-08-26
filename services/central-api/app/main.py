@@ -14,14 +14,24 @@ dependency; it accepts detections (and, for callers holding `plate:read`,
 read plate characters) over the ingest API and applies retention and
 field-level redaction on the way back out.
 
+Plate identity IS in scope, as of the watchlist phase: an ingested plate is
+recorded as a sighting, matched against the active watchlist, and can be
+assembled into a cross-camera movement history. That was a deliberate reversal
+of the earlier position, taken because the platform is answering a policing
+problem that requires it. The controls that came with the reversal - a
+permission per act, mandatory reasons, shorter retention, and an audit line on
+every disclosure - are documented in docs/access-model.md and are not optional.
+
 Explicitly NOT in this service:
   * face recognition, biometric identification, gait recognition.
-  * watchlist matching, automatic enforcement actions.
+  * automatic enforcement actions - the platform alerts a human, and stops.
   * live VAHAN or Dharmik integration. The vehicle reference data here is a
     local synthetic file for demo lookups and is not an authoritative
     registration source.
-  * make-model-colour recognition, vehicle re-identification, cross-camera
-    vehicle identity association, plate-vehicle mismatch detection.
+  * make-model-colour recognition, and vehicle re-identification by appearance.
+    A track is built from plate reads alone, so a vehicle whose plate was not
+    read contributes nothing to it.
+  * any join between a sighting and the vehicle reference registry.
 
 See docs/access-model.md.
 """
@@ -62,6 +72,7 @@ from .routers import (
     vehicles,
     video_grants,
     video_sessions,
+    watchlist,
 )
 from .services import health_monitor, sync_service
 
@@ -247,6 +258,7 @@ app.include_router(vehicles.router)
 app.include_router(audit.router)
 app.include_router(video_grants.router)
 app.include_router(video_sessions.router)
+app.include_router(watchlist.router)
 
 
 @app.get("/", tags=["system"], summary="Service banner")
@@ -277,15 +289,19 @@ async def root() -> dict[str, object]:
             "RTSP / NVR / VMS credentials",
             "camera source URLs, private IPs, permanent public links",
         ],
-        "excluded_from_module_1": [
+        "analytics_in_scope": [
+            "generic object detection (person / vehicle class / bicycle)",
+            "ANPR - number-plate reading at the edge, behind plate:read",
+            "watchlist matching and real-time alerting",
+            "cross-camera movement history from plate reads, behind track:read",
+        ],
+        "excluded": [
             "face recognition / biometric identification",
             "gait recognition",
-            "watchlist matching",
             "automatic enforcement actions",
             "live VAHAN / Dharmik integration",
             "make-model-colour recognition",
-            "vehicle re-identification",
-            "cross-camera vehicle identity association",
-            "plate-vehicle mismatch detection",
+            "vehicle re-identification by appearance",
+            "any join between a sighting and the vehicle reference registry",
         ],
     }

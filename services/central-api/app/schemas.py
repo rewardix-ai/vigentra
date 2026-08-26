@@ -1025,6 +1025,12 @@ class DetectionIngestResult(BaseModel):
     errors: list[dict[str, Any]] = Field(default_factory=list)
     model_name: str | None = None
     model_version: str | None = None
+    #: Plate reads promoted to sightings. Reported back so a worker's log shows
+    #: whether its ANPR output is actually reaching the identity layer, rather
+    #: than being silently dropped as implausible.
+    sightings_recorded: int = 0
+    sightings_rejected: int = 0
+    alerts_raised: int = 0
 
 
 class DetectorHealth(BaseModel):
@@ -1285,4 +1291,258 @@ class OverviewResponse(BaseModel):
 
     @field_serializer("last_metadata_sync_at")
     def _ser_sync(self, value: datetime | None) -> str | None:
+        return iso_z(value)
+
+
+# ---------------------------------------------------------------------------
+# Plate identity: watchlist, alerts, sightings and movement
+# ---------------------------------------------------------------------------
+
+class WatchCategory(str, Enum):
+    """The challenge's own vocabulary, and nothing beyond it.
+
+    A free-text category is a category nobody can report on, and it is also how
+    a watchlist quietly acquires uses it was never authorised for.
+    """
+
+    STOLEN = "stolen"
+    WANTED = "wanted"
+    BLACKLIST = "blacklist"
+    MISSING = "missing"
+    SUSPECT = "suspect"
+
+
+class WatchlistEntryCreate(BaseModel):
+    """Add a registration number to the watchlist.
+
+    `reason` is mandatory and cannot be whitespace. A watchlist entry is a
+    standing instruction to flag a vehicle every time it is seen anywhere in
+    the state; an entry nobody can account for is the one that should never
+    have been added.
+    """
+
+    plate: str = Field(min_length=4, max_length=24)
+    category: WatchCategory
+    reason: str = Field(min_length=8, max_length=2000)
+    case_reference: str | None = Field(default=None, max_length=80)
+    #: When the entry stops matching. Optional, but strongly encouraged: an
+    #: entry with no end date is one nobody ever revisits.
+    expires_at: datetime | None = None
+
+    @field_validator("plate")
+    @classmethod
+    def _normalise_plate(cls, value: str) -> str:
+        return "".join(character for character in value.upper() if character.isalnum())
+
+    @field_validator("reason")
+    @classmethod
+    def _reason_has_content(cls, value: str) -> str:
+        cleaned = value.strip()
+        if len(cleaned) < 8:
+            raise ValueError("reason must say why this vehicle is being watched")
+        return cleaned
+
+
+class WatchlistEntryOut(BaseModel):
+    entry_id: str
+    plate: str
+    category: str
+    reason: str
+    case_reference: str | None = None
+    added_by: str
+    owning_department: str | None = None
+    active: bool = True
+    expires_at: datetime | None = None
+    deactivated_at: datetime | None = None
+    deactivated_by: str | None = None
+    is_demo_data: bool = True
+    created_at: datetime | None = None
+    #: How many alerts this entry has produced. Useful on its own: an entry
+    #: firing constantly is usually a plate shaped like a common misread.
+    alert_count: int = 0
+
+    @field_serializer("expires_at", "deactivated_at", "created_at")
+    def _ser_times(self, value: datetime | None) -> str | None:
+        return iso_z(value)
+
+
+class WatchlistDeactivate(BaseModel):
+    """Stand an entry down. Entries are never deleted — the trail matters."""
+
+    reason: str = Field(min_length=4, max_length=2000)
+
+
+class SightingOut(BaseModel):
+    """One plate read at one camera."""
+
+    sighting_id: str
+    detection_id: str
+    plate_text: str | None = None
+    plate_normalised: str | None = None
+    state_code: str | None = None
+    camera_id: str
+    camera_name: str | None = None
+    owning_department: str | None = None
+    city: str | None = None
+    district: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    timestamp_utc: datetime
+    confidence: float
+    observations: int = 1
+    reader: str | None = None
+    frame_quality: str | None = None
+    is_demo_data: bool = True
+    #: True when the account may see the detection but not the registration.
+    plate_withheld: bool = False
+
+    @field_serializer("timestamp_utc")
+    def _ser_time(self, value: datetime) -> str | None:
+        return iso_z(value)
+
+
+class AlertOut(BaseModel):
+    """A watchlist hit.
+
+    Never an identification. `exact` and `distance` are both present because an
+    operator acts differently on the two: an exact read is something to respond
+    to, a near read is something to look at first.
+    """
+
+    alert_id: str
+    watch_plate: str | None = None
+    seen_plate: str | None = None
+    category: str
+    distance: float = 0.0
+    exact: bool = True
+    sighting_id: str
+    camera_id: str
+    camera_name: str | None = None
+    owning_department: str | None = None
+    city: str | None = None
+    district: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    timestamp_utc: datetime
+    acknowledged: bool = False
+    acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
+    dismissed_reason: str | None = None
+    is_demo_data: bool = True
+    #: Set when the account holds `alert:read` but not `plate:read`. The alert
+    #: is not refused; the registration numbers in it are.
+    plate_withheld: bool = False
+
+    @field_serializer("timestamp_utc", "acknowledged_at")
+    def _ser_times(self, value: datetime | None) -> str | None:
+        return iso_z(value)
+
+
+class AlertAcknowledge(BaseModel):
+    """Close an alert, either because it was acted on or because it was wrong."""
+
+    #: Present when the alert was reviewed and was NOT the watched vehicle.
+    #: Recorded so a pattern of false positives on one plate is visible.
+    dismissed_reason: str | None = Field(default=None, max_length=2000)
+
+
+class TrackPointOut(BaseModel):
+    """One camera on a reconstructed route."""
+
+    sighting_id: str
+    detection_id: str
+    plate_read: str | None = None
+    match_distance: float = 0.0
+    exact: bool = True
+    confidence: float
+    observations: int = 1
+    timestamp_utc: datetime
+
+    camera_id: str
+    camera_name: str | None = None
+    owning_department: str | None = None
+    city: str | None = None
+    district: str | None = None
+    zone: str | None = None
+    road_or_junction: str | None = None
+    landmark: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    coverage_description: str | None = None
+
+    distance_from_previous_km: float | None = None
+    seconds_from_previous: float | None = None
+    implied_speed_kmh: float | None = None
+    #: A leg no road vehicle could have driven. Flagged rather than dropped:
+    #: it usually means one of the two reads belongs to a different vehicle,
+    #: and that is a finding, not noise.
+    implausible_leg: bool = False
+
+    @field_serializer("timestamp_utc")
+    def _ser_time(self, value: datetime) -> str | None:
+        return iso_z(value)
+
+
+class TrackOut(BaseModel):
+    """A vehicle's movement history across the federated camera network."""
+
+    query: str
+    max_distance: float
+    points: list[TrackPointOut] = Field(default_factory=list)
+
+    first_seen: datetime | None = None
+    last_seen: datetime | None = None
+    cameras_seen: int = 0
+    total_distance_km: float = 0.0
+    exact_reads: int = 0
+    implausible_legs: int = 0
+    #: Said plainly on every response, because a route assembled from ANPR is
+    #: a lower bound on where a vehicle went, never a complete account.
+    caveat: str = (
+        "Built from plate reads only. A camera that did not read the plate "
+        "contributes nothing, so this is where the vehicle was seen - not "
+        "everywhere it went."
+    )
+
+    @field_serializer("first_seen", "last_seen")
+    def _ser_times(self, value: datetime | None) -> str | None:
+        return iso_z(value)
+
+
+class PlateSearchHit(BaseModel):
+    """A distinct plate the network saw, near the queried string."""
+
+    plate: str
+    distance: float
+    exact: bool
+    similarity: float
+    sightings: int
+    camera_count: int
+    first_seen: datetime
+    last_seen: datetime
+    best_confidence: float
+
+    @field_serializer("first_seen", "last_seen")
+    def _ser_times(self, value: datetime | None) -> str | None:
+        return iso_z(value)
+
+
+class AnalyticsReportRow(BaseModel):
+    """One line of the ANPR output report the challenge asks to be submitted."""
+
+    plate: str | None = None
+    camera_id: str
+    camera_name: str | None = None
+    location: str | None = None
+    district: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    timestamp_utc: datetime
+    confidence: float
+    observations: int = 1
+    watchlist_hit: bool = False
+    watchlist_category: str | None = None
+
+    @field_serializer("timestamp_utc")
+    def _ser_time(self, value: datetime) -> str | None:
         return iso_z(value)

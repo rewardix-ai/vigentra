@@ -221,16 +221,99 @@ from the detection that carries it.
 
 See [`docs/anpr.md`](anpr.md) for setup and the accuracy caveats.
 
-## 9. What is still out of scope
+## 9. Watchlist matching and movement history
+
+This section describes a **reversal**. The previous version of this document
+said, plainly, that watchlist matching and cross-camera identity association
+were out of scope, and that a plate was an observation at one camera that was
+never followed anywhere. That is no longer true, and pretending otherwise in a
+document whose whole job is to state what the system does would be worse than
+the change itself.
+
+### Why it changed
+
+The platform is answering a policing problem, and the problem it is being
+measured against is: given a registration number, show where that vehicle has
+been across the network, and raise an alert the moment a watchlisted vehicle is
+seen. Those are the two things the earlier scope specifically excluded. A
+system that federates fifty cameras, reads plates off them, and then refuses to
+answer "where did this stolen car go" is not a cautious system — it is an
+incomplete one, and it leaves the question to be answered by someone exporting
+rows into a spreadsheet, where none of the controls below exist.
+
+So the capability moved in scope, deliberately, in the same way ANPR did: as a
+decision on the record, with the controls designed at the same time rather than
+retrofitted after someone asks.
+
+### What it does
+
+- Every ingested plate becomes a **sighting**: one vehicle, read once, at one
+  camera, at one instant. Stored separately from the detection that produced
+  it, because a detection is an observation of an object and a sighting is an
+  assertion about an identity — different retention, different permissions,
+  different consequences when wrong.
+- Each sighting is matched against the **active watchlist** on ingest. A hit
+  raises an **alert**.
+- A **track** orders one plate's sightings by time and reconstructs the route.
+
+### What it still does not do
+
+| Not done | Why |
+|---|---|
+| Face recognition, biometrics, gait | Out of scope, and staying out. |
+| Vehicle re-identification by appearance | A track is built from plate reads **only**. A vehicle whose plate was not read contributes nothing to its own route — which understates movement rather than inventing it, and that is the correct direction to be wrong in. |
+| Any join to the vehicle reference registry | The registry is still a standalone reference dataset with no owner column. A sighting is never joined to it. |
+| Automatic enforcement | An alert reaches a human, and stops. Nothing is issued, no barrier moves, no notice is generated. |
+| Retroactive alerts | Matching happens at ingest. A watchlist entry added *after* a vehicle passed does not manufacture an alert for that pass. An alert asserts that the system knew at a moment in time, and a query-time matcher cannot make that claim. |
+
+### The controls
+
+| Control | How |
+|---|---|
+| Four permissions, not one | `watchlist:read` (oversight), `watchlist:manage` (a standing statewide instruction), `alert:read` / `alert:acknowledge` (operational), `track:read` (the most revealing query here). A role may hold any without the others. |
+| Municipal holds none of them | Civic monitoring counts vehicles. It does not identify their owners, and it does not trace them. |
+| The edge account holds none of them | `ai_operator` ingests plates and raises alerts as a side effect. A worker that can read the watchlist back is a worker that can exfiltrate it. |
+| A watchlist entry needs a reason | Mandatory, non-blank, recorded with the username. A standing instruction to flag a vehicle statewide that nobody can account for is the one that should never have been added. |
+| An entry should have an end date | Optional but pressed for in the UI, and expiry is applied **on read** rather than by a purge job — so a job that fails to run cannot quietly keep a vehicle flagged for ever. |
+| Entries are stood down, never deleted | Deactivation records who and why. The trail is the point. |
+| A trace needs a stated reason | Enforced at the API, not in the UI. `GET /plates/{plate}/track` refuses without one, and the reason is written to the audit log with the plate, the account and the time. |
+| Camera scope applies before assembly | A route is never built from a sighting the caller could not have read. Filtering after assembly would produce a route with holes attributed to the vehicle rather than to the reader's permissions. |
+| Plates withheld, alerts not refused | An account with `alert:read` but not `plate:read` sees that a stolen-category vehicle was flagged at a camera, with `plate_withheld: true`, and not which vehicle. The operational fact and the identifying fact are separable, so they are separated. |
+| Near matches are stored and shown | Matching is fuzzy by necessity (see below). The distance that admitted each hit is recorded, and the console shows exact and near differently. Suppressing near matches to keep a console tidy is how a stolen vehicle passes a camera and nobody hears. |
+| Impossible legs are flagged, not dropped | If two consecutive sightings imply 400 km/h, one of the reads is probably a different vehicle. That is a finding about the track's reliability, so it is surfaced in the API, the table and the map — not quietly removed to make the line look cleaner. |
+| Everything is audited | `watchlist_entry_added`, `watchlist_entry_deactivated`, `watchlist_viewed`, `watchlist_alert_raised`, `alerts_viewed`, `alert_acknowledged`, `alert_dismissed`, `plate_searched`, `vehicle_movement_viewed`. Note that `watchlist_alert_raised` is written by the machine, not by a person: the trail has to show what the system concluded as well as what people did. |
+
+### Why matching is fuzzy, and why that is the safer choice
+
+Exact-match lookup over OCR output is a trap. If the only camera that saw a
+vehicle read one character wrong, an exact query returns nothing and the
+vehicle looks like it was never there.
+
+But plain edit distance is too blunt — it rates `GJ01AB1234` equally far from
+`GJ01A81234` and `GJ01AX1234`, when the first is a pair the reader is known to
+swap and the second is not. So substitutions are priced by whether the two
+glyphs are a known confusion pair (0.35) or unrelated (1.0), and a dropped
+character is priced below an unrelated substitution (0.5) because losing a
+character to glare or a frame edge is a commonplace OCR failure while
+substituting a different digit usually means a different car.
+
+The default threshold is 1.0: about two plausible OCR errors. Raising it does
+not find more stolen vehicles. It finds more innocent ones.
+
+### The line that has not moved
+
+An alert is never an identification, and the system says so on every surface
+that shows one. It is a probabilistic reading of a photograph, matched fuzzily
+against a list, and if it matters to a case a human should look at the frame.
+Nothing here is evidence on its own.
+
+## 10. What is still out of scope
 
 Face recognition, biometric identification, gait recognition, make/model/colour
-verification, vehicle re-identification, cross-camera identity association,
-watchlist matching, and any automatic enforcement action.
-
-A plate is an **observation**, not an identity: it is recorded against one
-camera at one instant, is not joined to the vehicle reference registry, and
-nothing in this system follows a vehicle between cameras. The registry remains
-a standalone reference dataset.
+verification, vehicle re-identification by appearance, any join between a
+sighting and the vehicle reference registry, and any automatic enforcement
+action.
 
 Object detection is generic (person / vehicle class / bicycle), runs at the
-edge, and the central API carries no computer-vision dependency at all.
+edge, and the central API carries no computer-vision dependency at all — the
+plate matcher included, which works on characters and never on pixels.

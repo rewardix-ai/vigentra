@@ -656,3 +656,153 @@ class AuditLog(Base):
     case_or_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     client_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
     details: Mapped[dict] = mapped_column(JSONColumn, nullable=False, default=dict)
+
+
+# ---------------------------------------------------------------------------
+# Plate identity: sightings, watchlist, alerts
+#
+# These three tables are the join the Vehicle docstring above warns about, and
+# they exist because the challenge's graded test case requires them: trace a
+# designated registration number across the network, and alert on a watchlist
+# match. docs/access-model.md sets out the decision and the controls; in short,
+# every one of these is personal data, gated behind its own permission,
+# retained on its own shorter clock, and audited on disclosure.
+#
+# What is still absent, and stays absent: face embeddings, gait, vehicle
+# re-identification by appearance, and any join to the vehicle reference table.
+# A track here is built from plate reads alone.
+# ---------------------------------------------------------------------------
+
+
+class PlateSighting(Base):
+    """One vehicle, read once, at one camera.
+
+    Derived from a `Detection` that carried plate text, but stored separately
+    on purpose. A detection is an observation of an object; a sighting is an
+    assertion about an identity, and the two have different retention,
+    different permissions and different consequences when wrong.
+
+    `plate_normalised` is the cleaned form actually matched against. The raw
+    read is kept beside it because an operator reviewing a false positive needs
+    to see what the camera produced, not what normalisation made of it.
+    """
+
+    __tablename__ = "plate_sightings"
+    __table_args__ = (
+        Index("ix_sightings_plate_time", "plate_normalised", "timestamp_utc"),
+        Index("ix_sightings_camera_time", "camera_id", "timestamp_utc"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    sighting_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    #: The detection this came from - the evidence trail back to a frame.
+    detection_id: Mapped[str] = mapped_column(
+        String(128), nullable=False, unique=True, index=True
+    )
+
+    plate_text: Mapped[str] = mapped_column(String(24), nullable=False)
+    plate_normalised: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    state_code: Mapped[str | None] = mapped_column(String(4), nullable=True, index=True)
+
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    timestamp_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    #: How many frames voted for this reading. One frame is a guess; twelve
+    #: frames agreeing is a reading. Surfaced so an operator can tell them apart.
+    observations: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    reader: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    frame_quality: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    #: A pointer to evidence held by the owning department - never the pixels.
+    evidence_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_demo_data: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    provenance: Mapped[dict] = mapped_column(JSONColumn, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+
+class WatchlistEntry(Base, TimestampMixin):
+    """A registration number an operator has asked to be told about.
+
+    Categories mirror the challenge's own vocabulary: stolen, wanted,
+    blacklist, missing, suspect.
+
+    `added_by` and `reason` are not decoration. A watchlist entry is a standing
+    instruction to flag a vehicle every time it is seen anywhere in the state,
+    and the entry nobody can account for is the one that should never have been
+    added. Both are required at the API, and neither can be blank.
+    """
+
+    __tablename__ = "watchlist_entries"
+    __table_args__ = (
+        Index("ix_watchlist_active_category", "active", "category"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    entry_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    #: Normalised at write time - the form the matcher compares against.
+    plate: Mapped[str] = mapped_column(String(24), nullable=False, unique=True, index=True)
+    category: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    case_reference: Mapped[str | None] = mapped_column(String(80), nullable=True)
+
+    added_by: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    owning_department: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    #: A watchlist entry with no end date is one nobody ever revisits.
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deactivated_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    is_demo_data: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class WatchlistAlert(Base):
+    """A sighting the matcher believes is a watchlisted vehicle.
+
+    Stored whether or not the match was exact, with the distance that produced
+    it, because a near match is a thing for a human to look at rather than a
+    thing to hide. `exact` is carried separately from `distance` so a console
+    can lead with the difference an operator actually acts on.
+
+    An alert is never an identification. It is a probabilistic reading of a
+    photograph, matched fuzzily against a list. `acknowledged_by` records the
+    human who took it seriously enough to look.
+    """
+
+    __tablename__ = "watchlist_alerts"
+    __table_args__ = (
+        Index("ix_alerts_time_ack", "timestamp_utc", "acknowledged"),
+        Index("ix_alerts_watch_plate", "watch_plate"),
+        UniqueConstraint("sighting_id", "watch_plate", name="uq_alert_sighting_watch"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    alert_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+
+    watch_plate: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    seen_plate: Mapped[str] = mapped_column(String(24), nullable=False)
+    category: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    #: 0.0 is an exact match; services/plate_matching.py sets out the pricing.
+    distance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    exact: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+
+    sighting_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    timestamp_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+
+    acknowledged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    acknowledged_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    #: Set when an operator reviewed the alert and it was not the vehicle.
+    dismissed_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_demo_data: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )

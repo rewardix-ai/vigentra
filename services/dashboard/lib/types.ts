@@ -562,3 +562,126 @@ export interface InstallationFormValues {
   permitted_local_roles: LocalRoleValue[];
   attachments: AttachmentRef[];
 }
+
+// ---------------------------------------------------------------------------
+// Plate identity: watchlist, alerts and movement
+//
+// Every one of these carries personal data. `plate_withheld` on a row means
+// the account may see that something happened without being told which vehicle
+// it happened to — the row is not refused, the identifying field is.
+// ---------------------------------------------------------------------------
+
+export type WatchCategory = "stolen" | "wanted" | "blacklist" | "missing" | "suspect";
+
+export interface WatchlistEntry {
+  entry_id: string;
+  plate: string;
+  category: WatchCategory | string;
+  reason: string;
+  case_reference: string | null;
+  added_by: string;
+  owning_department: string | null;
+  active: boolean;
+  expires_at: string | null;
+  deactivated_at: string | null;
+  deactivated_by: string | null;
+  is_demo_data: boolean;
+  created_at: string | null;
+  /** Alerts this entry has produced. A plate firing constantly usually sits one
+   * confusion-pair away from something common. */
+  alert_count: number;
+}
+
+export interface Alert {
+  alert_id: string;
+  watch_plate: string | null;
+  seen_plate: string | null;
+  category: WatchCategory | string;
+  /** 0.0 is an exact match. Anything above is a near match to be reviewed. */
+  distance: number;
+  exact: boolean;
+  sighting_id: string;
+  camera_id: string;
+  camera_name: string | null;
+  owning_department: string | null;
+  city: string | null;
+  district: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  timestamp_utc: string;
+  acknowledged: boolean;
+  acknowledged_by: string | null;
+  acknowledged_at: string | null;
+  dismissed_reason: string | null;
+  is_demo_data: boolean;
+  plate_withheld: boolean;
+}
+
+export interface PlateSearchHit {
+  plate: string;
+  distance: number;
+  exact: boolean;
+  similarity: number;
+  sightings: number;
+  camera_count: number;
+  first_seen: string;
+  last_seen: string;
+  best_confidence: number;
+}
+
+export interface TrackPoint {
+  sighting_id: string;
+  detection_id: string;
+  plate_read: string | null;
+  match_distance: number;
+  exact: boolean;
+  confidence: number;
+  /** How many frames voted for this reading. One frame is a guess. */
+  observations: number;
+  timestamp_utc: string;
+  camera_id: string;
+  camera_name: string | null;
+  owning_department: string | null;
+  city: string | null;
+  district: string | null;
+  zone: string | null;
+  road_or_junction: string | null;
+  landmark: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  coverage_description: string | null;
+  distance_from_previous_km: number | null;
+  seconds_from_previous: number | null;
+  implied_speed_kmh: number | null;
+  /** A leg no road vehicle could have driven — usually one of the two reads
+   * belongs to a different car. Shown, never silently dropped. */
+  implausible_leg: boolean;
+}
+
+export interface Track {
+  query: string;
+  max_distance: number;
+  points: TrackPoint[];
+  first_seen: string | null;
+  last_seen: string | null;
+  cameras_seen: number;
+  total_distance_km: number;
+  exact_reads: number;
+  implausible_legs: number;
+  caveat: string;
+}
+
+export interface AnprReportRow {
+  plate: string | null;
+  camera_id: string;
+  camera_name: string | null;
+  location: string | null;
+  district: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  timestamp_utc: string;
+  confidence: number;
+  observations: number;
+  watchlist_hit: boolean;
+  watchlist_category: string | null;
+}

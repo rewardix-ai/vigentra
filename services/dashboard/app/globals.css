@@ -26,6 +26,12 @@ body {
     @apply text-[13px] font-semibold text-ink-900;
   }
 
+  /* The in-text link style already used verbatim across the registry and
+     detection tables, named once so new pages do not re-type it and drift. */
+  .link {
+    @apply font-medium text-brand-600 hover:underline;
+  }
+
   .section-label {
     @apply text-2xs font-semibold uppercase tracking-wider text-ink-500;
   }

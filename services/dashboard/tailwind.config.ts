@@ -47,7 +47,19 @@ const config: Config = {
         ],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
-      borderRadius: { DEFAULT: "3px", md: "4px", lg: "6px" },
+      /**
+       * Apple-style radii: the corner grows with the surface rather than one
+       * value doing every job. A 16px card around a 10px button reads as
+       * concentric; the same 10px on both reads as a mistake.
+       */
+      borderRadius: {
+        sm: "6px",
+        DEFAULT: "10px",
+        md: "12px",
+        lg: "16px",
+        xl: "20px",
+        "2xl": "24px",
+      },
       boxShadow: {
         card: "0 1px 2px rgba(16, 30, 51, 0.06)",
         raised: "0 2px 8px rgba(16, 30, 51, 0.10)",

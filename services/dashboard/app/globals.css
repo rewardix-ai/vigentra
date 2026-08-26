@@ -14,8 +14,11 @@ body {
 
 @layer components {
   /* --- surfaces ------------------------------------------------------- */
+  /* overflow-hidden is load-bearing at this radius: a full-bleed table or
+     header inside the card would otherwise square off its own corners and
+     poke through the card's rounding. */
   .card {
-    @apply rounded border border-line bg-white shadow-card;
+    @apply overflow-hidden rounded-lg border border-line bg-white shadow-card;
   }
 
   .card-header {
@@ -90,9 +93,12 @@ body {
   }
 
   /* --- status --------------------------------------------------------- */
+  /* Capsule rather than a small rounded rectangle - a status badge is the one
+     place Apple goes fully round, and it separates "state" from "control" at a
+     glance now that buttons are rounded too. */
   .pill {
-    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm border
-           px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide;
+    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border
+           px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide;
   }
 }
 

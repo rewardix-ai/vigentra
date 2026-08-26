@@ -366,14 +366,60 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
         base = self.config.base_url.rstrip("/")
         manifest = f"{base}/live/stream/{raw}/index.m3u8?cookieCheck=1"
 
+        # Probe the manifest before handing it over. The grid's HLS packager
+        # fails independently of the rest of the gateway - the catalogue keeps
+        # answering 200 and reporting the camera live while every playlist
+        # returns 502 - so a session opened blind produces a player stuck on a
+        # black frame with nothing to say about why.
+        if await self._manifest_ok(manifest):
+            return {
+                "source_session_reference": manifest,
+                "protocol": "hls",
+                # The grid issues no ticket of its own, so the session's lifetime
+                # is Sentinel's own TTL. Returning None lets the broker apply it.
+                "expires_at": None,
+                "is_demo_data": False,
+            }
+
+        # Fall back to the endpoint the guide itself names "the browser playback
+        # fallback": /stream/<id> answers range requests for a media player.
+        #
+        # This is NOT the thing the guide warns against. That warning is about
+        # planning around *obtaining a copy* - pulling the path with curl and
+        # building a pipeline against a local file that looks complete but is
+        # not. Serving it to a <video> element is its stated purpose, and the
+        # broker still proxies it, still range-limits it, still watermarks the
+        # session and still expires it. Inference never uses this path.
+        progressive = f"{base}/stream/{raw}"
+        logger.warning(
+            "grid camera %s: HLS manifest unavailable, using the browser "
+            "playback fallback for this session",
+            external_camera_id,
+        )
         return {
-            "source_session_reference": manifest,
-            "protocol": "hls",
-            # The grid issues no ticket of its own, so the session's lifetime is
-            # Sentinel's own TTL. Returning None lets the broker apply it.
+            "source_session_reference": progressive,
+            "protocol": "http-mp4",
             "expires_at": None,
             "is_demo_data": False,
+            "degraded": "hls_unavailable",
         }
+
+    async def _manifest_ok(self, manifest: str) -> bool:
+        """Is the HLS packager actually serving this camera right now?
+
+        Deliberately cheap and deliberately forgiving: one short GET, and any
+        transport error counts as "not ok" rather than raising. A slow probe
+        here would delay every session open, and an exception would turn a
+        recoverable degradation into a failed request.
+        """
+        try:
+            response = await self._client.get(
+                manifest, timeout=6.0, follow_redirects=True
+            )
+        except httpx.HTTPError as exc:
+            logger.info("grid manifest probe failed: %s", exc)
+            return False
+        return response.status_code == 200 and response.text.lstrip().startswith("#EXTM3U")
 
 
 VIDEO_ADAPTERS["sentinel_grid"] = SentinelGridVideoAdapter

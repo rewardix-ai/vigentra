@@ -30,19 +30,25 @@ Two consequences are enforced in code rather than left to convention:
 
 ## The integrator's guide, mapped to code
 
-| Rule from §3 of the guide | Where it lives |
-|---|---|
-| **DO** force RTSP over TCP | `edge-worker`: `OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;tcp`, set before the first capture because it is a process-wide FFmpeg option |
-| **DON'T** trust the reported frame rate | Nothing derives timing from `CAP_PROP_FPS`; the catalogue's `fps` is stored as metadata only |
-| **DO** drive timing from PTS | Frame timing reads `CAP_PROP_POS_MSEC`, never arrival time |
-| **DON'T** assume a constant frame rate | Inter-frame gaps are tolerated, not treated as a disconnect |
-| **DO** reconnect with backoff | 2 s → 30 s cap, never a tight loop |
-| **DON'T** treat join-time decode warnings as fatal | A run of failed reads is tolerated before a drop is declared; the grid is mixed H.264/H.265 |
-| **DON'T** assume a uniform grid | Per-camera codec, resolution and fps come from `/api/ingest`; the grid really is mixed (H.264, H.265, 720p→1440p) |
-| **DO** expect a scene discontinuity | A backwards PTS jump resets long-lived track state |
-| **DON'T** plan around obtaining copies | Nothing fetches `/stream/<id>`; that path is the browser fallback and yields a partial file that looks complete |
-| **DON'T** publish to the gateway | The adapter has no write path at all |
-| **DO** pace your load | Catalogue reads are cached (30 s TTL); sessions are closed when finished |
+| Rule from §3 of the guide | Where it lives | Asserted by |
+|---|---|---|
+| **DO** force RTSP over TCP | `edge-worker/app/grid.py` `_force_tcp_transport` - set before the first capture, because it is a process-wide FFmpeg option read at construction | `test_rtsp_transport_is_pinned_to_tcp` |
+| **DON'T** trust the reported frame rate | Nothing reads `CAP_PROP_FPS`. `ReconnectingCapture.measured_fps` is computed from PTS; the catalogue's `fps` is stored as provenance only | `test_measured_fps_is_derived_from_pts_not_declared`, `test_no_code_path_reads_cap_prop_fps` |
+| **DO** drive timing from PTS | `Frame.pts_ms` from `CAP_PROP_POS_MSEC`, never arrival time | `test_frame_timing_comes_from_pts_deltas_not_a_fixed_cadence` |
+| **DON'T** assume a constant frame rate | `Frame.dt_ms` is the real elapsed PTS gap; a gap does not tear down the capture | `test_a_gap_is_not_treated_as_a_disconnect` |
+| **DO** reconnect with backoff | `ReconnectingCapture`, 2 s → 30 s cap, never a tight loop | `test_a_real_drop_reconnects_with_backoff` |
+| **DON'T** treat join-time decode warnings as fatal | `GRACE_FAILURES = 25` bad reads tolerated after a (re)connect | `test_join_time_decode_failures_are_tolerated` |
+| **DON'T** assume a uniform grid | Per-camera codec/resolution/fps from `/api/ingest`; the grid really is mixed (H.264 + H.265, 720p→1440p) | verified against the live catalogue |
+| **DO** expect a scene discontinuity | A backwards PTS jump sets `Frame.discontinuity` and withholds `dt_ms`, so a tracker is never fed an impossible delta | `test_backwards_pts_raises_discontinuity_and_resets_timing` |
+| **DON'T** plan around obtaining copies | Frames are decoded from a live capture; nothing is written to disk | `test_nothing_is_written_to_disk` |
+| **DON'T** publish to the gateway | No write verb appears in a call anywhere in the module | `test_module_only_ever_reads` |
+| **DO** pace your load | Catalogue cached 30 s; one capture per camera, released on exit; dashboard tiles hold a session only while on screen | `test_capture_is_released_on_exit` |
+
+Every row above is pinned by a test in `tests/test_grid_capture.py` that runs
+against a fake capture, so the rules hold whether or not the sandbox is
+reachable. That matters more than it sounds: the grid's media plane fails
+independently of its catalogue, and a rule only checked when the feed is up is
+not really checked at all.
 
 The catalogue is the contract, the URL pattern is not: `/api/ingest` is re-read
 on a short TTL rather than hard-coded, because camera ids and the set of

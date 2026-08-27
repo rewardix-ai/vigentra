@@ -295,8 +295,6 @@ class MockVideoAdapter(BaseVideoAdapter):
 
 
 VIDEO_ADAPTERS: dict[str, type[BaseVideoAdapter]] = {
-    "traffic_vms": TrafficVmsVideoAdapter,
-    "municipal_vms": MunicipalVmsVideoAdapter,
     "official_sentinel": OfficialSentinelVideoAdapter,
 }
 
@@ -422,4 +420,9 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
         return response.status_code == 200 and response.text.lstrip().startswith("#EXTM3U")
 
 
-VIDEO_ADAPTERS["sentinel_grid"] = SentinelGridVideoAdapter
+# Both department systems front the same live grid, so both stream through it.
+# TrafficVmsVideoAdapter and MunicipalVmsVideoAdapter are kept above for a
+# deployment that runs the department mocks with their own recorded media; they
+# are simply not wired up while the departments federate the live gateway.
+VIDEO_ADAPTERS["traffic_vms"] = SentinelGridVideoAdapter
+VIDEO_ADAPTERS["municipal_vms"] = SentinelGridVideoAdapter

@@ -120,6 +120,21 @@ class Permission:
     # holding it is a deliberate grant rather than a side effect of any role.
     VEHICLE_REGISTRY_READ = "vehicle:read"
 
+    # plate identity - watchlist, alerts and cross-camera movement.
+    #
+    # Four permissions rather than one, because they are four different acts.
+    # Reading the watchlist is oversight; adding to it is a standing
+    # instruction to flag a vehicle statewide; acting on an alert is an
+    # operational decision; and reconstructing where a vehicle has been is the
+    # most revealing of the four and is gated on its own. An account may hold
+    # any of them without the others.
+    WATCHLIST_READ = "watchlist:read"
+    WATCHLIST_MANAGE = "watchlist:manage"
+    ALERT_READ = "alert:read"
+    ALERT_ACKNOWLEDGE = "alert:acknowledge"
+    #: Cross-camera movement history for one registration number.
+    TRACK_READ = "track:read"
+
 
 #: Metadata-only baseline shared by most read roles.
 _READ_ONLY = {
@@ -160,6 +175,11 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     },
     Role.DEPARTMENT_ADMIN: {
         Permission.PLATE_READ,
+        Permission.WATCHLIST_READ,
+        Permission.WATCHLIST_MANAGE,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
+        Permission.TRACK_READ,
         *_READ_ONLY,
         Permission.INSTALLATION_READ,
         Permission.INSTALLATION_SYNC,
@@ -175,6 +195,11 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # does not identify their owners.
     Role.TRAFFIC_OPERATOR: {
         Permission.PLATE_READ,
+        Permission.WATCHLIST_READ,
+        Permission.WATCHLIST_MANAGE,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
+        Permission.TRACK_READ,
         *_READ_ONLY,
         Permission.DETECTION_READ,
         Permission.VIDEO_REQUEST_ACCESS,
@@ -199,6 +224,11 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     Role.GRID_OPERATOR: {
         *_READ_ONLY,
         Permission.DETECTION_READ,
+        Permission.PLATE_READ,
+        Permission.WATCHLIST_READ,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
+        Permission.TRACK_READ,
         Permission.VIDEO_REQUEST_ACCESS,
         Permission.VIDEO_LIVE,
     },
@@ -209,6 +239,9 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     },
     Role.AUDITOR: {
         Permission.PLATE_READ,
+        Permission.WATCHLIST_READ,
+        Permission.ALERT_READ,
+        Permission.TRACK_READ,
         *_READ_ONLY,
         Permission.VEHICLE_REGISTRY_READ,
         Permission.AUDIT_READ,
@@ -245,6 +278,11 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # opens is audited like anyone else's, and that trail is the control.
     Role.SYSTEM_ADMIN: {
         Permission.PLATE_READ,
+        Permission.WATCHLIST_READ,
+        Permission.WATCHLIST_MANAGE,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
+        Permission.TRACK_READ,
         *_READ_ONLY,
         Permission.VEHICLE_REGISTRY_READ,
         Permission.INSTALLATION_CREATE,

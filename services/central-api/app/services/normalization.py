@@ -37,16 +37,34 @@ def district_code(district: str | None) -> str:
 def make_camera_id(department_code: str, district: str | None, external_camera_id: str) -> str:
     """Canonical registry ID: `SENTINEL-<DEPT>-<DISTRICT>-<SEQ>`.
 
-    The sequence is the trailing number of the department's own camera ID, which
-    is how these registers are numbered in practice. If a department ID carries
-    no number, the whole sanitised ID is used instead so nothing collides
-    silently. `sync_service` additionally refuses to overwrite a canonical ID
-    that already belongs to a different (source_system, external ID) pair.
+    The sequence comes from the LAST segment of the department's own camera ID,
+    which is how these registers are numbered in practice. A purely numeric
+    segment is zero-padded to four (`TRF-AHM-0001` -> `0001`); a segment that
+    carries letters keeps them (`TRF-AHM-T0001` -> `T0001`).
+
+    That distinction is load-bearing. An earlier version searched for trailing
+    digits anywhere in the string, so `TRF-AHM-0001` and `TRF-AHM-T0001` both
+    reduced to `0001` and the second camera could never be onboarded — the sync
+    refused it as a canonical-ID clash, which is safe but looks like the
+    onboarding flow is broken. Departments really do issue IDs with a letter in
+    the last segment, so a register that cannot accept one is not usable.
+
+    Known limitation: two DIFFERENT source systems can still land on the same
+    canonical ID when the department code, district and sequence all coincide -
+    `GRID-001` from the Sentinel grid against `TRF-AHM-0001` from the Traffic
+    register, both Traffic Police in Ahmedabad. `sync_service` refuses to
+    overwrite the incumbent and reports a degraded sync rather than silently
+    rebinding the ID, so the register stays correct; the second camera simply
+    does not appear until one of the two is renumbered. Folding the source
+    system into the ID would remove the case entirely, at the cost of re-keying
+    every camera in the registry.
     """
     external = (external_camera_id or "").strip()
-    match = re.search(r"(\d+)\s*$", external)
-    if match:
-        sequence = match.group(1).zfill(4)
+    last_segment = re.split(r"[^A-Za-z0-9]+", external)[-1] if external else ""
+    if last_segment.isdigit():
+        sequence = last_segment.zfill(4)
+    elif last_segment:
+        sequence = last_segment.upper()
     else:
         sequence = re.sub(r"[^A-Za-z0-9]+", "", external).upper() or "0000"
     return f"SENTINEL-{department_code.upper()}-{district_code(district)}-{sequence}"

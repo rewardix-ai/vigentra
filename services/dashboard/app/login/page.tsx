@@ -8,15 +8,17 @@ import { Notice, Spinner } from "@/components/ui";
 
 interface DemoAccount {
   username: string;
-  /** Filled by the Use button; never displayed. */
+  /** Filled by the Use button, and shown beside the username. */
   password: string;
 }
 
 /**
  * Demo accounts, grouped by purpose.
  *
- * Only the username is shown - the Use button fills both fields, so there is
- * no reason to put a password on screen. The grouping stays because it IS the
+ * Both halves of the credential are shown. These are synthetic accounts on a
+ * demo build and the passwords already ship inside this client bundle, so
+ * hiding them on screen bought no secrecy - it only meant anyone running the
+ * demo had to be told them out of band. The grouping stays because it IS the
  * role model: department operators can install, retire and manage their unit's
  * footage. Mirrors DEFAULT_DEMO_USERS in services/central-api/app/config.py.
  */
@@ -31,6 +33,12 @@ const GROUPS: { group: string; accounts: DemoAccount[] }[] = [
   {
     group: "Operations · may view and manage video",
     accounts: [
+      // The two statewide control rooms first: between them they hold every
+      // camera in the estate, so they are what the live wall is meant to be
+      // opened with. Leaving them off the list meant the widest video account
+      // in the build was the one nobody could click.
+      { username: "traffic.state", password: "Traffic@2026" },
+      { username: "municipal.state", password: "Municipal@2026" },
       { username: "traffic.operator", password: "Traffic@2026" },
       { username: "traffic.zone3", password: "Traffic@2026" },
       { username: "municipal.operator", password: "Municipal@2026" },
@@ -88,8 +96,11 @@ function SignInForm() {
   }
 
   return (
-    // h-screen + overflow-hidden: the whole page is one screen, never scrolls.
-    <div className="grid h-screen overflow-hidden lg:grid-cols-[minmax(0,380px)_1fr]">
+    // Two panes side by side on a wide screen, one screen tall and never
+    // scrolling. Below that they stack and the page is allowed to scroll -
+    // the accounts used to be hidden outright at those widths, which left
+    // anyone on a narrow window with no way to read a credential.
+    <div className="grid min-h-screen lg:h-screen lg:overflow-hidden lg:grid-cols-[minmax(0,380px)_1fr]">
       {/* Sign-in */}
       <div className="flex flex-col justify-center border-r border-line bg-white px-7 py-8">
         <div className="mx-auto w-full max-w-sm">
@@ -163,12 +174,13 @@ function SignInForm() {
         </div>
       </div>
 
-      {/* Accounts - username and Use only */}
-      <div className="hidden flex-col justify-center bg-paper px-7 py-8 lg:flex">
+      {/* Accounts - username, password and Use */}
+      <div className="flex flex-col justify-center bg-paper px-7 py-8">
         <div className="mx-auto w-full max-w-3xl">
           <h2 className="text-[13px] font-semibold text-ink-900">Demonstration accounts</h2>
           <p className="mt-0.5 text-2xs text-ink-500">
-            Select one to fill the form. Grouped by what the account is for.
+            Select one to fill the form, or read the credential off the list.
+            Grouped by what the account is for.
           </p>
 
           <div className="mt-3 space-y-2.5">
@@ -179,13 +191,16 @@ function SignInForm() {
                     {section.group}
                   </h3>
                 </header>
-                <div className="grid grid-cols-2 gap-x-3 p-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-3 p-2 md:grid-cols-2 xl:grid-cols-3">
                   {section.accounts.map((account) => (
                     <div
                       key={account.username}
                       className="flex items-center justify-between gap-2 rounded px-1.5 py-1 hover:bg-brand-50"
                     >
-                      <span className="mono truncate">{account.username}</span>
+                      <span className="mono min-w-0 truncate">
+                        {account.username}
+                        <span className="ml-1.5 text-ink-500">{account.password}</span>
+                      </span>
                       <button
                         className="btn btn-sm shrink-0"
                         type="button"

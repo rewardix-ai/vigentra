@@ -382,7 +382,11 @@ class _FakeClient:
 async def test_explicit_cameras_are_deduplicated():
     worker = _load_worker()
     resolved = worker.resolve_cameras(["CAM-1", "CAM-2", "CAM-1"], False, _FakeClient([]))
-    assert resolved == ["CAM-1", "CAM-2"], "a repeated --camera must not be processed twice"
+    # (canonical, external) pairs: the external ID is what tells the worker
+    # whether a camera is on the live grid, so it travels with the target.
+    assert [camera_id for camera_id, _ in resolved] == ["CAM-1", "CAM-2"], (
+        "a repeated --camera must not be processed twice"
+    )
 
 
 async def test_discovery_only_returns_cameras_the_worker_may_watch():
@@ -402,12 +406,13 @@ async def test_discovery_only_returns_cameras_the_worker_may_watch():
         {"camera_id": "CAM-DEAD", "video_access": "camera_unavailable"},
     ])
     resolved = worker.resolve_cameras(None, True, client)
+    ids = [camera_id for camera_id, _ in resolved]
 
-    assert resolved == ["CAM-LIVE", "CAM-LIVE-ONLY"]
+    assert ids == ["CAM-LIVE", "CAM-LIVE-ONLY"]
     # Playback-only is excluded deliberately: the worker samples a live feed,
     # and asking for playback would need a time window it has no basis to pick.
-    assert "CAM-PLAYBACK" not in resolved
-    assert "CAM-ASK" not in resolved
+    assert "CAM-PLAYBACK" not in ids
+    assert "CAM-ASK" not in ids
 
 
 async def test_no_cameras_requested_is_an_error_not_a_silent_pass():

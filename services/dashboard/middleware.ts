@@ -16,6 +16,15 @@ export function middleware(request: NextRequest) {
   }
 
   if (!request.cookies.get("sentinel_session")?.value) {
+    // An API call has to fail as JSON. Redirecting one sends the browser to the
+    // sign-in *page*, which it follows transparently and which answers 200 with
+    // HTML - so the caller's `response.json()` dies on "<!DOCTYPE" and the
+    // operator is shown a parser error instead of "your session expired". The
+    // browser client turns this 401 into a sign-in redirect that remembers the
+    // page it was on.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ detail: "Not signed in" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname)}`;

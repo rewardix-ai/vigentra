@@ -66,6 +66,21 @@ class AuditAction(str, Enum):
     #: as learning which vehicle it was.
     PLATE_DATA_VIEWED = "plate_data_viewed"
 
+    # plate identity - watchlist, alerts, movement
+    WATCHLIST_ENTRY_ADDED = "watchlist_entry_added"
+    WATCHLIST_ENTRY_DEACTIVATED = "watchlist_entry_deactivated"
+    WATCHLIST_VIEWED = "watchlist_viewed"
+    #: The matcher fired. Written by the ingest path, not by a human action,
+    #: so the trail shows what the system decided as well as what people did.
+    WATCHLIST_ALERT_RAISED = "watchlist_alert_raised"
+    ALERTS_VIEWED = "alerts_viewed"
+    ALERT_ACKNOWLEDGED = "alert_acknowledged"
+    ALERT_DISMISSED = "alert_dismissed"
+    #: Someone asked where a registration number has been. The single most
+    #: revealing query this platform answers, and audited as its own act.
+    VEHICLE_MOVEMENT_VIEWED = "vehicle_movement_viewed"
+    PLATE_SEARCHED = "plate_searched"
+
     # vehicle reference registry
     VEHICLE_REGISTRY_IMPORTED = "vehicle_registry_imported"
     VEHICLE_REGISTRY_SEARCHED = "vehicle_registry_searched"
@@ -83,6 +98,9 @@ class ResourceType(str, Enum):
     DETECTION = "detection"
     VEHICLE = "vehicle"
     VIDEO_ACCESS_GRANT = "video_access_grant"
+    WATCHLIST_ENTRY = "watchlist_entry"
+    WATCHLIST_ALERT = "watchlist_alert"
+    PLATE_SIGHTING = "plate_sighting"
 
 
 class AuditOutcome(str, Enum):

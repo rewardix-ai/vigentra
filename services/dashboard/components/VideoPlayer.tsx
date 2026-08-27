@@ -40,13 +40,18 @@ export function VideoPlayer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number>(0);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Deliberately state rather than a ref. The <video> is not in the tree on
+  // the render that opens a session, so an effect keyed only on `session`
+  // would run once against a null ref and never again - hls.js would never be
+  // attached and the player would sit on a black frame having requested
+  // nothing. As state, the element's arrival re-runs the effect.
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
 
   // Live grid cameras arrive as HLS. Safari plays a playlist natively; every
   // other browser needs hls.js, which is loaded only when a session actually
   // turns out to be HLS so the MP4 path costs nothing.
   useEffect(() => {
-    const video = videoRef.current;
+    const video = videoEl;
     if (!session || !video || session.stream_protocol !== "hls") return;
 
     const src = api.streamUrl(session);
@@ -85,7 +90,7 @@ export function VideoPlayer({
       destroyed = true;
       hls?.destroy();
     };
-  }, [session]);
+  }, [session, videoEl]);
 
   // Tracked in a ref so unmount cleanup can reach it without re-running on
   // every state change.
@@ -103,6 +108,38 @@ export function VideoPlayer({
     },
     [],
   );
+
+  /**
+   * Say why the feed actually failed.
+   *
+   * A <video> error event carries no status and no body, so the handler used
+   * to guess "expired or revoked" for every failure - including a department
+   * system that simply did not deliver media, which sent an operator looking
+   * at the audit trail for a revocation that never happened. Ask the proxy
+   * directly and report what it says.
+   */
+  const explainFailure = useCallback(async (current: VideoSession) => {
+    const fallback =
+      "The stream stopped. The session may have expired or been revoked by the owning unit.";
+    try {
+      const probe = await fetch(api.streamUrl(current), {
+        headers: { Range: "bytes=0-1" },
+        cache: "no-store",
+      });
+      if (probe.ok) {
+        setError(fallback);
+        return;
+      }
+      const body = (await probe.json().catch(() => null)) as
+        | { detail?: { message?: string } | string }
+        | null;
+      const detail = body?.detail;
+      const message = typeof detail === "string" ? detail : detail?.message;
+      setError(message ?? fallback);
+    } catch {
+      setError(fallback);
+    }
+  }, []);
 
   const isPlayback = mode === "playback";
 
@@ -173,6 +210,7 @@ export function VideoPlayer({
       const opened = await api.openVideoSession(body);
       // Held only for the length of the request.
       setPassword("");
+      setRemaining(opened.expires_in_seconds);
       setSession(opened);
     } catch (err) {
       setError(describe(err));
@@ -358,7 +396,7 @@ export function VideoPlayer({
       ) : (
         <div className="relative overflow-hidden rounded border border-line bg-black">
           <video
-            ref={videoRef}
+            ref={setVideoEl}
             key={session.session_id}
             className="block max-h-[60vh] w-full"
             // HLS is attached by the effect above (hls.js, or natively on
@@ -371,11 +409,7 @@ export function VideoPlayer({
             // Live is a continuous feed, so it does not stop at the end of the
             // buffer. Recorded footage does - it is a finite segment.
             loop={!isPlayback && !isHls}
-            onError={() =>
-              setError(
-                "The stream stopped. The session may have expired or been revoked by the owning unit.",
-              )
-            }
+            onError={() => void explainFailure(session)}
           />
           <div className="pointer-events-none absolute right-2 top-2 rounded bg-black/55 px-2 py-1 text-2xs text-white">
             {session.watermark}

@@ -5,10 +5,18 @@ edge, inside the department environment that already holds the video; the
 central API receives only detection metadata. That keeps raw statewide footage
 off the wire and keeps this container small enough to deploy anywhere.
 
-Scope: generic object classes only (person, car, motorcycle, bus, truck,
-auto-rickshaw, bicycle). No plate text, no face data, no vehicle identity, no
-cross-camera association — those are later phases with their own tables and
-their own review.
+Scope: generic object classes (person, car, motorcycle, bus, truck,
+auto-rickshaw, bicycle), plus a registration number when the owning deployment
+turned ANPR on at the edge.
+
+A detection carrying plate text also produces a *sighting* — see
+`services/watchlist_service.py`. The two are separate rows on purpose: a
+detection is an observation of an object, a sighting is an assertion about an
+identity, and they carry different retention, different permissions and
+different consequences when wrong.
+
+Still absent: face data, gait, and any vehicle identity derived from
+appearance rather than from a plate.
 
 Detections are probabilistic. `confidence` is a model score, and the API says
 so on `/detector/health` rather than leaving consumers to assume otherwise.
@@ -36,7 +44,7 @@ from ..schemas import (
     DetectorHealth,
     InstallationStatus,
 )
-from ..services import audit_service
+from ..services import audit_service, watchlist_service
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
@@ -143,6 +151,7 @@ async def ingest_detections(
     """
     accepted = duplicates = rejected = 0
     errors: list[dict] = []
+    plate_reads: list[watchlist_service.PlateRead] = []
     now = datetime.now(timezone.utc)
 
     # One lookup for the whole batch rather than per row.
@@ -253,11 +262,58 @@ async def ingest_detections(
         accepted += 1
         model_seen = (item.model_name, item.model_version)
 
+        # A plate read is also an assertion about an identity, and that gets
+        # its own row, its own retention and its own permission. Collected
+        # here and written below so the sighting, the alert it raises and the
+        # detection they came from all land in one transaction - an alert
+        # whose evidence rolled back is worse than no alert.
+        if item.plate_text:
+            plate_reads.append(
+                watchlist_service.PlateRead(
+                    detection_id=item.detection_id,
+                    camera_id=item.camera_id,
+                    plate_text=item.plate_text,
+                    confidence=item.plate_confidence or item.confidence,
+                    timestamp_utc=timestamp,
+                    observations=int(dict(item.provenance).get("plate_observations", 1) or 1),
+                    reader=item.plate_reader,
+                    frame_quality=item.frame_quality.value if item.frame_quality else None,
+                    evidence_reference=item.evidence_reference,
+                    is_demo_data=item.is_demo_data,
+                    provenance=dict(item.provenance),
+                )
+            )
+
     # Record the detector build so a result can always be traced to it.
     if model_seen:
         await _touch_model_version(db, model_seen[0], model_seen[1], accepted)
 
+    identity = await watchlist_service.record_sightings(db, plate_reads)
+
     await db.commit()
+
+    # Audited separately from the ingest itself, and only when it fired. The
+    # matcher is a machine decision with operational consequences, so the trail
+    # has to show what the system concluded as well as what people did.
+    for alert in identity.alerts_raised:
+        await audit_service.record(
+            db,
+            username=user.username,
+            role=user.role,
+            action=AuditAction.WATCHLIST_ALERT_RAISED,
+            resource_type=ResourceType.WATCHLIST_ALERT,
+            resource_id=alert.alert_id,
+            department=user.department,
+            client_ip=client_ip(request),
+            details={
+                "watch_plate": alert.watch_plate,
+                "seen_plate": alert.seen_plate,
+                "category": alert.category,
+                "camera_id": alert.camera_id,
+                "exact": alert.exact,
+                "distance": alert.distance,
+            },
+        )
 
     await audit_service.record(
         db,
@@ -274,6 +330,7 @@ async def ingest_detections(
             "rejected": rejected,
             "model_name": model_seen[0] if model_seen else None,
             "model_version": model_seen[1] if model_seen else None,
+            **identity.as_dict(),
         },
     )
 
@@ -284,6 +341,9 @@ async def ingest_detections(
         errors=errors,
         model_name=model_seen[0] if model_seen else None,
         model_version=model_seen[1] if model_seen else None,
+        sightings_recorded=identity.sightings_recorded,
+        sightings_rejected=identity.sightings_rejected,
+        alerts_raised=len(identity.alerts_raised),
     )
 
 

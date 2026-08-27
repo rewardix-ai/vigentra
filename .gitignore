@@ -24,6 +24,10 @@ Thumbs.db
 *.mp4
 cloudflared.exe
 weights/*.pt
+# Ultralytics downloads a missing model into the process working directory, so
+# stray copies appear at the repo root and beside the edge worker. The weights
+# belong in weights/ or ANPR_MODELS_DIR, never in a commit.
+*.pt
 
 # Local agent configuration and scratch files
 .claude/settings.local.json

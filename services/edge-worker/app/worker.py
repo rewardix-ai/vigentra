@@ -232,6 +232,10 @@ class CentralClient:
         self.base_url = base_url.rstrip("/")
         self._client = httpx.Client(base_url=self.base_url, timeout=20.0)
         self._token: str | None = None
+        # Opening a session re-presents the password, so it has to be held for
+        # the life of the client rather than discarded after sign-in. Kept
+        # private and never logged - see open_video_session.
+        self._password: str | None = None
 
     def sign_in(self, username: str, password: str) -> dict:
         response = self._client.post(
@@ -240,6 +244,7 @@ class CentralClient:
         response.raise_for_status()
         body = response.json()
         self._token = body["access_token"]
+        self._password = password
         logger.info(
             "signed in as %s (role=%s)", body["user"]["username"], body["user"]["role"]
         )
@@ -256,11 +261,23 @@ class CentralClient:
         The worker is subject to exactly the same authorisation as a human
         operator: an `ai_operator` outside the camera's department or city is
         refused, and the refusal is audited.
+
+        That includes re-presenting the password. `VideoSessionCreate` requires
+        it on every session precisely so a bearer token on its own cannot open
+        a camera, and the worker is not exempt: omitting it made every live
+        session 422 and left the worker able to run only from `--clip`.
         """
+        if not self._password:
+            raise DetectorError("Not signed in to the central API.")
         response = self._client.post(
             "/api/v1/video-sessions",
             headers=self._headers(),
-            json={"camera_id": camera_id, "mode": "live", "reason": reason},
+            json={
+                "camera_id": camera_id,
+                "mode": "live",
+                "reason": reason,
+                "password": self._password,
+            },
         )
         if response.status_code == 403:
             raise DetectorError(

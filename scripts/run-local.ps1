@@ -66,6 +66,12 @@ $env:VEHICLE_REGISTRY_PATH   = Join-Path $root 'data\reference\vehicle_registry.
 # stopped". These are read with os.getenv, so a .env entry is not enough.
 $env:TRAFFIC_VMS_PUBLIC_BASE_URL   = 'http://127.0.0.1:8001'
 $env:MUNICIPAL_VMS_PUBLIC_BASE_URL = 'http://127.0.0.1:8002'
+# Same reason as the two above: the dashboard's proxy routes default to
+# http://central-api:8000, which only resolves inside the Compose network.
+# Without this every /api call from the browser comes back 502.
+$env:CENTRAL_API_URL               = 'http://127.0.0.1:8000'
+
+$failed = @()
 
 $services = @(
     @{ Name = 'traffic-vms';   Dir = 'services\traffic-vms';   Port = 8001 },
@@ -75,11 +81,14 @@ $services = @(
 
 foreach ($service in $services) {
     Write-Host "starting $($service.Name) on :$($service.Port)" -ForegroundColor Cyan
+    # -ArgumentList joins an array with spaces and quotes NOTHING, so a repo
+    # path containing a space (D:\CCTV Management\...) reaches uvicorn as two
+    # arguments and it exits before binding. Quote it here.
     $arguments = @(
         '-m', 'uvicorn', 'app.main:app',
         '--host', '127.0.0.1',
         '--port', $service.Port,
-        '--app-dir', (Join-Path $root $service.Dir)
+        '--app-dir', ('"{0}"' -f (Join-Path $root $service.Dir))
     )
     # Working directory stays the repo root so `.env` and the relative
     # reference paths resolve the same way for every service.
@@ -102,6 +111,7 @@ foreach ($service in $services) {
     if ($ready) {
         Write-Host "  ok   $($service.Name)  $url" -ForegroundColor Green
     } else {
+        $failed += $service.Name
         Write-Warning "  $($service.Name) did not answer on :$($service.Port)"
     }
 }
@@ -110,20 +120,36 @@ if (-not $SkipDashboard) {
     $dashboard = Join-Path $root 'services\dashboard'
     if (-not (Test-Path (Join-Path $dashboard 'node_modules'))) {
         Write-Host 'installing dashboard dependencies (first run only)' -ForegroundColor Cyan
-        Start-Process -FilePath 'npm' -ArgumentList @('install', '--no-audit', '--no-fund') `
+        Start-Process -FilePath 'npm.cmd' -ArgumentList @('install', '--no-audit', '--no-fund') `
             -WorkingDirectory $dashboard -Wait -NoNewWindow
     }
     Write-Host 'starting dashboard on :3000' -ForegroundColor Cyan
-    Start-Process -FilePath 'npm' -ArgumentList @('run', 'dev') `
+    # 'npm' resolves to npm.ps1 on Windows, which Start-Process cannot launch
+    # directly - it needs the .cmd shim.
+    Start-Process -FilePath 'npm.cmd' -ArgumentList @('run', 'dev') `
         -WorkingDirectory $dashboard -WindowStyle Hidden
+    foreach ($attempt in 1..40) {
+        try {
+            $null = Invoke-WebRequest -Uri 'http://127.0.0.1:3000/login' -UseBasicParsing -TimeoutSec 2
+            break
+        } catch { Start-Sleep -Milliseconds 750 }
+    }
 }
 
 Write-Host ''
-Write-Host 'Sentinel is up:' -ForegroundColor Green
+if ($failed.Count -gt 0) {
+    # Reporting success here regardless of the warnings above is how a broken
+    # stack reaches the browser looking like a dashboard bug.
+    Write-Warning ("did not start: {0}" -f ($failed -join ', '))
+    Write-Warning 'The stack is NOT fully up. Check the ports below before signing in.'
+} else {
+    Write-Host 'Sentinel is up:' -ForegroundColor Green
+}
 Write-Host '  Dashboard      http://localhost:3000'
 Write-Host '  Central API    http://localhost:8000/docs'
 Write-Host '  Traffic VMS    http://localhost:8001/docs'
 Write-Host '  Municipal VMS  http://localhost:8002/docs'
 Write-Host ''
-Write-Host 'Sign in with traffic.state / Traffic@2026 - see the sign-in page for the rest.'
+Write-Host 'Sign in with joint.control / Joint@2026 to watch all 31 cameras -'
+Write-Host 'see the sign-in page for the rest.'
 Write-Host 'Stop everything with:  Get-Process python,node | Stop-Process -Force' -ForegroundColor DarkGray

@@ -306,7 +306,20 @@ class GridAdapter(SurveillanceAdapter):
     # ----------------------------------------------------------------------
 
     async def list_approved_cameras(self) -> list[CameraMetadata]:
-        return [self._to_camera(record) for record in await self._catalogue()]
+        """Only the cameras this source is the federating system for.
+
+        One physical gateway now sits behind two department systems: Traffic
+        Police federates its junctions, the Municipal Corporation its civic
+        cameras. Each adapter instance is registered under one `source_system`
+        and must return only the cameras carrying it, or both would claim all
+        thirty and the second sync would rewrite the first's custody.
+
+        A camera with no `source_system` in the reference falls back to this
+        adapter's own, which keeps a single-source deployment working
+        unchanged.
+        """
+        cameras = [self._to_camera(record) for record in await self._catalogue()]
+        return [camera for camera in cameras if camera.source_system == self.source_system]
 
     async def get_camera_health(self, external_camera_id: str) -> dict[str, Any]:
         """Health straight off the catalogue's own live flag.

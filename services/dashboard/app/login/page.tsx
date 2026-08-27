@@ -33,10 +33,13 @@ const GROUPS: { group: string; accounts: DemoAccount[] }[] = [
   {
     group: "Operations · may view and manage video",
     accounts: [
-      // The two statewide control rooms first: between them they hold every
+      // joint.control first - it is the only account that can watch all 31
+      // cameras, so it is what the live wall should be demonstrated with.
+      // The two statewide control rooms next: between them they hold every
       // camera in the estate, so they are what the live wall is meant to be
       // opened with. Leaving them off the list meant the widest video account
       // in the build was the one nobody could click.
+      { username: "joint.control", password: "Joint@2026" },
       { username: "traffic.state", password: "Traffic@2026" },
       { username: "municipal.state", password: "Municipal@2026" },
       { username: "traffic.operator", password: "Traffic@2026" },

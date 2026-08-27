@@ -55,10 +55,33 @@ if (-not $WorkerArgs -or $WorkerArgs.Count -eq 0) {
     exit 2
 }
 
-# The central API is reachable on localhost from the host; inside compose it is
-# the service name, which is why the default in the code differs from this one.
-if (-not $env:CENTRAL_API_URL) { $env:CENTRAL_API_URL = 'http://localhost:8000' }
+# 127.0.0.1, never 'localhost'. run-local binds uvicorn to 127.0.0.1 (IPv4
+# only), but on Windows 'localhost' resolves to ::1 first - and if Docker has
+# ever published port 8000, its relay is still listening there. The worker then
+# ingests into the Docker stack's Postgres while the dashboard reads the local
+# SQLite, and every batch comes back "accepted" with nothing to show for it.
+if (-not $env:CENTRAL_API_URL) { $env:CENTRAL_API_URL = 'http://127.0.0.1:8000' }
 $env:YOLO_WEIGHTS_DIR = $weightsDir
+
+# Plate reading needs its own models, which live with the ANPR package rather
+# than in weights/. Without ANPR_MODELS_DIR the engine looks in the process
+# working directory, finds nothing, and runs on with plates silently disabled.
+$anprModels = Join-Path $root 'services\edge-worker\models'
+if (-not (Test-Path (Join-Path $anprModels 'plate_detector.pt'))) {
+    if (Test-Path 'D:\ANPR\models\plate_detector.pt') { $anprModels = 'D:\ANPR\models' }
+}
+if (-not $env:ANPR_MODELS_DIR) { $env:ANPR_MODELS_DIR = $anprModels }
+if (-not $env:ANPR_ENABLE) {
+    if (Test-Path (Join-Path $env:ANPR_MODELS_DIR 'plate_detector.pt')) {
+        $env:ANPR_ENABLE = 'true'
+    } else {
+        $env:ANPR_ENABLE = 'false'
+        Write-Host "No plate detector in $($env:ANPR_MODELS_DIR) - vehicles only, no plates." -ForegroundColor Yellow
+    }
+}
+# torch and paddle each ship a copy of the Intel OpenMP runtime; loading both
+# aborts the process on Windows unless this is set.
+if (-not $env:KMP_DUPLICATE_LIB_OK) { $env:KMP_DUPLICATE_LIB_OK = 'TRUE' }
 
 # Only claim YOLO when the weights are actually here. Defaulting it on and
 # failing at load would be a worse first run than starting on the mock.
@@ -90,8 +113,21 @@ Write-Host "edge-worker -> $($env:CENTRAL_API_URL)  (YOLO_ENABLE=$($env:YOLO_ENA
 
 Push-Location $workerDir
 try {
-    & $python -m app.worker @WorkerArgs
-    exit $LASTEXITCODE
+    # $ErrorActionPreference = 'Stop' turns a native command's STDERR into a
+    # terminating error, and Ultralytics logs its startup banner to stderr - so
+    # the worker was killed the moment it loaded a model, which read as a
+    # silent crash right after "plate detector: ... on cpu". The worker's own
+    # exit code is the only thing that says whether it failed, so ask for that
+    # and let it write to stderr freely.
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $python -m app.worker @WorkerArgs
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previous
+    }
+    exit $code
 } finally {
     Pop-Location
 }

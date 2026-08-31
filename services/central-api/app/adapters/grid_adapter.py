@@ -124,9 +124,14 @@ def _load_reference() -> dict[str, dict[str, Any]]:
     for row in rows:
         if not isinstance(row, dict):
             continue
-        key = row.get("camera_no") or row.get("id")
-        if key:
-            reference[str(key)] = row
+        # Keyed by the grid's id first. `camera_no` is the survey's own
+        # numbering and the two stopped agreeing when the grid renumbered:
+        # cam21 is survey number 23, and cam24-cam30 are cameras the survey
+        # never saw. Both keys are registered so a reference row still finds
+        # its camera whichever numbering the catalogue is using today.
+        for key in (row.get("grid_id"), row.get("camera_no"), row.get("id")):
+            if key:
+                reference.setdefault(str(key), row)
     if not reference:
         logger.warning("grid reference file %s held no usable rows", REFERENCE_PATH)
     return reference
@@ -160,14 +165,60 @@ class GridAdapter(SurveillanceAdapter):
     adapter_name = "sentinel_grid_adapter"
     adapter_version = "1.0.0"
     #: The grid has no /health; the catalogue doubles as the liveness probe.
-    health_path = "/api/ingest"
+    health_path = "/cameras.json"
 
     def __init__(self, config: SourceSettings, **kwargs: Any) -> None:
         super().__init__(config, **kwargs)
         self._reference = _load_reference()
+        self._authenticated = False
         self._cache: list[dict[str, Any]] | None = None
         self._cache_at = 0.0
         self._cache_ttl = 30.0
+
+    # -- access ------------------------------------------------------------
+
+    async def _ensure_session(self) -> None:
+        """Trade the access password for a session cookie, once.
+
+        The sandbox used to be open; it is now behind a single shared access
+        password posted to /auth/login, which answers with a session cookie.
+        The password itself is deployment configuration and is held on the
+        source's `credential`, the same field every other adapter uses for its
+        vendor key - it is never logged, never echoed to a client, and never
+        put in a URL.
+
+        Re-authentication is lazy rather than scheduled: the gateway does not
+        publish the session lifetime, so guessing it would mean either
+        re-logging in needlessly or discovering the expiry as a failed sync.
+        `_request` calls this again after an auth rejection instead.
+        """
+        if self._authenticated or not self.config.credential:
+            return
+        client = self._client
+        if client is None:
+            return
+        try:
+            response = await client.post(
+                "/auth/login",
+                data={"password": self.config.credential},
+                follow_redirects=False,
+            )
+        except Exception as exc:  # noqa: BLE001 - surfaced as a source failure
+            raise UpstreamProtocolError(
+                "Could not reach the grid sign-in endpoint",
+                source_system=self.source_system,
+                detail=type(exc).__name__,
+            ) from exc
+
+        # A form login answers 2xx or a redirect; either is success as long as
+        # a cookie came back. httpx keeps it on the client's jar from here.
+        if response.status_code >= 400:
+            raise UpstreamProtocolError(
+                "The grid rejected Sentinel's access password",
+                source_system=self.source_system,
+                detail=str(response.status_code),
+            )
+        self._authenticated = True
 
     # -- catalogue ---------------------------------------------------------
 
@@ -183,14 +234,24 @@ class GridAdapter(SurveillanceAdapter):
         if self._cache is not None and (now - self._cache_at) < self._cache_ttl:
             return self._cache
 
-        payload = await self._request("GET", "/api/ingest", authenticated=False)
-        if not isinstance(payload, dict) or "cameras" not in payload:
+        # The sandbox moved hosts and changed this endpoint: it was
+        # /api/ingest returning {"cameras": [...]} with codec, resolution and
+        # three stream URLs per entry; it is now /cameras.json returning a
+        # bare list of {id, name}. Both shapes are accepted because the guide
+        # is explicit that the catalogue is the contract and the URL pattern
+        # is not - and a deployment pinned to one shape is how this adapter
+        # spent several days reporting an outage that was really a migration.
+        await self._ensure_session()
+        payload = await self._request("GET", "/cameras.json", authenticated=True)
+        if isinstance(payload, dict):
+            payload = payload.get("cameras", [])
+        if not isinstance(payload, list):
             raise UpstreamProtocolError(
-                "The grid catalogue did not contain a 'cameras' list",
+                "The grid catalogue was neither a camera list nor {'cameras': [...]}",
                 source_system=self.source_system,
                 detail=type(payload).__name__,
             )
-        cameras = [c for c in payload["cameras"] if isinstance(c, dict) and c.get("id")]
+        cameras = [c for c in payload if isinstance(c, dict) and c.get("id")]
         self._cache = cameras
         self._cache_at = now
         return cameras
@@ -207,7 +268,18 @@ class GridAdapter(SurveillanceAdapter):
         # site name wins where we have one.
         name = _clean(ref.get("site_name")) or str(record.get("location") or record.get("name"))
 
-        live = str(record.get("status") or "").lower() == "live" or bool(record.get("live"))
+        # The catalogue used to carry `live: true` (or `status: "live"`) per
+        # camera. The one the grid serves now is {id, name} and nothing else,
+        # so an absent flag has to mean "assume live" rather than "assume
+        # dead" - defaulting to dead published all thirty cameras with no
+        # `live` capability, which reads as "the owner has not enabled video"
+        # and takes the whole live wall down for a field that simply is not
+        # sent any more. The capture attempt remains the real liveness test
+        # and reports its own failure.
+        live = (
+            str(record.get("status") or "").lower() == "live"
+            or bool(record.get("live", True))
+        )
         width, height = _as_int(record.get("width")), _as_int(record.get("height"))
         resolution = f"{width}x{height}" if width and height else None
         codec_raw = str(record.get("codec") or "").lower()
@@ -338,7 +410,7 @@ class GridAdapter(SurveillanceAdapter):
                 # depend on which of the two endpoints answered.
                 live = (
                     str(record.get("status") or "").lower() == "live"
-                    or bool(record.get("live"))
+                    or bool(record.get("live", True))
                 )
                 now = datetime.now(timezone.utc)
                 return {

@@ -670,6 +670,18 @@ class Settings(BaseSettings):
     # A registry with no sources configured is not a meaningful default.
     traffic_vms_enabled: bool = True
     municipal_vms_enabled: bool = True
+    #: Which adapter each department system speaks through.
+    #:
+    #: Both default to the grid: these departments federate the live Sentinel
+    #: gateway, and that is the deployment this is built for. But a department
+    #: running its own VMS is the other real mode - it is what the bundled
+    #: mocks implement, what the test suite drives in-process, and what keeps
+    #: the registry serving when the shared gateway is down. Hard-coding
+    #: `grid_adapter` here made that mode unreachable and took the whole suite
+    #: with it: the mocks answer /traffic/approved-cameras, the grid adapter
+    #: asks for /api/ingest, and every fixture came back with no cameras.
+    traffic_vms_adapter: str = "grid_adapter"
+    municipal_vms_adapter: str = "grid_adapter"
 
     traffic_vms_base_url: str = "http://traffic-vms:8001"
     traffic_vms_api_key: str = "traffic-demo-key"
@@ -692,7 +704,18 @@ class Settings(BaseSettings):
     #: a source here: the grid is not a source of its own, it is the upstream
     #: both department systems federate.
     sentinel_grid_enabled: bool = True
-    sentinel_grid_base_url: str = "https://live.corp8.cloud"
+    #: The sandbox moved here from live.corp8.cloud, which now 502s. Anything
+    #: still pointed at the old host reports an outage that is really a
+    #: migration - which cost this project several days.
+    sentinel_grid_base_url: str = "https://cctv.corp8.cloud"
+    #: Shared access password for the grid. Empty means "open sandbox", which
+    #: is how it used to be; when set, the adapter trades it for a session
+    #: cookie before reading the catalogue.
+    sentinel_grid_password: str = ""
+    #: RTSP and WHEP are served on the public gateway rather than the CDN,
+    #: because a CDN cannot proxy them. The guide recommends RTSP for
+    #: inference, so the edge worker wants this and the browser wants HLS.
+    sentinel_grid_rtsp_host: str = "103.250.160.189"
     sentinel_grid_department: str = GRID_DEPARTMENT
     sentinel_grid_district: str = "Gujarat"
     sentinel_grid_city: str = "Gujarat"
@@ -798,11 +821,16 @@ class Settings(BaseSettings):
                 SourceSettings(
                     source_system=TRAFFIC_SOURCE,
                     display_name="Traffic Police VMS",
-                    adapter="grid_adapter",
-                    base_url=self.sentinel_grid_base_url,
+                    adapter=self.traffic_vms_adapter,
+                    base_url=(self.sentinel_grid_base_url
+                              if self.traffic_vms_adapter == "grid_adapter"
+                              else self.traffic_vms_base_url),
                     # The grid catalogue is unauthenticated; there is no
                     # credential to hold and inventing one would be theatre.
-                    credential="",
+                    # A department's own VMS does need its key.
+                    credential=(self.sentinel_grid_password
+                                if self.traffic_vms_adapter == "grid_adapter"
+                                else self.traffic_vms_api_key),
                     department=self.traffic_vms_department,
                     default_district=self.sentinel_grid_district,
                     department_code="TRAFFIC",
@@ -815,9 +843,13 @@ class Settings(BaseSettings):
                 SourceSettings(
                     source_system=MUNICIPAL_SOURCE,
                     display_name="Municipal Corporation VMS",
-                    adapter="grid_adapter",
-                    base_url=self.sentinel_grid_base_url,
-                    credential="",
+                    adapter=self.municipal_vms_adapter,
+                    base_url=(self.sentinel_grid_base_url
+                              if self.municipal_vms_adapter == "grid_adapter"
+                              else self.municipal_vms_base_url),
+                    credential=(self.sentinel_grid_password
+                                if self.municipal_vms_adapter == "grid_adapter"
+                                else self.municipal_vms_token),
                     department=self.municipal_vms_department,
                     default_district=self.sentinel_grid_district,
                     department_code="MUNICIPAL",

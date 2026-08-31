@@ -133,6 +133,23 @@ async def lifespan(app: FastAPI):
         timeout=httpx.Timeout(30.0, connect=settings.upstream_timeout_seconds),
         follow_redirects=True,
     )
+    # The grid CDN gates its playlists and segments behind the same access
+    # password as its catalogue, and answers an unauthenticated request with a
+    # 302 to the sign-in page rather than a 401. Proxied blind, that page
+    # arrives with HTTP 200 and content-type mpegurl, gets rewritten as if it
+    # were a playlist, and reaches the player as a manifest full of HTML - a
+    # failure that looks like a corrupt stream and is really a missing cookie.
+    # Signing the media client in at startup keeps the session on its jar for
+    # every segment fetch that follows.
+    if settings.sentinel_grid_password:
+        try:
+            await app.state.media_client.post(
+                settings.sentinel_grid_base_url.rstrip("/") + "/auth/login",
+                data={"password": settings.sentinel_grid_password},
+            )
+            logger.info("media client signed in to the grid")
+        except Exception as exc:  # noqa: BLE001 - non-fatal, logged not raised
+            logger.warning("media client could not sign in to the grid: %s", exc)
     app.state.media_root = os.getenv("SENTINEL_MEDIA_ROOT", "/app/videos")
     app.state.provider = build_provider(settings, adapters=app.state.adapters)
     app.state.monitor_task = None

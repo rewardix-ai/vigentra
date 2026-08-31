@@ -43,7 +43,12 @@ from typing import Any, Iterator
 
 logger = logging.getLogger("sentinel.edge.grid")
 
-CATALOGUE_PATH = "/api/ingest"
+CATALOGUE_PATH = "/cameras.json"
+#: RTSP and WHEP are served on the public gateway, not the CDN host: a CDN
+#: cannot proxy them. This is why RTSP appeared unreachable for so long - the
+#: worker was probing port 8554 on the CDN name, which never served it.
+RTSP_HOST = os.getenv("SENTINEL_GRID_RTSP_HOST", "103.250.160.189")
+RTSP_PORT = int(os.getenv("SENTINEL_GRID_RTSP_PORT", "8554"))
 #: The gateway 302s to http:// without this, which breaks a TLS-only client.
 COOKIE_CHECK = "cookieCheck=1"
 
@@ -89,38 +94,103 @@ class GridCamera:
         return f"{self.id} ({self.codec or 'codec unknown'}, {size})"
 
 
+class GridUnavailable(RuntimeError):
+    """The catalogue could not be read - usually an unauthenticated session."""
+
+
+def _opener(base_url: str, timeout: float) -> urllib.request.OpenerDirector:
+    """An opener holding a grid session, signing in first when configured.
+
+    The sandbox is behind one shared access password posted to /auth/login,
+    which answers with a cookie. Built per call rather than cached because the
+    catalogue is read once per cycle at most - a pooled session would need
+    expiry handling to save nothing measurable.
+    """
+    import http.cookiejar
+
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    password = os.getenv("SENTINEL_GRID_PASSWORD", "").strip()
+    if not password:
+        return opener
+    try:
+        opener.open(
+            urllib.request.Request(
+                base_url.rstrip("/") + "/auth/login",
+                data=urllib.parse.urlencode({"password": password}).encode(),
+                headers={"User-Agent": "sentinel-edge-worker/1.0"},
+            ),
+            timeout=timeout,
+        ).read()
+    except Exception as exc:  # noqa: BLE001 - report at the catalogue read
+        logger.warning("grid sign-in failed (%s); continuing unauthenticated", exc)
+    return opener
+
+
 def fetch_catalogue(base_url: str, timeout: float = 15.0) -> dict[str, GridCamera]:
-    """Read /api/ingest.
+    """Read the camera catalogue.
 
     The catalogue is the contract and the URL pattern is not: camera ids and
     the set of cameras change, so callers resolve through this rather than
-    building rtsp:// strings by hand.
+    building rtsp:// strings by hand. That warning earned itself - the grid
+    moved host, renamed this endpoint from /api/ingest to /cameras.json,
+    renumbered every camera from `1` to `cam01`, and replaced seven of them.
+
+    The new catalogue carries only {id, name}: no codec, no resolution, no
+    per-camera URLs. So the stream URLs are composed here from the documented
+    patterns, which is exactly what the guide says not to do - but there is
+    nothing else left to resolve them from, and composing them in one place
+    beats every caller doing it privately.
     """
+    import json
+
     url = base_url.rstrip("/") + CATALOGUE_PATH
+    opener = _opener(base_url, timeout)
     request = urllib.request.Request(url, headers={"User-Agent": "sentinel-edge-worker/1.0"})
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        import json
+    with opener.open(request, timeout=timeout) as response:
+        body = response.read()
+    try:
+        payload = json.loads(body)
+    except ValueError as exc:
+        # The gateway answers the sign-in page rather than a 401 when the
+        # session is missing, so a JSON failure here means "not signed in"
+        # far more often than it means "malformed catalogue". Saying so is
+        # the difference between a five-minute fix and a day of guessing.
+        raise GridUnavailable(
+            f"{url} did not return JSON. The grid is behind an access "
+            f"password now - set SENTINEL_GRID_PASSWORD."
+        ) from exc
 
-        payload = json.load(response)
-
+    # Accept the bare list the grid returns now, and the {"cameras": [...]}
+    # wrapper it used to, so a redeployment of either shape keeps working.
+    entries = payload.get("cameras", []) if isinstance(payload, dict) else payload
     cameras: dict[str, GridCamera] = {}
-    for entry in payload.get("cameras", []):
+    for entry in entries or []:
         cid = str(entry.get("id") or "").strip()
         if not cid:
             continue
         hls = str(entry.get("hls_live_url") or "")
-        if hls.startswith("/"):
+        if not hls:
+            hls = f"{base_url.rstrip('/')}/{cid}/index.m3u8"
+        elif hls.startswith("/"):
             hls = base_url.rstrip("/") + hls
+        rtsp = str(entry.get("rtsp_url") or "")
+        if not rtsp:
+            rtsp = f"rtsp://{RTSP_HOST}:{RTSP_PORT}/stream/{cid}"
         cameras[cid] = GridCamera(
             id=cid,
             name=str(entry.get("name") or f"Camera {cid}"),
             location=str(entry.get("location") or ""),
-            live=bool(entry.get("live") or entry.get("status") == "live"),
+            # The thin catalogue no longer reports liveness. Absent that,
+            # assume live rather than filtering every camera out: the capture
+            # attempt is the real liveness test and it reports its own
+            # failure, whereas a default of False silently empties the grid.
+            live=bool(entry.get("live", True) or entry.get("status") == "live"),
             codec=(entry.get("codec") or None),
             width=(entry.get("width") or None),
             height=(entry.get("height") or None),
             declared_fps=(entry.get("fps") or None),
-            rtsp_url=str(entry.get("rtsp_url") or ""),
+            rtsp_url=rtsp,
             hls_url=hls,
         )
     return cameras

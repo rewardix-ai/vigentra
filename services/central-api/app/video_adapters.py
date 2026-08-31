@@ -21,6 +21,7 @@ because it only ever handles an opaque handle.
 from __future__ import annotations
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -311,6 +312,12 @@ def build_video_adapter(
     return adapter_cls(config, settings, client)
 
 
+#: A grid camera id in the scheme introduced with the cctv.corp8.cloud move:
+#: a short alphanumeric token such as `cam04`. Deliberately permissive about
+#: the prefix - the grid has renamed its cameras once already.
+_GRID_ID = re.compile(r"[A-Za-z][A-Za-z0-9_-]{1,31}")
+
+
 class SentinelGridVideoAdapter(BaseVideoAdapter):
     """Live HLS from the Sentinel sandbox grid.
 
@@ -352,17 +359,25 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
                 detail={"requested_mode": mode, "available_modes": ["live"]},
             )
 
-        # GRID-007 -> 7. The catalogue is the contract, so the id is resolved
-        # back to the grid's own numbering rather than pattern-matched.
-        raw = str(external_camera_id).upper().removeprefix("GRID-").lstrip("0") or "0"
-        if not raw.isdigit():
+        # GRID-cam04 -> cam04, and GRID-007 -> 7 for the numbering the grid
+        # used before it renumbered. Both are accepted because the registry
+        # holds ids federated under either scheme, and a camera onboarded last
+        # week must not stop streaming because the upstream renamed itself.
+        raw = str(external_camera_id).removeprefix("GRID-").removeprefix("grid-")
+        raw = raw.strip()
+        if raw.isdigit():
+            raw = raw.lstrip("0") or "0"
+        elif not _GRID_ID.fullmatch(raw):
             raise VideoAdapterError(
                 f"'{external_camera_id}' is not a Sentinel grid camera id",
                 source_system=self.source_system,
             )
 
         base = self.config.base_url.rstrip("/")
-        manifest = f"{base}/live/stream/{raw}/index.m3u8?cookieCheck=1"
+        # Path shape changed with the move: /live/stream/<n>/index.m3u8 became
+        # /<id>/index.m3u8 on the CDN host.
+        manifest = (f"{base}/{raw}/index.m3u8" if not raw.isdigit()
+                    else f"{base}/live/stream/{raw}/index.m3u8?cookieCheck=1")
 
         # Probe the manifest before handing it over. The grid's HLS packager
         # fails independently of the rest of the gateway - the catalogue keeps

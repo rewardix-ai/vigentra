@@ -84,6 +84,11 @@ services:
       # Both department systems federate the live grid. Stated explicitly
       # rather than left to defaults, because when these are off the registry
       # builds no adapters at all and every route that needs one returns 503.
+      # The grid moved to cctv.corp8.cloud and is behind a shared access
+      # password; RTSP is on the public gateway because a CDN cannot proxy it.
+      SENTINEL_GRID_BASE_URL: ${SENTINEL_GRID_BASE_URL:-https://cctv.corp8.cloud}
+      SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
+      SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
       TRAFFIC_VMS_ENABLED: "true"
       MUNICIPAL_VMS_ENABLED: "true"
       TRAFFIC_VMS_BASE_URL: http://traffic-vms:8001

@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  DetectionBoxes,
+  DetectionControls,
+  useDetectionMoments,
+} from "@/components/DetectionOverlay";
+
 import { api, ApiError } from "@/lib/api";
 import type { VideoMode, VideoSession } from "@/lib/types";
 import { Notice, Spinner } from "./ui";
@@ -46,6 +52,8 @@ export function VideoPlayer({
   // attached and the player would sit on a black frame having requested
   // nothing. As state, the element's arrival re-runs the effect.
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
+  // What the edge worker recorded for this camera, ready to draw on request.
+  const detections = useDetectionMoments(cameraId, videoEl);
 
   // Live grid cameras arrive as HLS. Safari plays a playlist natively; every
   // other browser needs hls.js, which is loaded only when a session actually
@@ -414,8 +422,12 @@ export function VideoPlayer({
           <div className="pointer-events-none absolute right-2 top-2 rounded bg-black/55 px-2 py-1 text-2xs text-white">
             {session.watermark}
           </div>
+          {/* Inside the video box so the boxes scale with the picture. */}
+          <DetectionBoxes state={detections} />
         </div>
       )}
+
+      {session && <DetectionControls state={detections} />}
 
       {error && <Notice tone="bad">{error}</Notice>}
 

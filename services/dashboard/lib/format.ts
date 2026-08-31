@@ -107,3 +107,20 @@ export function orDash(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   return String(value);
 }
+
+/**
+ * Where a detection sits inside the footage, as `m:ss.mmm`.
+ *
+ * The wall-clock timestamp says when the worker saw something; this says where
+ * to scrub to in order to look at it yourself. They are not interchangeable -
+ * the grid replays a buffered GOP on connect, so arrival time runs ahead of
+ * media time by a second or two on every reconnect. The edge worker records
+ * the presentation timestamp for exactly this reason, and it is the only one
+ * of the two that can be checked against the video.
+ */
+export function footageTime(pts: unknown): string | null {
+  if (typeof pts !== "number" || !Number.isFinite(pts) || pts < 0) return null;
+  const minutes = Math.floor(pts / 60);
+  const seconds = pts - minutes * 60;
+  return `${minutes}:${seconds.toFixed(3).padStart(6, "0")}`;
+}

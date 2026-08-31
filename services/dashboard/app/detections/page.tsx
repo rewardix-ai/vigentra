@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 
 import { Card, DepartmentTag, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
-import { ist, relative } from "@/lib/format";
+import { footageTime, ist, relative } from "@/lib/format";
 import type { Detection, DetectorHealth } from "@/lib/types";
 
 /**
@@ -187,12 +187,14 @@ export default function DetectionsPage() {
                 <thead>
                   <tr>
                     <th>Time</th>
+                    {/* Media time, not arrival time - the one you can scrub to. */}
+                    <th>In footage</th>
                     <th>Camera</th>
                     <th>Class</th>
                     <th>Plate</th>
                     <th>Confidence</th>
                     <th>Box (x1,y1,x2,y2)</th>
-                    <th>Frame</th>
+                    <th>Quality</th>
                     <th>Model</th>
                     <th>Source</th>
                   </tr>
@@ -202,6 +204,16 @@ export default function DetectionsPage() {
                     <tr key={row.detection_id}>
                       <td className="whitespace-nowrap" title={ist(row.timestamp_utc)}>
                         {relative(row.timestamp_utc)}
+                      </td>
+                      <td className="mono whitespace-nowrap tabular-nums">
+                        {footageTime(row.provenance?.pts_seconds) ?? (
+                          <span className="text-ink-400">—</span>
+                        )}
+                        {typeof row.provenance?.frame_index === "number" && (
+                          <div className="text-2xs text-ink-500">
+                            frame {row.provenance.frame_index as number}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <Link

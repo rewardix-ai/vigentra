@@ -62,6 +62,14 @@ def _env() -> Iterator[None]:
     # ...and the live Sentinel grid is OFF, so no test reaches the public
     # internet or depends on a third-party sandbox being up.
     os.environ.setdefault("SENTINEL_GRID_ENABLED", "false")
+    # ...which also means each department speaks through its OWN adapter here,
+    # not the grid one. In deployment both departments federate the shared
+    # gateway; the suite drives the bundled mocks in-process instead, and those
+    # answer the department endpoints. Without this the grid adapter asks the
+    # mocks for /api/ingest, every sync returns nothing, and each fixture that
+    # expects cameras yields nothing at all.
+    os.environ.setdefault("TRAFFIC_VMS_ADAPTER", "traffic_adapter")
+    os.environ.setdefault("MUNICIPAL_VMS_ADAPTER", "municipal_adapter")
     # Point the mocks at the real bundled clips so the media proxy has bytes.
     os.environ.setdefault("TRAFFIC_VIDEO_DIR", str(VIDEO_TRAFFIC))
     os.environ.setdefault("MUNICIPAL_VIDEO_DIR", str(VIDEO_MUNICIPAL))

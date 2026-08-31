@@ -124,11 +124,17 @@ body {
     background: var(--field-bg);
   }
 
-  /* Raised: focused, filled, or a select (which always holds a value). */
+  /* Raised: focused, filled, autofilled, or a select (always holds a value).
+     :-webkit-autofill is not redundant with :placeholder-shown. Chrome's
+     autofill *preview* paints the saved value into the field while leaving
+     input.value empty until the user commits it, so the placeholder still
+     counts as shown and the label would sit on top of the previewed text. */
   .float > .input:focus ~ .float-label,
   .float > .input:not(:placeholder-shown) ~ .float-label,
+  .float > .input:-webkit-autofill ~ .float-label,
   .float > .textarea:focus ~ .float-label,
   .float > .textarea:not(:placeholder-shown) ~ .float-label,
+  .float > .textarea:-webkit-autofill ~ .float-label,
   .float > .select ~ .float-label {
     @apply top-0 text-[11px] font-medium text-ink-500;
   }
@@ -159,6 +165,36 @@ body {
 
   .float > .input-error ~ .float-label {
     @apply text-bad;
+  }
+
+  /* Chrome paints its own blue over an autofilled field, which the label's
+     notch (painted in --field-bg) then sits on as a visible white patch.
+     background-color is ignored on :-webkit-autofill, so the surface has to
+     be repainted with an inset shadow. */
+  .float > .input:-webkit-autofill,
+  .float > .input:-webkit-autofill:hover,
+  .float > .input:-webkit-autofill:focus,
+  .float > .textarea:-webkit-autofill,
+  .float > .select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--field-bg) inset;
+    box-shadow: 0 0 0 1000px var(--field-bg) inset;
+    -webkit-text-fill-color: #1f2933;
+    caret-color: #1f2933;
+  }
+
+  /* Chrome's preview state has its own internal selector, which older engines
+     do not know. It is kept in rules of its own because a browser that fails
+     to parse one selector discards the whole comma-separated list with it. */
+  .float > .input:-internal-autofill-previewed ~ .float-label,
+  .float > .input:-internal-autofill-selected ~ .float-label {
+    @apply top-0 text-[11px] font-medium text-ink-500;
+  }
+
+  .float > .input:-internal-autofill-previewed,
+  .float > .input:-internal-autofill-selected {
+    -webkit-box-shadow: 0 0 0 1000px var(--field-bg) inset;
+    box-shadow: 0 0 0 1000px var(--field-bg) inset;
+    -webkit-text-fill-color: #1f2933;
   }
 
   /* --- status --------------------------------------------------------- */

@@ -111,6 +111,7 @@ class AnprPipeline:
         #: track -> (text, confirmed) last pushed to the UI
         self._announced: dict[int, tuple[str, bool]] = {}
         self._best_crop: dict[int, tuple[float, np.ndarray]] = {}
+        self._fuse_crops: dict[int, list[tuple[float, np.ndarray]]] = {}
         self._times: deque[float] = deque(maxlen=60)
         self._ocr_calls = 0
         self._skipped = 0
@@ -126,6 +127,7 @@ class AnprPipeline:
         self.frame_idx = 0
         self._announced.clear()
         self._best_crop.clear()
+        self._fuse_crops.clear()
         self._times.clear()
         self._ocr_calls = self._skipped = 0
 
@@ -144,6 +146,7 @@ class AnprPipeline:
         self.tracks.reset()
         self._announced.clear()
         self._best_crop.clear()
+        self._fuse_crops.clear()
 
     def warmup(self, size: tuple[int, int] = (720, 1280)) -> None:
         """Run one throwaway frame so CUDA kernels are compiled up front.
@@ -222,7 +225,11 @@ class AnprPipeline:
             self._ocr_calls += 1
             if not result.candidates:
                 continue
-            tc.observe(result.candidates, q.score, idx)
+            candidates = list(result.candidates)
+            fused = self._fused_reading(det.track_id)
+            if fused is not None:
+                candidates.append(fused)
+            tc.observe(candidates, q.score, idx)
             tc.last_seen = captured
             tc.last_capture = captured
             if tc.first_capture is None:
@@ -285,6 +292,39 @@ class AnprPipeline:
         prev = self._best_crop.get(track_id)
         if prev is None or quality > prev[0]:
             self._best_crop[track_id] = (quality, crop.copy())
+
+        # Logit fusion needs several looks at the same plate, so the best few
+        # are kept rather than only the winner. Sorted by quality and capped,
+        # because a track that lingers for a minute must not accumulate a
+        # hundred crops - and the worst of them would only dilute the sum.
+        pool = self._fuse_crops.setdefault(track_id, [])
+        pool.append((quality, crop.copy()))
+        if len(pool) > self.cfg.ocr.fuse_frames:
+            pool.sort(key=lambda entry: entry[0], reverse=True)
+            del pool[self.cfg.ocr.fuse_frames:]
+
+    def _fused_reading(self, track_id: int) -> "pr.PlateCandidate | None":
+        """One decode over every kept frame of a track, or None.
+
+        Runs only when the track has enough independent looks to be worth it,
+        and never replaces the per-frame observations - it is added alongside
+        them, so a fused reading has to win the same consensus every other
+        reading does rather than being trusted because of how it was produced.
+        """
+        if not self.cfg.ocr.fuse_track_logits:
+            return None
+        pool = self._fuse_crops.get(track_id) or []
+        if len(pool) < self.cfg.ocr.fuse_min_frames:
+            return None
+        engine = getattr(self.ocr, "fusion_engine", None)
+        if engine is None:
+            return None
+        crops = [crop for _quality, crop in sorted(pool, key=lambda e: e[0], reverse=True)]
+        reading = engine.read_track_fused(crops)
+        if reading is None:
+            return None
+        text, confidence = reading
+        return pr.normalise(text, confidence, engine="paddle-fused", variant="track")
 
     def best_crop(self, track_id: int) -> np.ndarray | None:
         entry = self._best_crop.get(track_id)

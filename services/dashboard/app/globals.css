@@ -98,6 +98,69 @@ body {
     @apply border-bad focus:border-bad focus:ring-bad/30;
   }
 
+  /* --- floating labels ------------------------------------------------- */
+  /* The label starts as the field's own placeholder and rises onto the top
+     border once the field is focused or filled, so a filled form still says
+     what each value is - a placeholder-only field loses its own question the
+     moment someone types into it.
+
+     Driven entirely by :placeholder-shown, so there is no React state to keep
+     in sync and browser autofill floats the label like any other input. Every
+     control therefore needs placeholder=" " - a real placeholder would make
+     the field permanently "filled" and pin the label up.
+
+     The label sits ON the border, so it paints a notch in it using the
+     surface colour behind the field. That defaults to white (cards); on any
+     other surface set --field-bg to match, or the notch shows as a smear. */
+  .float {
+    @apply relative;
+    --field-bg: #fff;
+  }
+
+  .float-label {
+    @apply pointer-events-none absolute left-1.5 top-1/2 z-10 -translate-y-1/2 px-1
+           text-[13px] font-normal normal-case tracking-normal text-ink-400
+           transition-all duration-150;
+    background: var(--field-bg);
+  }
+
+  /* Raised: focused, filled, or a select (which always holds a value). */
+  .float > .input:focus ~ .float-label,
+  .float > .input:not(:placeholder-shown) ~ .float-label,
+  .float > .textarea:focus ~ .float-label,
+  .float > .textarea:not(:placeholder-shown) ~ .float-label,
+  .float > .select ~ .float-label {
+    @apply top-0 text-[11px] font-medium text-ink-500;
+  }
+
+  .float > .input:focus ~ .float-label,
+  .float > .textarea:focus ~ .float-label,
+  .float > .select:focus ~ .float-label {
+    @apply text-brand-600;
+  }
+
+  /* A textarea is taller than one line, so its label pins to the top rather
+     than to the vertical centre. */
+  .float > .textarea ~ .float-label {
+    @apply top-3.5;
+  }
+
+  .float > .textarea:focus ~ .float-label,
+  .float > .textarea:not(:placeholder-shown) ~ .float-label {
+    @apply top-0;
+  }
+
+  /* Room for the label to sit inside the field at rest. */
+  .float > .input,
+  .float > .select,
+  .float > .textarea {
+    @apply py-2.5;
+  }
+
+  .float > .input-error ~ .float-label {
+    @apply text-bad;
+  }
+
   /* --- status --------------------------------------------------------- */
   /* Capsule rather than a small rounded rectangle - a status badge is the one
      place Apple goes fully round, and it separates "state" from "control" at a

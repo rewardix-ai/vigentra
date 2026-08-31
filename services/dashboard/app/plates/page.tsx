@@ -3,8 +3,18 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Search } from "lucide-react";
 
-import { Card, DepartmentTag, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import {
+  Card,
+  DepartmentTag,
+  FloatInput,
+  FloatSelect,
+  Notice,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import { ist, relative } from "@/lib/format";
 import type { PlateSearchHit, Track } from "@/lib/types";
@@ -119,74 +129,62 @@ export default function PlatesPage() {
         <Card title="Find the vehicle">
           <div className="space-y-3 px-3 py-3">
             <div className="flex flex-wrap items-end gap-3">
-              <label className="block min-w-[16rem] flex-1">
-                <span className="field-label">Registration number</span>
-                <input
-                  className="input mono mt-1"
+              <FloatInput
+                label="Registration number"
+                className="min-w-[16rem] flex-1"
+                inputClassName="mono"
                   value={query}
                   onChange={(event) => setQuery(event.target.value.toUpperCase())}
-                  placeholder="GJ01AB1234"
+                  hint="GJ01AB1234"
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && query.trim().length >= 3) void search();
                   }}
-                />
-              </label>
+              />
 
-              <label className="block">
-                <span className="field-label">Time window</span>
-                <select
-                  className="input mt-1"
+              <FloatSelect
+                label="Time window"
                   value={sinceHours}
                   onChange={(event) => setSinceHours(event.target.value)}
-                >
+              >
                   <option value="24">Last 24 hours</option>
                   <option value="168">Last 7 days</option>
                   <option value="720">Last 30 days</option>
-                </select>
-              </label>
+              </FloatSelect>
 
-              <label
-                className="block"
+              <FloatSelect
+                label="Match tolerance"
                 title="Confusion-weighted edit distance. One classic OCR misread scores 0.35."
+                value={maxDistance}
+                onChange={(event) => setMaxDistance(event.target.value)}
               >
-                <span className="field-label">Match tolerance</span>
-                <select
-                  className="input mt-1"
-                  value={maxDistance}
-                  onChange={(event) => setMaxDistance(event.target.value)}
-                >
-                  <option value="0">Exact only</option>
-                  <option value="0.5">Tight (one misread)</option>
-                  <option value="1.0">Default (two misreads)</option>
-                  <option value="2.0">Wide — expect false matches</option>
-                </select>
-              </label>
+                <option value="0">Exact only</option>
+                <option value="0.5">Tight (one misread)</option>
+                <option value="1.0">Default (two misreads)</option>
+                <option value="2.0">Wide — expect false matches</option>
+              </FloatSelect>
 
               <button
                 className="btn btn-primary"
                 onClick={() => void search()}
                 disabled={busy || query.trim().length < 3}
               >
-                {busy && <Spinner />} Search sightings
+                {busy ? <Spinner /> : <Search className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Search sightings
               </button>
             </div>
 
-            <label className="block">
-              <span className="field-label">
-                Why are you tracing this vehicle? (required, recorded)
-              </span>
-              <input
-                className="input mt-1"
+            <div>
+              <FloatInput
+                label="Why are you tracing this vehicle? (required, recorded)"
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder="FIR 118/2026 — stolen vehicle, last seen Sarkhej"
+                hint="e.g. FIR 118/2026 — stolen vehicle, last seen Sarkhej"
               />
               {reason.length > 0 && !reasonReady && (
                 <span className="mt-1 block text-2xs text-warn">
                   A little more detail — a case number or what happened.
                 </span>
               )}
-            </label>
+            </div>
           </div>
         </Card>
 

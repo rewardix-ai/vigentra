@@ -2,9 +2,14 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { LogIn } from "lucide-react";
 
 import { signIn } from "@/lib/api";
-import { Notice, Spinner } from "@/components/ui";
+import {
+  FloatInput,
+  Notice,
+  Spinner,
+} from "@/components/ui";
 
 interface DemoAccount {
   username: string;
@@ -133,38 +138,31 @@ function SignInForm() {
           </p>
 
           <form className="mt-5 space-y-3" onSubmit={submit}>
-            <div>
-              <label className="field-label" htmlFor="username">
-                Username
-              </label>
-              <input
-                id="username"
-                className="input mt-1"
-                autoComplete="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="field-label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                className="input mt-1"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </div>
+            {/* The leading icons are gone rather than combined with the label:
+                at rest the label sits exactly where the icon did, and running
+                both pushes the label off the field's text baseline. */}
+            <FloatInput
+              id="username"
+              label="Username"
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              required
+            />
+            <FloatInput
+              id="password"
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
 
             {error && <Notice tone="bad">{error}</Notice>}
 
             <button className="btn btn-primary w-full" type="submit" disabled={busy}>
-              {busy && <Spinner />}
+              {busy ? <Spinner /> : <LogIn className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />}
               {busy ? "Signing in…" : "Sign in"}
             </button>
           </form>

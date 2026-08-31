@@ -4,12 +4,15 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { Download, X } from "lucide-react";
 
 import { LoadingPanel } from "@/components/Shell";
 import {
   Card,
   DepartmentTag,
   EmptyState,
+  FloatInput,
+  FloatSelect,
   FootageNotice,
   HealthPill,
   InstallationPill,
@@ -190,6 +193,7 @@ function Registry() {
               disabled={visible.length === 0}
               title="Download the currently visible rows as CSV"
             >
+              <Download className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
               Export CSV
             </button>
           </>
@@ -203,75 +207,61 @@ function Registry() {
         {/* Filters */}
         <div className="card px-3 py-2.5">
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-            <label className="block lg:col-span-1">
-              <span className="field-label">Search</span>
-              <input
-                className="input mt-1"
-                placeholder="Name or camera ID…"
+            <FloatInput
+              label="Search"
+              className="lg:col-span-1"
+                hint="Name or camera ID…"
                 value={filters.q}
                 onChange={(event) => set({ q: event.target.value })}
-              />
-            </label>
-            <label className="block">
-              <span className="field-label">Department</span>
-              <select
-                className="select mt-1"
+            />
+            <FloatSelect
+              label="Department"
                 value={filters.owning_department}
                 onChange={(event) => set({ owning_department: event.target.value })}
-              >
+            >
                 <option value="">All</option>
                 {options.departments.map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="field-label">District</span>
-              <select
-                className="select mt-1"
+            </FloatSelect>
+            <FloatSelect
+              label="District"
                 value={filters.district}
                 onChange={(event) => set({ district: event.target.value })}
-              >
+            >
                 <option value="">All</option>
                 {options.districts.map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="field-label">Installation status</span>
-              <select
-                className="select mt-1"
+            </FloatSelect>
+            <FloatSelect
+              label="Installation status"
                 value={filters.installation_status}
                 onChange={(event) => set({ installation_status: event.target.value })}
-              >
+            >
                 <option value="">All</option>
                 {options.installation.map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="field-label">Health</span>
-              <select
-                className="select mt-1"
+            </FloatSelect>
+            <FloatSelect
+              label="Health"
                 value={filters.status}
                 onChange={(event) => set({ status: event.target.value })}
-              >
+            >
                 <option value="">All</option>
                 {options.statuses.map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>
                 ))}
-              </select>
-            </label>
+            </FloatSelect>
           </div>
           <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2">
             <span className="text-2xs text-ink-500">
@@ -281,6 +271,7 @@ function Registry() {
             </span>
             {dirty && (
               <button className="btn btn-sm" onClick={() => setFilters(EMPTY)}>
+                <X className="h-3 w-3" strokeWidth={2} aria-hidden />
                 Clear filters
               </button>
             )}

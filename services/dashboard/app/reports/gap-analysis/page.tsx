@@ -2,9 +2,19 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Download, RefreshCw } from "lucide-react";
 
 import { LoadingPanel } from "@/components/Shell";
-import { Card, EmptyState, HealthPill, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  FloatInput,
+  HealthPill,
+  Notice,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import { download, toCSV } from "@/lib/csv";
 import { calendarDate, ist } from "@/lib/format";
@@ -135,10 +145,11 @@ export default function GapAnalysisPage() {
         actions={
           <>
             <button className="btn" onClick={exportReport} disabled={busy}>
+              <Download className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
               Export CSV
             </button>
             <button className="btn btn-primary" onClick={load} disabled={busy}>
-              {busy && <Spinner />} Recompute
+              {busy ? <Spinner /> : <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Recompute
             </button>
           </>
         }
@@ -148,32 +159,24 @@ export default function GapAnalysisPage() {
         {/* Thresholds */}
         <Card title="Thresholds">
           <div className="grid gap-3 px-4 py-3 md:grid-cols-2">
-            <label className="block">
-              <span className="field-label">
-                A district is thin when active cameras are below…
-              </span>
-              <input
-                type="number"
-                min={1}
-                max={200}
-                className="input mt-1 max-w-[8rem]"
-                value={minCameras}
-                onChange={(event) => setMinCameras(Math.max(1, Number(event.target.value) || 1))}
-              />
-            </label>
-            <label className="block">
-              <span className="field-label">
-                Flag cameras older than this many years
-              </span>
-              <input
-                type="number"
-                min={1}
-                max={40}
-                className="input mt-1 max-w-[8rem]"
-                value={ageingYears}
-                onChange={(event) => setAgeingYears(Math.max(1, Number(event.target.value) || 1))}
-              />
-            </label>
+            <FloatInput
+              label="A district is thin when active cameras are below…"
+              type="number"
+              min={1}
+              max={200}
+              inputClassName="max-w-[8rem]"
+              value={minCameras}
+              onChange={(event) => setMinCameras(Math.max(1, Number(event.target.value) || 1))}
+            />
+            <FloatInput
+              label="Flag cameras older than this many years"
+              type="number"
+              min={1}
+              max={40}
+              inputClassName="max-w-[8rem]"
+              value={ageingYears}
+              onChange={(event) => setAgeingYears(Math.max(1, Number(event.target.value) || 1))}
+            />
           </div>
         </Card>
 

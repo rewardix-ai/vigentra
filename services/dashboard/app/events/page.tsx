@@ -8,6 +8,8 @@ import {
   Card,
   DepartmentTag,
   EmptyState,
+  FloatInput,
+  FloatSelect,
   Notice,
   PageHeader,
   Pill,
@@ -107,47 +109,41 @@ export default function EventsPage() {
 
         {/* Filters */}
         <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">
-          <label className="block">
-            <span className="field-label">Time window (hrs)</span>
-            <input
+          <FloatInput
+            label="Time window (hrs)"
+            inputClassName="max-w-[7rem]"
               type="number"
               min={1}
               max={168}
-              className="input mt-1 max-w-[7rem]"
               value={sinceHours}
               onChange={(event) => setSinceHours(Math.max(1, Number(event.target.value) || 1))}
-            />
-          </label>
-          <label className="block min-w-[10rem]">
-            <span className="field-label">Source system</span>
-            <select
-              className="select mt-1"
+          />
+          <FloatSelect
+            label="Source system"
+            className="min-w-[10rem]"
               value={source}
               onChange={(event) => setSource(event.target.value)}
-            >
+          >
               <option value="">All</option>
               {options.sources.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="block min-w-[10rem]">
-            <span className="field-label">Event type</span>
-            <select
-              className="select mt-1"
+          </FloatSelect>
+          <FloatSelect
+            label="Event type"
+            className="min-w-[10rem]"
               value={type}
               onChange={(event) => setType(event.target.value)}
-            >
+          >
               <option value="">All</option>
               {options.types.map((value) => (
                 <option key={value} value={value}>
                   {humanise(value)}
                 </option>
               ))}
-            </select>
-          </label>
+          </FloatSelect>
           <div className="ml-auto text-2xs text-ink-500">
             <span className="tabular font-medium text-ink-900">{events.length}</span> event(s) in
             the last <span className="tabular font-medium text-ink-900">{sinceHours}</span>h

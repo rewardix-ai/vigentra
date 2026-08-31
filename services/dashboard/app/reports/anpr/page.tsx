@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import { Download, FileBarChart2 } from "lucide-react";
 
-import { Card, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import {
+  Card,
+  FloatInput,
+  FloatSelect,
+  Notice,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import { ist } from "@/lib/format";
 import type { AnprReportRow } from "@/lib/types";
@@ -65,33 +74,28 @@ export default function AnprReportPage() {
 
         <Card title="Generate">
           <div className="flex flex-wrap items-end gap-3 px-3 py-3">
-            <label className="block">
-              <span className="field-label">Time window</span>
-              <select
-                className="input mt-1"
+            <FloatSelect
+              label="Time window"
                 value={sinceHours}
                 onChange={(event) => setSinceHours(event.target.value)}
-              >
+            >
                 <option value="1">Last hour</option>
                 <option value="6">Last 6 hours</option>
                 <option value="24">Last 24 hours</option>
                 <option value="168">Last 7 days</option>
                 <option value="720">Last 30 days</option>
-              </select>
-            </label>
+            </FloatSelect>
 
-            <label className="block min-w-[18rem] flex-1">
-              <span className="field-label">Camera ID (optional)</span>
-              <input
-                className="input mt-1"
+            <FloatInput
+              label="Camera ID (optional)"
+              className="min-w-[18rem] flex-1"
                 value={cameraId}
                 onChange={(event) => setCameraId(event.target.value)}
-                placeholder="SENTINEL-TRAFFIC-AHM-0001"
-              />
-            </label>
+                hint="SENTINEL-TRAFFIC-AHM-0001"
+            />
 
             <button className="btn btn-primary" onClick={() => void generate()} disabled={busy}>
-              {busy && <Spinner />} Generate report
+              {busy ? <Spinner /> : <FileBarChart2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Generate report
             </button>
 
             {rows !== null && rows.length > 0 && (
@@ -102,6 +106,7 @@ export default function AnprReportPage() {
                   since_hours: sinceHours,
                 })}
               >
+                <Download className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                 Download CSV
               </a>
             )}

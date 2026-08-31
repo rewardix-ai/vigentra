@@ -1,6 +1,35 @@
+"use client";
+
 /** Shared presentation primitives for the registry console. */
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import {
+  Archive,
+  Ban,
+  CheckCheck,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  CircleHelp,
+  CircleSlash,
+  CircleX,
+  Clock,
+  History,
+  Inbox,
+  Info,
+  Lock,
+  LockKeyhole,
+  PauseCircle,
+  PencilLine,
+  Radio,
+  Send,
+  ShieldX,
+  TimerOff,
+  TriangleAlert,
+  Video,
+  VideoOff,
+  type LucideIcon,
+} from "lucide-react";
 
 import { humanise } from "@/lib/format";
 import type {
@@ -22,113 +51,152 @@ const TONE_CLASS: Record<Tone, string> = {
   info: "border-brand-500/30 bg-brand-100 text-brand-700",
 };
 
-export function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
-  return <span className={`pill ${TONE_CLASS[tone]}`}>{children}</span>;
+/**
+ * State is carried by icon *and* colour *and* text, never colour alone - these
+ * pills are read in dense tables, and a red/amber difference is exactly what a
+ * colour-blind operator or a washed-out control-room monitor loses first.
+ */
+export function Pill({
+  tone,
+  icon: Icon,
+  children,
+}: {
+  tone: Tone;
+  icon?: LucideIcon;
+  children: ReactNode;
+}) {
+  return (
+    <span className={`pill ${TONE_CLASS[tone]}`}>
+      {Icon && <Icon className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />}
+      {children}
+    </span>
+  );
 }
 
-const HEALTH_TONE: Record<CameraHealthStatus, Tone> = {
-  online: "ok",
-  degraded: "warn",
-  offline: "bad",
-  unavailable: "idle",
-  unknown: "idle",
+const HEALTH_META: Record<CameraHealthStatus, [Tone, LucideIcon]> = {
+  online: ["ok", CircleCheck],
+  degraded: ["warn", TriangleAlert],
+  offline: ["bad", CircleX],
+  unavailable: ["idle", CircleSlash],
+  unknown: ["idle", CircleHelp],
 };
 
 export function HealthPill({ status }: { status: CameraHealthStatus | string }) {
-  const tone = HEALTH_TONE[status as CameraHealthStatus] ?? "idle";
+  const [tone, icon] = HEALTH_META[status as CameraHealthStatus] ?? ["idle", CircleHelp];
   return (
-    <Pill tone={tone}>
-      <span
-        aria-hidden
-        className={`h-1.5 w-1.5 rounded-full ${
-          tone === "ok" ? "bg-ok" : tone === "warn" ? "bg-warn" : tone === "bad" ? "bg-bad" : "bg-idle"
-        }`}
-      />
+    <Pill tone={tone} icon={icon}>
       {status}
     </Pill>
   );
 }
 
-const REQUEST_TONE: Record<RequestStatus, Tone> = {
-  DRAFT: "idle",
-  SUBMITTED: "info",
-  VALIDATION_FAILED: "bad",
-  REGISTERED: "ok",
-  SYNCHRONIZED: "ok",
-  SUSPENDED: "warn",
-  DECOMMISSIONED: "idle",
+const REQUEST_META: Record<RequestStatus, [Tone, LucideIcon]> = {
+  DRAFT: ["idle", PencilLine],
+  SUBMITTED: ["info", Send],
+  VALIDATION_FAILED: ["bad", CircleX],
+  REGISTERED: ["ok", CircleCheck],
+  SYNCHRONIZED: ["ok", CheckCheck],
+  SUSPENDED: ["warn", PauseCircle],
+  DECOMMISSIONED: ["idle", Archive],
 };
 
 export function RequestStatusPill({ status }: { status: RequestStatus | string }) {
+  const [tone, icon] = REQUEST_META[status as RequestStatus] ?? ["idle", CircleHelp];
   return (
-    <Pill tone={REQUEST_TONE[status as RequestStatus] ?? "idle"}>
+    <Pill tone={tone} icon={icon}>
       {String(status).replace(/_/g, " ")}
     </Pill>
   );
 }
 
-const GRANT_TONE: Record<GrantStatus, Tone> = {
-  requested: "warn",
-  granted: "ok",
-  denied: "bad",
-  revoked: "idle",
-  expired: "idle",
+const GRANT_META: Record<GrantStatus, [Tone, LucideIcon]> = {
+  requested: ["warn", Clock],
+  granted: ["ok", CircleCheck],
+  denied: ["bad", CircleX],
+  revoked: ["idle", Ban],
+  expired: ["idle", TimerOff],
 };
 
 export function GrantStatusPill({ status }: { status: GrantStatus | string }) {
-  return <Pill tone={GRANT_TONE[status as GrantStatus] ?? "idle"}>{status}</Pill>;
+  const [tone, icon] = GRANT_META[status as GrantStatus] ?? ["idle", CircleHelp];
+  return (
+    <Pill tone={tone} icon={icon}>
+      {status}
+    </Pill>
+  );
 }
 
 /** What this account may do with a camera's footage, in plain words. */
-const VIDEO_STATE_LABEL: Record<VideoAccessState, [string, Tone]> = {
-  live_and_playback: ["Live + playback", "ok"],
-  live_only: ["Live only", "ok"],
-  playback_only: ["Playback only", "ok"],
+const VIDEO_STATE_LABEL: Record<VideoAccessState, [string, Tone, LucideIcon]> = {
+  live_and_playback: ["Live + playback", "ok", Video],
+  live_only: ["Live only", "ok", Radio],
+  playback_only: ["Playback only", "ok", History],
   // Not a dead end - it is an instruction, so the registry turns this one into
   // a button rather than a greyed-out label.
-  needs_unit_approval: ["Request from owner", "warn"],
-  not_enabled_by_owner: ["Owner has video off", "idle"],
-  camera_unavailable: ["Camera unavailable", "idle"],
-  denied: ["No video", "idle"],
+  needs_unit_approval: ["Request from owner", "warn", LockKeyhole],
+  not_enabled_by_owner: ["Owner has video off", "idle", VideoOff],
+  camera_unavailable: ["Camera unavailable", "idle", CircleSlash],
+  denied: ["No video", "idle", Ban],
 };
 
 export function VideoStatePill({ state }: { state: VideoAccessState | string }) {
-  const [label, tone] = VIDEO_STATE_LABEL[state as VideoAccessState] ?? [
+  const [label, tone, icon] = VIDEO_STATE_LABEL[state as VideoAccessState] ?? [
     String(state).replace(/_/g, " "),
     "idle" as Tone,
+    CircleHelp,
   ];
-  return <Pill tone={tone}>{label}</Pill>;
+  return (
+    <Pill tone={tone} icon={icon}>
+      {label}
+    </Pill>
+  );
 }
 
-const INSTALLATION_TONE: Record<InstallationStatus, Tone> = {
-  COMMISSIONED: "ok",
-  SUSPENDED: "warn",
-  DECOMMISSIONED: "idle",
+const INSTALLATION_META: Record<InstallationStatus, [Tone, LucideIcon]> = {
+  COMMISSIONED: ["ok", CircleCheck],
+  SUSPENDED: ["warn", PauseCircle],
+  DECOMMISSIONED: ["idle", Archive],
 };
 
 export function InstallationPill({ status }: { status: InstallationStatus | string }) {
+  const [tone, icon] = INSTALLATION_META[status as InstallationStatus] ?? ["idle", CircleHelp];
   return (
-    <Pill tone={INSTALLATION_TONE[status as InstallationStatus] ?? "idle"}>
+    <Pill tone={tone} icon={icon}>
       {String(status).replace(/_/g, " ")}
     </Pill>
   );
 }
 
-const SYNC_TONE: Record<SyncStatus, Tone> = {
-  SYNCHRONIZED: "ok",
-  PENDING: "warn",
-  WITHDRAWN: "idle",
-  FAILED: "bad",
+const SYNC_META: Record<SyncStatus, [Tone, LucideIcon]> = {
+  SYNCHRONIZED: ["ok", CheckCheck],
+  PENDING: ["warn", Clock],
+  WITHDRAWN: ["idle", Ban],
+  FAILED: ["bad", CircleX],
 };
 
 export function SyncPill({ status }: { status: SyncStatus | string }) {
-  return <Pill tone={SYNC_TONE[status as SyncStatus] ?? "idle"}>{String(status)}</Pill>;
+  const [tone, icon] = SYNC_META[status as SyncStatus] ?? ["idle", CircleHelp];
+  return (
+    <Pill tone={tone} icon={icon}>
+      {String(status)}
+    </Pill>
+  );
 }
 
 export function OutcomePill({ outcome }: { outcome: string }) {
-  const tone: Tone =
-    outcome === "denied" ? "bad" : outcome === "error" ? "bad" : outcome === "partial" ? "warn" : "ok";
-  return <Pill tone={tone}>{outcome}</Pill>;
+  const [tone, icon]: [Tone, LucideIcon] =
+    outcome === "denied"
+      ? ["bad", ShieldX]
+      : outcome === "error"
+        ? ["bad", CircleX]
+        : outcome === "partial"
+          ? ["warn", TriangleAlert]
+          : ["ok", CircleCheck];
+  return (
+    <Pill tone={tone} icon={icon}>
+      {outcome}
+    </Pill>
+  );
 }
 
 export function DepartmentTag({ department }: { department: string }) {
@@ -215,7 +283,7 @@ export function PageHeader({
           <nav className="mb-1 flex items-center gap-1.5 text-2xs text-ink-500" aria-label="Breadcrumb">
             {breadcrumb.map((crumb, index) => (
               <span key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
-                {index > 0 && <span aria-hidden>›</span>}
+                {index > 0 && <ChevronRight className="h-3 w-3 text-ink-400" strokeWidth={2} aria-hidden />}
                 {crumb.href ? (
                   <Link href={crumb.href} className="hover:text-brand-600 hover:underline">
                     {crumb.label}
@@ -245,14 +313,39 @@ export function Spinner({ className = "" }: { className?: string }) {
   );
 }
 
-export function EmptyState({ message, hint }: { message: string; hint?: string }) {
+/**
+ * An empty table should read as "nothing matched", not as "this broke". The
+ * icon is what separates those two readings before the sentence is read.
+ */
+export function EmptyState({
+  message,
+  hint,
+  icon: Icon = Inbox,
+}: {
+  message: string;
+  hint?: string;
+  icon?: LucideIcon;
+}) {
   return (
     <div className="px-4 py-10 text-center">
+      <Icon
+        className="mx-auto mb-2 h-7 w-7 text-ink-300"
+        strokeWidth={1.4}
+        aria-hidden
+      />
       <p className="text-[13px] text-ink-500">{message}</p>
       {hint && <p className="mt-1 text-2xs text-ink-400">{hint}</p>}
     </div>
   );
 }
+
+const NOTICE_META: Record<Tone, [string, LucideIcon, string]> = {
+  ok: ["border-l-ok bg-ok-bg", CircleCheck, "text-ok"],
+  warn: ["border-l-warn bg-warn-bg", TriangleAlert, "text-warn"],
+  bad: ["border-l-bad bg-bad-bg", CircleAlert, "text-bad"],
+  idle: ["border-l-idle bg-idle-bg", Info, "text-idle"],
+  info: ["border-l-brand-600 bg-brand-50", Info, "text-brand-600"],
+};
 
 export function Notice({
   tone = "info",
@@ -263,17 +356,20 @@ export function Notice({
   title?: string;
   children: ReactNode;
 }) {
-  const border = {
-    ok: "border-l-ok bg-ok-bg",
-    warn: "border-l-warn bg-warn-bg",
-    bad: "border-l-bad bg-bad-bg",
-    idle: "border-l-idle bg-idle-bg",
-    info: "border-l-brand-600 bg-brand-50",
-  }[tone];
+  const [border, Icon, iconColour] = NOTICE_META[tone];
   return (
-    <div className={`rounded border border-line border-l-4 px-3 py-2 text-[13px] ${border}`}>
-      {title && <div className="font-semibold">{title}</div>}
-      <div className={title ? "mt-0.5 text-ink-700" : "text-ink-700"}>{children}</div>
+    <div
+      className={`flex items-start gap-2 rounded border border-line border-l-4 px-3 py-2 text-[13px] ${border}`}
+    >
+      <Icon
+        className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${iconColour}`}
+        strokeWidth={2}
+        aria-hidden
+      />
+      <div className="min-w-0 flex-1">
+        {title && <div className="font-semibold">{title}</div>}
+        <div className={title ? "mt-0.5 text-ink-700" : "text-ink-700"}>{children}</div>
+      </div>
     </div>
   );
 }
@@ -383,11 +479,142 @@ export function FootageNotice({
   );
 }
 
-export function LockIcon({ className = "" }: { className?: string }) {
+/* -------------------------------------------------------------------------- */
+/* Floating-label form controls.                                              */
+
+/** useId, not a module counter - the latter desynchronises across the
+ *  server and client renders and trips a hydration mismatch. */
+function useFieldId(explicit?: string) {
+  const generated = useId();
+  return explicit ?? generated;
+}
+
+type FloatWrapProps = {
+  label: string;
+  id?: string;
+  required?: boolean;
+  error?: string | null;
+  hint?: string;
+  /** Classes for the wrapper (layout: width, grid span). */
+  className?: string;
+  /** Classes for the control itself (e.g. `mono`). */
+  inputClassName?: string;
+};
+
+/**
+ * `placeholder=" "` is not cosmetic - the raised/at-rest state is decided by
+ * `:placeholder-shown`, so a control without it never drops its label back
+ * down, and one with a *real* placeholder never shows it at rest.
+ */
+export function FloatInput({
+  label,
+  id,
+  required,
+  error,
+  hint,
+  className = "",
+  inputClassName = "",
+  ...rest
+}: FloatWrapProps & React.InputHTMLAttributes<HTMLInputElement>) {
+  const fieldId = useFieldId(id);
   return (
-    <svg viewBox="0 0 16 16" className={`h-3.5 w-3.5 text-navy-700 ${className}`} fill="none" aria-hidden>
-      <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.3" />
-    </svg>
+    <div className={className}>
+      <div className="float">
+        <input
+          {...rest}
+          id={fieldId}
+          placeholder=" "
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${fieldId}-error` : undefined}
+          className={`input ${inputClassName} ${error ? "input-error" : ""}`}
+        />
+        <label className="float-label" htmlFor={fieldId}>
+          {label}
+          {required && <span className="ml-0.5 text-bad">*</span>}
+        </label>
+      </div>
+      <FieldFoot id={fieldId} error={error} hint={hint} />
+    </div>
   );
+}
+
+export function FloatSelect({
+  label,
+  id,
+  required,
+  error,
+  hint,
+  className = "",
+  inputClassName = "",
+  children,
+  ...rest
+}: FloatWrapProps & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const fieldId = useFieldId(id);
+  return (
+    <div className={className}>
+      <div className="float">
+        <select
+          {...rest}
+          id={fieldId}
+          aria-invalid={error ? true : undefined}
+          className={`select ${inputClassName} ${error ? "input-error" : ""}`}
+        >
+          {children}
+        </select>
+        <label className="float-label" htmlFor={fieldId}>
+          {label}
+          {required && <span className="ml-0.5 text-bad">*</span>}
+        </label>
+      </div>
+      <FieldFoot id={fieldId} error={error} hint={hint} />
+    </div>
+  );
+}
+
+export function FloatTextarea({
+  label,
+  id,
+  required,
+  error,
+  hint,
+  className = "",
+  inputClassName = "",
+  ...rest
+}: FloatWrapProps & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const fieldId = useFieldId(id);
+  return (
+    <div className={className}>
+      <div className="float">
+        <textarea
+          {...rest}
+          id={fieldId}
+          placeholder=" "
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${fieldId}-error` : undefined}
+          className={`textarea ${inputClassName} ${error ? "input-error" : ""}`}
+        />
+        <label className="float-label" htmlFor={fieldId}>
+          {label}
+          {required && <span className="ml-0.5 text-bad">*</span>}
+        </label>
+      </div>
+      <FieldFoot id={fieldId} error={error} hint={hint} />
+    </div>
+  );
+}
+
+function FieldFoot({ id, error, hint }: { id: string; error?: string | null; hint?: string }) {
+  if (error) {
+    return (
+      <p id={`${id}-error`} className="mt-1 text-2xs font-medium text-bad">
+        {error}
+      </p>
+    );
+  }
+  if (hint) return <p className="mt-1 text-2xs text-ink-400">{hint}</p>;
+  return null;
+}
+
+export function LockIcon({ className = "" }: { className?: string }) {
+  return <Lock className={`h-3.5 w-3.5 text-navy-700 ${className}`} strokeWidth={1.6} aria-hidden />;
 }

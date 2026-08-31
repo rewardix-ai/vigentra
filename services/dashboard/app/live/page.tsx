@@ -5,7 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import { LiveTile } from "@/components/LiveTile";
 import { LoadingPanel } from "@/components/Shell";
-import { Card, EmptyState, Notice, PageHeader } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  FloatInput,
+  FloatSelect,
+  FloatTextarea,
+  Notice,
+  PageHeader,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import type { Camera } from "@/lib/types";
 
@@ -76,31 +84,24 @@ export default function LiveWallPage() {
       {!started ? (
         <Card>
           <div className="space-y-2">
-            <label className="block">
-              <span className="field-label">
-                Why are you viewing these feeds? <span className="text-bad">*</span>
-              </span>
-              <textarea
-                className="textarea mt-1"
-                rows={2}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="e.g. Evening peak monitoring across the Ahmedabad corridor"
-              />
-            </label>
-            <label className="block max-w-xs">
-              <span className="field-label">
-                Confirm your password <span className="text-bad">*</span>
-              </span>
-              <input
-                className="input mt-1"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Re-enter to open the wall"
-              />
-            </label>
+            <FloatTextarea
+              label="Why are you viewing these feeds?"
+              required
+              rows={2}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              hint="e.g. Evening peak monitoring across the Ahmedabad corridor"
+            />
+            <FloatInput
+              label="Confirm your password"
+              required
+              className="max-w-xs"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              hint="Re-enter to open the wall"
+            />
             <p className="text-2xs text-ink-500">
               Confirmed once for the wall, then re-checked by the API on every session it opens.
               Each tile opens its own short-lived, watermarked session and is written to the audit
@@ -121,36 +122,30 @@ export default function LiveWallPage() {
       ) : (
         <Card>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="block">
-              <span className="field-label">Department</span>
-              <select
-                className="input mt-1"
+            <FloatSelect
+              label="Department"
                 value={department}
                 onChange={(event) => setDepartment(event.target.value)}
-              >
+            >
                 <option value="">All</option>
                 {departments.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="field-label">District</span>
-              <select
-                className="input mt-1"
+            </FloatSelect>
+            <FloatSelect
+              label="District"
                 value={district}
                 onChange={(event) => setDistrict(event.target.value)}
-              >
+            >
                 <option value="">All</option>
                 {districts.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
                 ))}
-              </select>
-            </label>
+            </FloatSelect>
             <div className="ml-auto flex items-center gap-2">
               <span className="text-2xs text-ink-500">
                 showing {shown.length} of {watchable.length}

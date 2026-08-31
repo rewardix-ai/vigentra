@@ -8,6 +8,7 @@ import { LoadingPanel } from "@/components/Shell";
 import {
   Card,
   DepartmentTag,
+  FloatTextarea,
   FootageNotice,
   Notice,
   PageHeader,
@@ -269,25 +270,18 @@ export default function InstallationRequestPage() {
         {prompt && (
           <Card title={`${ACTION_LABEL[prompt.kind]} — ${record.request_id}`}>
             <div className="space-y-2.5 px-4 py-3">
-              <label className="block">
-                <span className="field-label">
-                  Reason {prompt.requiresReason && <span className="text-bad">*</span>}
-                </span>
-                <textarea
-                  className="textarea mt-1"
-                  rows={3}
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                  placeholder={
-                    prompt.kind === "decommission"
-                      ? "Why is this camera being retired?"
-                      : "Reason (optional)"
-                  }
-                />
-                <p className="mt-1 text-2xs text-ink-500">
-                  Written to the audit trail and shown to the raiser.
-                </p>
-              </label>
+              <FloatTextarea
+                label="Reason"
+                required={prompt.requiresReason}
+                rows={3}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                hint={
+                  prompt.kind === "decommission"
+                    ? "Why is this camera being retired? Written to the audit trail and shown to the raiser."
+                    : "Written to the audit trail and shown to the raiser."
+                }
+              />
               <div className="flex justify-end gap-2">
                 <button className="btn" onClick={() => setPrompt(null)} disabled={busy}>
                   Cancel

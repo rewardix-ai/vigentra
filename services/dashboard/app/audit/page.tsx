@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { LoadingPanel } from "@/components/Shell";
-import { Card, EmptyState, Notice, OutcomePill, PageHeader } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  FloatInput,
+  FloatSelect,
+  Notice,
+  OutcomePill,
+  PageHeader,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import { humanise, ist, orDash } from "@/lib/format";
 import type { AuditEntry } from "@/lib/types";
@@ -103,44 +111,38 @@ export default function AuditPage() {
         )}
 
         <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">
-          <label className="block min-w-[16rem] flex-1">
-            <span className="field-label">Search</span>
-            <input
-              className="input mt-1"
-              placeholder="User, resource ID, case ID or reason…"
+          <FloatInput
+            label="Search"
+            className="min-w-[16rem] flex-1"
+              hint="User, resource ID, case ID or reason…"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-          <label className="block min-w-[14rem]">
-            <span className="field-label">Action</span>
-            <select
-              className="select mt-1"
+          />
+          <FloatSelect
+            label="Action"
+            className="min-w-[14rem]"
               value={action}
               onChange={(event) => setAction(event.target.value)}
-            >
+          >
               <option value="">All actions</option>
               {ACTIONS.map((value) => (
                 <option key={value} value={value}>
                   {humanise(value)}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="block min-w-[9rem]">
-            <span className="field-label">Outcome</span>
-            <select
-              className="select mt-1"
+          </FloatSelect>
+          <FloatSelect
+            label="Outcome"
+            className="min-w-[9rem]"
               value={outcome}
               onChange={(event) => setOutcome(event.target.value)}
-            >
+          >
               <option value="">Any</option>
               <option value="success">success</option>
               <option value="partial">partial</option>
               <option value="denied">denied</option>
               <option value="error">error</option>
-            </select>
-          </label>
+          </FloatSelect>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-2xs text-ink-500">
               <span className="tabular font-medium text-ink-900">{visible.length}</span> of{" "}

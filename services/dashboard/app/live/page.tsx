@@ -83,7 +83,7 @@ export default function LiveWallPage() {
 
       {!started ? (
         <Card>
-          <div className="space-y-2">
+          <div className="space-y-3 px-4 py-3">
             <FloatTextarea
               label="Why are you viewing these feeds?"
               required
@@ -121,7 +121,7 @@ export default function LiveWallPage() {
         </Card>
       ) : (
         <Card>
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-end gap-3 px-4 py-3">
             <FloatSelect
               label="Department"
                 value={department}

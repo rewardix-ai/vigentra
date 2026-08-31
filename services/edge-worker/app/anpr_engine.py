@@ -69,6 +69,23 @@ DEFAULT_MIN_SCORE = float(os.getenv("ANPR_MIN_SCORE", "0.55"))
 #: comes back in through the side door.
 EMIT_UNCONFIRMED = os.getenv("ANPR_EMIT_UNCONFIRMED", "false").lower() == "true"
 
+#: Below this consensus score a reading is emitted for a human to check rather
+#: than acted on.
+#:
+#: A single threshold throws away everything under it, which for an estate this
+#: size is the wrong trade twice over: an automatic action on a wrong plate is
+#: expensive, and silently discarding a nearly-right one loses the vehicle.
+#: Two thresholds give a third outcome - "probably this, please confirm" - and
+#: that is what a forensic queue actually wants.
+#:
+#: The ICPR 2026 LRLPR organisers made the same point with their tiebreaker:
+#: the 3rd-placed system recognised 80.17% with a 2.38% confidence gap, while
+#: systems scoring slightly LOWER had gaps of 14.86% and 20.47%. A model whose
+#: confidence separates its right answers from its wrong ones is worth more
+#: operationally than one that scores higher and cannot tell you which is
+#: which, because only the first can triage its own output.
+REVIEW_SCORE = float(os.getenv("ANPR_REVIEW_SCORE", "0.35"))
+
 
 class AnprUnavailable(DetectorError):
     """The engine could not be built.
@@ -99,6 +116,9 @@ class PlateSighting:
     captured_at: float
     frame_index: int
     method: str = ""
+    #: True when the reading cleared the review floor but not the acting
+    #: threshold: show it to a human, do not act on it automatically.
+    needs_review: bool = False
     quality: dict = field(default_factory=dict)
 
 
@@ -161,6 +181,7 @@ class AnprEngine:
             "vehicle_model": self.cfg.detect.vehicle_model,
             "ocr_engines": list(self.cfg.ocr.engines),
             "min_score": self.min_score,
+            "review_score": REVIEW_SCORE,
             "emit_unconfirmed": EMIT_UNCONFIRMED,
             "preferred_states": list(self.cfg.region.preferred_states),
         }
@@ -230,7 +251,11 @@ class AnprEngine:
                 continue
             if not event.confirmed and not EMIT_UNCONFIRMED:
                 continue
-            if event.score < self.min_score:
+            # Between the review floor and the acting threshold a reading is
+            # still worth surfacing - flagged, not acted on. Below the review
+            # floor there is not enough agreement to be worth a human's time.
+            needs_review = event.score < self.min_score
+            if event.score < REVIEW_SCORE:
                 continue
             if self._emitted.get(event.track_id) == event.text:
                 continue
@@ -250,6 +275,7 @@ class AnprEngine:
                 confidence=float(event.confidence),
                 observations=int(event.observations or 1),
                 confirmed=bool(event.confirmed),
+                needs_review=needs_review,
                 state=event.state,
                 plate_format=event.fmt,
                 plate_bbox=_box_to_xyxy(box),

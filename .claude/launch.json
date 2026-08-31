@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "services/dashboard", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "central-api",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--port", "8000", "--app-dir", "services/central-api"],
+      "port": 8000
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Check, X } from "lucide-react";
 
 import { LoadingPanel } from "@/components/Shell";
 import {
@@ -98,13 +99,14 @@ function RequestRow({
                 disabled={busy}
                 onClick={() => onDecide(record.grant_id, "grant")}
               >
-                {busy && <Spinner />} Grant
+                {busy ? <Spinner /> : <Check className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Grant
               </button>
               <button
                 className="btn btn-danger"
                 disabled={busy}
                 onClick={() => onDecide(record.grant_id, "deny")}
               >
+                <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                 Deny
               </button>
             </>

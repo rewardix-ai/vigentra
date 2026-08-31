@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 
 import { LoadingPanel } from "@/components/Shell";
 import {
@@ -47,7 +48,10 @@ function Stat({
 
   if (href) {
     return (
-      <Link href={href} className="card block px-4 py-3 transition hover:border-brand-500 hover:shadow-raised">
+      <Link
+        href={href}
+        className="card block px-4 py-3 transition hover:border-brand-500 hover:shadow-raised"
+      >
         {body}
       </Link>
     );
@@ -133,7 +137,7 @@ export default function OverviewPage() {
         actions={
           canSync && (
             <button className="btn btn-primary" onClick={runSync} disabled={syncing}>
-              {syncing ? <Spinner /> : null}
+              {syncing ? <Spinner /> : <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />}
               {syncing ? "Synchronising…" : "Synchronise metadata"}
             </button>
           )
@@ -226,7 +230,11 @@ export default function OverviewPage() {
                 value={overview?.offline ?? "—"}
                 tone={overview && overview.offline > 0 ? "bad" : "plain"}
               />
-              <Stat label="Unavailable" value={overview?.unavailable ?? "—"} hint="withdrawn" />
+              <Stat
+                label="Unavailable"
+                value={overview?.unavailable ?? "—"}
+                hint="withdrawn"
+              />
             </div>
           </div>
         </div>

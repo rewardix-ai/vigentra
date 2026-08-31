@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, ApiError } from "@/lib/api";
 import type { VideoMode, VideoSession } from "@/lib/types";
-import { Notice, Spinner } from "./ui";
+import {
+  FloatInput,
+  FloatTextarea,
+  Notice,
+  Spinner,
+} from "./ui";
 
 /**
  * Authorised viewing, with the conditions on screen rather than in a policy
@@ -241,7 +246,7 @@ export function VideoPlayer({
 
   if (!session) {
     return (
-      <div className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3">
+      <div className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3 [--field-bg:#f7f8fa]">
         <div className="text-[13px] font-semibold text-ink-900">
           {isPlayback ? "Request recorded footage" : "Open a live session"} · {cameraName}
         </div>
@@ -249,37 +254,28 @@ export function VideoPlayer({
         {isPlayback && (
           <>
             <div className="flex flex-wrap gap-3">
-              <label className="block">
-                <span className="field-label">Date</span>
-                <input
-                  className="input mt-1"
+              <FloatInput
+                label="Date"
                   type="date"
                   value={date}
                   min={earliestDate}
                   max={localDate(new Date())}
                   onChange={(event) => setDate(event.target.value)}
-                />
-              </label>
-              <label className="block">
-                <span className="field-label">From</span>
-                <input
-                  className="input mt-1"
+              />
+              <FloatInput
+                label="From"
                   type="time"
                   step={60}
                   value={fromTime}
                   onChange={(event) => setFromTime(event.target.value)}
-                />
-              </label>
-              <label className="block">
-                <span className="field-label">To</span>
-                <input
-                  className="input mt-1"
+              />
+              <FloatInput
+                label="To"
                   type="time"
                   step={60}
                   value={toTime}
                   onChange={(event) => setToTime(event.target.value)}
-                />
-              </label>
+              />
             </div>
             <p className="text-2xs text-ink-500">
               {retentionDays
@@ -289,44 +285,35 @@ export function VideoPlayer({
           </>
         )}
 
-        <label className="block">
-          <span className="field-label">
-            Why are you viewing this? <span className="text-bad">*</span>
-          </span>
-          <textarea
-            className="textarea mt-1"
+        <FloatTextarea
+          label="Why are you viewing this?"
+          required
             rows={2}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
-            placeholder={
+            hint={
               isPlayback
                 ? "e.g. Reviewing the 21:40 collision reported on this approach"
                 : "e.g. Live monitoring of the evening peak"
             }
           />
-        </label>
-        <label className="block max-w-xs">
-          <span className="field-label">
-            Confirm your password <span className="text-bad">*</span>
-          </span>
-          <input
-            className="input mt-1"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Re-enter to open the camera"
-          />
-        </label>
-        <label className="block max-w-xs">
-          <span className="field-label">Case / FIR reference (optional)</span>
-          <input
-            className="input mt-1"
+        <FloatInput
+          label="Confirm your password"
+          required
+          className="max-w-xs"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          hint="Re-enter to open the camera"
+        />
+        <FloatInput
+          label="Case / FIR reference (optional)"
+          className="max-w-xs"
             value={caseId}
             onChange={(event) => setCaseId(event.target.value)}
-            placeholder="FIR 214/2026"
-          />
-        </label>
+            hint="FIR 214/2026"
+        />
 
         <p className="text-2xs text-ink-500">
           Your password is re-checked at this point: a signed-in tab left unattended must not be

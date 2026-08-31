@@ -10,6 +10,8 @@ import {
   Card,
   DepartmentTag,
   Field,
+  FloatInput,
+  FloatTextarea,
   FootageNotice,
   HealthPill,
   InstallationPill,
@@ -210,28 +212,22 @@ export default function CameraDetailPage() {
           {camera.video_access === "needs_unit_approval" &&
             (canRequestVideo ? (
               asking ? (
-                <div className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3">
-                  <label className="block">
-                    <span className="field-label">
-                      Why do you need this footage? <span className="text-bad">*</span>
-                    </span>
-                    <textarea
-                      className="textarea mt-1"
-                      rows={2}
-                      value={askReason}
-                      onChange={(event) => setAskReason(event.target.value)}
-                      placeholder="e.g. Chain-snatching follow-up on the Vasna approach"
-                    />
-                  </label>
-                  <label className="block max-w-xs">
-                    <span className="field-label">Case / FIR reference (optional)</span>
-                    <input
-                      className="input mt-1"
+                <div className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3 [--field-bg:#f7f8fa]">
+                  <FloatTextarea
+                    label="Why do you need this footage?"
+                    required
+                    rows={2}
+                    value={askReason}
+                    onChange={(event) => setAskReason(event.target.value)}
+                    hint="e.g. Chain-snatching follow-up on the Vasna approach"
+                  />
+                  <FloatInput
+                    label="Case / FIR reference (optional)"
+                    className="max-w-xs"
                       value={askCase}
                       onChange={(event) => setAskCase(event.target.value)}
-                      placeholder="FIR 214/2026"
-                    />
-                  </label>
+                      hint="FIR 214/2026"
+                  />
                   <p className="text-2xs text-ink-500">
                     This reason is shown to {camera.owning_department} and written to the audit
                     trail. It is the record of why the footage was looked at.

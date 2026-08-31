@@ -3,36 +3,68 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {
+  BellRing,
+  Cctv,
+  ClipboardList,
+  FileBarChart2,
+  FilePlus2,
+  KeyRound,
+  LayoutDashboard,
+  ListChecks,
+  Lock,
+  MapPinned,
+  Menu,
+  MonitorPlay,
+  Radio,
+  Route,
+  ScanEye,
+  ScrollText,
+  Upload,
+  type LucideIcon,
+} from "lucide-react";
 
 import { api, signOut } from "@/lib/api";
 import { ist } from "@/lib/format";
 import type { Operator, PlatformHealth } from "@/lib/types";
 import { Spinner } from "./ui";
 
+/** Queues whose outstanding item count is worth surfacing in the rail. */
+type BadgeKey = "installations" | "alerts";
+
 interface NavItem {
   href: string;
   label: string;
+  icon: LucideIcon;
   /** Permission required to see this section, if any. */
   permission?: string;
+  /** Shows a count pill when that queue is non-empty. */
+  badge?: BadgeKey;
 }
 
 const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "Operations",
     items: [
-      { href: "/", label: "Overview" },
-      { href: "/registry", label: "Camera registry", permission: "registry:read" },
-      { href: "/live", label: "Live wall", permission: "video:live" },
-      { href: "/events", label: "Federated events", permission: "registry:read" },
-      { href: "/detections", label: "Object detections", permission: "detection:read" },
+      { href: "/", label: "Overview", icon: LayoutDashboard },
+      { href: "/registry", label: "Camera registry", icon: Cctv, permission: "registry:read" },
+      { href: "/live", label: "Live wall", icon: MonitorPlay, permission: "video:live" },
+      { href: "/events", label: "Federated events", icon: Radio, permission: "registry:read" },
+      { href: "/detections", label: "Object detections", icon: ScanEye, permission: "detection:read" },
     ],
   },
   {
     group: "Onboarding",
     items: [
-      { href: "/installations", label: "Installation requests", permission: "installation:read" },
-      { href: "/installations/new", label: "New CCTV installation", permission: "installation:create" },
-      { href: "/installations/bulk", label: "Bulk upload (CSV)", permission: "installation:create" },
+      {
+        href: "/installations",
+        label: "Installation requests",
+        icon: ClipboardList,
+        permission: "installation:read",
+        badge: "installations",
+      },
+      { href: "/installations/new", label: "New CCTV installation", icon: FilePlus2, permission: "installation:create" },
+      { href: "/installations/bulk", label: "Bulk upload (CSV)", icon: Upload, permission: "installation:create" },
     ],
   },
   {
@@ -41,6 +73,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       {
         href: "/access-requests",
         label: "Access requests",
+        icon: KeyRound,
         permission: "registry:read",
       },
     ],
@@ -51,21 +84,21 @@ const NAV: { group: string; items: NavItem[] }[] = [
     // and the municipal roles hold none of them at all.
     group: "Vehicles of interest",
     items: [
-      { href: "/alerts", label: "Alerts", permission: "alert:read" },
-      { href: "/plates", label: "Trace a vehicle", permission: "track:read" },
-      { href: "/watchlist", label: "Watchlist", permission: "watchlist:read" },
+      { href: "/alerts", label: "Alerts", icon: BellRing, permission: "alert:read", badge: "alerts" },
+      { href: "/plates", label: "Trace a vehicle", icon: Route, permission: "track:read" },
+      { href: "/watchlist", label: "Watchlist", icon: ListChecks, permission: "watchlist:read" },
     ],
   },
   {
     group: "Reports",
     items: [
-      { href: "/reports/gap-analysis", label: "Gap analysis", permission: "registry:read" },
-      { href: "/reports/anpr", label: "ANPR output report", permission: "plate:read" },
+      { href: "/reports/gap-analysis", label: "Gap analysis", icon: MapPinned, permission: "registry:read" },
+      { href: "/reports/anpr", label: "ANPR output report", icon: FileBarChart2, permission: "plate:read" },
     ],
   },
   {
     group: "Oversight",
-    items: [{ href: "/audit", label: "Audit log", permission: "audit:read" }],
+    items: [{ href: "/audit", label: "Audit log", icon: ScrollText, permission: "audit:read" }],
   },
 ];
 
@@ -82,6 +115,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [operator, setOperator] = useState<Operator | null>(null);
   const [health, setHealth] = useState<PlatformHealth | null>(null);
+  const [badges, setBadges] = useState<Partial<Record<BadgeKey, number>>>({});
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -91,6 +125,39 @@ export function Shell({ children }: { children: React.ReactNode }) {
     const timer = setInterval(load, 15_000);
     return () => clearInterval(timer);
   }, []);
+
+  // Queue counts, refreshed on the same cadence as health. Each is fetched only
+  // when the operator can actually open that queue, so a municipal role never
+  // triggers a 403 for a section it cannot see.
+  const permissions = operator?.permissions;
+  useEffect(() => {
+    if (!permissions) return;
+    let cancelled = false;
+    const set = (key: BadgeKey, value: number) =>
+      !cancelled && setBadges((prev) => ({ ...prev, [key]: value }));
+
+    const load = () => {
+      if (permissions.includes("installation:read")) {
+        api
+          .overview()
+          .then((o) => set("installations", o.pending_installation_requests))
+          .catch(() => undefined);
+      }
+      if (permissions.includes("alert:read")) {
+        api
+          .alerts({ unacknowledged_only: "true", limit: "100" })
+          .then((rows) => set("alerts", rows.length))
+          .catch(() => undefined);
+      }
+    };
+
+    load();
+    const timer = setInterval(load, 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [permissions]);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -120,9 +187,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             onClick={() => setMenuOpen((open) => !open)}
             aria-label="Toggle navigation"
           >
-            <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" aria-hidden>
-              <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
+            <Menu className="h-5 w-5" strokeWidth={1.6} aria-hidden />
           </button>
 
           <Link href="/" className="flex items-center gap-2.5">
@@ -187,42 +252,65 @@ export function Shell({ children }: { children: React.ReactNode }) {
           aria-label="Sections"
         >
           <div className="sticky top-14 py-3">
-            {NAV.map((section) => {
-              const visible = section.items.filter((item) => can(item.permission));
-              if (visible.length === 0) return null;
-              return (
-                <div key={section.group} className="mb-4">
+            {NAV.map((section) => ({
+              ...section,
+              items: section.items.filter((item) => can(item.permission)),
+            }))
+              // Resolve the visible sections before rendering, so the rule sits
+              // between them rather than above whichever section happens to be
+              // first once the operator's permissions have filtered the rail.
+              .filter((section) => section.items.length > 0)
+              .map((section, index) => (
+                <div
+                  key={section.group}
+                  className={
+                    index === 0
+                      ? "mb-4"
+                      : "mb-4 border-t border-white/10 pt-4"
+                  }
+                >
                   <div className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wider text-white/40">
                     {section.group}
                   </div>
-                  {visible.map((item) => {
+                  {section.items.map((item) => {
                     const active = isActive(pathname, item.href);
+                    const Icon = item.icon;
+                    const count = item.badge ? badges[item.badge] ?? 0 : 0;
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setMenuOpen(false)}
                         aria-current={active ? "page" : undefined}
-                        className={`block border-l-[3px] px-4 py-1.5 text-[13px] transition ${
+                        className={`flex items-center gap-2.5 border-l-[3px] px-4 py-1.5 text-[13px] transition ${
                           active
                             ? "border-l-white bg-navy-600 font-medium text-white"
                             : "border-l-transparent text-white/70 hover:bg-navy-600/60 hover:text-white"
                         }`}
                       >
-                        {item.label}
+                        <Icon
+                          className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-white/55"}`}
+                          strokeWidth={1.6}
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {count > 0 && (
+                          <span
+                            className="shrink-0 rounded-full bg-white/15 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-white"
+                            aria-label={`${count} outstanding`}
+                          >
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}
                 </div>
-              );
-            })}
+              ))}
 
             <div className="mx-4 mt-6 rounded border border-white/12 bg-navy-800/70 p-2.5">
               <div className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-white/70">
-                <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden>
-                  <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                  <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.3" />
-                </svg>
+                <Lock className="h-3 w-3" strokeWidth={1.6} aria-hidden />
                 No video access
               </div>
               <p className="mt-1 text-2xs leading-relaxed text-white/55">

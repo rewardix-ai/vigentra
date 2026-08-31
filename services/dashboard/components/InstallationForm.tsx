@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from "react";
 
-import { Card, FootageNotice, Notice, Pill, Spinner } from "./ui";
+import {
+  Card,
+  FloatInput,
+  FloatSelect,
+  FloatTextarea,
+  FootageNotice,
+  Notice,
+  Pill,
+  Spinner,
+} from "./ui";
 import { titleise } from "@/lib/format";
 import type {
   AttachmentRef,
@@ -211,30 +220,22 @@ function Text({
 }) {
   const id = `field-${String(field)}`;
   const error = errors[field];
+  // The old `placeholder` prop is deliberately dropped rather than forwarded:
+  // the floating label occupies that space at rest, and a real placeholder
+  // would keep the label permanently raised. Anything it used to say belongs
+  // in `hint`, under the field, where it survives the field being filled.
   return (
-    <div>
-      <label className="field-label" htmlFor={id}>
-        {label} {required && <span className="text-bad">*</span>}
-      </label>
-      <input
-        id={id}
-        type={type}
-        disabled={disabled}
-        className={`input mt-1 ${error ? "input-error" : ""}`}
-        placeholder={placeholder}
-        value={String(values[field] ?? "")}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        onChange={(event) => onChange({ [field]: event.target.value } as Partial<InstallationFormValues>)}
-      />
-      {error ? (
-        <p id={`${id}-error`} className="mt-1 text-2xs font-medium text-bad">
-          {error}
-        </p>
-      ) : hint ? (
-        <p className="mt-1 text-2xs text-ink-400">{hint}</p>
-      ) : null}
-    </div>
+    <FloatInput
+      id={id}
+      label={label}
+      required={required}
+      disabled={disabled}
+      type={type}
+      error={error}
+      hint={hint ?? placeholder}
+      value={String(values[field] ?? "")}
+      onChange={(event) => onChange({ [field]: event.target.value } as Partial<InstallationFormValues>)}
+    />
   );
 }
 
@@ -255,23 +256,19 @@ function Choice({
 }) {
   const id = `field-${String(field)}`;
   return (
-    <div>
-      <label className="field-label" htmlFor={id}>
-        {label} {required && <span className="text-bad">*</span>}
-      </label>
-      <select
-        id={id}
-        className="select mt-1"
-        value={String(values[field] ?? "")}
-        onChange={(event) => onChange({ [field]: event.target.value } as Partial<InstallationFormValues>)}
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </div>
+    <FloatSelect
+      id={id}
+      label={label}
+      required={required}
+      value={String(values[field] ?? "")}
+      onChange={(event) => onChange({ [field]: event.target.value } as Partial<InstallationFormValues>)}
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </FloatSelect>
   );
 }
 
@@ -290,19 +287,15 @@ function Area({
 }) {
   const id = `field-${String(field)}`;
   return (
-    <div className="sm:col-span-2">
-      <label className="field-label" htmlFor={id}>
-        {label}
-      </label>
-      <textarea
-        id={id}
-        rows={2}
-        className="textarea mt-1"
-        value={String(values[field] ?? "")}
-        onChange={(event) => onChange({ [field]: event.target.value } as Partial<InstallationFormValues>)}
-      />
-      {hint && <p className="mt-1 text-2xs text-ink-400">{hint}</p>}
-    </div>
+    <FloatTextarea
+      id={id}
+      className="sm:col-span-2"
+      label={label}
+      rows={2}
+      hint={hint}
+      value={String(values[field] ?? "")}
+      onChange={(event) => onChange({ [field]: event.target.value } as Partial<InstallationFormValues>)}
+    />
   );
 }
 
@@ -476,23 +469,20 @@ export function InstallationForm({
         {step === 1 && (
           <>
             <Section title="Ownership and administration">
-              <div>
-                <label className="field-label" htmlFor="field-owning_department">
-                  Owning department <span className="text-bad">*</span>
-                </label>
-                <input
-                  id="field-owning_department"
-                  className={`input mt-1 ${errors.owning_department ? "input-error" : ""}`}
-                  value={values.owning_department}
-                  disabled={departmentLocked}
-                  onChange={(event) => change({ owning_department: event.target.value })}
-                />
-                <p className="mt-1 text-2xs text-ink-400">
-                  {departmentLocked
+              <FloatInput
+                id="field-owning_department"
+                label="Owning department"
+                required
+                error={errors.owning_department}
+                value={values.owning_department}
+                disabled={departmentLocked}
+                onChange={(event) => change({ owning_department: event.target.value })}
+                hint={
+                  departmentLocked
                     ? "Set from your account — you may only raise forms for your own department."
-                    : "Statewide accounts must name the owning department."}
-                </p>
-              </div>
+                    : "Statewide accounts must name the owning department."
+                }
+              />
               <Text label="Owning unit" field="owning_unit" values={values} errors={errors} onChange={change} required placeholder="Ahmedabad Traffic Zone 1" />
               <Text label="Police station / zone" field="police_station_or_zone" values={values} errors={errors} onChange={change} />
               <Text label="Local administrator contact" field="local_admin_contact" values={values} errors={errors} onChange={change} hint="Held by your department; Sentinel receives it masked" />
@@ -624,8 +614,8 @@ export function InstallationForm({
                 <div className="mt-3 space-y-2">
                   {values.attachments.map((item, index) => (
                     <div key={index} className="grid gap-2 sm:grid-cols-[12rem_1fr_1fr_auto]">
-                      <select
-                        className="select"
+                      <FloatSelect
+                        label="Document type"
                         value={item.document_type}
                         onChange={(event) =>
                           updateAttachment(index, {
@@ -638,16 +628,14 @@ export function InstallationForm({
                             {titleise(type)}
                           </option>
                         ))}
-                      </select>
-                      <input
-                        className="input"
-                        placeholder="Department reference number"
+                      </FloatSelect>
+                      <FloatInput
+                        label="Department reference number"
                         value={item.reference}
                         onChange={(event) => updateAttachment(index, { reference: event.target.value })}
                       />
-                      <input
-                        className="input"
-                        placeholder="Filename (optional)"
+                      <FloatInput
+                        label="Filename (optional)"
                         value={item.filename ?? ""}
                         onChange={(event) => updateAttachment(index, { filename: event.target.value })}
                       />

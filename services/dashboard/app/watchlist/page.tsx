@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 
-import { Card, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import {
+  Card,
+  FloatInput,
+  FloatSelect,
+  Notice,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { ist, relative } from "@/lib/format";
 import type { WatchCategory, WatchlistEntry } from "@/lib/types";
@@ -142,20 +151,17 @@ export default function WatchlistPage() {
         <Card title="Add a vehicle">
           <div className="space-y-3 px-3 py-3">
             <div className="flex flex-wrap items-end gap-3">
-              <label className="block">
-                <span className="field-label">Registration number</span>
-                <input
-                  className="input mono mt-1"
-                  value={plate}
-                  onChange={(event) => setPlate(event.target.value.toUpperCase())}
-                  placeholder="GJ01AB1234"
-                />
-              </label>
+              <FloatInput
+                label="Registration number"
+                inputClassName="mono"
+                value={plate}
+                onChange={(event) => setPlate(event.target.value.toUpperCase())}
+                hint="e.g. GJ01AB1234"
+              />
 
-              <label className="block">
-                <span className="field-label">Category</span>
-                <select
-                  className="input mt-1"
+              <div>
+                <FloatSelect
+                  label="Category"
                   value={category}
                   onChange={(event) => setCategory(event.target.value as WatchCategory)}
                 >
@@ -164,45 +170,36 @@ export default function WatchlistPage() {
                       {item.label}
                     </option>
                   ))}
-                </select>
+                </FloatSelect>
                 <span className="mt-1 block text-2xs text-ink-500">
                   {CATEGORIES.find((item) => item.value === category)?.hint}
                 </span>
-              </label>
+              </div>
 
-              <label className="block">
-                <span className="field-label">Case reference (optional)</span>
-                <input
-                  className="input mt-1"
+              <FloatInput
+                label="Case reference (optional)"
                   value={caseReference}
                   onChange={(event) => setCaseReference(event.target.value)}
-                  placeholder="FIR 118/2026"
-                />
-              </label>
+                  hint="FIR 118/2026"
+              />
 
-              <label className="block">
-                <span className="field-label">Stops matching on</span>
-                <input
+              <FloatInput
+                label="Stops matching on"
                   type="date"
-                  className="input mt-1"
                   value={expiresAt}
                   onChange={(event) => setExpiresAt(event.target.value)}
-                />
-              </label>
+              />
             </div>
 
-            <label className="block">
-              <span className="field-label">Why is this vehicle being watched? (required)</span>
-              <input
-                className="input mt-1"
+            <FloatInput
+              label="Why is this vehicle being watched? (required)"
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder="Reported stolen from Sarkhej on 24 Aug 2026, FIR 118/2026"
-              />
-            </label>
+                hint="Reported stolen from Sarkhej on 24 Aug 2026, FIR 118/2026"
+            />
 
             <button className="btn btn-primary" onClick={() => void add()} disabled={busy || !ready}>
-              {busy && <Spinner />} Add to watchlist
+              {busy ? <Spinner /> : <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Add to watchlist
             </button>
           </div>
         </Card>
@@ -305,9 +302,9 @@ export default function WatchlistPage() {
                             </button>
                             {standingDown === row.entry_id && (
                               <div className="flex gap-1">
-                                <input
-                                  className="input text-2xs"
-                                  placeholder="Why? e.g. vehicle recovered"
+                                <FloatInput
+                                  inputClassName="text-2xs"
+                                  label="Why? e.g. vehicle recovered"
                                   value={standDownReason}
                                   onChange={(event) => setStandDownReason(event.target.value)}
                                 />

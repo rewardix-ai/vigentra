@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
-import { Card, DepartmentTag, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import {
+  Card,
+  DepartmentTag,
+  FloatInput,
+  FloatSelect,
+  Notice,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import { footageTime, ist, relative } from "@/lib/format";
 import type { Detection, DetectorHealth } from "@/lib/types";
@@ -90,57 +99,46 @@ export default function DetectionsPage() {
         <Card title="Ask for detections">
           <div className="space-y-3 px-3 py-3">
             <div className="flex flex-wrap items-end gap-3">
-              <label className="block">
-                <span className="field-label">Class</span>
-                <select
-                  className="input mt-1"
+              <FloatSelect
+                label="Class"
                   value={className}
                   onChange={(event) => setClassName(event.target.value)}
-                >
+              >
                   <option value="">Any class</option>
                   {CLASSES.map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
                   ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="field-label">Time window</span>
-                <select
-                  className="input mt-1"
+              </FloatSelect>
+              <FloatSelect
+                label="Time window"
                   value={sinceHours}
                   onChange={(event) => setSinceHours(event.target.value)}
-                >
+              >
                   <option value="1">Last hour</option>
                   <option value="6">Last 6 hours</option>
                   <option value="24">Last 24 hours</option>
                   <option value="168">Last 7 days</option>
                   <option value="720">Last 30 days</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="field-label">Minimum confidence</span>
-                <select
-                  className="input mt-1"
+              </FloatSelect>
+              <FloatSelect
+                label="Minimum confidence"
                   value={minConfidence}
                   onChange={(event) => setMinConfidence(event.target.value)}
-                >
+              >
                   <option value="0">Everything stored</option>
                   <option value="0.45">0.45 (edge floor)</option>
                   <option value="0.6">0.60</option>
                   <option value="0.8">0.80</option>
-                </select>
-              </label>
-              <label className="block min-w-[18rem] flex-1">
-                <span className="field-label">Camera ID (optional)</span>
-                <input
-                  className="input mt-1"
+              </FloatSelect>
+              <FloatInput
+                label="Camera ID (optional)"
+                className="min-w-[18rem] flex-1"
                   value={cameraId}
                   onChange={(event) => setCameraId(event.target.value)}
-                  placeholder="SENTINEL-TRAFFIC-AHM-0001"
-                />
-              </label>
+                  hint="SENTINEL-TRAFFIC-AHM-0001"
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

@@ -9,6 +9,8 @@ import {
   Card,
   DepartmentTag,
   EmptyState,
+  FloatInput,
+  FloatSelect,
   Notice,
   PageHeader,
   RequestStatusPill,
@@ -119,30 +121,26 @@ function RequestList() {
 
         {/* Filters */}
         <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">
-          <label className="block min-w-[14rem] flex-1">
-            <span className="field-label">Search</span>
-            <input
-              className="input mt-1"
-              placeholder="Request ID, camera name or camera ID…"
+          <FloatInput
+            label="Search"
+            className="min-w-[14rem] flex-1"
+              hint="Request ID, camera name or camera ID…"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-          <label className="block min-w-[12rem]">
-            <span className="field-label">Status</span>
-            <select
-              className="select mt-1"
+          />
+          <FloatSelect
+            label="Status"
+            className="min-w-[12rem]"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
-            >
+          >
               <option value="">All statuses</option>
               {STATUSES.map((value) => (
                 <option key={value} value={value}>
                   {value.replace(/_/g, " ")} {counts[value] ? `(${counts[value]})` : ""}
                 </option>
               ))}
-            </select>
-          </label>
+          </FloatSelect>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-2xs text-ink-500">
               <span className="tabular font-medium text-ink-900">{visible.length}</span> of{" "}

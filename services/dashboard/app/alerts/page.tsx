@@ -2,8 +2,18 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Check, RefreshCw } from "lucide-react";
 
-import { Card, DepartmentTag, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import {
+  Card,
+  DepartmentTag,
+  FloatInput,
+  FloatSelect,
+  Notice,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/ui";
 import { api } from "@/lib/api";
 import { ist, relative } from "@/lib/format";
 import type { Alert } from "@/lib/types";
@@ -112,20 +122,17 @@ export default function AlertsPage() {
 
         <Card title="Filter">
           <div className="flex flex-wrap items-end gap-3 px-3 py-3">
-            <label className="block">
-              <span className="field-label">Time window</span>
-              <select
-                className="input mt-1"
+            <FloatSelect
+              label="Time window"
                 value={sinceHours}
                 onChange={(event) => setSinceHours(event.target.value)}
-              >
+            >
                 <option value="1">Last hour</option>
                 <option value="6">Last 6 hours</option>
                 <option value="24">Last 24 hours</option>
                 <option value="168">Last 7 days</option>
                 <option value="720">Last 30 days</option>
-              </select>
-            </label>
+            </FloatSelect>
 
             <label className="flex items-center gap-2 pb-1 text-[13px]">
               <input
@@ -149,7 +156,7 @@ export default function AlertsPage() {
             </label>
 
             <button className="btn" onClick={() => void load()} disabled={busy}>
-              {busy && <Spinner />} Refresh
+              {busy ? <Spinner /> : <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Refresh
             </button>
 
             {refreshedAt && (
@@ -288,6 +295,7 @@ export default function AlertsPage() {
                                 disabled={busy}
                                 title="I have seen this and it is being dealt with"
                               >
+                                <Check className="h-3 w-3" strokeWidth={2} aria-hidden />
                                 Acknowledge
                               </button>
                               <button
@@ -303,9 +311,9 @@ export default function AlertsPage() {
                             </div>
                             {dismissing === row.alert_id && (
                               <div className="flex gap-1">
-                                <input
-                                  className="input text-2xs"
-                                  placeholder="What did the frame actually show?"
+                                <FloatInput
+                                  label="What did the frame actually show?"
+                                  inputClassName="text-2xs"
                                   value={dismissReason}
                                   onChange={(event) => setDismissReason(event.target.value)}
                                 />

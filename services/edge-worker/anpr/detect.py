@@ -455,7 +455,75 @@ class Detector:
                                  self.orphan_tracker.update(orphans, frame_idx)):
                 detections[slot].track_id = tid
 
+        if self.cfg.prior_pass and vehicles:
+            detections.extend(
+                self._prior_plates(frame, vehicles, detections, skip=settled))
+
         return vehicles, detections
+
+    def _prior_plates(self, frame: np.ndarray, vehicles: list[Box],
+                      found: list[PlateDetection],
+                      skip: set[int] | None = None) -> list[PlateDetection]:
+        """Where a plate must be, for vehicles where none was detected.
+
+        This exists because the detector's failure is silent and total. On a
+        wide junction camera a plate can be 15 px tall - too small to be
+        recognised as a plate, so no box is returned, so no crop is made, so
+        OCR is never asked. The vehicle is discarded having never been read.
+
+        Geometry has no such threshold. Every vehicle carries its plate low
+        and centred, so the band can be cut from the vehicle box alone and
+        handed to the same enhancement and OCR path as a detected plate. When
+        there is nothing legible there, OCR returns nothing and the consensus
+        stage never sees a candidate - the same outcome as today, minus the
+        assumption that undetected means unreadable.
+
+        Only vehicles with no detected plate are considered: a real detection
+        is always better than a guess at where one would be.
+        """
+        import cv2
+
+        h, w = frame.shape[:2]
+        covered = {d.track_id for d in found}
+        out: list[PlateDetection] = []
+        # Biggest first - a near vehicle is the one whose plate might resolve.
+        for vehicle in sorted(vehicles, key=lambda v: v.area, reverse=True):
+            if len(out) >= self.cfg.prior_max_per_frame:
+                break
+            tid = vehicle.track_id
+            if tid is None or tid in covered:
+                continue
+            if skip and tid in skip:
+                continue
+            if vehicle.w < self.cfg.prior_min_vehicle:
+                continue
+
+            band_w = vehicle.w * self.cfg.prior_width
+            cx = vehicle.cx
+            box = Box(
+                x1=cx - band_w / 2.0,
+                y1=vehicle.y1 + vehicle.h * self.cfg.prior_top,
+                x2=cx + band_w / 2.0,
+                y2=vehicle.y1 + vehicle.h * self.cfg.prior_bottom,
+            ).clipped(w, h)
+            if box.w < 8 or box.h < 4:
+                continue
+
+            x1, y1, x2, y2 = box.as_int()
+            crop = frame[y1:y2, x1:x2].copy()
+            if crop.size == 0:
+                continue
+            # A band this small is below what OCR can use directly. Upscaling
+            # here rather than in build_variants keeps the aspect honest and
+            # gives rectification something to work with.
+            if crop.shape[1] < self.cfg.roi_min_size:
+                scale = self.cfg.roi_min_size / float(crop.shape[1])
+                crop = cv2.resize(crop, None, fx=scale, fy=scale,
+                                  interpolation=cv2.INTER_CUBIC)
+
+            out.append(PlateDetection(box=box, track_id=tid, vehicle=vehicle,
+                                      crop=crop, source="prior"))
+        return out
 
     @staticmethod
     def _crop(frame: np.ndarray, box: Box, margin: float = 0.10) -> np.ndarray:

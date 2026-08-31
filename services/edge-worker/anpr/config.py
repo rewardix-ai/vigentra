@@ -58,6 +58,31 @@ class DetectConfig:
     #: Vehicle crops smaller than this (px, longest side) are upscaled before
     #: the ROI plate pass.
     roi_min_size: int = 320
+    #: Last resort when neither pass found a plate on a vehicle: crop where a
+    #: plate must be, from the vehicle box alone, and let OCR look there.
+    #:
+    #: A plate detector needs enough pixels to recognise a plate AS a plate.
+    #: Below that it returns nothing, and the vehicle is dropped without a
+    #: single OCR call ever being made - which is the difference between "no
+    #: plate is readable here" and "we never looked". Geometry does not have
+    #: that failure mode: a plate is always low and central on a vehicle, so
+    #: the band can be cut without recognising anything first.
+    #:
+    #: The band is deliberately generous. The OCR engine runs its own text
+    #: detection inside the crop, so including bumper and road costs a little
+    #: time and no accuracy, while cropping too tight loses the plate.
+    prior_pass: bool = True
+    #: Vehicles narrower than this are not worth the OCR call - the band would
+    #: be a handful of pixels wide.
+    prior_min_vehicle: int = 60
+    #: Vertical band as a fraction of vehicle height: plates sit low.
+    prior_top: float = 0.55
+    prior_bottom: float = 0.95
+    #: Horizontal band as a fraction of vehicle width, centred.
+    prior_width: float = 0.80
+    #: Per frame. Each prior costs a full OCR call on a crop that may hold
+    #: nothing, so this is the throttle.
+    prior_max_per_frame: int = 4
     #: COCO classes treated as vehicles: car, motorcycle, bus, truck.
     vehicle_classes: tuple[int, ...] = (2, 3, 5, 7)
     tracker: str = "bytetrack.yaml"
@@ -115,6 +140,40 @@ class OcrConfig:
     #: minority, but "unreadable" crops are not - without a cap the fallback
     #: fires on most calls and dominates the frame budget.
     max_fallback_per_frame: int = 2
+    #: Sum the recogniser's score matrices across a track and decode once,
+    #: instead of decoding each frame and voting on the strings.
+    #:
+    #: Character evidence is complementary across frames - one frame is sure
+    #: about slot 3, another about slot 6 - and collapsing each frame to a
+    #: string before comparing them discards exactly that. The ICPR 2026 LRLPR
+    #: organisers found effective use of the track structure, not
+    #: super-resolution, was what the strongest entries shared.
+    #: OFF by default, on measurement rather than principle.
+    #:
+    #: On 14 synthetic tracks through the CCTV degradation chain: per-frame
+    #: reads 65.7%, string voting across the track 92.9%, this 35.7%. The
+    #: aggregation idea is right - +27 points from using the track at all -
+    #: but summing THIS head's output is not how to get it here.
+    #:
+    #: Why it does not transfer: the competition's winner summed logits from a
+    #: recogniser they trained, over tracks that arrive pre-cropped and
+    #: registered. PP-OCRv5 is a CTC head whose timestep-to-character mapping
+    #: shifts with the crop, so evidence lands in different columns and the
+    #: sum smears it. ECC alignment took it from 14.3% to 28.6% and log-space
+    #: summing to 35.7%, which says the diagnosis is right and the remedy is
+    #: still not enough - the alignment a CTC sum needs is finer than
+    #: registration on a blurred 48 px crop can give.
+    #:
+    #: Turn it on with a recogniser you control end to end (SVTRv2-AR), where
+    #: the pre-softmax logits and a fixed output length are both reachable.
+    #: Until then string voting is doing the job better.
+    fuse_track_logits: bool = False
+    #: Frames per fused decode. Five is the track length that competition used
+    #: and is enough for the complementarity to show; more costs linearly.
+    fuse_frames: int = 5
+    #: Below this many frames a track is not fused - one or two looks do not
+    #: carry enough independent evidence to beat the per-frame reads.
+    fuse_min_frames: int = 2
     #: Crops narrower than this are not worth escalating: if the recogniser
     #: could not read them, a text detector will not rescue them either.
     fallback_min_width: int = 60

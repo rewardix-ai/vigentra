@@ -1,0 +1,47 @@
+# ANPR tuning for the Sentinel grid.
+#
+# The defaults in anpr/config.py are written for footage where a plate fills a
+# useful part of the frame. The grid's cameras are wide junction overviews at
+# 1920x1080, and a measured pass over SENTINEL-TRAFFIC-AHM-0002 found plates
+# 13-17 px tall - below anything an OCR engine can read, and small enough that
+# the detector mostly missed them too: 31 vehicles, 2 plate boxes, 0 reads.
+#
+# Everything here buys plate size back at the cost of CPU time. Numbers are
+# measured on that camera; re-measure with scripts/anpr-tune.ps1 after changes.
+detect:
+  # The full-frame pass ran at 640 on a 1920 frame - a 3x downscale before the
+  # detector ever saw it, turning a 53 px plate into ~18 px. This is the single
+  # biggest lever on this footage.
+  plate_imgsz: 1280
+  # Same reasoning for the pass inside each vehicle box.
+  roi_imgsz: 960
+  # Vehicle crops are upscaled to at least this before the ROI plate pass. At
+  # 320 a distant car's plate was still sub-20 px going in.
+  roi_min_size: 640
+  # A 17 px plate scores low even when found. Recovering it and letting the
+  # consensus stage reject it beats never seeing it.
+  plate_conf: 0.15
+  vehicle_conf: 0.30
+  # YOLO11 for vehicles and BoT-SORT for tracking: the pairing the LRLPR-26
+  # dataset itself was built with, so track structure here matches what the
+  # published results were measured on. BoT-SORT carries appearance features
+  # through occlusions that break ByteTrack's pure-IoU association - and a
+  # track that fragments is a track whose frames never get fused.
+  vehicle_model: yolo11n.pt
+  tracker: botsort.yaml
+
+enhance:
+  # Plates arrive far below this, so upscaling does real work here.
+  ocr_height: 96
+  max_variants: 6
+
+ocr:
+  min_confidence: 0.25
+
+consensus:
+  # Traffic crosses these junctions quickly and the worker samples every 5th
+  # frame, so a vehicle is often present for only two sampled frames. Three
+  # observations meant a plate that WAS read could still never be confirmed.
+  min_observations: 2
+  min_score: 0.50
+  min_margin: 0.15

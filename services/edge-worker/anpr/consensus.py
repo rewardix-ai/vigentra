@@ -22,6 +22,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from . import layout as lay
 from . import plate_rules as pr
 from .config import ConsensusConfig
 
@@ -38,6 +39,11 @@ class Observation:
     frame: int
     engine: str = ""
     variant: str = ""
+    #: Layout of the crop this reading came from, and how sure that call was.
+    #: Carried per observation rather than per track because it is voted on:
+    #: a single skewed frame must not decide the whole vehicle's layout.
+    layout: str = lay.UNKNOWN
+    layout_confidence: float = 0.0
 
     @property
     def weight(self) -> float:
@@ -99,7 +105,7 @@ class TrackConsensus:
 
     # -- ingest ----------------------------------------------------------
     def observe(self, candidates: Iterable[pr.PlateCandidate], quality: float,
-                frame: int) -> None:
+                frame: int, layout: "lay.LayoutVerdict | None" = None) -> None:
         """Record every reading produced for one crop of this track."""
         self.last_ocr_frame = frame
         self.last_frame = frame
@@ -113,8 +119,32 @@ class TrackConsensus:
                 text=c.text, confidence=c.confidence, score=c.score,
                 valid=c.valid, fmt=c.fmt, quality=quality, frame=frame,
                 engine=c.engine, variant=c.variant,
+                layout=(layout.layout if layout else lay.UNKNOWN),
+                layout_confidence=(layout.confidence if layout else 0.0),
             ))
             self._dirty = True
+
+    @property
+    def layout(self) -> str:
+        """The track's layout, voted across every look at it.
+
+        One bit decided over many frames, so it settles long before the plate
+        string does - which is the point of separating them. Once it is
+        settled it constrains the string: a two-line plate's positions are
+        scoped per band, and voting them as one flat sequence lets a
+        band-split disagreement in one frame shift every character after it.
+
+        Weighted by how sure each look was, not merely counted, because the
+        classifier already knows when its two signals disagreed and that
+        information should not be thrown away at the ballot box.
+        """
+        tally: dict[str, float] = defaultdict(float)
+        for obs in self.observations:
+            if obs.layout and obs.layout != lay.UNKNOWN:
+                tally[obs.layout] += max(obs.layout_confidence, 0.05)
+        if not tally:
+            return lay.UNKNOWN
+        return max(tally.items(), key=lambda kv: kv[1])[0]
 
     # -- verdict ---------------------------------------------------------
     @property
@@ -223,6 +253,24 @@ class TrackConsensus:
         pool = [o for o in obs if len(o.text) == target_len]
         if len(pool) < 2:
             return None, 0.0
+
+        # On a two-line plate, restrict the pool to readings taken under the
+        # same layout call.
+        #
+        # A stacked plate read as one line yields the two rows smeared into a
+        # single sequence, and a stacked plate read band-by-band yields them
+        # joined in reading order. Both are `target_len` characters of the
+        # same plate and they are NOT aligned: slot 4 is the fifth glyph of
+        # one and something else entirely in the other. Voting them together
+        # is voting two different coordinate systems into one string, and one
+        # disagreeing frame shifts every position after the split. Scoping the
+        # pool to the track's settled layout is what keeps the positions
+        # meaning the same thing across the frames being compared.
+        track_layout = self.layout
+        if track_layout == lay.TWO_LINE:
+            scoped = [o for o in pool if o.layout == lay.TWO_LINE]
+            if len(scoped) >= 2:
+                pool = scoped
 
         # ---- layout mask ------------------------------------------------
         # Which format the pool believes it is looking at, so each slot can be

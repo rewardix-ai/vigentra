@@ -20,6 +20,7 @@ from typing import Protocol, Sequence
 import cv2
 import numpy as np
 
+from . import layout as lay
 from . import plate_rules as pr
 from .config import OcrConfig
 
@@ -319,11 +320,60 @@ STACKED_ASPECT = 0.38
 
 
 def _looks_stacked(img: np.ndarray) -> bool:
-    """True when the crop's shape suggests two rows of characters."""
+    """True when the crop's shape suggests two rows of characters.
+
+    Kept as the cheap gate on the expensive detect-then-recognise escalation.
+    `layout.classify()` is the considered answer and reads the ink rather than
+    the shape, but it costs a threshold and a projection per call, and this is
+    asked once per variant per crop. Shape is enough to decide whether the
+    considered answer is worth computing.
+    """
     if img is None or img.size == 0:
         return False
     h, w = img.shape[:2]
     return w > 0 and (h / w) > STACKED_ASPECT
+
+
+def read_stacked(engine: "OcrEngine", crop: np.ndarray) -> list[Reading]:
+    """Read a stacked plate one band at a time, joined in reading order.
+
+    The escalation path in `read_batch` gets there eventually - it hands the
+    crop to a full text detector, which finds the two rows and `_order_lines`
+    re-joins them. That works and it costs a detector pass, and it only runs
+    after the fast path has already failed and produced a wrong answer that
+    the grammar had to reject.
+
+    Splitting on the ink profile reaches the same place without either cost:
+    two ordinary recognition calls on two single-line crops, which is what
+    every recogniser here is actually good at. The joined reading is emitted
+    alongside the individual bands, because a plate whose upper row is the
+    state code and lower row the number is only legal when joined, while a
+    misclassified single-line crop is only legal un-split - and the grammar
+    discards whichever of the two does not parse.
+    """
+    verdict = lay.classify(crop)
+    if not verdict.is_two_line:
+        return []
+    bands = lay.split_bands(crop, verdict)
+    if len(bands) < 2:
+        return []
+
+    per_band = engine.read_batch(bands, allow_fallback=False)
+    out: list[Reading] = []
+    best: list[Reading] = []
+    for readings in per_band:
+        if not readings:
+            best.append(("", 0.0))
+            continue
+        top = max(readings, key=lambda r: r[1])
+        best.append(top)
+        out.extend(readings)
+
+    if all(text for text, _ in best):
+        joined = "".join(text for text, _ in best)
+        mean = sum(score for _, score in best) / len(best)
+        out.append((joined, mean))
+    return out
 
 
 def _order_lines(texts: Sequence[str], scores: Sequence[float],
@@ -695,16 +745,32 @@ class OcrEnsemble:
             except Exception as exc:            # noqa: BLE001 - isolate engines
                 log.warning("engine %s crashed on batch: %s", engine.name, exc)
                 continue
-            for variant, readings in zip(names, per_image):
-                for raw, conf in readings:
-                    trace.append({"engine": engine.name, "variant": variant,
-                                  "raw": raw, "conf": round(float(conf), 3)})
-                    if conf < self.cfg.min_confidence:
-                        continue
-                    if not pr.plausible(raw):
-                        continue
-                    candidates.append(pr.normalise(
-                        raw, float(conf), engine=engine.name, variant=variant))
+            # A stacked plate gets read band by band as well as whole. The
+            # base variant is enough to split on - every variant is the same
+            # crop enhanced differently, so they share a layout, and profiling
+            # each one would repeat the same measurement at the same answer.
+            stacked: list[tuple[str, Reading]] = []
+            if images:
+                try:
+                    for reading in read_stacked(engine, images[0]):
+                        stacked.append(("stacked", reading))
+                except Exception as exc:        # noqa: BLE001 - never fatal
+                    log.debug("stacked read failed on %s: %s", engine.name, exc)
+
+            pairs = [(variant, reading)
+                     for variant, readings in zip(names, per_image)
+                     for reading in readings]
+            pairs.extend(stacked)
+
+            for variant, (raw, conf) in pairs:
+                trace.append({"engine": engine.name, "variant": variant,
+                              "raw": raw, "conf": round(float(conf), 3)})
+                if conf < self.cfg.min_confidence:
+                    continue
+                if not pr.plausible(raw):
+                    continue
+                candidates.append(pr.normalise(
+                    raw, float(conf), engine=engine.name, variant=variant))
 
         candidates.sort(key=lambda c: (c.valid, c.score), reverse=True)
         return OcrResult(candidates, pr.best_of(candidates), trace)

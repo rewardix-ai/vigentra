@@ -25,6 +25,7 @@ import cv2
 import numpy as np
 
 from . import enhance
+from . import layout as lay
 from .config import Config
 from .consensus import ConsensusStore, TrackConsensus, supersedes
 from .detect import Box, Detector, PlateDetection
@@ -229,7 +230,11 @@ class AnprPipeline:
             fused = self._fused_reading(det.track_id)
             if fused is not None:
                 candidates.append(fused)
-            tc.observe(candidates, q.score, idx)
+            # Classified here rather than inside the OCR layer so the track
+            # gets the verdict even when every reading was rejected: a crop
+            # that produced no legal plate still told us the plate's shape,
+            # and that is a vote worth keeping for the frames that follow.
+            tc.observe(candidates, q.score, idx, layout=lay.classify(det.crop))
             tc.last_seen = captured
             tc.last_capture = captured
             if tc.first_capture is None:

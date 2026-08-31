@@ -81,6 +81,11 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel
+      # Both department systems federate the live grid. Stated explicitly
+      # rather than left to defaults, because when these are off the registry
+      # builds no adapters at all and every route that needs one returns 503.
+      TRAFFIC_VMS_ENABLED: "true"
+      MUNICIPAL_VMS_ENABLED: "true"
       TRAFFIC_VMS_BASE_URL: http://traffic-vms:8001
       TRAFFIC_VMS_API_KEY: ${TRAFFIC_VMS_API_KEY:-traffic-demo-key}
       MUNICIPAL_VMS_BASE_URL: http://municipal-vms:8002

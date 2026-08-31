@@ -659,8 +659,17 @@ class Settings(BaseSettings):
     #: Off by default: the platform should not invent cameras. Turn these on
     #: only to demonstrate the cross-unit grant flow, which needs a second
     #: department to exist at all.
-    traffic_vms_enabled: bool = False
-    municipal_vms_enabled: bool = False
+    # On by default, because these two ARE the federation now.
+    #
+    # They used to default off and it did not matter: the grid was registered
+    # as a third source with `sentinel_grid_enabled` defaulting True, so a
+    # deployment that set no flags still got one adapter and the app came up.
+    # Re-homing the grid behind these two removed that fallback, and any
+    # deployment not setting the flags explicitly - docker-compose.yml among
+    # them - built ZERO adapters and answered 503 on every route needing one.
+    # A registry with no sources configured is not a meaningful default.
+    traffic_vms_enabled: bool = True
+    municipal_vms_enabled: bool = True
 
     traffic_vms_base_url: str = "http://traffic-vms:8001"
     traffic_vms_api_key: str = "traffic-demo-key"
@@ -678,6 +687,10 @@ class Settings(BaseSettings):
     #: The live grid described at https://sentinel.gujarat.gov.in/resource.
     #: Unlike the two demo departments this is a real upstream, so every rule
     #: from that guide is enforced in code - see docs/sentinel-grid.md.
+    #: Retained for the edge worker, which reads SENTINEL_GRID_ENABLED from the
+    #: environment to decide whether to open grid captures. It no longer gates
+    #: a source here: the grid is not a source of its own, it is the upstream
+    #: both department systems federate.
     sentinel_grid_enabled: bool = True
     sentinel_grid_base_url: str = "https://live.corp8.cloud"
     sentinel_grid_department: str = GRID_DEPARTMENT

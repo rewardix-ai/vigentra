@@ -530,10 +530,15 @@ DEFAULT_DEMO_USERS: list[dict[str, Any]] = [
     {
         "username": "municipal.ai",
         "password": "MuniOps@2026",
-        "display_name": "Municipal Analytics Workbench",
+        "display_name": "Municipal Analytics Workbench (statewide)",
         "role": Role.AI_OPERATOR,
         "department": MUNICIPAL_DEPARTMENT,
-        "city": "Ahmedabad",
+        # Statewide, like its traffic counterpart above. The federated cameras
+        # are state assets and carry no city of their own, so a city-scoped
+        # analytics account matched almost none of them - this one could reach
+        # 1 of its department's 12 cameras. The departmental boundary is what
+        # constrains ingest here, and that still holds: municipal.ai submits
+        # for municipal cameras only.
     },
     # --- statewide department control rooms --------------------------------
     # The federated cameras are state assets spread across nine districts, so
@@ -555,6 +560,27 @@ DEFAULT_DEMO_USERS: list[dict[str, Any]] = [
         "role": Role.MUNICIPAL_OPERATOR,
         "department": MUNICIPAL_DEPARTMENT,
         "unit": "State Civic Control Room",
+    },
+    # --- joint control room ------------------------------------------------
+    # One account that can watch the whole estate, for demonstrating the live
+    # wall in a single sign-in rather than two.
+    #
+    # It reaches every camera by being statewide across BOTH departments
+    # (department "*"), not by being an administrator. That distinction is the
+    # point: it sits in the operator tier, so it is still refused a suspended
+    # camera, an owner-disabled one, or a mode the camera does not offer. The
+    # oversight accounts above remain unable to watch anything without the
+    # owning unit's grant, which is the property the federation model is
+    # actually claiming. Real deployments would provision this only for a
+    # standing multi-agency cell.
+    {
+        "username": "joint.control",
+        "password": "Joint@2026",
+        "display_name": "State Joint Control Room (all departments)",
+        "role": Role.DEPARTMENT_ADMIN,
+        "department": ALL_DEPARTMENTS,
+        "city": ALL_CITIES,
+        "unit": "State Joint Control Room",
     },
     {
         "username": "traffic.ai",
@@ -743,50 +769,46 @@ class Settings(BaseSettings):
 
         Adding a third department system is one entry here plus one adapter
         class - nothing in the routers or the dashboard changes.
+
+        Both departments federate the live Sentinel grid. The grid is a
+        gateway, not a custodian: it fronts cameras that belong to Traffic
+        Police and to the Municipal Corporation, so listing it as a source of
+        its own put a third "department" in the registry that owns nothing and
+        answers to no one. Each department system now federates the cameras it
+        actually owns - which is what the access model has always assumed - and
+        `grid_adapter` returns only the cameras carrying its own
+        `source_system`.
         """
         entries: list[SourceSettings] = []
         if self.traffic_vms_enabled:
             entries.append(
                 SourceSettings(
                     source_system=TRAFFIC_SOURCE,
-                    display_name="Traffic VMS",
-                    adapter="traffic_adapter",
-                    base_url=self.traffic_vms_base_url,
-                    credential=self.traffic_vms_api_key,
+                    display_name="Traffic Police VMS",
+                    adapter="grid_adapter",
+                    base_url=self.sentinel_grid_base_url,
+                    # The grid catalogue is unauthenticated; there is no
+                    # credential to hold and inventing one would be theatre.
+                    credential="",
                     department=self.traffic_vms_department,
-                    default_district=self.traffic_vms_district,
+                    default_district=self.sentinel_grid_district,
                     department_code="TRAFFIC",
                     default_city=self.traffic_vms_city,
+                    read_only=True,
                 )
             )
         if self.municipal_vms_enabled:
             entries.append(
                 SourceSettings(
                     source_system=MUNICIPAL_SOURCE,
-                    display_name="Municipal VMS",
-                    adapter="municipal_adapter",
-                    base_url=self.municipal_vms_base_url,
-                    credential=self.municipal_vms_token,
-                    department=self.municipal_vms_department,
-                    default_district=self.municipal_vms_district,
-                    department_code="MUNICIPAL",
-                    default_city=self.municipal_vms_city,
-                )
-            )
-        if self.sentinel_grid_enabled:
-            entries.append(
-                SourceSettings(
-                    source_system=GRID_SOURCE,
-                    display_name="Sentinel Camera Grid",
+                    display_name="Municipal Corporation VMS",
                     adapter="grid_adapter",
                     base_url=self.sentinel_grid_base_url,
-                    # The grid catalogue is unauthenticated. There is no
-                    # credential to hold, and inventing one would be theatre.
                     credential="",
-                    department=self.sentinel_grid_department,
+                    department=self.municipal_vms_department,
                     default_district=self.sentinel_grid_district,
-                    department_code="GRID",
-                    default_city=self.sentinel_grid_city,
+                    department_code="MUNICIPAL",
+                    default_city=self.municipal_vms_city,
                     read_only=True,
                 )
             )

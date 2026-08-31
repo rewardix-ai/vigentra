@@ -365,6 +365,17 @@ def format_pretty(text: str, fmt: str | None) -> str:
     return text
 
 
+def slot_options(ch: str, want: str) -> tuple[tuple[str, float], ...]:
+    """Public view of the confusion alternatives for one slot.
+
+    The positional voter needs this: when a frame reads '0' in a slot the
+    layout says must be a letter, that vote is not noise to be discarded, it
+    is evidence for 'O' or 'D' or 'Q'. Folding it onto the legal glyphs keeps
+    the evidence and spends it where it belongs.
+    """
+    return _options(ch, want)
+
+
 def char_classes(fmt_name: str | None, length: int) -> Sequence[str]:
     """Slot classes for a format, used by the positional voter."""
     for f in PLATE_FORMATS:

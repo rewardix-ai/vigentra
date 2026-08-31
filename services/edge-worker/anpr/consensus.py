@@ -224,12 +224,37 @@ class TrackConsensus:
         if len(pool) < 2:
             return None, 0.0
 
+        # ---- layout mask ------------------------------------------------
+        # Which format the pool believes it is looking at, so each slot can be
+        # constrained to the class the layout allows. An Indian plate is
+        # AA NN AA NNNN: position 0 is a letter, position 2 is a digit, and no
+        # amount of agreement makes 'O' legal in a digit slot. Without this the
+        # voter would happily elect a glyph the grammar must then reject,
+        # throwing away the whole track.
+        fmts: dict[str, float] = defaultdict(float)
+        for o in pool:
+            if o.valid and o.fmt:
+                fmts[o.fmt] += o.weight
+        fmt_name = max(fmts.items(), key=lambda kv: kv[1])[0] if fmts else None
+        classes = pr.char_classes(fmt_name, target_len)
+
         out: list[str] = []
         agreements: list[float] = []
         for i in range(target_len):
+            want = classes[i] if i < len(classes) else "?"
             slot: dict[str, float] = defaultdict(float)
             for o in pool:
-                slot[o.text[i]] += o.weight * (self.cfg.valid_weight if o.valid else 1.0)
+                w = o.weight * (self.cfg.valid_weight if o.valid else 1.0)
+                # A reading that breaks the layout is evidence, not noise: OCR
+                # confuses a known, small set of glyph pairs, so '0' seen in a
+                # letter slot is a vote for O/D/Q. Spend it on the legal glyphs
+                # it most likely was, discounted by how far down the confusion
+                # list each one sits. This is what turns five disagreeing
+                # frames into one correct plate rather than five rejects.
+                for glyph, cost in pr.slot_options(o.text[i], want):
+                    slot[glyph] += w / (1.0 + cost)
+            if not slot:
+                return None, 0.0
             ch, won = max(slot.items(), key=lambda kv: kv[1])
             total = sum(slot.values()) or 1.0
             out.append(ch)

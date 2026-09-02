@@ -32,8 +32,14 @@ import type { Camera, VideoSession } from "@/lib/types";
  * Without this, one camera whose manifest never arrives holds a slot forever
  * and the queue behind it stops moving - the exact stall this queue exists to
  * remove, with a smaller number.
+ *
+ * Generous, because it has to cover the whole start: the session POST, the
+ * proxied manifest fetch and the first segment, every one of them a round trip
+ * to a gateway on the public internet. It is a backstop for a feed that never
+ * arrives, not a latency budget - a tile that starts slowly is still a tile
+ * that works, and cutting it off produces a wall where nothing plays.
  */
-const START_TIMEOUT_MS = 20_000;
+const START_TIMEOUT_MS = 45_000;
 
 /** Backoff between retries: 3s, 6s, 12s, 24s, then every 30s. */
 function backoffMs(attempt: number): number {
@@ -63,6 +69,16 @@ export function LiveTile({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const releaseRef = useRef<Release | null>(null);
+  // Shared between the two effects on purpose.
+  //
+  // The deadline is armed where the session is opened and has to be cancelled
+  // where the video reports itself playing, which is a different effect. Held
+  // in the effect that arms it, it could never be cancelled - so it fired on
+  // healthy tiles too, revoked a session that was streaming perfectly well,
+  // and every segment after it came back 410. A wall of tiles that each died
+  // twenty seconds after appearing looks exactly like footage that does not
+  // work at all.
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const watchable =
     camera.video_access === "live_and_playback" || camera.video_access === "live_only";
@@ -75,6 +91,12 @@ export function LiveTile({
   const releaseSlot = useCallback(() => {
     releaseRef.current?.();
     releaseRef.current = null;
+  }, []);
+
+  /** Disarm the start deadline. Called once the feed is genuinely playing. */
+  const clearWatchdog = useCallback(() => {
+    if (watchdogRef.current) clearTimeout(watchdogRef.current);
+    watchdogRef.current = null;
   }, []);
 
   // Only tiles the operator can actually see hold a session.
@@ -106,11 +128,11 @@ export function LiveTile({
     if (sessionIdRef.current) return;
 
     const controller = new AbortController();
-    let watchdog: ReturnType<typeof setTimeout> | null = null;
 
     /** Give up on this attempt and schedule the next one. */
     const fail = (message: string) => {
       if (controller.signal.aborted) return;
+      clearWatchdog();
       releaseSlot();
       setError(message);
       setPhase("waiting");
@@ -136,8 +158,9 @@ export function LiveTile({
       setPhase("opening");
 
       // The slot is not held past this even if the feed never produces a
-      // frame, so one dead camera cannot block the rest of the wall.
-      watchdog = setTimeout(() => fail("Feed did not start"), START_TIMEOUT_MS);
+      // frame, so one dead camera cannot block the rest of the wall. Cancelled
+      // by the attach effect as soon as the video reports it is playing.
+      watchdogRef.current = setTimeout(() => fail("Feed did not start"), START_TIMEOUT_MS);
 
       try {
         const opened = await api.openVideoSession({
@@ -160,19 +183,30 @@ export function LiveTile({
 
     return () => {
       controller.abort();
-      if (watchdog) clearTimeout(watchdog);
+      clearWatchdog();
       releaseSlot();
     };
-  }, [visible, watchable, camera.camera_id, reason, password, attempt, close, releaseSlot]);
+  }, [
+    visible,
+    watchable,
+    camera.camera_id,
+    reason,
+    password,
+    attempt,
+    close,
+    releaseSlot,
+    clearWatchdog,
+  ]);
 
   // Give the session and the slot back on unmount rather than leaving them to
   // time out.
   useEffect(
     () => () => {
+      clearWatchdog();
       releaseSlot();
       void close();
     },
-    [close, releaseSlot],
+    [close, releaseSlot, clearWatchdog],
   );
 
   // Attach the feed. HLS needs hls.js outside Safari.
@@ -189,16 +223,21 @@ export function LiveTile({
     // is not a started feed.
     const onPlaying = () => {
       if (destroyed) return;
+      // Order matters: disarm the deadline BEFORE anything else, because a
+      // feed that has started is no longer a feed that failed to start.
+      clearWatchdog();
       setPhase("live");
       setError(null);
       releaseSlot();
     };
-    const onStalled = () => {
-      if (!destroyed) setError("Feed stalled");
-    };
+    // Nothing listens for `stalled`. A live stream stalls briefly all the
+    // time - a segment arrives late, the buffer drains - and the player
+    // recovers on its own; hls.js raises a fatal error when it cannot. Before
+    // the first frame, `stalled` is also exactly the condition the start
+    // deadline is there to catch, so treating it as news would disarm the one
+    // check that matters.
     video.addEventListener("playing", onPlaying);
     video.addEventListener("loadeddata", onPlaying);
-    video.addEventListener("stalled", onStalled);
 
     if (session.stream_protocol !== "hls" || video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src;
@@ -228,10 +267,9 @@ export function LiveTile({
       destroyed = true;
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("loadeddata", onPlaying);
-      video.removeEventListener("stalled", onStalled);
       hls?.destroy();
     };
-  }, [session, releaseSlot]);
+  }, [session, releaseSlot, clearWatchdog]);
 
   const loc = camera.location;
 

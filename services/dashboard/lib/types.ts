@@ -685,3 +685,29 @@ export interface AnprReportRow {
   watchlist_hit: boolean;
   watchlist_category: string | null;
 }
+
+
+/** One class's tally at a camera. */
+export interface VehicleCount {
+  class_name: string;
+  count: number;
+}
+
+/**
+ * What a camera has counted, and over what window.
+ *
+ * `total_detections` includes people and bicycles; `total_vehicles` is the
+ * traffic figure. Both are returned because a junction's throughput and its
+ * pedestrian exposure are different questions and the same query answers each.
+ */
+export interface CameraTrafficSummary {
+  camera_id: string;
+  camera_name: string | null;
+  since_hours: number;
+  total_detections: number;
+  total_vehicles: number;
+  by_class: VehicleCount[];
+  plates_read: number;
+  first_seen_utc: string | null;
+  last_seen_utc: string | null;
+}

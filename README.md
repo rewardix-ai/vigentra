@@ -226,9 +226,8 @@ Every credential is synthetic. Passwords deliberately stay simple for the demo.
 | `municipal.operator` | `Municipal@2026` | Municipal operator | Municipal Corp., Ahmedabad |
 | `dept.admin` | `DeptAdmin@2026` | Department admin | Traffic Police |
 | `municipal.deptadmin` | `DeptAdmin@2026` | Department admin | Municipal Corp. |
-| `ai.operator` | `AiOps@2026` | AI operator | Traffic Police, Ahmedabad |
 | `traffic.ai` | `AiOps@2026` | AI operator | Traffic Police, statewide |
-| `municipal.ai` | `MuniOps@2026` | AI operator | Municipal Corp., Ahmedabad |
+| `municipal.ai` | `MuniOps@2026` | AI operator | Municipal Corp., statewide |
 | `traffic.installer` | `Install@2026` | Installation operator | Traffic Police |
 | `municipal.installer` | `Install@2026` | Installation operator | Municipal Corp. |
 

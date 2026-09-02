@@ -57,7 +57,7 @@ logging.basicConfig(
 logger = logging.getLogger("sentinel.edge.worker")
 
 CENTRAL_API_URL = os.getenv("CENTRAL_API_URL", "http://central-api:8000")
-EDGE_USERNAME = os.getenv("EDGE_USERNAME", "ai.operator")
+EDGE_USERNAME = os.getenv("EDGE_USERNAME", "traffic.ai")
 EDGE_PASSWORD = os.getenv("EDGE_PASSWORD", "AiOps@2026")
 FRAME_SAMPLE_INTERVAL = int(os.getenv("YOLO_FRAME_SAMPLE_INTERVAL", "5"))
 BATCH_SIZE = int(os.getenv("EDGE_BATCH_SIZE", "50"))
@@ -67,7 +67,8 @@ BATCH_SIZE = int(os.getenv("EDGE_BATCH_SIZE", "50"))
 #: and the grid is a live-only feed with no archive: there is nothing to
 #: download, and `iter_session_frames` below can only work on a source that
 #: answers range requests. See docs/sentinel-grid.md.
-GRID_BASE_URL = os.getenv("SENTINEL_GRID_BASE_URL", "https://live.corp8.cloud")
+#: live.corp8.cloud was decommissioned; the grid serves from here now.
+GRID_BASE_URL = os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud")
 GRID_ENABLED = os.getenv("SENTINEL_GRID_ENABLED", "true").lower() != "false"
 #: Canonical camera IDs carry the grid's own id in their external ID.
 GRID_EXTERNAL_PREFIX = "GRID-"
@@ -202,11 +203,17 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
     if not GRID_ENABLED:
         return None
 
-    reference = (external_id or "").upper()
-    if not reference.startswith(GRID_EXTERNAL_PREFIX):
+    # Upper-cased only to test the prefix. The id itself keeps its own case:
+    # the grid's ids were numeric when this was written, so folding case was
+    # free; they are `cam04` now and folding it looked for CAM04 in a
+    # catalogue holding cam04, missed, and silently fell back to fetching the
+    # HLS manifest into a temp file - where ffmpeg tried to resolve relative
+    # segment names against a local path and could open nothing.
+    reference = (external_id or "").strip()
+    if not reference.upper().startswith(GRID_EXTERNAL_PREFIX):
         return None
 
-    if _GRID_CATALOGUE is None:
+    if not _GRID_CATALOGUE:
         try:
             _GRID_CATALOGUE = grid.fetch_catalogue(GRID_BASE_URL)
             logger.info("grid catalogue: %d camera(s)", len(_GRID_CATALOGUE))
@@ -214,11 +221,28 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
             # A grid that is unreachable is a normal condition, not a crash:
             # the worker still has whatever local and departmental cameras it
             # was given.
-            logger.warning("grid catalogue unavailable (%s); skipping grid cameras", exc)
+            #
+            # The failure is NOT cached. Caching an empty catalogue meant one
+            # slow response - on a gateway that takes tens of seconds on a cold
+            # connection - disabled grid capture for the entire life of a
+            # process meant to run for ever, sending every camera down the
+            # broker path instead, where a live-only source has nothing to
+            # serve and answers 404. Retrying on the next camera costs one
+            # request; the alternative costs the whole run.
+            logger.warning(
+                "grid catalogue unavailable (%s); skipping grid cameras this pass", exc
+            )
             _GRID_CATALOGUE = {}
+            return None
 
-    grid_id = reference[len(GRID_EXTERNAL_PREFIX):].lstrip("0") or "0"
-    return _GRID_CATALOGUE.get(grid_id) or _GRID_CATALOGUE.get(reference[len(GRID_EXTERNAL_PREFIX):])
+    raw = reference[len(GRID_EXTERNAL_PREFIX):]
+    # Try the id as given first, then the old numeric form with its padding
+    # stripped, so a registry holding ids from either scheme still resolves.
+    for key in (raw, raw.lstrip("0") or "0", raw.lower(), raw.upper()):
+        camera = _GRID_CATALOGUE.get(key)
+        if camera is not None:
+            return camera
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -680,6 +704,33 @@ def resolve_cameras(
     return found
 
 
+def _sign_in_patiently(client: CentralClient, *, forever: bool) -> None:
+    """Sign in, waiting for the API rather than exiting when it is not there.
+
+    A worker started beside the stack it reports to will often win the race,
+    and one running continuously outlives any number of API deployments. Both
+    used to end the process on the first refused connection, which turns a
+    thirty-second restart into analytics that stay off until somebody notices.
+
+    A one-shot run still fails fast: there, an unreachable API means the
+    command cannot do what was asked, and saying so immediately is right.
+    """
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            client.sign_in(EDGE_USERNAME, EDGE_PASSWORD)
+            return
+        except Exception as exc:
+            if not forever:
+                raise
+            delay = min(60, 2 ** min(attempt, 6))
+            logger.warning(
+                "central API not ready (%s); retrying sign-in in %ds", exc, delay
+            )
+            time.sleep(delay)
+
+
 def supervise(
     *,
     cameras: list[str],
@@ -710,7 +761,7 @@ def supervise(
     # takes the live path instead of the broker's.
     if not dry_run:
         discovery_client = CentralClient()
-        discovery_client.sign_in(EDGE_USERNAME, EDGE_PASSWORD)
+        _sign_in_patiently(discovery_client, forever=forever)
     elif all_cameras:
         logger.error("--all-cameras needs the registry; not available with --dry-run")
         return 2
@@ -747,7 +798,24 @@ def supervise(
             if all_cameras and discovery_client is not None:
                 # Re-resolve every cycle so new cameras join and withdrawn ones
                 # drop out without a restart.
-                targets = resolve_cameras(None, True, discovery_client)
+                #
+                # Tolerated rather than fatal: this call is the first thing a
+                # cycle does, so an API restart landing here used to kill a
+                # worker meant to run for ever - and a worker that exits when
+                # the registry is redeployed is not continuous analytics, it is
+                # analytics until the next deployment. Last cycle's camera list
+                # is a good enough approximation of this one's.
+                try:
+                    targets = resolve_cameras(None, True, discovery_client)
+                except Exception as exc:
+                    if not forever:
+                        raise
+                    logger.warning(
+                        "camera list unavailable this cycle (%s); reusing the "
+                        "previous %d camera(s)",
+                        exc,
+                        len(targets),
+                    )
 
             if not targets:
                 logger.warning("no cameras to process")

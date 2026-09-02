@@ -53,21 +53,38 @@ RTSP_PORT = int(os.getenv("SENTINEL_GRID_RTSP_PORT", "8554"))
 COOKIE_CHECK = "cookieCheck=1"
 
 
+#: Microseconds FFmpeg will wait for the socket before giving up. OpenCV
+#: exposes no timeout on VideoCapture, so without this a capture that opens
+#: against an unresponsive feed blocks the calling thread indefinitely - and a
+#: worker sweeping thirty cameras stops on the first one that hangs, having
+#: reported nothing wrong. Ten seconds: long enough for a slow but working
+#: connection, short enough that a dead one is one camera's delay.
+SOCKET_TIMEOUT_US = int(float(os.getenv("SENTINEL_GRID_SOCKET_TIMEOUT", "10")) * 1_000_000)
+
+
 def _force_tcp_transport() -> None:
-    """Pin FFmpeg's RTSP demuxer to TCP.
+    """Pin FFmpeg's RTSP demuxer to TCP, and give it a deadline.
 
     UDP is accepted by the grid but fails across NAT and most corporate
     firewalls, and partial UDP delivery produces corrupt frames that look
-    exactly like model bugs. This is a process-wide FFmpeg option read when the
-    first capture is constructed, so it has to be set before any VideoCapture
-    exists - setting it afterwards silently does nothing.
+    exactly like model bugs.
+
+    These are process-wide FFmpeg options read when the first capture is
+    constructed, so they have to be set before any VideoCapture exists -
+    setting them afterwards silently does nothing.
     """
     existing = os.environ.get("OPENCV_FFMPEG_CAPTURE_OPTIONS", "")
     if "rtsp_transport" in existing:
         return
-    merged = "rtsp_transport;tcp"
-    if existing:
-        merged = f"{existing}|{merged}"
+    options = [
+        "rtsp_transport;tcp",
+        # `timeout` is the current spelling and `stimeout` the older one;
+        # FFmpeg ignores an option it does not know, so passing both covers
+        # whichever build OpenCV was linked against.
+        f"timeout;{SOCKET_TIMEOUT_US}",
+        f"stimeout;{SOCKET_TIMEOUT_US}",
+    ]
+    merged = "|".join(([existing] if existing else []) + options)
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = merged
 
 
@@ -196,16 +213,42 @@ def fetch_catalogue(base_url: str, timeout: float = 15.0) -> dict[str, GridCamer
     return cameras
 
 
+#: Seconds a TCP handshake may take before RTSP is judged unusable even though
+#: the port answered. A handshake is the cheapest exchange there is: if it
+#: takes this long, the path cannot carry a real-time video session, and the
+#: capture that follows will stall rather than fail. Observed on one network
+#: here: 8554 reachable, but 20s to complete the handshake, which passed the
+#: probe and then hung the whole worker on its second camera.
+SLOW_HANDSHAKE_SECONDS = float(os.getenv("SENTINEL_GRID_RTSP_MAX_HANDSHAKE", "3.0"))
+
+
 def _port_open(host: str, port: int, timeout: float) -> bool:
+    """Reachable AND quick enough to be worth using.
+
+    Reachability alone is the wrong test. A filtered port is the obvious
+    failure and the one the fallback was written for, but a port that answers
+    slowly is worse: it passes, and the stall lands later in a media session
+    with no deadline on it.
+    """
     sock = socket.socket()
     sock.settimeout(timeout)
+    started = time.monotonic()
     try:
         sock.connect((host, port))
-        return True
     except OSError:
         return False
     finally:
         sock.close()
+
+    elapsed = time.monotonic() - started
+    if elapsed > SLOW_HANDSHAKE_SECONDS:
+        logger.warning(
+            "%s:%s answered but took %.1fs to complete a TCP handshake "
+            "(limit %.1fs) - treating RTSP as unusable on this network",
+            host, port, elapsed, SLOW_HANDSHAKE_SECONDS,
+        )
+        return False
+    return True
 
 
 def _with_cookie_check(url: str) -> str:

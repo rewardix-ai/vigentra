@@ -366,19 +366,30 @@ _GRID_HEADERS = {
 def _resolve_hls_target(reference: str, sub_path: str | None) -> str:
     """Resolve a playlist-relative reference against the session's manifest.
 
-    `sub_path` arrives from the browser, so it is treated as hostile: it must
-    stay relative and stay under the manifest's own directory. Anything with a
-    scheme, an authority, or a parent traversal is refused rather than
-    normalised, because a permissive resolver here would turn the stream proxy
-    into an open forward proxy.
+    `sub_path` arrives from the browser, so it is treated as hostile: anything
+    with a scheme or its own authority is refused rather than normalised,
+    because a permissive resolver here would turn the stream proxy into an
+    open forward proxy.
+
+    A single leading slash is allowed, and has to be. The grid's playlists
+    carry an encryption key as URI="/enc.key" - host-absolute, which is
+    ordinary in HLS - and refusing it served the player every segment with no
+    way to decrypt any of them. The stream then stopped with no error the
+    browser could report, which reads to an operator as a revoked session.
+    What actually guards against an open proxy is the same-host check below,
+    not the shape of the path: `urljoin` resolves "/enc.key" against the
+    manifest's own origin, and a target that lands anywhere else is refused
+    there whatever it looked like going in.
     """
     from urllib.parse import urljoin, urlparse
 
     if not sub_path:
         return reference
 
-    if "://" in sub_path or sub_path.startswith("//") or sub_path.startswith("/"):
-        raise HTTPExceptionLike("Stream sub-path must be relative")
+    # "//host/path" is protocol-relative and DOES change host, so it stays
+    # refused; a single slash does not.
+    if "://" in sub_path or sub_path.startswith("//"):
+        raise HTTPExceptionLike("Stream sub-path may not name its own host")
     if ".." in sub_path.split("?")[0].split("/"):
         raise HTTPExceptionLike("Stream sub-path may not traverse upwards")
 

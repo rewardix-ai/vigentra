@@ -228,7 +228,7 @@ ACCOUNTS = {
     "municipal.state": "Municipal@2026",
     "dept.admin": "DeptAdmin@2026",
     "municipal.deptadmin": "DeptAdmin@2026",
-    "ai.operator": "AiOps@2026",
+    "traffic.ai": "AiOps@2026",
     # Statewide analytics accounts - the ones the watchlist suite ingests
     # through, because a department-scoped edge account cannot submit for
     # cameras in another district.

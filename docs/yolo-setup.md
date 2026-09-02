@@ -258,7 +258,7 @@ interpreter and the environment (see the warning above).
 
 The same arguments work with `./scripts/edge-worker.sh` on macOS and Linux.
 
-The worker signs in as `ai.operator` and is subject to **exactly** the same
+The worker signs in as `traffic.ai` and is subject to **exactly** the same
 authorisation as a human: an `ai_operator` outside the camera's department or
 city is refused, and the refusal is audited. It is not a privileged back door.
 
@@ -382,7 +382,7 @@ Three properties make horizontal scaling safe:
 | One camera's failure is contained | A suspended camera, a revoked grant or a dead NVR is logged and the cycle continues to the next camera. |
 
 `--all-cameras` filters on the per-camera video decision, so discovery is
-convenience and never escalation: a worker signed in as `ai.operator` (Traffic
+convenience and never escalation: a worker signed in as `traffic.ai` (Traffic
 Police) discovers one camera where `system.admin` discovers two.
 
 ### Live feeds

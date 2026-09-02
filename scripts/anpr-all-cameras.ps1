@@ -5,8 +5,8 @@
 .DESCRIPTION
     Two workers, one per department, because that is the boundary the platform
     enforces: an analytics account may only submit detections for cameras its
-    own department owns. `traffic.ai` covers the 18 Traffic Police cameras and
-    `municipal.ai` the 12 Municipal Corporation ones - together, all 30, with
+    own department owns. `traffic.ai` covers the Traffic Police cameras and
+    `municipal.ai` the Municipal Corporation ones - together, the whole estate, with
     no account that can ingest across the boundary.
 
     Runs the two sequentially by default. On a machine with cores and RAM to
@@ -39,8 +39,8 @@ $root = Split-Path -Parent $PSScriptRoot
 $worker = Join-Path $PSScriptRoot 'edge-worker.ps1'
 
 $departments = @(
-    @{ Name = 'Traffic Police';        User = 'traffic.ai';   Pass = 'AiOps@2026';   Cameras = 18 },
-    @{ Name = 'Municipal Corporation'; User = 'municipal.ai'; Pass = 'MuniOps@2026'; Cameras = 12 }
+    @{ Name = 'Traffic Police';        User = 'traffic.ai';   Pass = 'AiOps@2026';   Cameras = 23 },
+    @{ Name = 'Municipal Corporation'; User = 'municipal.ai'; Pass = 'MuniOps@2026'; Cameras = 7 }
 )
 
 $common = @('--all-cameras', '--max-frames', $MaxFrames)

@@ -38,12 +38,10 @@ const GROUPS: { group: string; accounts: DemoAccount[] }[] = [
   {
     group: "Operations · may view and manage video",
     accounts: [
-      // joint.control first - it is the only account that can watch all 31
-      // cameras, so it is what the live wall should be demonstrated with.
-      // The two statewide control rooms next: between them they hold every
-      // camera in the estate, so they are what the live wall is meant to be
-      // opened with. Leaving them off the list meant the widest video account
-      // in the build was the one nobody could click.
+      // joint.control first: the only account that can watch every camera in
+      // the estate, so it is the one to open the live wall with. The two
+      // statewide control rooms next - between them they cover the same set,
+      // one department each.
       { username: "joint.control", password: "Joint@2026" },
       { username: "traffic.state", password: "Traffic@2026" },
       { username: "municipal.state", password: "Municipal@2026" },
@@ -67,7 +65,8 @@ const GROUPS: { group: string; accounts: DemoAccount[] }[] = [
   {
     group: "Analytics & reference",
     accounts: [
-      { username: "ai.operator", password: "AiOps@2026" },
+      { username: "traffic.ai", password: "AiOps@2026" },
+      { username: "municipal.ai", password: "MuniOps@2026" },
       { username: "vehicle.registry", password: "Vehicle@2026" },
     ],
   },
@@ -105,9 +104,8 @@ function SignInForm() {
 
   return (
     // Two panes side by side on a wide screen, one screen tall and never
-    // scrolling. Below that they stack and the page is allowed to scroll -
-    // the accounts used to be hidden outright at those widths, which left
-    // anyone on a narrow window with no way to read a credential.
+    // scrolling. Below that they stack and the page scrolls, so the account
+    // list stays reachable on a narrow window rather than being hidden.
     <div className="grid min-h-screen lg:h-screen lg:overflow-hidden lg:grid-cols-[minmax(0,380px)_1fr]">
       {/* Sign-in */}
       <div className="flex flex-col justify-center border-r border-line bg-white px-7 py-8">

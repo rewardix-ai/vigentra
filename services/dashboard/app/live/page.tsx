@@ -15,6 +15,7 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { streamQueue } from "@/lib/streamQueue";
 import type { Camera } from "@/lib/types";
 
 /**
@@ -103,10 +104,8 @@ export default function LiveWallPage() {
               hint="Re-enter to open the wall"
             />
             <p className="text-2xs text-ink-500">
-              Confirmed once for the wall, then re-checked by the API on every session it opens.
-              Each tile opens its own short-lived, watermarked session and is written to the audit
-              trail under this reason. Feeds start only when a tile is on screen, and stop when it
-              scrolls away.
+              Every tile opens its own watermarked session, audited under this reason. Feeds start
+              a few at a time and only while a tile is on screen.
             </p>
             <button
               className="btn btn-primary"
@@ -150,6 +149,7 @@ export default function LiveWallPage() {
               <span className="text-2xs text-ink-500">
                 showing {shown.length} of {watchable.length}
               </span>
+              <QueueStatus />
               <button
                 className="btn"
                 onClick={() => {
@@ -184,5 +184,30 @@ export default function LiveWallPage() {
           </div>
         ))}
     </div>
+  );
+}
+
+/**
+ * How far through the start queue the wall is.
+ *
+ * Without it, a wall filling in waves is indistinguishable from a wall that
+ * has quietly given up on the tiles below the fold.
+ */
+function QueueStatus() {
+  const [state, setState] = useState({ starting: 0, pending: 0 });
+  useEffect(() => {
+    const tick = setInterval(
+      () => setState({ starting: streamQueue.starting, pending: streamQueue.pending }),
+      400,
+    );
+    return () => clearInterval(tick);
+  }, []);
+
+  if (state.starting === 0 && state.pending === 0) return null;
+  return (
+    <span className="rounded bg-brand-50 px-2 py-0.5 text-2xs text-ink-600">
+      {state.starting} starting
+      {state.pending > 0 ? ` · ${state.pending} queued` : ""}
+    </span>
   );
 }

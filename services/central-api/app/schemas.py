@@ -981,6 +981,36 @@ class DetectionBatch(BaseModel):
     detections: list[DetectionIn] = Field(min_length=1, max_length=500)
 
 
+class VehicleCount(BaseModel):
+    """How many of one class a camera has seen."""
+
+    class_name: str
+    count: int
+
+
+class CameraTrafficSummary(BaseModel):
+    """Everything one camera has counted, broken down by what it counted.
+
+    A single total answers "is this camera working". The breakdown answers the
+    question a traffic unit actually has - whether a junction is carrying
+    two-wheelers or trucks - and it is the same query either way, so returning
+    only the total would be throwing away the useful half.
+    """
+
+    camera_id: str
+    camera_name: str | None = None
+    since_hours: int
+    #: Every detection, including classes that are not vehicles.
+    total_detections: int
+    #: Vehicles only: the classes a traffic count is actually about.
+    total_vehicles: int
+    by_class: list[VehicleCount] = Field(default_factory=list)
+    #: Distinct registrations read at this camera in the window.
+    plates_read: int = 0
+    first_seen_utc: datetime | None = None
+    last_seen_utc: datetime | None = None
+
+
 class DetectionOut(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 

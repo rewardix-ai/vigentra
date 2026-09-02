@@ -67,7 +67,7 @@ async def test_confidence_threshold_filters(detectors):
     ],
 )
 async def test_invalid_bboxes_are_rejected(api, login, traffic_camera, detectors, bbox, reason):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detection = payload_for(detectors, traffic_camera["camera_id"])[0]
     detection["bbox_xyxy"] = bbox
     detection["detection_id"] = f"det_bad_{abs(hash(reason))}"
@@ -79,7 +79,7 @@ async def test_invalid_bboxes_are_rejected(api, login, traffic_camera, detectors
 
 
 async def test_out_of_range_confidence_is_rejected(api, login, traffic_camera, detectors):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detection = payload_for(detectors, traffic_camera["camera_id"])[0]
     detection["confidence"] = 1.5
 
@@ -91,7 +91,7 @@ async def test_out_of_range_confidence_is_rejected(api, login, traffic_camera, d
 
 async def test_out_of_scope_class_is_rejected(api, login, traffic_camera, detectors):
     """Phase scope is enforced at the schema, not by convention."""
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detection = payload_for(detectors, traffic_camera["camera_id"])[0]
     detection["class_name"] = "license_plate"
 
@@ -103,7 +103,7 @@ async def test_out_of_scope_class_is_rejected(api, login, traffic_camera, detect
 
 # 24. Unknown camera detections are rejected
 async def test_unknown_camera_detections_are_rejected(api, login, detectors):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detections = payload_for(detectors, "SENTINEL-NOPE-XXX-9999")
 
     body = (
@@ -119,7 +119,7 @@ async def test_unknown_camera_detections_are_rejected(api, login, detectors):
 
 async def test_partial_batch_accepts_the_good_rows(api, login, traffic_camera, detectors):
     """One bad row must not discard the rest of the batch."""
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     good = payload_for(detectors, traffic_camera["camera_id"])
     bad = dict(good[0])
     bad["detection_id"] = "det_unknown_camera_row"
@@ -161,7 +161,7 @@ async def test_detector_factory_falls_back_to_mock(detectors):
 
 # 26. Detector health endpoint works
 async def test_detector_health_endpoint(api, login):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     body = (await api.get("/api/v1/detector/health", headers=headers)).json()
 
     assert set(body["classes"]) >= {"person", "car", "motorcycle", "bus", "truck"}
@@ -173,7 +173,7 @@ async def test_detector_health_endpoint(api, login):
 
 # 27. Model provenance is stored
 async def test_model_provenance_is_stored(api, login, traffic_camera, detectors):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detections = payload_for(detectors, traffic_camera["camera_id"])
 
     result = (
@@ -191,7 +191,7 @@ async def test_model_provenance_is_stored(api, login, traffic_camera, detectors)
     assert record["model_version"] == "1.0.0"
     assert record["source_mode"] == "mock"
     assert record["is_demo_data"] is True
-    assert record["provenance"]["submitted_by"] == "ai.operator"
+    assert record["provenance"]["submitted_by"] == "traffic.ai"
     assert record["provenance"]["source_system"] == traffic_camera["source_system"]
 
     # The health endpoint now reports the build that reported in.
@@ -202,7 +202,7 @@ async def test_model_provenance_is_stored(api, login, traffic_camera, detectors)
 
 # 28. Detection ingestion is idempotent
 async def test_detection_ingestion_is_idempotent(api, login, traffic_camera, detectors):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detections = payload_for(detectors, traffic_camera["camera_id"])
 
     first = (
@@ -234,7 +234,7 @@ async def test_detection_ingest_requires_permission(api, login, traffic_camera, 
 
 
 async def test_detections_are_scoped_by_department(api, login, traffic_camera, detectors):
-    ai_headers = await login("ai.operator")
+    ai_headers = await login("traffic.ai")
     detections = payload_for(detectors, traffic_camera["camera_id"])
     await api.post(
         "/api/v1/detections/ingest", headers=ai_headers, json={"detections": detections}
@@ -316,7 +316,7 @@ async def test_overexposed_frames_are_not_enhanced(frame_quality):
 
 
 async def test_frame_quality_events_can_be_recorded(api, login, traffic_camera, frame_quality):
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     response = await api.post(
         "/api/v1/detections/frame-quality",
         headers=headers,
@@ -542,7 +542,7 @@ async def test_plate_is_withheld_without_the_permission(api, login, traffic_came
     """
     from datetime import datetime, timezone
 
-    ingest = await login("ai.operator")
+    ingest = await login("traffic.ai")
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = {
         "detections": [
@@ -595,7 +595,7 @@ async def test_reading_a_plate_is_audited(api, login, traffic_camera):
     """
     from datetime import datetime, timezone
 
-    ingest = await login("ai.operator")
+    ingest = await login("traffic.ai")
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     await api.post(
         "/api/v1/detections/ingest",
@@ -635,7 +635,7 @@ async def test_reading_a_plate_is_audited(api, login, traffic_camera):
 
 async def test_listing_without_plates_records_no_disclosure(api, login, traffic_camera):
     """The audit line means something, so it must not fire on every listing."""
-    ingest = await login("ai.operator")
+    ingest = await login("traffic.ai")
     from datetime import datetime, timezone
 
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

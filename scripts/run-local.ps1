@@ -27,13 +27,19 @@
 .PARAMETER SkipDashboard
     Start only the APIs. Useful when driving the API directly.
 
+.PARAMETER SkipAnpr
+    Do not start the edge worker. Counting stops when it is not running, so
+    the default is to run it - a count is only meaningful if something has
+    been counting continuously, and nobody remembers to start it by hand.
+
 .EXAMPLE
     .\scripts\run-local.ps1 -Fresh
 #>
 [CmdletBinding()]
 param(
     [switch]$Fresh,
-    [switch]$SkipDashboard
+    [switch]$SkipDashboard,
+    [switch]$SkipAnpr
 )
 
 $ErrorActionPreference = 'Stop'
@@ -150,6 +156,66 @@ Write-Host '  Central API    http://localhost:8000/docs'
 Write-Host '  Traffic VMS    http://localhost:8001/docs'
 Write-Host '  Municipal VMS  http://localhost:8002/docs'
 Write-Host ''
-Write-Host 'Sign in with joint.control / Joint@2026 to watch all 31 cameras -'
+Write-Host 'Sign in with joint.control / Joint@2026 to watch every camera -'
 Write-Host 'see the sign-in page for the rest.'
+# ---------------------------------------------------------------------------
+# Edge analytics, always on.
+#
+# The worker is a separate process that writes detections straight to the
+# database. Nothing about it depends on the dashboard being open or even
+# running: close the browser, restart Next.js, and the counting carries on -
+# which is the whole point of counting centrally rather than in a page.
+#
+# It runs whenever the models are present. Without them it would start,
+# discover it cannot load a detector and spin, so it is skipped with a line
+# saying why rather than left to fail quietly.
+# ---------------------------------------------------------------------------
+if (-not $SkipAnpr) {
+    # Same resolution edge-worker.ps1 uses: the plate models ship beside the
+    # ANPR package, and fall back to the vendored D:\ANPR checkout.
+    $anprModels = Join-Path $root 'services\edge-worker\models'
+    if (-not (Test-Path (Join-Path $anprModels 'plate_detector.pt'))) {
+        if (Test-Path 'D:\ANPR\models\plate_detector.pt') { $anprModels = 'D:\ANPR\models' }
+    }
+    $env:ANPR_MODELS_DIR = $anprModels
+
+    # The grid is behind an access password now, and the worker reads it from
+    # the environment rather than through pydantic settings, so a .env entry
+    # alone does not reach it.
+    $envFile = Join-Path $root '.env'
+    if (Test-Path $envFile) {
+        foreach ($line in Get-Content $envFile) {
+            if ($line -match '^\s*SENTINEL_GRID_(PASSWORD|BASE_URL|RTSP_HOST)\s*=\s*(.*)$') {
+                Set-Item -Path ("env:SENTINEL_GRID_" + $Matches[1]) -Value $Matches[2].Trim()
+            }
+        }
+    }
+
+    $plateModel = Join-Path $anprModels 'plate_detector.pt'
+    if (Test-Path $plateModel) {
+        Write-Host 'starting edge worker (all cameras, continuous)' -ForegroundColor Cyan
+        $workerArgs = @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $PSScriptRoot 'edge-worker.ps1'),
+            '--all-cameras', '--forever',
+            '--max-frames', '20', '--sample-interval', '20', '--cycle-seconds', '120'
+        )
+        # Logged to a file, not swallowed. A hidden window with no log is how
+        # a worker that dies on startup looks exactly like a worker that is
+        # running and finding nothing - which cost an afternoon.
+        $logDir = Join-Path $root 'logs'
+        if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
+        $workerLog = Join-Path $logDir 'edge-worker.log'
+        Start-Process -FilePath 'powershell.exe' -ArgumentList $workerArgs `
+            -WorkingDirectory $root -WindowStyle Hidden `
+            -RedirectStandardOutput $workerLog `
+            -RedirectStandardError (Join-Path $logDir 'edge-worker.err.log')
+        Write-Host "  log: $workerLog" -ForegroundColor DarkGray
+    } else {
+        Write-Host "No plate detector at $plateModel - ANPR not started." -ForegroundColor Yellow
+        Write-Host 'Vehicles and plates will stay at zero until it is there.' -ForegroundColor Yellow
+    }
+}
+
+Write-Host ''
 Write-Host 'Stop everything with:  Get-Process python,node | Stop-Process -Force' -ForegroundColor DarkGray

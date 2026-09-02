@@ -203,20 +203,60 @@ def normalize_local_roles(raw: Any) -> list[str]:
     return out
 
 
+#: The eight headings a camera may be recorded as facing, and the spellings
+#: people actually type. Intercardinals matter: four cardinals force whoever
+#: fills the form to round a north-east facing to north or east, and a wedge
+#: drawn 45 degrees off covers the wrong road.
+#:
+#: Anything not here is passed through rather than rejected, because this
+#: normalises a free-text field that predates the vocabulary - but the bulk
+#: upload validates against `DIRECTIONS` below, so new records stay inside it.
 DIRECTION_VOCABULARY = {
     "n": "northbound",
     "north": "northbound",
-    "s": "southbound",
-    "south": "southbound",
+    "ne": "northeastbound",
+    "northeast": "northeastbound",
+    "north-east": "northeastbound",
+    "north east": "northeastbound",
     "e": "eastbound",
     "east": "eastbound",
+    "se": "southeastbound",
+    "southeast": "southeastbound",
+    "south-east": "southeastbound",
+    "south east": "southeastbound",
+    "s": "southbound",
+    "south": "southbound",
+    "sw": "southwestbound",
+    "southwest": "southwestbound",
+    "south-west": "southwestbound",
+    "south west": "southwestbound",
     "w": "westbound",
     "west": "westbound",
+    "nw": "northwestbound",
+    "northwest": "northwestbound",
+    "north-west": "northwestbound",
+    "north west": "northwestbound",
 }
+
+#: The canonical values, for validators and for the CSV template.
+DIRECTIONS = (
+    "northbound",
+    "northeastbound",
+    "eastbound",
+    "southeastbound",
+    "southbound",
+    "southwestbound",
+    "westbound",
+    "northwestbound",
+    #: A steerable camera points nowhere in particular, and saying so is a
+    #: real answer rather than a missing one.
+    "omnidirectional",
+    "unknown",
+)
 
 
 def normalize_direction(raw: Any) -> str:
-    """`north` and `northbound` describe one heading."""
+    """`north`, `North-East` and `northbound` all describe one heading."""
     if not raw:
         return "unknown"
     token = str(raw).strip().lower()

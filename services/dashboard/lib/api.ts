@@ -6,6 +6,7 @@
  * credential, an internal hostname, or a video URL - because none exists.
  */
 import type {
+  CameraTrafficSummary,
   AccessPolicy,
   Alert,
   AnprReportRow,
@@ -181,6 +182,14 @@ export const api = {
   } = {}) => request<Detection[]>(`/api/v1/detections${query(filters)}`),
 
   detectorHealth: () => request<DetectorHealth>("/api/v1/detector/health"),
+
+  /** Vehicles counted at one camera, aggregated server-side. */
+  cameraTraffic: (cameraId: string, sinceHours = 24) =>
+    request<CameraTrafficSummary>(
+      `/api/v1/cameras/${encodeURIComponent(cameraId)}/traffic${query({
+        since_hours: String(sinceHours),
+      })}`,
+    ),
 
   // -- watchlist, alerts and movement -------------------------------------
   // Four permissions, not one: reading the list is oversight, adding to it is

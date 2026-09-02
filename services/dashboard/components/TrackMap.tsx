@@ -25,6 +25,8 @@
  */
 import { useEffect, useMemo, useRef } from "react";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+
+import { INDIA_BOUNDS, INDIA_MIN_ZOOM } from "@/lib/mapBounds";
 import type { LatLngBoundsExpression, LatLngExpression } from "leaflet";
 
 import "leaflet/dist/leaflet.css";
@@ -124,11 +126,17 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
           center={GUJARAT}
           zoom={7}
           scrollWheelZoom
+          // Same constraint as the registry map: India only, no repeated
+          // copies. A route drawn across a second India is not a route.
+          maxBounds={INDIA_BOUNDS}
+          maxBoundsViscosity={1}
+          minZoom={INDIA_MIN_ZOOM}
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            noWrap
           />
           <FitToRoute points={placed} />
 

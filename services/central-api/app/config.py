@@ -516,29 +516,30 @@ DEFAULT_DEMO_USERS: list[dict[str, Any]] = [
         "unit": "Civic Headquarters",
     },
     # --- analytics ----------------------------------------------------------
+    # One analytics account per department, each statewide within it.
+    #
+    # Statewide because the federated cameras are state assets spread across
+    # nine districts and carry no city of their own: a city-scoped analytics
+    # account matched almost none of them, and a worker running as one counted
+    # traffic at 8 junctions while reporting itself healthy.
+    #
+    # Two accounts rather than one that spans both, because the departmental
+    # boundary is the point. Each department runs its own edge worker and can
+    # only submit detections for cameras its own department owns, so analytics
+    # ingest cannot cross custody even by accident.
     {
-        "username": "ai.operator",
+        "username": "traffic.ai",
         "password": "AiOps@2026",
-        "display_name": "Analytics Workbench",
+        "display_name": "Traffic Analytics Workbench (statewide)",
         "role": Role.AI_OPERATOR,
         "department": TRAFFIC_DEPARTMENT,
-        "city": "Ahmedabad",
     },
-    # Each department runs its own edge worker; an analytics account is scoped
-    # to the unit that owns the cameras it submits for, so detection ingest
-    # cannot cross a departmental boundary.
     {
         "username": "municipal.ai",
         "password": "MuniOps@2026",
         "display_name": "Municipal Analytics Workbench (statewide)",
         "role": Role.AI_OPERATOR,
         "department": MUNICIPAL_DEPARTMENT,
-        # Statewide, like its traffic counterpart above. The federated cameras
-        # are state assets and carry no city of their own, so a city-scoped
-        # analytics account matched almost none of them - this one could reach
-        # 1 of its department's 12 cameras. The departmental boundary is what
-        # constrains ingest here, and that still holds: municipal.ai submits
-        # for municipal cameras only.
     },
     # --- statewide department control rooms --------------------------------
     # The federated cameras are state assets spread across nine districts, so
@@ -582,13 +583,6 @@ DEFAULT_DEMO_USERS: list[dict[str, Any]] = [
         "city": ALL_CITIES,
         "unit": "State Joint Control Room",
     },
-    {
-        "username": "traffic.ai",
-        "password": "AiOps@2026",
-        "display_name": "Traffic Analytics Workbench (statewide)",
-        "role": Role.AI_OPERATOR,
-        "department": TRAFFIC_DEPARTMENT,
-    },
     # --- onboarding (Module 1 workflow) ------------------------------------
     {
         "username": "traffic.installer",
@@ -628,6 +622,13 @@ class SourceSettings(BaseModel):
     #: control API"), so its adapter refuses every write rather than
     #: attempting one and being rejected upstream.
     read_only: bool = False
+    #: Per-source transport budget. A department system on the same network as
+    #: Sentinel and a shared gateway reached over the public internet do not
+    #: deserve the same deadline, and one number for both means either the
+    #: local one hangs or the remote one is declared dead while it is still
+    #: answering. None falls back to `upstream_timeout_seconds`.
+    timeout_seconds: float | None = None
+    retries: int | None = None
 
 
 class Settings(BaseSettings):
@@ -651,35 +652,18 @@ class Settings(BaseSettings):
     demo_users_json: str = ""
 
     # --- federation -----------------------------------------------------
-    #: The two demo department systems carry synthetic cameras. Turn them off
-    #: to run the platform against real sources only - the registry then shows
-    #: nothing invented. They stay in the tree because the cross-unit grant
-    #: flow (request -> grant -> revoke) needs a second department to
-    #: demonstrate at all, and the test-suite exercises them.
-    #: Off by default: the platform should not invent cameras. Turn these on
-    #: only to demonstrate the cross-unit grant flow, which needs a second
-    #: department to exist at all.
-    # On by default, because these two ARE the federation now.
-    #
-    # They used to default off and it did not matter: the grid was registered
-    # as a third source with `sentinel_grid_enabled` defaulting True, so a
-    # deployment that set no flags still got one adapter and the app came up.
-    # Re-homing the grid behind these two removed that fallback, and any
-    # deployment not setting the flags explicitly - docker-compose.yml among
-    # them - built ZERO adapters and answered 503 on every route needing one.
-    # A registry with no sources configured is not a meaningful default.
+    #: The two department systems Sentinel federates. On by default: these two
+    #: ARE the federation, and a registry configured with no sources builds no
+    #: adapters and answers 503 on every route that needs one.
     traffic_vms_enabled: bool = True
     municipal_vms_enabled: bool = True
     #: Which adapter each department system speaks through.
     #:
-    #: Both default to the grid: these departments federate the live Sentinel
-    #: gateway, and that is the deployment this is built for. But a department
-    #: running its own VMS is the other real mode - it is what the bundled
-    #: mocks implement, what the test suite drives in-process, and what keeps
-    #: the registry serving when the shared gateway is down. Hard-coding
-    #: `grid_adapter` here made that mode unreachable and took the whole suite
-    #: with it: the mocks answer /traffic/approved-cameras, the grid adapter
-    #: asks for /api/ingest, and every fixture came back with no cameras.
+    #: Both default to the shared gateway, which is the deployment this is
+    #: built for. A department running its own VMS is the other supported
+    #: mode - it is what the bundled mocks implement, what the test suite
+    #: drives in-process, and what keeps the registry serving when the gateway
+    #: is down - so this stays configuration rather than a constant.
     traffic_vms_adapter: str = "grid_adapter"
     municipal_vms_adapter: str = "grid_adapter"
 
@@ -704,13 +688,13 @@ class Settings(BaseSettings):
     #: a source here: the grid is not a source of its own, it is the upstream
     #: both department systems federate.
     sentinel_grid_enabled: bool = True
-    #: The sandbox moved here from live.corp8.cloud, which now 502s. Anything
-    #: still pointed at the old host reports an outage that is really a
-    #: migration - which cost this project several days.
+    #: The gateway has moved host once already. Keep this configurable and
+    #: never hard-code it: a deployment pinned to an old host reports an
+    #: outage that is really a migration.
     sentinel_grid_base_url: str = "https://cctv.corp8.cloud"
-    #: Shared access password for the grid. Empty means "open sandbox", which
-    #: is how it used to be; when set, the adapter trades it for a session
-    #: cookie before reading the catalogue.
+    #: Shared access password for the grid. Empty means an open gateway; when
+    #: set, the adapter trades it for a session cookie before reading the
+    #: catalogue.
     sentinel_grid_password: str = ""
     #: RTSP and WHEP are served on the public gateway rather than the CDN,
     #: because a CDN cannot proxy them. The guide recommends RTSP for
@@ -736,6 +720,13 @@ class Settings(BaseSettings):
 
     upstream_timeout_seconds: float = 6.0
     upstream_retries: int = 1
+    #: The grid is a shared sandbox on the public internet behind a sign-in,
+    #: not a VMS on the department LAN. Measured from a working connection it
+    #: answers the catalogue in well under a second warm, ~9s on a fresh TLS
+    #: session and ~30s on the first connection of the day. Holding it to the
+    #: LAN budget marked both departments offline on every cold start.
+    grid_upstream_timeout_seconds: float = 25.0
+    grid_upstream_retries: int = 2
 
     # --- camera resource provider ---------------------------------------
     #: mock | federated | official
@@ -836,6 +827,12 @@ class Settings(BaseSettings):
                     department_code="TRAFFIC",
                     default_city=self.traffic_vms_city,
                     read_only=True,
+                    timeout_seconds=(self.grid_upstream_timeout_seconds
+                                     if self.traffic_vms_adapter == "grid_adapter"
+                                     else None),
+                    retries=(self.grid_upstream_retries
+                             if self.traffic_vms_adapter == "grid_adapter"
+                             else None),
                 )
             )
         if self.municipal_vms_enabled:
@@ -855,6 +852,12 @@ class Settings(BaseSettings):
                     department_code="MUNICIPAL",
                     default_city=self.municipal_vms_city,
                     read_only=True,
+                    timeout_seconds=(self.grid_upstream_timeout_seconds
+                                     if self.municipal_vms_adapter == "grid_adapter"
+                                     else None),
+                    retries=(self.grid_upstream_retries
+                             if self.municipal_vms_adapter == "grid_adapter"
+                             else None),
                 )
             )
         return entries

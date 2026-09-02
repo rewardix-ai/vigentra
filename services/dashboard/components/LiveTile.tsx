@@ -3,18 +3,45 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, ApiError } from "@/lib/api";
+import { streamQueue, type Release } from "@/lib/streamQueue";
 import type { Camera, VideoSession } from "@/lib/types";
 
 /**
  * One camera on the live wall.
  *
  * A tile only opens a session when it is actually on screen, and gives it back
- * the moment it scrolls away. That is not an optimisation detail — the grid's
+ * the moment it scrolls away. That is not an optimisation detail - the grid's
  * own guidance is "each connected client receives its own copy of the stream;
  * open only the cameras you are actively processing". Thirty permanent
  * sessions for a wall the operator is scrolling past would be exactly the
  * abuse that warns against, and each one is an audited access besides.
+ *
+ * Starting is queued rather than immediate; see lib/streamQueue. The slot is
+ * held until the feed is playing or has failed, so the gateway sets up a few
+ * streams at a time while every tile still ends up live.
+ *
+ * A tile that fails keeps trying on a backoff instead of settling into an
+ * error message. A wall is left running unattended, and a camera that drops
+ * for a minute should return to the wall on its own rather than when somebody
+ * notices and reloads the page.
  */
+
+/**
+ * How long a feed may be starting before the slot is taken back.
+ *
+ * Without this, one camera whose manifest never arrives holds a slot forever
+ * and the queue behind it stops moving - the exact stall this queue exists to
+ * remove, with a smaller number.
+ */
+const START_TIMEOUT_MS = 20_000;
+
+/** Backoff between retries: 3s, 6s, 12s, 24s, then every 30s. */
+function backoffMs(attempt: number): number {
+  return Math.min(30_000, 3_000 * 2 ** Math.max(0, attempt - 1));
+}
+
+type Phase = "idle" | "queued" | "opening" | "live" | "waiting";
+
 export function LiveTile({
   camera,
   reason,
@@ -30,15 +57,25 @@ export function LiveTile({
   const [session, setSession] = useState<VideoSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [attempt, setAttempt] = useState(0);
   const holderRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const releaseRef = useRef<Release | null>(null);
 
-  const watchable = camera.video_access === "live_and_playback" || camera.video_access === "live_only";
+  const watchable =
+    camera.video_access === "live_and_playback" || camera.video_access === "live_only";
 
   useEffect(() => {
     sessionIdRef.current = session?.session_id ?? null;
   }, [session]);
+
+  /** Hand the admission slot back; the next tile in the queue starts. */
+  const releaseSlot = useCallback(() => {
+    releaseRef.current?.();
+    releaseRef.current = null;
+  }, []);
 
   // Only tiles the operator can actually see hold a session.
   useEffect(() => {
@@ -60,15 +97,48 @@ export function LiveTile({
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
     if (!visible || !watchable) {
+      releaseSlot();
+      setPhase("idle");
       void close();
       return;
     }
     if (sessionIdRef.current) return;
 
+    const controller = new AbortController();
+    let watchdog: ReturnType<typeof setTimeout> | null = null;
+
+    /** Give up on this attempt and schedule the next one. */
+    const fail = (message: string) => {
+      if (controller.signal.aborted) return;
+      releaseSlot();
+      setError(message);
+      setPhase("waiting");
+      void close();
+      setTimeout(() => {
+        if (!controller.signal.aborted) setAttempt((n) => n + 1);
+      }, backoffMs(attempt + 1));
+    };
+
     void (async () => {
+      setPhase("queued");
+      let release: Release;
+      try {
+        release = await streamQueue.acquire(controller.signal);
+      } catch {
+        return; // scrolled away or unmounted while queued
+      }
+      if (controller.signal.aborted) {
+        release();
+        return;
+      }
+      releaseRef.current = release;
+      setPhase("opening");
+
+      // The slot is not held past this even if the feed never produces a
+      // frame, so one dead camera cannot block the rest of the wall.
+      watchdog = setTimeout(() => fail("Feed did not start"), START_TIMEOUT_MS);
+
       try {
         const opened = await api.openVideoSession({
           camera_id: camera.camera_id,
@@ -76,24 +146,34 @@ export function LiveTile({
           reason,
           password,
         });
-        if (cancelled) {
+        if (controller.signal.aborted) {
           void api.closeVideoSession(opened.session_id).catch(() => undefined);
+          releaseSlot();
           return;
         }
         setSession(opened);
         setError(null);
       } catch (err) {
-        if (!cancelled) setError(describe(err));
+        fail(describe(err));
       }
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
+      if (watchdog) clearTimeout(watchdog);
+      releaseSlot();
     };
-  }, [visible, watchable, camera.camera_id, reason, password, close]);
+  }, [visible, watchable, camera.camera_id, reason, password, attempt, close, releaseSlot]);
 
-  // Give the session back on unmount rather than leaving it to time out.
-  useEffect(() => () => void close(), [close]);
+  // Give the session and the slot back on unmount rather than leaving them to
+  // time out.
+  useEffect(
+    () => () => {
+      releaseSlot();
+      void close();
+    },
+    [close, releaseSlot],
+  );
 
   // Attach the feed. HLS needs hls.js outside Safari.
   useEffect(() => {
@@ -101,32 +181,57 @@ export function LiveTile({
     if (!session || !video) return;
 
     const src = api.streamUrl(session);
-    if (session.stream_protocol !== "hls") {
-      video.src = src;
-      return;
-    }
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
-      return;
-    }
-
     let destroyed = false;
     let hls: { destroy: () => void } | null = null;
-    void import("hls.js").then(({ default: Hls }) => {
-      if (destroyed || !Hls.isSupported()) return;
-      const instance = new Hls({ lowLatencyMode: true, backBufferLength: 10 });
-      hls = instance;
-      instance.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => {
-        if (data?.fatal) setError("Feed stopped");
+
+    // Playing is what ends the start: the slot goes back to the queue here,
+    // not when the session was granted. A granted session that never renders
+    // is not a started feed.
+    const onPlaying = () => {
+      if (destroyed) return;
+      setPhase("live");
+      setError(null);
+      releaseSlot();
+    };
+    const onStalled = () => {
+      if (!destroyed) setError("Feed stalled");
+    };
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("loadeddata", onPlaying);
+    video.addEventListener("stalled", onStalled);
+
+    if (session.stream_protocol !== "hls" || video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = src;
+    } else {
+      void import("hls.js").then(({ default: Hls }) => {
+        if (destroyed || !Hls.isSupported()) return;
+        const instance = new Hls({ lowLatencyMode: true, backBufferLength: 10 });
+        hls = instance;
+        instance.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => {
+          if (!data?.fatal || destroyed) return;
+          // A fatal hls.js error means this session is finished. Drop it and
+          // let the retry path open a fresh one rather than leaving a dead
+          // <video> on the wall.
+          releaseSlot();
+          setError("Feed stopped");
+          setPhase("waiting");
+          setTimeout(() => {
+            if (!destroyed) setAttempt((n) => n + 1);
+          }, backoffMs(1));
+        });
+        instance.loadSource(src);
+        instance.attachMedia(video);
       });
-      instance.loadSource(src);
-      instance.attachMedia(video);
-    });
+    }
+
     return () => {
       destroyed = true;
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("loadeddata", onPlaying);
+      video.removeEventListener("stalled", onStalled);
       hls?.destroy();
     };
-  }, [session]);
+  }, [session, releaseSlot]);
 
   const loc = camera.location;
 
@@ -155,7 +260,7 @@ export function LiveTile({
           <div className="flex h-full items-center justify-center px-3 text-center text-2xs text-ink-500">
             {!watchable
               ? camera.video_access_reason ?? "Not viewable by this account"
-              : error ?? (visible ? "Opening…" : "Scroll into view to start")}
+              : statusText(phase, visible, error, attempt)}
           </div>
         )}
       </div>
@@ -205,6 +310,27 @@ export function LiveTile({
       </div>
     </div>
   );
+}
+
+/**
+ * What the black rectangle says about itself.
+ *
+ * "Queued" and "Opening" are different facts and an operator watching a wall
+ * fill in should be able to tell them apart - one means the wall is working
+ * through its list, the other means this camera is being contacted right now.
+ */
+function statusText(
+  phase: Phase,
+  visible: boolean,
+  error: string | null,
+  attempt: number,
+): string {
+  if (!visible) return "Scroll into view to start";
+  if (phase === "waiting") {
+    return `${error ?? "Feed unavailable"} — retrying (${attempt + 1})`;
+  }
+  if (phase === "queued") return "Queued…";
+  return error ?? "Opening…";
 }
 
 function describe(err: unknown): string {

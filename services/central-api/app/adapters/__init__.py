@@ -49,8 +49,16 @@ def build_adapters(
             raise KeyError(f"No adapter registered under '{source.adapter}'")
         adapters[source.source_system] = adapter_cls(
             source,
-            timeout=settings.upstream_timeout_seconds,
-            retries=settings.upstream_retries,
+            # A source may set its own budget; the platform default applies to
+            # every source that does not care.
+            timeout=(
+                source.timeout_seconds
+                if source.timeout_seconds is not None
+                else settings.upstream_timeout_seconds
+            ),
+            retries=(
+                source.retries if source.retries is not None else settings.upstream_retries
+            ),
             client=(clients or {}).get(source.source_system),
         )
     return adapters

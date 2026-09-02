@@ -305,9 +305,19 @@ def build_video_adapter(
     settings: Settings,
     client: httpx.AsyncClient | None = None,
 ) -> BaseVideoAdapter:
-    """Pick the video adapter for one department, honouring resource mode."""
+    """Pick the video adapter for one department, honouring resource mode.
+
+    Video follows the department's METADATA adapter rather than a table keyed
+    by department name. Where a department's records come from is where its
+    footage comes from, and a deployment that points Traffic Police at its own
+    VMS gets that VMS's video - not the shared gateway, because a hard-coded
+    pair said so.
+    """
     if (settings.sentinel_resource_mode or "").strip().lower() == "mock":
         return MockVideoAdapter(config, settings, client)
+    by_metadata_adapter = METADATA_ADAPTER_VIDEO.get(config.adapter)
+    if by_metadata_adapter is not None:
+        return by_metadata_adapter(config, settings, client)
     adapter_cls = VIDEO_ADAPTERS.get(config.source_system, MockVideoAdapter)
     return adapter_cls(config, settings, client)
 
@@ -435,9 +445,11 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
         return response.status_code == 200 and response.text.lstrip().startswith("#EXTM3U")
 
 
-# Both department systems front the same live grid, so both stream through it.
-# TrafficVmsVideoAdapter and MunicipalVmsVideoAdapter are kept above for a
-# deployment that runs the department mocks with their own recorded media; they
-# are simply not wired up while the departments federate the live gateway.
-VIDEO_ADAPTERS["traffic_vms"] = SentinelGridVideoAdapter
-VIDEO_ADAPTERS["municipal_vms"] = SentinelGridVideoAdapter
+#: Video transport implied by a department's metadata adapter. A department
+#: whose records are read from the shared gateway streams from the shared
+#: gateway; one running its own VMS streams from that VMS.
+METADATA_ADAPTER_VIDEO: dict[str, type[BaseVideoAdapter]] = {
+    "grid_adapter": SentinelGridVideoAdapter,
+    "traffic_adapter": TrafficVmsVideoAdapter,
+    "municipal_adapter": MunicipalVmsVideoAdapter,
+}

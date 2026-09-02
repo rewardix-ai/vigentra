@@ -89,6 +89,12 @@ services:
       SENTINEL_GRID_BASE_URL: ${SENTINEL_GRID_BASE_URL:-https://cctv.corp8.cloud}
       SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
       SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+      # The gateway is reached over the public internet behind a sign-in, so
+      # it does not share the LAN budget the department mocks are held to.
+      # Warm it answers in under a second; cold, tens of seconds - and the
+      # short budget marked both departments offline on every cold start.
+      GRID_UPSTREAM_TIMEOUT_SECONDS: ${GRID_UPSTREAM_TIMEOUT_SECONDS:-25}
+      GRID_UPSTREAM_RETRIES: ${GRID_UPSTREAM_RETRIES:-2}
       TRAFFIC_VMS_ENABLED: "true"
       MUNICIPAL_VMS_ENABLED: "true"
       TRAFFIC_VMS_BASE_URL: http://traffic-vms:8001
@@ -109,6 +115,53 @@ services:
       timeout: 4s
       retries: 6
       start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Edge analytics. Off unless you ask for it: `docker compose --profile anpr up`
+  #
+  # Kept behind a profile because it is the only service here that needs a CV
+  # stack, wants a couple of GB of RAM, and will happily saturate a CPU. A
+  # registry demo should not drag that in by default - but a *count* is only
+  # meaningful if something has been counting continuously, so when it is on it
+  # runs forever rather than once.
+  #
+  # Detections land in Postgres like any other write, which is what makes the
+  # numbers survive a browser reload, a dashboard restart, or the worker itself
+  # being stopped and started again. Nothing about the count lives in the page.
+  # ---------------------------------------------------------------------------
+  edge-worker:
+    profiles: ["anpr"]
+    build:
+      context: .
+      dockerfile: services/edge-worker/Dockerfile
+      # The ANPR target carries the plate models; the yolo target is vehicles
+      # only and starts far faster if that is all you need.
+      target: anpr
+    image: sentinel/edge-worker:0.2.0
+    restart: unless-stopped
+    environment:
+      CENTRAL_API_URL: http://central-api:8000
+      EDGE_USERNAME: ${EDGE_USERNAME:-traffic.ai}
+      EDGE_PASSWORD: ${EDGE_PASSWORD:-AiOps@2026}
+      SENTINEL_GRID_BASE_URL: ${SENTINEL_GRID_BASE_URL:-https://cctv.corp8.cloud}
+      SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
+      SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+      ANPR_ENABLE: "true"
+      ANPR_MODELS_DIR: /app/models
+      # torch and paddle each ship an Intel OpenMP runtime; loading both aborts
+      # the process without this.
+      KMP_DUPLICATE_LIB_OK: "TRUE"
+    # --forever is the whole point: every camera the account may watch, cycling
+    # continuously, so the counts keep accumulating without anyone running a
+    # command. --cycle-seconds paces it - each client gets its own copy of the
+    # stream and the guide asks callers to pace their load.
+    command: >
+      python -m app.worker --all-cameras --forever
+      --max-frames ${EDGE_MAX_FRAMES:-25}
+      --sample-interval ${EDGE_SAMPLE_INTERVAL:-20}
+      --cycle-seconds ${EDGE_CYCLE_SECONDS:-120}
+    depends_on:
+      central-api: { condition: service_healthy }
 
   dashboard:
     build:

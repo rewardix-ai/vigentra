@@ -256,7 +256,7 @@ async def test_detections_never_carry_a_registration_number(
 ):
     from datetime import datetime, timezone
 
-    headers = await login("ai.operator")
+    headers = await login("traffic.ai")
     detector = detectors.MockDetector()
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = [

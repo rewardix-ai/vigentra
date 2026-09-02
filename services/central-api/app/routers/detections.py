@@ -27,7 +27,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import DemoUser, Permission
@@ -38,11 +38,13 @@ from ..models import Detection as DetectionRow
 from ..models import FrameQualityEvent, ModelVersion
 from ..schemas import (
     DETECTION_CLASSES,
+    CameraTrafficSummary,
     DetectionBatch,
     DetectionIngestResult,
     DetectionOut,
     DetectorHealth,
     InstallationStatus,
+    VehicleCount,
 )
 from ..services import audit_service, watchlist_service
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
@@ -372,6 +374,92 @@ async def _touch_model_version(
 # ---------------------------------------------------------------------------
 # Query
 # ---------------------------------------------------------------------------
+
+#: What counts as a vehicle for a traffic count. `person` and `bicycle` are
+#: detected and stored, and both belong in a safety review rather than in the
+#: number a junction's throughput is judged by, so they are excluded here and
+#: still visible in `by_class`.
+VEHICLE_CLASSES = ("car", "motorcycle", "bus", "truck", "auto-rickshaw")
+
+
+@router.get(
+    "/cameras/{camera_id}/traffic",
+    response_model=CameraTrafficSummary,
+    summary="Vehicles counted at one camera, by class",
+)
+async def camera_traffic(
+    camera_id: str,
+    request: Request,
+    settings: SettingsDep,
+    user: DemoUser = Depends(require_permission(Permission.DETECTION_READ)),
+    db: AsyncSession = Depends(get_db),
+    since_hours: int = Query(default=24, ge=1, le=8760),
+) -> CameraTrafficSummary:
+    """Counted in the database, not in the browser.
+
+    The alternative is to fetch every detection row and tally them client-side,
+    which is what the detections page does for a filtered handful. A camera
+    that has been watched for a week holds hundreds of thousands of rows, and
+    the (camera_id, timestamp) index makes this a scan of the ones that matter
+    rather than a transfer of all of them.
+
+    Scoped like every other detection read: a camera this account may not read
+    returns 404 rather than a count, because "there is nothing here" and "you
+    may not know what is here" must not be distinguishable from outside.
+    """
+    camera = (
+        await db.execute(select(CameraRow).where(CameraRow.camera_id == camera_id))
+    ).scalar_one_or_none()
+    if camera is None or not may_read_detections(user, camera):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "CAMERA_NOT_FOUND", "camera_id": camera_id},
+        )
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=since_hours)
+    rows = (
+        await db.execute(
+            select(
+                DetectionRow.class_name,
+                func.count().label("n"),
+                func.min(DetectionRow.timestamp_utc).label("first_seen"),
+                func.max(DetectionRow.timestamp_utc).label("last_seen"),
+            )
+            .where(DetectionRow.camera_id == camera_id)
+            .where(DetectionRow.timestamp_utc >= cutoff)
+            .group_by(DetectionRow.class_name)
+        )
+    ).all()
+
+    by_class = sorted(
+        (VehicleCount(class_name=r.class_name, count=int(r.n)) for r in rows),
+        key=lambda c: c.count,
+        reverse=True,
+    )
+    firsts = [r.first_seen for r in rows if r.first_seen]
+    lasts = [r.last_seen for r in rows if r.last_seen]
+
+    plates = (
+        await db.execute(
+            select(func.count(func.distinct(DetectionRow.plate_text)))
+            .where(DetectionRow.camera_id == camera_id)
+            .where(DetectionRow.timestamp_utc >= cutoff)
+            .where(DetectionRow.plate_text.is_not(None))
+        )
+    ).scalar_one()
+
+    return CameraTrafficSummary(
+        camera_id=camera_id,
+        camera_name=camera.name,
+        since_hours=since_hours,
+        total_detections=sum(c.count for c in by_class),
+        total_vehicles=sum(c.count for c in by_class if c.class_name in VEHICLE_CLASSES),
+        by_class=by_class,
+        plates_read=int(plates or 0),
+        first_seen_utc=min(firsts) if firsts else None,
+        last_seen_utc=max(lasts) if lasts else None,
+    )
+
 
 @router.get("/detections", response_model=list[DetectionOut], summary="List detections")
 async def list_detections(

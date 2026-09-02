@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { LoadingPanel } from "@/components/Shell";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { TrafficCount } from "@/components/TrafficCount";
 import {
   Card,
   DepartmentTag,
@@ -292,6 +293,11 @@ export default function CameraDetailPage() {
             view. Withheld: {Array.from(withheld).map((f) => f.replace(/_/g, " ")).join(", ")}.
           </Notice>
         )}
+
+        {/* What this camera has actually counted. Above the identity block
+            because "is it earning its place" is the question people arrive
+            with; the serial number is what they look up afterwards. */}
+        <TrafficCount cameraId={camera.camera_id} />
 
         {/* Identity */}
         <Card title="Camera identity">

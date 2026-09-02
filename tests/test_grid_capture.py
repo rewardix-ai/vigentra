@@ -206,19 +206,30 @@ def test_capture_is_released_on_exit(grid, monkeypatch):
 def test_nothing_is_written_to_disk(grid):
     """Frames are decoded from a live capture, never from a downloaded file.
 
-    AST again: `urlopen` legitimately contains the substring `open(`, and a
-    test that cannot tell those apart would be noise rather than a guarantee.
+    AST rather than a substring search, and bare calls kept apart from method
+    calls: the builtin `open(path)` is what makes a local copy, while
+    `opener.open(request)` is a urllib read over the network. Matching both on
+    the name alone fails an adapter that only ever streams.
     """
     import ast
 
     tree = ast.parse(GRID.read_text(encoding="utf-8"))
-    called = set()
+    functions: set[str] = set()
+    methods: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            fn = node.func
-            called.add(fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", ""))
-    for forbidden in ("NamedTemporaryFile", "urlretrieve", "mktemp", "open"):
-        assert forbidden not in called, f"{forbidden}() suggests a local copy is being made"
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        if isinstance(fn, ast.Attribute):
+            methods.add(fn.attr)
+        elif isinstance(fn, ast.Name):
+            functions.add(fn.id)
+
+    assert "open" not in functions, "open() suggests a local copy is being made"
+    for forbidden in ("NamedTemporaryFile", "urlretrieve", "mktemp"):
+        assert forbidden not in functions | methods, (
+            f"{forbidden}() suggests a local copy is being made"
+        )
 
 
 # --- DON'T publish to the gateway -------------------------------------------

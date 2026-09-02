@@ -12,6 +12,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from _media import requires_demo_clips
+
 from conftest import assert_no_secrets, open_video_session, password_for_headers
 
 pytestmark = pytest.mark.asyncio
@@ -25,6 +27,7 @@ async def open_session(api, headers, camera_id: str, **overrides):
 
 
 # 9. Authorized Traffic operator can view permitted Traffic video
+@requires_demo_clips
 async def test_traffic_operator_can_view_traffic_video(api, login, traffic_camera):
     headers = await login("traffic.operator")
     response = await open_session(api, headers, traffic_camera["camera_id"])
@@ -43,6 +46,7 @@ async def test_traffic_operator_can_view_traffic_video(api, login, traffic_camer
 
 
 # 10. Authorized Municipal operator can view permitted Municipal video
+@requires_demo_clips
 async def test_municipal_operator_can_view_municipal_video(api, login, municipal_camera):
     headers = await login("municipal.operator")
     response = await open_session(api, headers, municipal_camera["camera_id"])
@@ -191,6 +195,7 @@ async def test_expired_session_cannot_stream(api, login, traffic_camera, monkeyp
 
 
 # 17. Stopped session cannot be used
+@requires_demo_clips
 async def test_revoked_session_cannot_stream(api, login, traffic_camera):
     headers = await login("traffic.operator")
     session = (await open_session(api, headers, traffic_camera["camera_id"])).json()
@@ -526,6 +531,7 @@ async def test_playback_returns_the_segment_for_the_window(api, login, traffic_c
     assert repeat.json()["segment_start_seconds"] == b["segment_start_seconds"]
 
 
+@requires_demo_clips
 async def test_playback_can_be_requested_repeatedly(api, login, traffic_camera):
     """No quota. The limits are the owner's, not a counter.
 

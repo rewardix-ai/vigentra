@@ -118,7 +118,7 @@ const TEMPLATE_ROWS = [
     "Ahmedabad Traffic Zone 3",
     "Ahmedabad",
     "Sarkhej Circle",
-    "southbound",
+    "omnidirectional",
     "22.9948",
     "72.5015",
     "VMS_API",
@@ -165,6 +165,69 @@ const PURPOSES: PurposeValue[] = [
   "other",
 ];
 const SOURCE_TYPES: SourceTypeValue[] = ["RTSP", "ONVIF", "VMS_API", "NVR", "other"];
+
+/**
+ * Headings a camera may be recorded as facing.
+ *
+ * A closed vocabulary rather than free text. The map draws a coverage wedge
+ * from this value, so "towards the mall" or "NE-ish" produces a camera that
+ * plots but claims to see nothing - indistinguishable on screen from one
+ * nobody surveyed. Eight compass points rather than four, because rounding a
+ * north-east facing to north puts the wedge 45 degrees off the road it covers.
+ *
+ * `omnidirectional` is a real answer for a PTZ or dome: it points nowhere in
+ * particular and the map draws a ring instead of a wedge. `unknown` is the
+ * honest answer when nobody looked, and is accepted so a bulk upload is not
+ * blocked on a field the surveyor could not fill.
+ *
+ * Mirrors DIRECTION_VOCABULARY in central-api normalization.py, which accepts
+ * the same spellings server-side.
+ */
+const DIRECTIONS = [
+  "north",
+  "north-east",
+  "east",
+  "south-east",
+  "south",
+  "south-west",
+  "west",
+  "north-west",
+  "omnidirectional",
+  "unknown",
+] as const;
+
+const DIRECTION_ALIASES: Record<string, string> = {
+  n: "north",
+  ne: "north-east",
+  e: "east",
+  se: "south-east",
+  s: "south",
+  sw: "south-west",
+  w: "west",
+  nw: "north-west",
+  northeast: "north-east",
+  southeast: "south-east",
+  southwest: "south-west",
+  northwest: "north-west",
+  "north east": "north-east",
+  "south east": "south-east",
+  "south west": "south-west",
+  "north west": "north-west",
+  northbound: "north",
+  eastbound: "east",
+  southbound: "south",
+  westbound: "west",
+  ptz: "omnidirectional",
+  "360": "omnidirectional",
+  "": "unknown",
+};
+
+/** Canonicalise a direction cell, or null when it is not a heading at all. */
+function canonicalDirection(raw: string): string | null {
+  const token = raw.trim().toLowerCase();
+  const mapped = DIRECTION_ALIASES[token] ?? token;
+  return (DIRECTIONS as readonly string[]).includes(mapped) ? mapped : null;
+}
 const CAMERA_TYPE_ALIASES: Record<string, CameraTypeValue> = {
   anpr: "ANPR-capable",
   "anpr capable": "ANPR-capable",
@@ -269,6 +332,12 @@ function normalise(
   const canonicalSource = SOURCE_TYPE_ALIASES[sourceType] ?? SOURCE_TYPES.find((s) => s.toLowerCase() === sourceType);
   if (!canonicalSource && sourceType !== "") errors.push(`source_type "${raw.source_type}" not recognised`);
 
+  const direction = trimmed(raw.view_direction);
+  if (canonicalDirection(direction) === null) {
+    errors.push(
+      `view_direction "${raw.view_direction}" is not a heading - use one of ${DIRECTIONS.join(", ")}`,
+    );
+  }
   const latitude = toNumber(raw.latitude, "latitude", errors);
   const longitude = toNumber(raw.longitude, "longitude", errors);
   if (latitude !== null && (latitude < -90 || latitude > 90)) errors.push("latitude must be between -90 and 90");
@@ -315,7 +384,7 @@ function normalise(
     longitude,
     address_or_landmark: trimmed(raw.address_or_landmark) || null,
     road_or_junction: trimmed(raw.road_or_junction),
-    view_direction: trimmed(raw.view_direction),
+    view_direction: canonicalDirection(trimmed(raw.view_direction)) ?? "unknown",
     coverage_description: trimmed(raw.coverage_description) || null,
     entry_exit_zone_description: trimmed(raw.entry_exit_zone_description) || null,
     source_type: canonicalSource,

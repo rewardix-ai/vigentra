@@ -397,6 +397,21 @@ async def _retire_unconfigured_sources(
         if rows:
             removed[label] = len(rows)
 
+    # ...and the source's own registry entry, or the department table keeps
+    # listing a system nobody federates any more. That row is what the console
+    # renders as a department: it carried a name, a camera count, a latency and
+    # a health banner long after the source was removed from configuration,
+    # which is a department that does not exist reporting that it is fine.
+    stale_sources = (
+        await db.execute(
+            select(SourceRow).where(SourceRow.source_system_id.notin_(configured or {""}))
+        )
+    ).scalars().all()
+    for row in stale_sources:
+        await db.delete(row)
+    if stale_sources:
+        removed["sources"] = len(stale_sources)
+
     if removed:
         await db.commit()
         logger.info(

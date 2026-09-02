@@ -150,6 +150,15 @@ async def lifespan(app: FastAPI):
             logger.info("media client signed in to the grid")
         except Exception as exc:  # noqa: BLE001 - non-fatal, logged not raised
             logger.warning("media client could not sign in to the grid: %s", exc)
+    # Pay the grid's cold-connection cost here rather than on the first
+    # operator request. Sequential on purpose: both department adapters point
+    # at the same gateway, and warming them in parallel means two sign-ins
+    # racing for one session.
+    for adapter in app.state.adapters.values():
+        warm = getattr(adapter, "warm", None)
+        if warm is not None:
+            await warm()
+
     app.state.media_root = os.getenv("SENTINEL_MEDIA_ROOT", "/app/videos")
     app.state.provider = build_provider(settings, adapters=app.state.adapters)
     app.state.monitor_task = None

@@ -29,6 +29,11 @@ detect:
   # track that fragments is a track whose frames never get fused.
   vehicle_model: yolo11n.pt
   tracker: botsort.yaml
+  # The full plate detector. plate_detector_s.pt is the same architecture at
+  # 18 MB instead of 38 MB and finds fewer distant plates; swap to it only on
+  # a host too tight on memory to load this one, where a worker that runs at
+  # slightly lower recall beats a worker that will not start.
+  plate_model: plate_detector.pt
 
 enhance:
   # Plates arrive far below this, so upscaling does real work here.

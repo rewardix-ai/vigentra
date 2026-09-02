@@ -56,6 +56,7 @@ from .base import (
     AdapterError,
     ResourceNotFoundError,
     SourceConflictError,
+    SourceUnavailableError,
     SurveillanceAdapter,
     UpstreamProtocolError,
 )
@@ -174,18 +175,24 @@ class GridAdapter(SurveillanceAdapter):
         self._cache: list[dict[str, Any]] | None = None
         self._cache_at = 0.0
         self._cache_ttl = 30.0
+        #: How long a catalogue may be served after the grid stops answering.
+        #: The set of cameras changes over days, not minutes, so a five-minute
+        #: old list is still a true statement about the estate - and far more
+        #: use than marking thirty cameras offline because one request to a
+        #: shared sandbox on the public internet was slow.
+        self._stale_ttl = 300.0
+        self._stale = False
 
     # -- access ------------------------------------------------------------
 
     async def _ensure_session(self) -> None:
         """Trade the access password for a session cookie, once.
 
-        The sandbox used to be open; it is now behind a single shared access
-        password posted to /auth/login, which answers with a session cookie.
-        The password itself is deployment configuration and is held on the
-        source's `credential`, the same field every other adapter uses for its
-        vendor key - it is never logged, never echoed to a client, and never
-        put in a URL.
+        The gateway is behind a single shared access password posted to
+        /auth/login, which answers with a session cookie. The password is
+        deployment configuration and is held on the source's `credential`, the
+        same field every other adapter uses for its vendor key - never logged,
+        never echoed to a client, never put in a URL.
 
         Re-authentication is lazy rather than scheduled: the gateway does not
         publish the session lifetime, so guessing it would mean either
@@ -234,15 +241,33 @@ class GridAdapter(SurveillanceAdapter):
         if self._cache is not None and (now - self._cache_at) < self._cache_ttl:
             return self._cache
 
-        # The sandbox moved hosts and changed this endpoint: it was
-        # /api/ingest returning {"cameras": [...]} with codec, resolution and
-        # three stream URLs per entry; it is now /cameras.json returning a
-        # bare list of {id, name}. Both shapes are accepted because the guide
-        # is explicit that the catalogue is the contract and the URL pattern
-        # is not - and a deployment pinned to one shape is how this adapter
-        # spent several days reporting an outage that was really a migration.
-        await self._ensure_session()
-        payload = await self._request("GET", "/cameras.json", authenticated=True)
+        # Two catalogue shapes are accepted: a bare list of {id, name}, and
+        # the older {"cameras": [...]} carrying codec, resolution and stream
+        # URLs per entry. The guide is explicit that the catalogue is the
+        # contract and its URL pattern is not, so pinning to one shape turns
+        # the next migration into a reported outage.
+        try:
+            await self._ensure_session()
+            payload = await self._request("GET", "/cameras.json", authenticated=True)
+        except AdapterError as exc:
+            # Serve the last good catalogue rather than propagating a blip.
+            #
+            # The health monitor probes every 20s and the wall re-reads on
+            # every page load, so a single slow response from a shared sandbox
+            # used to blank the registry and post a red banner that stayed up
+            # until the next successful poll. Falling back keeps the registry
+            # true for as long as the last answer can be trusted, and lets the
+            # error through once it cannot.
+            if self._cache is not None and (now - self._cache_at) < self._stale_ttl:
+                logger.warning(
+                    "grid catalogue unavailable (%s); serving the copy read %.0fs ago",
+                    exc,
+                    now - self._cache_at,
+                )
+                self._stale = True
+                return self._cache
+            self._authenticated = False
+            raise
         if isinstance(payload, dict):
             payload = payload.get("cameras", [])
         if not isinstance(payload, list):
@@ -254,6 +279,7 @@ class GridAdapter(SurveillanceAdapter):
         cameras = [c for c in payload if isinstance(c, dict) and c.get("id")]
         self._cache = cameras
         self._cache_at = now
+        self._stale = False
         return cameras
 
     def _to_camera(self, record: dict[str, Any]) -> CameraMetadata:
@@ -268,14 +294,12 @@ class GridAdapter(SurveillanceAdapter):
         # site name wins where we have one.
         name = _clean(ref.get("site_name")) or str(record.get("location") or record.get("name"))
 
-        # The catalogue used to carry `live: true` (or `status: "live"`) per
-        # camera. The one the grid serves now is {id, name} and nothing else,
-        # so an absent flag has to mean "assume live" rather than "assume
-        # dead" - defaulting to dead published all thirty cameras with no
-        # `live` capability, which reads as "the owner has not enabled video"
-        # and takes the whole live wall down for a field that simply is not
-        # sent any more. The capture attempt remains the real liveness test
-        # and reports its own failure.
+        # An absent flag means "assume live", not "assume dead": the current
+        # catalogue is {id, name} and nothing else, and defaulting to dead
+        # publishes every camera with no `live` capability - which reads as
+        # "the owner has not enabled video" and empties the live wall over a
+        # field that is simply not sent. The capture attempt is the real
+        # liveness test and reports its own failure.
         live = (
             str(record.get("status") or "").lower() == "live"
             or bool(record.get("live", True))
@@ -393,21 +417,71 @@ class GridAdapter(SurveillanceAdapter):
         cameras = [self._to_camera(record) for record in await self._catalogue()]
         return [camera for camera in cameras if camera.source_system == self.source_system]
 
+    async def check_source_health(self) -> dict[str, Any]:
+        """Liveness via the catalogue this adapter already keeps.
+
+        The inherited probe makes its own unauthenticated request to
+        `health_path` every polling interval. Against this gateway that is
+        wrong twice over: the sandbox is behind a sign-in, so an
+        unauthenticated read is answered with the login page rather than the
+        catalogue, and a probe every 20s on top of the reads the registry
+        already makes is exactly the load the integrator's guide asks clients
+        not to generate.
+
+        Going through `_catalogue()` reuses the session, honours the TTL, and
+        counts a catalogue served from cache as reachable - which it is: the
+        cameras are there and the last read succeeded.
+        """
+        started = time.perf_counter()
+        try:
+            cameras = await self._catalogue()
+        except AdapterError as exc:
+            return {
+                "reachable": False,
+                "status": "offline",
+                "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+                "error": str(exc),
+                "error_code": exc.code,
+            }
+        return {
+            "reachable": True,
+            "status": "online",
+            "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+            "upstream": {
+                "cameras": len(cameras),
+                "catalogue_age_seconds": round(time.monotonic() - self._cache_at, 1),
+                "stale": self._stale,
+            },
+        }
+
+    async def warm(self) -> None:
+        """Read the catalogue once at startup, failure tolerated.
+
+        The first connection to this gateway pays TLS setup and a sign-in and
+        can take half a minute; every one after it is sub-second. Paying that
+        in the background at boot means the first operator to open the registry
+        does not pay it instead, and a cold start no longer looks like an
+        outage.
+        """
+        try:
+            await self._catalogue()
+        except AdapterError as exc:
+            logger.warning("grid catalogue could not be pre-warmed: %s", exc)
+
     async def get_camera_health(self, external_camera_id: str) -> dict[str, Any]:
         """Health straight off the catalogue's own live flag.
 
-        The catalogue is not always right - cameras 17 and 18 have reported
-        `live` while their playlists returned HTTP 500 - so the detail block
-        says where the claim came from rather than presenting it as measured.
+        The catalogue is not always right - a camera can report `live` while
+        its playlist returns HTTP 500 - so the detail block says where the
+        claim came from rather than presenting it as measured.
         """
         wanted = external_camera_id.upper()
         for record in await self._catalogue():
             grid_id = str(record["id"])
             candidate = f"GRID-{int(grid_id):03d}" if grid_id.isdigit() else f"GRID-{grid_id}"
             if candidate.upper() == wanted:
-                # /api/ingest reports `live: true`; /api/cameras reports
-                # `status: "live"`. Accept either so the adapter does not
-                # depend on which of the two endpoints answered.
+                # Accept either spelling the catalogue has used, so the
+                # adapter does not depend on which endpoint answered.
                 live = (
                     str(record.get("status") or "").lower() == "live"
                     or bool(record.get("live", True))
@@ -420,7 +494,7 @@ class GridAdapter(SurveillanceAdapter):
                     "latency_ms": None,
                     "reconnect_count": None,
                     "detail": {
-                        "source": "grid catalogue /api/ingest",
+                        "source": "grid catalogue",
                         "claimed_live": live,
                         "note": (
                             "Catalogue status is the grid's own claim and is not "

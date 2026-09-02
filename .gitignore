@@ -5,6 +5,13 @@ __pycache__/
 .pytest_cache/
 .pytest-sentinel.sqlite
 
+# Local run databases. The schema is created on startup and the contents are
+# whatever that machine happened to sync and detect, so a committed copy is
+# one developer's run history presented as project state - and it conflicts on
+# every pull.
+*.sqlite
+*.sqlite-journal
+
 # Node / Next.js
 node_modules/
 .next/
@@ -42,3 +49,6 @@ data/reference/_*.json
 # data/reference/grid_cameras.json, which the Dockerfile bakes into the image.
 # Two committed copies drift - that is how the wrong-shape file shipped once.
 services/central-api/reference/
+
+# Runtime logs from the local stack.
+logs/

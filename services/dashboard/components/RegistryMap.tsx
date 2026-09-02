@@ -12,8 +12,8 @@
  *
  * Coordinates are synthetic demo values, labelled as such in the popup.
  */
-import { useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, CircleMarker, Popup, useMap } from "react-leaflet";
 import Link from "next/link";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 
@@ -28,6 +28,9 @@ import "leaflet/dist/leaflet.css";
 import type { Camera, CameraHealthStatus } from "@/lib/types";
 import { calendarDate, relative, titleise } from "@/lib/format";
 import { HealthPill, InstallationPill, DepartmentTag } from "./ui";
+import { BASEMAPS, BasemapLayer, BasemapPicker } from "./BasemapPicker";
+import { INDIA_BOUNDS, INDIA_MIN_ZOOM } from "@/lib/mapBounds";
+import { CameraFieldOfView, bearingOf, isOmnidirectional } from "./CameraFieldOfView";
 
 const AHMEDABAD: LatLngExpression = [23.033, 72.585];
 
@@ -65,6 +68,40 @@ function placeable(cameras: Camera[]): Placed[] {
 }
 
 /** Recompute bounds whenever the visible list changes. */
+/**
+ * Tell Leaflet how big it actually is.
+ *
+ * Leaflet measures its container once, at construction. The registry map is
+ * built inside a tab that is display:none until "Map" is pressed, so it
+ * measures zero, decides one tile covers the planet, and renders the whole
+ * world repeated sideways with every camera collapsed onto one dot - which is
+ * exactly what it did. Nothing about the data or the basemap is wrong; the
+ * map simply never learned its own size.
+ *
+ * `invalidateSize` re-measures. It runs once on mount, and again on any
+ * container resize, because the sidebar collapsing or the window changing
+ * shape has the same effect on a smaller scale.
+ */
+function KeepMapSized({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
+  const map = useMap();
+  useEffect(() => {
+    const element = containerRef.current;
+    // A frame's delay: on the render that reveals the tab the element has its
+    // final height, but layout has not flushed when the effect first runs.
+    const raf = requestAnimationFrame(() => map.invalidateSize());
+    if (!element || typeof ResizeObserver === "undefined") {
+      return () => cancelAnimationFrame(raf);
+    }
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(element);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [map, containerRef]);
+  return null;
+}
+
 function FitToPoints({ points }: { points: Placed[] }) {
   const map = useMap();
   const fittedSignature = useRef<string | null>(null);
@@ -80,7 +117,14 @@ function FitToPoints({ points }: { points: Placed[] }) {
       return;
     }
     const bounds: LatLngBoundsExpression = points.map((p) => [p.lat, p.lng]);
-    map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+    // Deferred a frame for the same reason as invalidateSize above: fitting
+    // bounds to a container Leaflet still believes is 0x0 produces a
+    // world-level zoom that then never corrects itself.
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+      if (map.getZoom() < INDIA_MIN_ZOOM) map.setZoom(INDIA_MIN_ZOOM);
+    });
   }, [map, points]);
   return null;
 }
@@ -88,6 +132,22 @@ function FitToPoints({ points }: { points: Placed[] }) {
 export function RegistryMap({ cameras }: { cameras: Camera[] }) {
   const points = useMemo(() => placeable(cameras), [cameras]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [basemapId, setBasemapId] = useState(BASEMAPS[0].id);
+  const [showCoverage, setShowCoverage] = useState(true);
+  const basemap = BASEMAPS.find((b) => b.id === basemapId) ?? BASEMAPS[0];
+
+  // How many of the plotted cameras can say anything about where they look.
+  // Worth stating rather than leaving the map to imply full coverage: a
+  // bearing nobody surveyed is the difference between a coverage map and a
+  // decorative one.
+  const aimed = useMemo(
+    () =>
+      points.filter(
+        ({ camera }) =>
+          isOmnidirectional(camera) || bearingOf(camera.location?.view_direction) !== null,
+      ).length,
+    [points],
+  );
 
   // Leaflet ships icon URLs that break under Webpack; we use CircleMarker
   // instead of the default marker, so no icon-path patch is needed.
@@ -105,23 +165,53 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
           </div>
           <p className="mt-0.5 text-2xs text-ink-500">
             Cameras with recorded coordinates. Fill by department, ring by health.
-            Synthetic demonstration coordinates around Ahmedabad.
+            Wedges show where a camera looks; a dashed ring means steerable, so it
+            points nowhere in particular. Range is indicative, not surveyed.{" "}
+            <span className="tabular font-mono">{aimed}</span> of{" "}
+            <span className="tabular font-mono">{points.length}</span> have a
+            recorded bearing.
           </p>
         </div>
-        <MapLegend />
+        <div className="flex items-center gap-3">
+          <label className="flex cursor-pointer items-center gap-1.5 text-2xs text-ink-600">
+            <input
+              type="checkbox"
+              checked={showCoverage}
+              onChange={(event) => setShowCoverage(event.target.checked)}
+            />
+            Show coverage
+          </label>
+          <MapLegend />
+        </div>
       </div>
       <div ref={containerRef} className="relative h-[520px] w-full bg-[#eaeef3]">
+        <BasemapPicker value={basemapId} onChange={setBasemapId} />
         <MapContainer
           center={AHMEDABAD}
           zoom={12}
           scrollWheelZoom
+          // India only, as a hard stop. maxBoundsViscosity 1 refuses the drag
+          // outright rather than letting it rubber-band: a map you can pull
+          // off the country still shows the wrong thing while you are pulling.
+          maxBounds={INDIA_BOUNDS}
+          maxBoundsViscosity={1}
+          minZoom={INDIA_MIN_ZOOM}
           style={{ height: "100%", width: "100%" }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <BasemapLayer basemap={basemap} />
+          <KeepMapSized containerRef={containerRef} />
           <FitToPoints points={points} />
+          {showCoverage &&
+            points.map(({ camera, lat, lng }) => (
+              <CameraFieldOfView
+                key={`fov-${camera.camera_id}`}
+                camera={camera}
+                lat={lat}
+                lng={lng}
+                colour={DEPARTMENT_FILL[camera.owning_department] ?? "#5b6670"}
+                dimmed={camera.installation.installation_status !== "COMMISSIONED"}
+              />
+            ))}
           {points.map(({ camera, lat, lng }) => {
             const isWithdrawn = camera.installation.installation_status !== "COMMISSIONED";
             const fill = DEPARTMENT_FILL[camera.owning_department] ?? "#5b6670";

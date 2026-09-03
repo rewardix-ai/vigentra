@@ -1,4 +1,4 @@
-"""Sentinel edge analytics worker.
+"""Vigentra edge analytics worker.
 
 Runs *inside* the department environment, next to the video it is authorized to
 process. It:
@@ -16,7 +16,7 @@ confidence, a box, a timestamp and provenance.
 
 Usage:
 
-    python -m app.worker --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 60
+    python -m app.worker --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 60
     python -m app.worker --clip /app/videos/traffic_01.mp4 --camera ... --dry-run
 
 Environment: see docs/yolo-setup.md.
@@ -54,7 +54,7 @@ logging.basicConfig(
     # ErrorRecord - so a healthy run looks like a crash.
     stream=sys.stdout,
 )
-logger = logging.getLogger("sentinel.edge.worker")
+logger = logging.getLogger("vigentra.edge.worker")
 
 CENTRAL_API_URL = os.getenv("CENTRAL_API_URL", "http://central-api:8000")
 EDGE_USERNAME = os.getenv("EDGE_USERNAME", "traffic.ai")
@@ -410,7 +410,7 @@ def _sighting_payload(
         "class_id": 2,
         "confidence": round(float(sighting.confidence), 4),
         "bbox_xyxy": sighting.vehicle_bbox or sighting.plate_bbox or [0.0, 0.0, 1.0, 1.0],
-        "model_name": "sentinel-anpr-consensus",
+        "model_name": "vigentra-anpr-consensus",
         "model_version": reader_version.split("/", 1)[-1],
         "source_mode": source_mode,
         "is_demo_data": source_mode != "authorized_edge",
@@ -562,7 +562,7 @@ def run(
                 "frame_quality": assessment.quality.value,
                 "enhancement_applied": assessment.enhancement_applied,
                 "sample_interval": sample_interval,
-                "worker": "sentinel-edge-worker",
+                "worker": "vigentra-edge-worker",
                 # Stream-relative capture time, kept alongside the wall-clock
                 # timestamp. The guide is explicit that PTS is the only
                 # trustworthy clock on these feeds, so it travels with the row.
@@ -871,7 +871,7 @@ def main(argv: list[str] | None = None) -> int:
         action="append",
         default=None,
         help=(
-            "Canonical camera ID, e.g. SENTINEL-TRAFFIC-AHM-0001. "
+            "Canonical camera ID, e.g. VIGENTRA-TRAFFIC-AHM-0001. "
             "Repeat for several cameras on one worker."
         ),
     )

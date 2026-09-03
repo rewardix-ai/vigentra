@@ -383,7 +383,7 @@ export function Notice({
 /**
  * What happens to this camera's footage, said plainly.
  *
- * Without a `state` this is the general statement: Sentinel holds metadata,
+ * Without a `state` this is the general statement: Vigentra holds metadata,
  * departments hold video. With one it becomes specific to the camera in front
  * of the reader, because "you may watch this" and "ask the Municipal
  * Corporation" are very different things to tell an operator, and a single
@@ -405,7 +405,7 @@ export function FootageNotice({
   let headline = "Footage stays with the department that owns the camera";
   let body: ReactNode = (
     <>
-      Sentinel federates camera <strong>metadata</strong>. Video is never copied here: a
+      Vigentra federates camera <strong>metadata</strong>. Video is never copied here: a
       permitted session is brokered from {owner}&rsquo;s own CCTV/VMS environment, watermarked,
       time-limited and recorded in the audit log.
     </>
@@ -437,7 +437,7 @@ export function FootageNotice({
       headline = "This camera is metadata-only";
       body = (
         <>
-          {owner} has not enabled brokered video for this camera. No role in Sentinel can
+          {owner} has not enabled brokered video for this camera. No role in Vigentra can
           override that, and there is nothing to request.
         </>
       );

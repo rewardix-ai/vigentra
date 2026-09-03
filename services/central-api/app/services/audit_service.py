@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import AuditLog
 
-logger = logging.getLogger("sentinel.audit")
+logger = logging.getLogger("vigentra.audit")
 
 
 class AuditAction(str, Enum):

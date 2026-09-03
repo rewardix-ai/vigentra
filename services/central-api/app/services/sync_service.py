@@ -57,7 +57,7 @@ from ..schemas import (
 from . import normalization as norm
 from . import policy_service
 
-logger = logging.getLogger("sentinel.sync")
+logger = logging.getLogger("vigentra.sync")
 
 #: Statuses that are still inside the department's pipeline. Their metadata
 #: must never reach the central registry.
@@ -370,7 +370,7 @@ async def _retire_unconfigured_sources(
 ) -> dict[str, int]:
     """Remove registry rows belonging to sources that are no longer federated.
 
-    Turning a department off in configuration is a statement that Sentinel no
+    Turning a department off in configuration is a statement that Vigentra no
     longer federates it. Leaving its cameras in the registry would contradict
     that, and for the two demo departments it would leave synthetic cameras on
     the map with nothing to mark them as such.
@@ -486,6 +486,7 @@ async def sync_all(
             continue
 
         acknowledge: list[str] = []
+        seen_ids: set[str] = set()
         for camera in outcome["cameras"]:
             status = camera.request_status
             is_publishable = _in(status, PUBLISHABLE_STATUSES)
@@ -498,6 +499,8 @@ async def sync_all(
                 continue
 
             verdict = await _upsert_camera(db, camera, adapter)
+            if verdict != "conflict":
+                seen_ids.add(camera.camera_id)
             if verdict == "conflict":
                 result.errors.append(
                     f"canonical ID {camera.camera_id} already belongs to another record "
@@ -516,6 +519,39 @@ async def sync_all(
                     result.updated += 1
                 if camera.installation_request_id and _in(status, {RequestStatus.REGISTERED}):
                     acknowledge.append(camera.installation_request_id)
+
+        # Drop cameras this source no longer publishes.
+        #
+        # A register that only ever adds is not a register of what exists. A
+        # camera removed upstream - decommissioned, renumbered, moved to
+        # another system - otherwise stays on the map and in the counts for
+        # ever, indistinguishable from one that is simply offline today.
+        #
+        # Guarded on having read at least one camera, so an upstream that
+        # answers with an empty list, or a read that half-failed, cannot empty
+        # the registry. That is the failure mode this ordering exists to
+        # prevent: absence of evidence is not evidence of decommissioning.
+        if seen_ids and not result.errors:
+            stale = (
+                await db.execute(
+                    select(CameraRow).where(
+                        CameraRow.source_system == source_system,
+                        CameraRow.camera_id.notin_(seen_ids),
+                    )
+                )
+            ).scalars().all()
+            for row in stale:
+                await db.delete(row)
+            if stale:
+                result.retired = len(stale)
+                logger.info(
+                    "sync: %s no longer publishes %d camera(s); removed from the "
+                    "registry: %s",
+                    source_system,
+                    len(stale),
+                    ", ".join(sorted(row.camera_id for row in stale)[:5])
+                    + (" ..." if len(stale) > 5 else ""),
+                )
 
         # Tell the department system its approved records have been taken.
         if acknowledge_to_source:

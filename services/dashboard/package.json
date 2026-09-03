@@ -1,8 +1,8 @@
 {
-  "name": "sentinel-dashboard",
+  "name": "vigentra-dashboard",
   "version": "0.2.0",
   "private": true,
-  "description": "Sentinel Module 1 dashboard - metadata-only CCTV registry console.",
+  "description": "Vigentra Module 1 dashboard - metadata-only CCTV registry console.",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",

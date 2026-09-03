@@ -74,7 +74,7 @@ with open("data/reference/grid_cameras_final.csv", "w", newline="", encoding="ut
 
 # human-readable companion
 with open("data/reference/grid_cameras_final.txt", "w", encoding="utf-8") as f:
-    f.write("SENTINEL CAMERA GRID - 30 CAMERAS\n")
+    f.write("VIGENTRA CAMERA GRID - 30 CAMERAS\n")
     f.write("snapshot %s UTC   source %s/api/ingest\n" %
             (datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M"), BASE))
     f.write("=" * 78 + "\n\n")

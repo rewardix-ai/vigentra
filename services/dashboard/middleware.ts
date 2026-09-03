@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!request.cookies.get("sentinel_session")?.value) {
+  if (!request.cookies.get("vigentra_session")?.value) {
     // An API call has to fail as JSON. Redirecting one sends the browser to the
     // sign-in *page*, which it follows transparently and which answers 200 with
     // HTML - so the caller's `response.json()` dies on "<!DOCTYPE" and the

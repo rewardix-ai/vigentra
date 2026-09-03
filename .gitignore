@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 .venv/
 .pytest_cache/
-.pytest-sentinel.sqlite
+.pytest-vigentra.sqlite
 
 # Local run databases. The schema is created on startup and the contents are
 # whatever that machine happened to sync and detect, so a committed copy is

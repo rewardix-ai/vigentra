@@ -79,7 +79,7 @@ which would downgrade the scheme mid-playlist. Every request carries it.
 The browser never learns that `live.corp8.cloud` exists.
 
 ```
-browser → /api/v1/streams/{session_id}          (Sentinel, authorised, audited)
+browser → /api/v1/streams/{session_id}          (Vigentra, authorised, audited)
         → /api/v1/streams/{session_id}?p=<ref>  (each segment re-enters the same route)
                 ↓ server-side only
           https://live.corp8.cloud/live/stream/<n>/...
@@ -93,7 +93,7 @@ relative `?p=<encoded ref>`.
 
 Relative, deliberately: `?p=…` resolves against whatever URL the playlist was
 fetched from, so the rewrite stays correct behind the dashboard's
-`/api/sentinel` proxy, behind any other reverse proxy, and when the API is
+`/api/vigentra` proxy, behind any other reverse proxy, and when the API is
 called directly — without this service needing to know its own public prefix.
 
 Because every segment re-enters `/api/v1/streams/{id}`, **authorisation is

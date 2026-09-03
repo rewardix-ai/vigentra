@@ -2,7 +2,7 @@
 .git
 .venv
 .pytest_cache
-.pytest-sentinel.sqlite
+.pytest-vigentra.sqlite
 __pycache__
 *.pyc
 node_modules

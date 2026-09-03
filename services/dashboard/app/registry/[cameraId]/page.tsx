@@ -277,7 +277,7 @@ export default function CameraDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <DepartmentTag department={camera.owning_department} />
           <InstallationPill status={camera.installation.installation_status} />
-          <SyncPill status={camera.sentinel_sync.status} />
+          <SyncPill status={camera.vigentra_sync.status} />
           <HealthPill status={effectiveHealth.status} />
           <VideoStatePill state={camera.video_access} />
           <Pill tone="idle">{titleise(camera.camera_type)}</Pill>
@@ -356,7 +356,7 @@ export default function CameraDetailPage() {
           </Grid>
           <p className="border-t border-line px-4 py-2 text-2xs text-ink-500">
             Local administrator contact details are held by the owning department and are masked
-            before they leave that system — Sentinel never receives them in full.
+            before they leave that system — Vigentra never receives them in full.
           </p>
         </Card>
 
@@ -402,7 +402,7 @@ export default function CameraDetailPage() {
           </Grid>
           <p className="border-t border-line px-4 py-2 text-2xs text-ink-500">
             These describe how the <strong>owning department</strong> records and retains footage.
-            Sentinel stores the description; it holds no address, credential or stream for any of it.
+            Vigentra stores the description; it holds no address, credential or stream for any of it.
           </p>
         </Card>
 
@@ -459,9 +459,9 @@ export default function CameraDetailPage() {
           <Card title="Metadata synchronisation">
             <Grid>
               <Field label="Sync status">
-                <SyncPill status={camera.sentinel_sync.status} />
+                <SyncPill status={camera.vigentra_sync.status} />
               </Field>
-              <Field label="Last synchronised">{ist(camera.sentinel_sync.synced_at_utc)}</Field>
+              <Field label="Last synchronised">{ist(camera.vigentra_sync.synced_at_utc)}</Field>
               <Field label="First recorded">{ist(camera.first_synced_at)}</Field>
               <Field label="Source system">{camera.source_system}</Field>
               <Field label="Adapter">
@@ -488,13 +488,13 @@ export default function CameraDetailPage() {
           }
         >
           <Grid>
-            <Field label="Video access through Sentinel">
+            <Field label="Video access through Vigentra">
               {/* The owner's switch and this reader's own decision are two
                   different facts, and conflating them is how the page used to
                   claim NOT AVAILABLE at an operator who could watch. */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <Pill tone={camera.access_policy_summary.sentinel_video_access ? "ok" : "idle"}>
-                  {camera.access_policy_summary.sentinel_video_access
+                <Pill tone={camera.access_policy_summary.vigentra_video_access ? "ok" : "idle"}>
+                  {camera.access_policy_summary.vigentra_video_access
                     ? "brokering permitted by owner"
                     : "brokering not permitted by owner"}
                 </Pill>
@@ -549,7 +549,7 @@ export default function CameraDetailPage() {
             </table>
           )}
           <p className="border-t border-line px-4 py-2 text-2xs text-ink-500">
-            Sentinel records document <strong>references</strong> only. The documents themselves stay
+            Vigentra records document <strong>references</strong> only. The documents themselves stay
             with the owning department, and no CCTV footage is ever attached to a registry record.
           </p>
         </Card>

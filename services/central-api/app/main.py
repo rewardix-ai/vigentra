@@ -1,4 +1,4 @@
-"""Sentinel Central API - metadata-only CCTV registry federation (Module 1).
+"""Vigentra Central API - metadata-only CCTV registry federation (Module 1).
 
 Scope: federate the CCTV ASSET REGISTERS of independent departments behind one
 canonical schema, one approval-gated onboarding pipeline, one permission model,
@@ -80,7 +80,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s %(name)s :: %(message)s",
 )
-logger = logging.getLogger("sentinel.api")
+logger = logging.getLogger("vigentra.api")
 
 
 async def _seed_identity(settings: Settings) -> None:
@@ -142,12 +142,26 @@ async def lifespan(app: FastAPI):
     # Signing the media client in at startup keeps the session on its jar for
     # every segment fetch that follows.
     if settings.sentinel_grid_password:
+        form = {"password": settings.sentinel_grid_password}
+        if settings.sentinel_grid_email:
+            form["email"] = settings.sentinel_grid_email
         try:
             await app.state.media_client.post(
                 settings.sentinel_grid_base_url.rstrip("/") + "/auth/login",
-                data={"password": settings.sentinel_grid_password},
+                data=form,
             )
-            logger.info("media client signed in to the grid")
+            # A refused sign-in comes back 200 with the sign-in page, so the
+            # cookie jar is what says whether this worked. Logging success off
+            # the status alone reported a session that did not exist, and the
+            # failure surfaced much later as unplayable video.
+            if any(cookie for cookie in app.state.media_client.cookies.jar):
+                logger.info("media client signed in to the grid")
+            else:
+                logger.warning(
+                    "media client sign-in was refused by the grid (no session "
+                    "cookie issued) - check SENTINEL_GRID_EMAIL and "
+                    "SENTINEL_GRID_PASSWORD; brokered video will not play"
+                )
         except Exception as exc:  # noqa: BLE001 - non-fatal, logged not raised
             logger.warning("media client could not sign in to the grid: %s", exc)
     # Pay the grid's cold-connection cost here rather than on the first
@@ -159,7 +173,7 @@ async def lifespan(app: FastAPI):
         if warm is not None:
             await warm()
 
-    app.state.media_root = os.getenv("SENTINEL_MEDIA_ROOT", "/app/videos")
+    app.state.media_root = os.getenv("VIGENTRA_MEDIA_ROOT", "/app/videos")
     app.state.provider = build_provider(settings, adapters=app.state.adapters)
     app.state.monitor_task = None
 
@@ -225,7 +239,7 @@ async def lifespan(app: FastAPI):
 settings = get_settings()
 
 app = FastAPI(
-    title="Sentinel Central API",
+    title="Vigentra Central API",
     version=settings.service_version,
     description=(
         "Vendor-neutral federated CCTV **metadata** registry. Module 1 covers "
@@ -243,7 +257,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Sentinel-Degraded"],
+    expose_headers=["X-Vigentra-Degraded"],
 )
 
 
@@ -255,8 +269,8 @@ async def stamp_access_model(request: Request, call_next):
     gateway even if they never read the documentation.
     """
     response = await call_next(request)
-    response.headers["X-Sentinel-Access-Model"] = "AUTHORIZED_VIDEO"
-    response.headers["X-Sentinel-Video-Access"] = "ROLE_AND_SCOPE_GATED"
+    response.headers["X-Vigentra-Access-Model"] = "AUTHORIZED_VIDEO"
+    response.headers["X-Vigentra-Video-Access"] = "ROLE_AND_SCOPE_GATED"
     return response
 
 
@@ -264,7 +278,7 @@ async def stamp_access_model(request: Request, call_next):
 async def adapter_error_handler(_: Request, exc: AdapterError) -> JSONResponse:
     """Turn a department-system failure into a useful central error.
 
-    The client learns which department failed and why, in Sentinel's vocabulary -
+    The client learns which department failed and why, in Vigentra's vocabulary -
     never the vendor's raw envelope, and never a credential.
     """
     return JSONResponse(status_code=exc.http_status, content={"detail": exc.to_dict()})

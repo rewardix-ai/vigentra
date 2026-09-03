@@ -15,7 +15,7 @@ from .config import get_settings
 
 
 class Base(DeclarativeBase):
-    """Declarative base for every Sentinel table."""
+    """Declarative base for every Vigentra table."""
 
 
 _engine: AsyncEngine | None = None

@@ -147,7 +147,7 @@ export default function OverviewPage() {
       <div className="space-y-4">
         {/* Only for accounts that hold no footage rights at all. Telling a
             viewing account that video lives elsewhere is just wrong. */}
-        {operator && !operator.sentinel_video_access && <FootageNotice />}
+        {operator && !operator.vigentra_video_access && <FootageNotice />}
 
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
 
@@ -318,7 +318,7 @@ export default function OverviewPage() {
           )}
           <p className="border-t border-line px-4 py-2 text-2xs leading-relaxed text-ink-500">
             Each department runs its own CCTV/VMS system and its own installation register.
-            Sentinel reads camera <strong>metadata</strong> from each as soon as that department&rsquo;s
+            Vigentra reads camera <strong>metadata</strong> from each as soon as that department&rsquo;s
             own validation passes, and never holds stream URLs or VMS credentials. Footage is
             brokered per session, only for the units the owning department has said yes to.
           </p>

@@ -1,8 +1,14 @@
-# Sentinel
+# Vigentra
 
-**Vendor-neutral federation of independent CCTV/VMS systems.**
+**Unified AI Video Intelligence for Safer Cities**
 
-Sentinel gives a state-level operator one console over multiple department
+*Gujarat Police CCTV Integration Hackathon 2026 — Model 1 (Centralised CCTV
+Registry + GIS) with Models 2, 3 and 4.*
+
+Vendor-neutral federation of independent CCTV/VMS systems, with GIS coverage
+mapping, brokered live video, edge ANPR and cross-camera vehicle tracing.
+
+Vigentra gives a state-level operator one console over multiple department
 CCTV registers — Traffic Police, Municipal Corporation, and any future
 department system — without moving footage between them. Each department keeps
 its own installation register, its own credentials and its own raw video.
@@ -88,12 +94,12 @@ flowchart LR
         MR[(municipal-vms)]
     end
 
-    TA[TrafficAdapter] -->|registered metadata| SENTINEL
-    MA[MunicipalAdapter] -->|registered metadata| SENTINEL
+    TA[TrafficAdapter] -->|registered metadata| VIGENTRA
+    MA[MunicipalAdapter] -->|registered metadata| VIGENTRA
     Traffic -.->|brokered session, on grant| TA
     Municipal -.->|brokered session, on grant| MA
 
-    subgraph SENTINEL["Sentinel central-api"]
+    subgraph VIGENTRA["Vigentra central-api"]
         SYNC[metadata sync]
         REG[(canonical registry)]
         PERM[video permissions]
@@ -101,22 +107,22 @@ flowchart LR
         AUDIT[(audit log)]
     end
 
-    EDGE[edge-worker<br/>YOLO] -->|detections| SENTINEL
-    SENTINEL --> DASH[dashboard]
+    EDGE[edge-worker<br/>YOLO] -->|detections| VIGENTRA
+    VIGENTRA --> DASH[dashboard]
 
     style Traffic fill:#f6f7f9,stroke:#c3ccd7
     style Municipal fill:#f6f7f9,stroke:#c3ccd7
-    style SENTINEL fill:#e3edf9,stroke:#1b4f9c
+    style VIGENTRA fill:#e3edf9,stroke:#1b4f9c
 ```
 
 Each department:
 
 - runs its own installation register and validates its own forms;
 - holds its own raw video, NVR credentials, RTSP URLs and local access policy;
-- decides whether Sentinel may broker each camera at all, and who from outside
+- decides whether Vigentra may broker each camera at all, and who from outside
   may watch it.
 
-Sentinel:
+Vigentra:
 
 - normalises every department dialect (vocabulary, timestamps, envelopes) into
   one canonical shape;
@@ -136,7 +142,7 @@ Sentinel:
    non-empty local-role list.
 3. Failure returns `VALIDATION_FAILED` with the department's own error list;
    correct and resubmit. Success registers the camera immediately.
-4. Sentinel synchronises. `REGISTERED` and `SYNCHRONIZED` records cross the
+4. Vigentra synchronises. `REGISTERED` and `SYNCHRONIZED` records cross the
    adapter boundary; drafts and failed validations are counted and skipped.
    Suspended and decommissioned assets are kept and marked `unavailable`, so
    the register never loses a withdrawn camera.
@@ -147,7 +153,7 @@ Sentinel:
 The adapter pattern makes vendor differences invisible above the boundary. The
 Traffic system speaks flat snake_case with IST wall-clock strings and an
 `X-API-Key` header; the Municipal system speaks nested camelCase with epoch
-milliseconds and a bearer token. Sentinel's routers and the dashboard see the
+milliseconds and a bearer token. Vigentra's routers and the dashboard see the
 same canonical `Camera` model either way. See
 [`docs/adapter-contract.md`](docs/adapter-contract.md).
 
@@ -170,7 +176,7 @@ same canonical `Camera` model either way. See
 | `grid_operator` | the live sandbox grid — live video only, plus plates, alerts and traces on it |
 
 Local roles (each department's own VMS vocabulary) are recorded on the
-access-policy summary. Sentinel does not grant them and never receives a token
+access-policy summary. Vigentra does not grant them and never receives a token
 for any of them.
 
 ---
@@ -260,7 +266,7 @@ A camera you do not own is visible but not viewable:
 ```bash
 curl -s -X POST http://localhost:8000/api/v1/video-sessions \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"camera_id":"SENTINEL-MUNICIPAL-AHM-0101","mode":"live","reason":"demo"}' | jq .detail
+  -d '{"camera_id":"VIGENTRA-MUNICIPAL-AHM-0101","mode":"live","reason":"demo"}' | jq .detail
 # { "code": "VIDEO_ACCESS_DENIED", "state": "needs_unit_approval",
 #   "owning_department": "Municipal Corporation",
 #   "request_access_at": "/api/v1/video-access-requests" }
@@ -275,7 +281,7 @@ running stream when revoked.
 
 ## Testing source failure
 
-Sentinel isolates department outages: one system going down never breaks the
+Vigentra isolates department outages: one system going down never breaks the
 other.
 
 ```bash
@@ -288,7 +294,7 @@ Refresh the overview page:
 - Municipal Corporation cameras become `offline` with an explanatory reason.
 - The department-systems row for the Municipal Corporation turns red.
 - Installation listings degrade to the last mirrored state rather than failing,
-  and say so via `X-Sentinel-Degraded`.
+  and say so via `X-Vigentra-Degraded`.
 
 ```bash
 docker compose start municipal-vms
@@ -326,9 +332,9 @@ those are placed under `data/videos/`.
 ## Repository layout
 
 ```
-sentinel-module1/
+vigentra-module1/
 ├── services/
-│   ├── central-api/          # Sentinel middleware (FastAPI + SQLAlchemy 2)
+│   ├── central-api/          # Vigentra middleware (FastAPI + SQLAlchemy 2)
 │   ├── traffic-vms/          # Mock Traffic Police department system
 │   ├── municipal-vms/        # Mock Municipal Corporation department system
 │   ├── edge-worker/          # YOLO inference and consensus ANPR at the edge
@@ -343,6 +349,6 @@ sentinel-module1/
 ```
 
 Every input, every camera and every account in this repository is synthetic and
-labelled as such. Sentinel does not connect to any real government CCTV system,
+labelled as such. Vigentra does not connect to any real government CCTV system,
 and the official-source provider refuses rather than guesses until authorised
 access is configured.

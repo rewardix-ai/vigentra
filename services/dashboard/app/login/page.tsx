@@ -10,6 +10,7 @@ import {
   Notice,
   Spinner,
 } from "@/components/ui";
+import { BrandLockup, TAGLINE } from "@/components/Brand";
 
 interface DemoAccount {
   username: string;
@@ -110,24 +111,9 @@ function SignInForm() {
       {/* Sign-in */}
       <div className="flex flex-col justify-center border-r border-line bg-white px-7 py-8">
         <div className="mx-auto w-full max-w-sm">
-          <div className="mb-6 flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded border border-navy-700 bg-navy-800 text-white">
-              <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden>
-                <path
-                  d="M12 3 4 6.2v5.3c0 4.6 3.2 8.5 8 9.5 4.8-1 8-4.9 8-9.5V6.2L12 3Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="11" r="2.4" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </span>
-            <div>
-              <div className="text-base font-semibold tracking-wide text-ink-900">SENTINEL</div>
-              <div className="text-2xs uppercase tracking-wider text-ink-500">
-                CCTV Asset Registry
-              </div>
-            </div>
+          <div className="mb-6">
+            <BrandLockup subtitle={null} />
+            <p className="mt-2.5 text-[13px] leading-snug text-ink-500">{TAGLINE}</p>
           </div>
 
           <h1 className="text-lg font-semibold text-ink-900">Sign in</h1>
@@ -176,7 +162,9 @@ function SignInForm() {
       {/* Accounts - username, password and Use */}
       <div className="flex flex-col justify-center bg-paper px-7 py-8">
         <div className="mx-auto w-full max-w-3xl">
-          <h2 className="text-[13px] font-semibold text-ink-900">Demonstration accounts</h2>
+          <Capabilities />
+
+          <h2 className="mt-5 text-[13px] font-semibold text-ink-900">Demonstration accounts</h2>
           <p className="mt-0.5 text-2xs text-ink-500">
             Select one to fill the form, or read the credential off the list.
             Grouped by what the account is for.
@@ -216,6 +204,63 @@ function SignInForm() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * What the platform does, before anyone signs in.
+ *
+ * The sign-in screen is the first thing an evaluator sees and it used to say
+ * only "Sign in" and list credentials - a console with no statement of what it
+ * is. These four are the capabilities the build actually ships, named the way
+ * the brief names them, so the reader can match each to a screen in the rail
+ * once they are through.
+ */
+const CAPABILITIES: { title: string; body: string }[] = [
+  {
+    title: "Federated registry + GIS",
+    body:
+      "One canonical register over independently owned Traffic Police and Municipal "
+      + "Corporation estates, plotted with coverage direction on an interactive map.",
+  },
+  {
+    title: "Brokered live video",
+    body:
+      "Short-lived watermarked sessions against an opaque stream id. Upstream URLs and "
+      + "credentials never leave the server, and every view is audited.",
+  },
+  {
+    title: "Edge ANPR + vehicle counts",
+    body:
+      "Detection and plate reading run at the edge and stream in continuously, so counts "
+      + "and class breakdowns accumulate per camera and survive a reload.",
+  },
+  {
+    title: "Watchlist + cross-camera tracing",
+    body:
+      "A plate of interest raises an alert on sighting, and a vehicle's movement can be "
+      + "assembled across cameras - each disclosure gated by permission and reason.",
+  },
+];
+
+function Capabilities() {
+  return (
+    <section>
+      <h2 className="text-[13px] font-semibold text-ink-900">{TAGLINE}</h2>
+      <p className="mt-0.5 text-2xs text-ink-500">
+        Gujarat Police CCTV Integration Hackathon 2026 · all data in this build is synthetic.
+      </p>
+      <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+        {CAPABILITIES.map((capability) => (
+          <div key={capability.title} className="card px-3 py-2.5">
+            <div className="text-2xs font-semibold uppercase tracking-wider text-brand-700">
+              {capability.title}
+            </div>
+            <p className="mt-1 text-2xs leading-relaxed text-ink-500">{capability.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

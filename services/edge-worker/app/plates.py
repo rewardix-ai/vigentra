@@ -26,7 +26,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-logger = logging.getLogger("sentinel.edge.plates")
+logger = logging.getLogger("vigentra.edge.plates")
 
 #: Only these classes are examined. Reading text off a person is not a thing
 #: this system does.

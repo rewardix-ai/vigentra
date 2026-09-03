@@ -107,7 +107,7 @@ async def gap_analysis(
     ]
     ageing.sort(key=lambda item: item.age_years or 0, reverse=True)
 
-    # Departments that Sentinel knows about but that have no live cameras in
+    # Departments that Vigentra knows about but that have no live cameras in
     # the registry - a stronger signal than "no rows for this district".
     known_departments = {source.department for source in sources}
     covered_departments = {camera.owning_department for camera in cameras}

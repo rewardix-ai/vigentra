@@ -120,8 +120,8 @@ export default function GapAnalysisPage() {
       ]),
       ageingHeader,
     );
-    download(`sentinel-gap-analysis-${stamp}-districts.csv`, districtCsv);
-    download(`sentinel-gap-analysis-${stamp}-ageing.csv`, ageingCsv);
+    download(`vigentra-gap-analysis-${stamp}-districts.csv`, districtCsv);
+    download(`vigentra-gap-analysis-${stamp}-ageing.csv`, ageingCsv);
   }
 
   if (loading) return <LoadingPanel label="Compiling gap-analysis report" />;

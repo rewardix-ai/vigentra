@@ -6,9 +6,9 @@ This is a STANDALONE department system. It owns:
   * the approval workflow that commissions a camera
   * the raw footage, the NVR recordings, the RTSP URLs and the VMS credentials
 
-Sentinel never receives footage from this service. It reads APPROVED camera
+Vigentra never receives footage from this service. It reads APPROVED camera
 METADATA only. The local video endpoints at the bottom of this file exist to
-represent what the owning department keeps to itself - Sentinel does not call
+represent what the owning department keeps to itself - Vigentra does not call
 them and does not proxy them.
 
 Vendor dialect (deliberately unlike the Municipal system):
@@ -49,7 +49,7 @@ app = FastAPI(
     description=(
         "Gujarat Traffic Police demo CCTV/VMS system. Owns its installation "
         "register, its approval workflow and its footage. Publishes approved "
-        "camera METADATA to Sentinel. Synthetic data only."
+        "camera METADATA to Vigentra. Synthetic data only."
     ),
     version="0.2.0",
 )
@@ -73,7 +73,7 @@ STATE_DECOMMISSIONED = "DECOMMISSIONED"
 
 # States for which a camera asset record exists at all.
 COMMISSIONED_STATES = {STATE_REGISTERED, STATE_SYNCED, STATE_SUSPENDED, STATE_DECOMMISSIONED}
-# States whose metadata Sentinel is allowed to take into its registry.
+# States whose metadata Vigentra is allowed to take into its registry.
 PUBLISHABLE_STATES = {STATE_REGISTERED, STATE_SYNCED}
 
 EDITABLE_STATES = {STATE_DRAFT, STATE_VALIDATION_FAILED}
@@ -111,7 +111,7 @@ _RAW_EVENTS: list[dict[str, Any]] = _load("events.json")
 # camera code -> live health counters, seeded when a camera is commissioned
 HEALTH: dict[str, dict[str, Any]] = {}
 
-# media ticket -> grant (local video only; never issued to Sentinel)
+# media ticket -> grant (local video only; never issued to Vigentra)
 TICKETS: dict[str, dict[str, Any]] = {}
 
 
@@ -204,13 +204,13 @@ def _touch_health(code: str) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------
-# Validation - runs at the department system, before anything reaches Sentinel
+# Validation - runs at the department system, before anything reaches Vigentra
 # --------------------------------------------------------------------------
 
 #: Rough bounding box for Gujarat, padded slightly. This is a jurisdiction
 #: check, not a geocoder: it rejects the transposed digits and the pasted
 #: sample coordinate, which is what actually goes wrong on a form. It lives in
-#: the department system rather than in Sentinel because which ground a
+#: the department system rather than in Vigentra because which ground a
 #: department may commission cameras on is the department's rule.
 GUJARAT_BOUNDS = {"lat": (20.0, 24.8), "lng": (68.0, 74.6)}
 
@@ -306,7 +306,7 @@ def _camera_record(record: dict[str, Any]) -> dict[str, Any]:
     """Project an installation request into this vendor's camera asset shape.
 
     Note what is NOT here: no stream URL, no NVR address, no credential. Those
-    stay inside this service. Sentinel reads this projection and nothing else.
+    stay inside this service. Vigentra reads this projection and nothing else.
     """
     form = record["form"]
     code = form["cam_code"]
@@ -344,8 +344,8 @@ def _camera_record(record: dict[str, Any]) -> dict[str, Any]:
         "tz": form.get("tz"),
         "installed_on": form.get("installed_on"),
         "commissioned_on": form.get("commissioned_on"),
-        # Local viewing capability. Reported so Sentinel can show the policy
-        # summary - never so Sentinel can act on it.
+        # Local viewing capability. Reported so Vigentra can show the policy
+        # summary - never so Vigentra can act on it.
         "live_ok": form.get("live_ok", True),
         "playback_ok": form.get("playback_ok", True),
         "roles_allowed": form.get("roles_allowed", []),
@@ -577,7 +577,7 @@ def mark_synchronized(
     request_ref: str,
     x_api_key: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    """Acknowledge that Sentinel has taken this record's metadata."""
+    """Acknowledge that Vigentra has taken this record's metadata."""
     _require_key(x_api_key)
     record = _request(request_ref)
     if record["state"] not in PUBLISHABLE_STATES:
@@ -591,7 +591,7 @@ def mark_synchronized(
 
 
 # --------------------------------------------------------------------------
-# Camera asset register (metadata that Sentinel is allowed to read)
+# Camera asset register (metadata that Vigentra is allowed to read)
 # --------------------------------------------------------------------------
 
 @app.get("/traffic/approved-cameras", tags=["cameras"])
@@ -716,7 +716,7 @@ def set_camera_status(
 # LOCAL video - department custody only
 #
 # These endpoints model what the Traffic Police keep inside their own
-# environment. Sentinel does not call them, does not proxy them, and never
+# environment. Vigentra does not call them, does not proxy them, and never
 # hands a client a URL that reaches them. They exist so the demo can show that
 # footage genuinely lives here and not in the federation layer.
 # --------------------------------------------------------------------------
@@ -760,7 +760,7 @@ def camera_live(camera_id: str, x_api_key: str | None = Header(default=None)) ->
     """Authorized live feed handle.
 
     Modelled on how a real VMS hands back an RTSP/HLS address: a short-lived
-    ticketed URL that is useless once the ticket expires. Sentinel relays the
+    ticketed URL that is useless once the ticket expires. Vigentra relays the
     bytes and never passes the ticket to a browser.
     """
     _require_key(x_api_key)
@@ -837,14 +837,14 @@ def local_live(camera_id: str, x_api_key: str | None = Header(default=None)) -> 
                 "cam_code": form["cam_code"],
                 "custody": "TRAFFIC_POLICE_LOCAL",
                 "playback_url": f"{PUBLIC_BASE_URL}/traffic/local/media/{media_file}?ticket={ticket}",
-                "note": "LOCAL_DEPARTMENT_ACCESS_ONLY - not federated to Sentinel",
+                "note": "LOCAL_DEPARTMENT_ACCESS_ONLY - not federated to Vigentra",
             }
     raise HTTPException(status_code=404, detail={"error": "CAMERA_NOT_FOUND"})
 
 
 @app.get("/traffic/local/media/{filename}", tags=["local-video"])
 def local_media(filename: str, request: Request, ticket: str = Query(...)) -> Response:
-    """Ticketed local media. Department custody; Sentinel never receives a ticket."""
+    """Ticketed local media. Department custody; Vigentra never receives a ticket."""
     entry = TICKETS.get(ticket)
     if entry is None or entry["expires_at"] < datetime.now(timezone.utc):
         TICKETS.pop(ticket, None)

@@ -242,7 +242,7 @@ body {
    A CSS filter over the same OpenStreetMap tiles the street map already uses,
    rather than a second tile provider. Keeps the coverage wedges legible
    without another network dependency that can be rate-limited or refused. */
-.sentinel-muted-tiles {
+.vigentra-muted-tiles {
   /* Desaturated, not greyscaled. Full greyscale flattened parks, rivers and
      the Sabarmati into one shade, so a coverage map lost the geography you
      read coverage against. A third of the saturation keeps green green and

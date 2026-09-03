@@ -1,4 +1,4 @@
-# Scaling Sentinel to ~80,000 cameras
+# Scaling Vigentra to ~80,000 cameras
 
 The challenge asks for a strategy to scale securely and reliably to roughly
 80,000 cameras across Gujarat. This is that strategy, with the arithmetic
@@ -7,7 +7,7 @@ with — and the interesting parts of this problem are all arithmetic.
 
 Two things stated up front, so the rest is read correctly.
 
-**What has actually been run.** Sentinel federates 30 live sandbox cameras
+**What has actually been run.** Vigentra federates 30 live sandbox cameras
 today, plus two mock department systems. Everything below 30 is measured.
 Everything above it is engineering estimate, and is labelled as such rather
 than presented as a result.
@@ -58,7 +58,7 @@ video wall. At 80,000 cameras that is:
 That is not a network anyone is going to build, and it is why Model 4 (fully
 central VMS) is the most expensive of the reference models to operate.
 
-Sentinel's edge-first design does not carry that traffic. What crosses the
+Vigentra's edge-first design does not carry that traffic. What crosses the
 regional boundary is a detection row:
 
 | | |
@@ -74,7 +74,7 @@ That is a factor of **40–250× less** than centralising video, and it is a
 number the existing state network can carry. The trade is that a central
 operator cannot arbitrarily scrub any camera's history — which is the correct
 trade, because that capability is also the one with the worst privacy
-properties, and Sentinel already treats live viewing as a brokered, per-session,
+properties, and Vigentra already treats live viewing as a brokered, per-session,
 audited decision rather than an ambient one.
 
 Video is still available. It is pulled on demand, per session, for the cameras
@@ -127,9 +127,9 @@ estimate for planning, not a quotation.
 
 ## 4. Storage
 
-Sentinel stores no video. Departments keep their own footage under their own
+Vigentra stores no video. Departments keep their own footage under their own
 retention policies (7 days, 15 days, or more — they already differ, and the
-federation does not need them to agree). What Sentinel stores is metadata.
+federation does not need them to agree). What Vigentra stores is metadata.
 
 **Detections.** At ~400 bytes/row, a realistic mixed statewide load produces on
 the order of 30–60 billion rows/year if everything is kept. It should not be.
@@ -247,7 +247,7 @@ The controls do not change with camera count. They are listed here because
 "how does this stay safe at 80,000 cameras" has a specific answer, and the
 answer is that none of it is per-camera work.
 
-- **Feed credentials never centralise.** Sentinel stores no RTSP URL, no NVR
+- **Feed credentials never centralise.** Vigentra stores no RTSP URL, no NVR
   address, no credential, no media token — at 30 cameras or 80,000. A breach of
   the central tier does not yield a key to any camera.
 - **Every footage session is brokered, opaque, short-lived and re-authorised

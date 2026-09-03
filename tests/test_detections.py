@@ -104,7 +104,7 @@ async def test_out_of_scope_class_is_rejected(api, login, traffic_camera, detect
 # 24. Unknown camera detections are rejected
 async def test_unknown_camera_detections_are_rejected(api, login, detectors):
     headers = await login("traffic.ai")
-    detections = payload_for(detectors, "SENTINEL-NOPE-XXX-9999")
+    detections = payload_for(detectors, "VIGENTRA-NOPE-XXX-9999")
 
     body = (
         await api.post(
@@ -123,7 +123,7 @@ async def test_partial_batch_accepts_the_good_rows(api, login, traffic_camera, d
     good = payload_for(detectors, traffic_camera["camera_id"])
     bad = dict(good[0])
     bad["detection_id"] = "det_unknown_camera_row"
-    bad["camera_id"] = "SENTINEL-NOPE-XXX-0001"
+    bad["camera_id"] = "VIGENTRA-NOPE-XXX-0001"
 
     body = (
         await api.post(
@@ -350,7 +350,7 @@ def _load_worker():
     import types
     from pathlib import Path
 
-    package = "sentinel_edge"
+    package = "vigentra_edge"
     app_dir = Path(__file__).resolve().parents[1] / "services" / "edge-worker" / "app"
 
     if package not in sys.modules:
@@ -431,7 +431,7 @@ async def test_live_runs_refuse_to_fall_back_to_synthetic_frames():
     worker = _load_worker()
     with pytest.raises(Exception) as excinfo:
         worker.run(
-            camera_id="SENTINEL-TRAFFIC-AHM-0001",
+            camera_id="VIGENTRA-TRAFFIC-AHM-0001",
             clip=None,
             max_frames=1,
             sample_interval=1,
@@ -452,7 +452,7 @@ def _load_plates():
     import types
     from pathlib import Path
 
-    package = "sentinel_edge"
+    package = "vigentra_edge"
     app_dir = Path(__file__).resolve().parents[1] / "services" / "edge-worker" / "app"
     if package not in sys.modules:
         parent = types.ModuleType(package)

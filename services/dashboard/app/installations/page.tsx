@@ -230,7 +230,7 @@ function RequestList() {
         </Card>
 
         <p className="text-2xs leading-relaxed text-ink-400">
-          These records live in each department&rsquo;s own system. Sentinel mirrors them so the
+          These records live in each department&rsquo;s own system. Vigentra mirrors them so the
           pipeline is visible and auditable centrally, and publishes camera metadata to the registry
           as soon as a form passes its own department&rsquo;s validation &mdash; there is no approval
           queue. Footage is the part that still needs a decision: other units must request it, and

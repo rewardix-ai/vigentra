@@ -1,6 +1,6 @@
 # YOLO setup
 
-Object detection in Sentinel runs at the **edge**, in
+Object detection in Vigentra runs at the **edge**, in
 `services/edge-worker` — next to the video it is authorized to process. The
 central API has no computer-vision dependencies at all: it receives detection
 *metadata* and stores it. Raw frames never cross the wire.
@@ -89,21 +89,21 @@ mkdir -p weights
 # obtain yolo11n.pt through your own approved channel, place it in ./weights
 docker compose run --rm \
   -v "$PWD/weights:/app/weights" \
-  edge-worker python -m app.worker --camera SENTINEL-TRAFFIC-AHM-0001
+  edge-worker python -m app.worker --camera VIGENTRA-TRAFFIC-AHM-0001
 ```
 
 **(b) Let Ultralytics download it** — fine on a developer machine:
 
 ```powershell
 $env:YOLO_ALLOW_DOWNLOAD='true'
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
 ```
 
 **(c) Run the mock detector** — no weights, no torch, no GPU:
 
 ```powershell
 $env:YOLO_ENABLE='false'
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --synthetic
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --synthetic
 ```
 
 If weights are missing and download is disabled, the worker fails with an
@@ -244,16 +244,16 @@ interpreter and the environment (see the warning above).
 
 ```powershell
 # offline, no central API, no CV stack
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --synthetic --dry-run
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --synthetic --dry-run
 
 # synthetic frames, real ingestion into a running central API
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --synthetic --max-frames 20
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --synthetic --max-frames 20
 
 # a real local clip with real inference
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --clip dataideos	raffic	raffic_live.mp4 --source-mode demo_local
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --clip dataideos	raffic	raffic_live.mp4 --source-mode demo_local
 
 # authorized live session (opens, decodes and revokes a real video session)
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --source-mode authorized_edge
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --source-mode authorized_edge
 ```
 
 The same arguments work with `./scripts/edge-worker.sh` on macOS and Linux.
@@ -289,7 +289,7 @@ Indicative figures — measure on your own hardware, these are not benchmarks:
 To measure properly:
 
 ```powershell
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --clip <clip> --max-frames 200 --dry-run
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --clip <clip> --max-frames 200 --dry-run
 ```
 
 `--dry-run` isolates inference cost from ingestion and network time.
@@ -328,19 +328,19 @@ consumer has to infer it.
 Windows PowerShell:
 
 ```powershell
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
 ```
 
 macOS / Linux:
 
 ```bash
-./scripts/edge-worker.sh --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
+./scripts/edge-worker.sh --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
 ```
 
 Several cameras on one worker, cycling until stopped:
 
 ```powershell
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --camera SENTINEL-TRAFFIC-AHM-0002 --forever --cycle-seconds 60
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --camera VIGENTRA-TRAFFIC-AHM-0002 --forever --cycle-seconds 60
 ```
 
 Every camera this worker's account may watch, re-checked each cycle so a

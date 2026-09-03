@@ -1,4 +1,4 @@
-# Sentinel edge analytics worker.
+# Vigentra edge analytics worker.
 #
 # Three build targets:
 #

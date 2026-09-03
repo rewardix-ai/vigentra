@@ -314,7 +314,7 @@ export default function InstallationRequestPage() {
             <Show label="Submitted by">{orDash(record.submitted_by)}</Show>
             <Show label="Submitted at">{ist(record.submitted_at)}</Show>
             <Show label="Registered at">{ist(record.approved_at)}</Show>
-            <Show label="Synchronised to Sentinel">{ist(record.synchronized_at)}</Show>
+            <Show label="Synchronised to Vigentra">{ist(record.synchronized_at)}</Show>
           </div>
         </Card>
 

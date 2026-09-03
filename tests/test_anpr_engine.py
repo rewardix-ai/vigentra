@@ -23,7 +23,7 @@ EDGE = Path(__file__).resolve().parent.parent / "services" / "edge-worker" / "ap
 #: worker's modules import each other relatively. Synthesising a parent package
 #: with a `__path__` gives them a real package to be relative to, without
 #: putting either `app` on sys.path where they would shadow each other.
-PACKAGE = "sentinel_edge"
+PACKAGE = "vigentra_edge"
 
 
 def _load_edge(module_name: str):
@@ -303,10 +303,10 @@ def test_a_sighting_payload_carries_the_vote_count(worker_module, engine_module)
     )
     payload = worker_module._sighting_payload(
         sighting,
-        camera_id="SENTINEL-TRAFFIC-AHM-0001",
+        camera_id="VIGENTRA-TRAFFIC-AHM-0001",
         timestamp_iso="2026-09-01T10:00:00Z",
         source_mode="authorized_edge",
-        reader_version="sentinel-anpr-consensus/plate_detector+paddle",
+        reader_version="vigentra-anpr-consensus/plate_detector+paddle",
         provenance={"frame_index": 12},
     )
 

@@ -23,7 +23,7 @@ from ..schemas import VehicleFacets, VehicleOut, VehicleSearchResponse
 from ..services import audit_service, vehicle_service
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 
-logger = logging.getLogger("sentinel.vehicles.router")
+logger = logging.getLogger("vigentra.vehicles.router")
 
 router = APIRouter(prefix="/api/v1/vehicles", tags=["vehicle reference registry"])
 

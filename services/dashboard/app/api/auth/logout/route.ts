@@ -6,6 +6,6 @@ export const dynamic = "force-dynamic";
 
 export async function POST(): Promise<NextResponse> {
   const response = NextResponse.json({ signed_out: true });
-  response.cookies.set({ name: "sentinel_session", value: "", path: "/", maxAge: 0 });
+  response.cookies.set({ name: "vigentra_session", value: "", path: "/", maxAge: 0 });
   return response;
 }

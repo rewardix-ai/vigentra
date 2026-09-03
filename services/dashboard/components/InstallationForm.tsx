@@ -414,7 +414,7 @@ export function InstallationForm({
     <div className="space-y-3">
       <Notice tone="info" title="Where this form goes">
         This form is submitted to <strong>{values.owning_department || "your department"}</strong>
-        &rsquo;s own CCTV/VMS system and validated there. Once it passes, Sentinel receives that camera&rsquo;s{" "}
+        &rsquo;s own CCTV/VMS system and validated there. Once it passes, Vigentra receives that camera&rsquo;s{" "}
         <strong>metadata only</strong> — raw CCTV footage remains within the owning
         department&rsquo;s local environment.
       </Notice>
@@ -485,7 +485,7 @@ export function InstallationForm({
               />
               <Text label="Owning unit" field="owning_unit" values={values} errors={errors} onChange={change} required placeholder="Ahmedabad Traffic Zone 1" />
               <Text label="Police station / zone" field="police_station_or_zone" values={values} errors={errors} onChange={change} />
-              <Text label="Local administrator contact" field="local_admin_contact" values={values} errors={errors} onChange={change} hint="Held by your department; Sentinel receives it masked" />
+              <Text label="Local administrator contact" field="local_admin_contact" values={values} errors={errors} onChange={change} hint="Held by your department; Vigentra receives it masked" />
               <Text label="Maintenance agency" field="maintenance_agency" values={values} errors={errors} onChange={change} />
               <Text label="Installation vendor" field="installation_vendor" values={values} errors={errors} onChange={change} />
             </Section>
@@ -527,7 +527,7 @@ export function InstallationForm({
               <h3 className="section-label">Local recording capability</h3>
               <p className="mt-1 text-2xs text-ink-500">
                 Recorded so the access policy can describe what your department&rsquo;s system
-                offers. Sentinel exposes no viewing link either way.
+                offers. Vigentra exposes no viewing link either way.
               </p>
               <div className="mt-2.5 flex flex-wrap gap-4">
                 <label className="flex items-center gap-2 text-[13px]">
@@ -563,7 +563,7 @@ export function InstallationForm({
                 <span className="text-bad">*</span>
               </h3>
               <p className="mt-1 text-2xs text-ink-500">
-                These permissions apply to the owning department&rsquo;s local CCTV/VMS. Sentinel
+                These permissions apply to the owning department&rsquo;s local CCTV/VMS. Vigentra
                 stores and displays the permission policy summary but does not provide video access.
               </p>
               {errors.permitted_local_roles && (

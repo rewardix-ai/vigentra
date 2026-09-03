@@ -51,7 +51,7 @@ from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
 
-logger = logging.getLogger("sentinel.detections")
+logger = logging.getLogger("vigentra.detections")
 
 router = APIRouter(prefix="/api/v1", tags=["detections"])
 

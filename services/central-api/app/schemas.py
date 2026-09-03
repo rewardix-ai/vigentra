@@ -49,7 +49,7 @@ class InstallationPurpose(str, Enum):
 
 
 class SourceType(str, Enum):
-    """How the OWNING DEPARTMENT reaches the camera. Sentinel never uses it."""
+    """How the OWNING DEPARTMENT reaches the camera. Vigentra never uses it."""
 
     RTSP = "RTSP"
     ONVIF = "ONVIF"
@@ -61,8 +61,8 @@ class SourceType(str, Enum):
 class LocalRole(str, Enum):
     """Roles inside the owning department's VMS.
 
-    A separate namespace from Sentinel's own roles. These describe who may see
-    FOOTAGE in the department's system; Sentinel only records the summary.
+    A separate namespace from Vigentra's own roles. These describe who may see
+    FOOTAGE in the department's system; Vigentra only records the summary.
     """
 
     DEPARTMENT_OPERATOR = "department_operator"
@@ -126,7 +126,7 @@ class AttachmentType(str, Enum):
 class AttachmentRef(BaseModel):
     """A REFERENCE to a document held by the owning department.
 
-    Sentinel stores the pointer, never the file, and never any footage.
+    Vigentra stores the pointer, never the file, and never any footage.
     """
 
     document_type: AttachmentType
@@ -138,7 +138,7 @@ class InstallationForm(BaseModel):
     """The CCTV installation/onboarding form.
 
     Submitted by a department installer, validated and approved inside that
-    department's own system. Only after approval does any of it reach Sentinel.
+    department's own system. Only after approval does any of it reach Vigentra.
     """
 
     model_config = ConfigDict(use_enum_values=True)
@@ -157,7 +157,7 @@ class InstallationForm(BaseModel):
     owning_unit: str = Field(max_length=160)
     district: str = Field(max_length=120)
     police_station_or_zone: str | None = Field(default=None, max_length=160)
-    # Held by the department. Sentinel receives it masked and never in full.
+    # Held by the department. Vigentra receives it masked and never in full.
     local_admin_contact: str | None = Field(default=None, max_length=120)
     maintenance_agency: str | None = Field(default=None, max_length=160)
     installation_vendor: str | None = Field(default=None, max_length=160)
@@ -178,8 +178,8 @@ class InstallationForm(BaseModel):
     resolution: str | None = Field(default=None, max_length=32)
     fps: int | None = Field(default=None, ge=1, le=240)
     codec: str | None = Field(default=None, max_length=32)
-    # Stored so the policy summary can be shown. Sentinel exposes no viewing
-    # link either way - see access_policy_summary.sentinel_video_access.
+    # Stored so the policy summary can be shown. Vigentra exposes no viewing
+    # link either way - see access_policy_summary.vigentra_video_access.
     supports_live: bool = True
     supports_playback: bool = True
     retention_days: int | None = Field(default=None, ge=0, le=3650)
@@ -192,7 +192,7 @@ class InstallationForm(BaseModel):
         min_length=1,
         description=(
             "Roles permitted to view FOOTAGE inside the owning department's VMS. "
-            "Sentinel records this summary and grants no video access of its own."
+            "Vigentra records this summary and grants no video access of its own."
         ),
     )
 
@@ -275,7 +275,7 @@ class WithdrawalRequest(BaseModel):
 
 
 class InstallationRequestOut(BaseModel):
-    """An installation record as Sentinel presents it."""
+    """An installation record as Vigentra presents it."""
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -307,7 +307,7 @@ class InstallationRequestOut(BaseModel):
     attachments: list[dict[str, Any]] = Field(default_factory=list)
 
     #: Always false in Module 1, on every record, without exception.
-    sentinel_video_access: bool = False
+    vigentra_video_access: bool = False
 
     @field_serializer(
         "created_at", "submitted_at", "approved_at", "rejected_at", "synchronized_at", "updated_at"
@@ -378,17 +378,17 @@ class ApprovalSummary(BaseModel):
 
 
 class AccessPolicySummary(BaseModel):
-    """What the owning department permits, and what Sentinel permits.
+    """What the owning department permits, and what Vigentra permits.
 
-    `sentinel_video_access` is the OWNING DEPARTMENT's decision about whether
-    Sentinel may broker footage for this camera at all. It is a precondition,
+    `vigentra_video_access` is the OWNING DEPARTMENT's decision about whether
+    Vigentra may broker footage for this camera at all. It is a precondition,
     not a grant: a true value still has to survive the role, department, city,
     zone and camera-state checks in `services/video_permissions.py`.
     """
 
     local_video_access: bool = Field(description="Does the owning department's VMS serve footage for this camera")
-    sentinel_video_access: bool = Field(
-        default=False, description="Owner permits Sentinel to broker video for this camera"
+    vigentra_video_access: bool = Field(
+        default=False, description="Owner permits Vigentra to broker video for this camera"
     )
     permitted_local_roles: list[str] = Field(default_factory=list)
     footage_custodian: str = Field(description="Department that holds the footage")
@@ -408,7 +408,7 @@ class CameraHealthSummary(BaseModel):
         return iso_z(value)
 
 
-class SentinelSyncSummary(BaseModel):
+class VigentraSyncSummary(BaseModel):
     status: SyncStatus = SyncStatus.PENDING
     synced_at_utc: datetime | None = None
     source_request_id: str | None = None
@@ -426,7 +426,7 @@ class Camera(BaseModel):
 
     model_config = ConfigDict(use_enum_values=True)
 
-    camera_id: str = Field(description="Canonical registry ID, e.g. SENTINEL-TRAFFIC-AHM-0001")
+    camera_id: str = Field(description="Canonical registry ID, e.g. VIGENTRA-TRAFFIC-AHM-0001")
     external_camera_id: str = Field(description="The ID the owning department uses")
     source_system: str
     owning_department: str
@@ -445,7 +445,7 @@ class Camera(BaseModel):
     approval: ApprovalSummary
     access_policy_summary: AccessPolicySummary
     health: CameraHealthSummary
-    sentinel_sync: SentinelSyncSummary
+    vigentra_sync: VigentraSyncSummary
 
     capabilities: list[str] = Field(default_factory=list)
     is_demo_data: bool = True
@@ -498,10 +498,10 @@ class AccessPolicyOut(BaseModel):
     camera_name: str
     owning_department: str
     source_system: str
-    sentinel_metadata_access: str = Field(description="How the signed-in role may read this record")
-    sentinel_video_access: bool = False
-    sentinel_video_access_note: str = (
-        "Sentinel brokers footage only for cameras the owning department has "
+    vigentra_metadata_access: str = Field(description="How the signed-in role may read this record")
+    vigentra_video_access: bool = False
+    vigentra_video_access_note: str = (
+        "Vigentra brokers footage only for cameras the owning department has "
         "enabled, and only for authenticated users whose role, department, city "
         "and zone scope match the camera. Sessions are short-lived and audited."
     )
@@ -595,7 +595,7 @@ class ExternalCameraRecord(BaseModel):
     last_seen_utc: datetime | None = None
     reconnect_count: int | None = None
 
-    #: Whether the OWNING DEPARTMENT permits Sentinel to broker video.
+    #: Whether the OWNING DEPARTMENT permits Vigentra to broker video.
     video_access_enabled: bool = False
     permitted_local_roles: list[str] = Field(default_factory=list)
 
@@ -748,7 +748,7 @@ class CameraMetadata(BaseModel):
     approved_at: datetime | None = None
 
     #: Whether the OWNING DEPARTMENT's VMS serves footage for this camera, and
-    #: therefore whether Sentinel may broker it. A precondition, not a grant.
+    #: therefore whether Vigentra may broker it. A precondition, not a grant.
     local_video_access: bool = True
     permitted_local_roles: list[str] = Field(default_factory=list)
     capabilities: list[str] = Field(default_factory=lambda: ["metadata", "health"])
@@ -798,7 +798,7 @@ class VideoSessionOut(BaseModel):
     """What the browser is allowed to see.
 
     No source URL, no vendor ticket, no credential — the only address here is
-    Sentinel's own opaque stream route.
+    Vigentra's own opaque stream route.
     """
 
     model_config = ConfigDict(use_enum_values=True)
@@ -809,7 +809,7 @@ class VideoSessionOut(BaseModel):
     department: str
     city: str | None = None
     mode: VideoMode
-    stream_url: str = Field(description="Protected Sentinel route - the only URL a client may use")
+    stream_url: str = Field(description="Protected Vigentra route - the only URL a client may use")
     #: How the bytes behind `stream_url` are packaged, so the player can pick a
     #: strategy without guessing from the URL. `hls` needs a JS player in most
     #: browsers; `http-mp4` plays natively in a <video> element.
@@ -1163,6 +1163,8 @@ class SyncSourceResult(BaseModel):
     withdrawn: int = 0
     created: int = 0
     updated: int = 0
+    #: Cameras removed because this source stopped publishing them.
+    retired: int = 0
     errors: list[str] = Field(default_factory=list)
     latency_ms: float | None = None
     status: str = "unknown"
@@ -1219,7 +1221,7 @@ class UserOut(BaseModel):
     permissions: list[str] = Field(default_factory=list)
     visibility_level: str = "standard"
     #: Surfaced to the UI so it can state the boundary rather than infer it.
-    sentinel_video_access: bool = False
+    vigentra_video_access: bool = False
 
 
 class TokenResponse(BaseModel):

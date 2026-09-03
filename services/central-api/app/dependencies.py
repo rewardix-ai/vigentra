@@ -22,9 +22,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .adapters.base import SurveillanceAdapter
 from .config import DemoUser, Settings, get_settings
 
-bearer_scheme = HTTPBearer(auto_error=False, description="Sentinel demo bearer token")
+bearer_scheme = HTTPBearer(auto_error=False, description="Vigentra demo bearer token")
 
-TOKEN_ISSUER = "sentinel-central-api"
+TOKEN_ISSUER = "vigentra-central-api"
 
 
 def get_settings_dep() -> Settings:

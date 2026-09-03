@@ -1,7 +1,7 @@
 # Adapter contract
 
 Every federated department system is reached through one adapter class. The
-adapter is the only component in Sentinel that knows a vendor's field names,
+adapter is the only component in Vigentra that knows a vendor's field names,
 authentication scheme, lifecycle vocabulary, timestamp format or error
 envelope. Above the adapter boundary, everything is canonical.
 
@@ -34,7 +34,7 @@ department's own validation is what registers a camera; there is no second
 human step, because the unit installing the camera had already made the
 decision.
 
-Note what the contract does **not** define: any method that hands Sentinel a
+Note what the contract does **not** define: any method that hands Vigentra a
 stream URL, an NVR address, a credential or a long-lived media token. Video is
 brokered separately (`video_adapters/`), one short-lived session at a time,
 against a ticket that never leaves the server.
@@ -47,7 +47,7 @@ Adapter output for one commissioned camera (Pydantic model
 
 ```json
 {
-  "camera_id": "SENTINEL-TRAFFIC-AHM-0001",
+  "camera_id": "VIGENTRA-TRAFFIC-AHM-0001",
   "external_camera_id": "TRF-AHM-0001",
   "source_system": "traffic_vms",
   "installation_request_id": "TRF-REQ-0001",
@@ -88,7 +88,7 @@ Adapter output for one commissioned camera (Pydantic model
 No `stream_url`, no `rtsp_url`, no `media_token`, no `session_id`. The
 canonical schema has nowhere to put them. `local_video_access` records whether
 the department serves this camera at all — it is a fact about their system, not
-a grant, and Sentinel enforces its own decision separately.
+a grant, and Vigentra enforces its own decision separately.
 
 ## Canonical installation request
 
@@ -113,13 +113,13 @@ validated:
   "validation_errors": [],
   "form": { … canonicalised installation form … },
   "attachments": [ { "document_type": "site_survey", "reference": "DOC-TRF-SS-0001" } ],
-  "sentinel_video_access": false
+  "vigentra_video_access": false
 }
 ```
 
 `approved_at` is a legacy column name kept for records created before the
 approval stage was removed; for anything registered since, it is the moment
-validation passed. `sentinel_video_access` on an *installation record* is
+validation passed. `vigentra_video_access` on an *installation record* is
 always false — a form is not a camera, and nothing is viewable until it has
 registered and synchronised.
 
@@ -130,11 +130,11 @@ Adapters translate every failure into one of these canonical exceptions:
 | Exception | Central HTTP | Meaning |
 |---|---|---|
 | `SourceUnavailableError` (incl. `SourceTimeoutError`) | 503 | Department system unreachable |
-| `SourceAuthError` | 502 | Sentinel's own credential for the department was rejected |
+| `SourceAuthError` | 502 | Vigentra's own credential for the department was rejected |
 | `ResourceNotFoundError` | 404 | The department does not know this record |
 | `SourceValidationError` | 422 | The department rejected the payload (bad form) |
 | `SourceConflictError` | 409 | Lifecycle transition refused (wrong state) |
-| `SourceRateLimitedError` | 429 | Department is rate-limiting Sentinel |
+| `SourceRateLimitedError` | 429 | Department is rate-limiting Vigentra |
 | `UpstreamProtocolError` | 502 | Response shape not understood by the adapter |
 
 The central error handler in `app/main.py::adapter_error_handler` returns
@@ -147,10 +147,10 @@ Video is deliberately **not** part of `SurveillanceAdapter`. Metadata adapters
 mirror records; video adapters broker one short-lived session at a time. They
 are separate classes in `services/central-api/app/video_adapters/` so that a
 department can federate its register without exposing any footage at all —
-`video_access_enabled` is the owning department's switch and no Sentinel role
+`video_access_enabled` is the owning department's switch and no Vigentra role
 overrides it.
 
-A video adapter returns a ticket that never leaves the server. Sentinel hands
+A video adapter returns a ticket that never leaves the server. Vigentra hands
 the client an opaque `/api/v1/streams/{session_id}` and proxies range requests
 against it, re-authorising each one. Refusals are `403 VIDEO_ACCESS_DENIED`
 carrying a `state` — see [`access-model.md`](access-model.md).

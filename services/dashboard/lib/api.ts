@@ -1,7 +1,7 @@
 /**
- * Browser-side client for the Sentinel registry.
+ * Browser-side client for the Vigentra registry.
  *
- * Every call goes to /api/sentinel/... on this origin, which the Next.js server
+ * Every call goes to /api/vigentra/... on this origin, which the Next.js server
  * proxies using an httpOnly session cookie. Nothing here knows a department
  * credential, an internal hostname, or a video URL - because none exists.
  */
@@ -36,7 +36,7 @@ import type {
   WatchlistEntry,
 } from "./types";
 
-const BASE = "/api/sentinel";
+const BASE = "/api/vigentra";
 
 export class ApiError extends Error {
   constructor(
@@ -286,7 +286,7 @@ export const api = {
    * attaches the session cookie server-side - the browser never holds a token
    * and never learns the central API's address.
    */
-  streamUrl: (session: VideoSession) => `/api/sentinel${session.stream_url}`,
+  streamUrl: (session: VideoSession) => `/api/vigentra${session.stream_url}`,
 
   // -- video access requests ---------------------------------------------
   // Metadata federates on its own; footage is asked for. These four calls are

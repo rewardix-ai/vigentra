@@ -8,7 +8,7 @@ Vendor dialect handled here and nowhere else:
     auth         X-API-Key header
 
 Translation runs in both directions: canonical form -> vendor form when an
-installer submits, vendor record -> canonical when Sentinel reads.
+installer submits, vendor record -> canonical when Vigentra reads.
 """
 from __future__ import annotations
 
@@ -142,7 +142,7 @@ class TrafficAdapter(SurveillanceAdapter):
         canonical["permitted_local_roles"] = norm.normalize_local_roles(
             vendor_form.get("roles_allowed")
         )
-        # The department masks these before they leave its system; Sentinel
+        # The department masks these before they leave its system; Vigentra
         # never holds the full values.
         canonical["camera_serial_number"] = vendor_form.get("serial_no")
         canonical["local_admin_contact_masked"] = vendor_form.get("admin_contact_masked")
@@ -358,7 +358,7 @@ class TrafficAdapter(SurveillanceAdapter):
             "device_offline": "device_offline",
         }.get(str(vendor_type or "").lower(), "other")
         return Event(
-            event_id=f"sentinel_evt_{digest}",
+            event_id=f"vigentra_evt_{digest}",
             source_system=self.source_system,
             external_event_id=external_id,
             camera_id=canonical_camera_id,

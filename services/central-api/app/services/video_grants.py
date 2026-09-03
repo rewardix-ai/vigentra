@@ -31,7 +31,7 @@ from ..models import Camera as CameraRow
 from ..models import VideoAccessGrant
 from .normalization import to_utc
 
-logger = logging.getLogger("sentinel.video.grants")
+logger = logging.getLogger("vigentra.video.grants")
 
 REQUESTED = "requested"
 GRANTED = "granted"

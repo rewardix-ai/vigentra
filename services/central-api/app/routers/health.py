@@ -1,10 +1,10 @@
 """Platform health.
 
 Unauthenticated on purpose: the Compose healthcheck and the sign-in page both
-need it, and it exposes no camera data - only whether Sentinel and each
+need it, and it exposes no camera data - only whether Vigentra and each
 department system are reachable.
 
-Sentinel reports `ok` while it can serve its own registry. A dead department
+Vigentra reports `ok` while it can serve its own registry. A dead department
 system makes the platform `degraded`, never `down`: that is the point of
 federating rather than consolidating.
 """

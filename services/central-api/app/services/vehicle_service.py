@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import Settings
 from ..models import Vehicle
 
-logger = logging.getLogger("sentinel.vehicles")
+logger = logging.getLogger("vigentra.vehicles")
 
 
 class OwnerDataRejected(ValueError):

@@ -41,7 +41,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any, Iterator
 
-logger = logging.getLogger("sentinel.edge.grid")
+logger = logging.getLogger("vigentra.edge.grid")
 
 CATALOGUE_PATH = "/cameras.json"
 #: RTSP and WHEP are served on the public gateway, not the CDN host: a CDN
@@ -130,17 +130,34 @@ def _opener(base_url: str, timeout: float) -> urllib.request.OpenerDirector:
     password = os.getenv("SENTINEL_GRID_PASSWORD", "").strip()
     if not password:
         return opener
+
+    # The sign-in form grew a second field: it took a password alone and now
+    # takes a registered address alongside it. Sent only when configured, so a
+    # gateway still running the older form is unaffected.
+    form = {"password": password}
+    email = os.getenv("SENTINEL_GRID_EMAIL", "").strip()
+    if email:
+        form["email"] = email
+
     try:
         opener.open(
             urllib.request.Request(
                 base_url.rstrip("/") + "/auth/login",
-                data=urllib.parse.urlencode({"password": password}).encode(),
-                headers={"User-Agent": "sentinel-edge-worker/1.0"},
+                data=urllib.parse.urlencode(form).encode(),
+                headers={"User-Agent": "vigentra-edge-worker/1.0"},
             ),
             timeout=timeout,
         ).read()
     except Exception as exc:  # noqa: BLE001 - report at the catalogue read
         logger.warning("grid sign-in failed (%s); continuing unauthenticated", exc)
+
+    # A refused sign-in is answered with HTTP 200 and the sign-in page, so
+    # reaching here proves nothing on its own - the cookie does.
+    if not len(jar):
+        logger.warning(
+            "grid sign-in issued no session cookie, which means the credential "
+            "was refused; check SENTINEL_GRID_EMAIL and SENTINEL_GRID_PASSWORD"
+        )
     return opener
 
 
@@ -163,7 +180,7 @@ def fetch_catalogue(base_url: str, timeout: float = 15.0) -> dict[str, GridCamer
 
     url = base_url.rstrip("/") + CATALOGUE_PATH
     opener = _opener(base_url, timeout)
-    request = urllib.request.Request(url, headers={"User-Agent": "sentinel-edge-worker/1.0"})
+    request = urllib.request.Request(url, headers={"User-Agent": "vigentra-edge-worker/1.0"})
     with opener.open(request, timeout=timeout) as response:
         body = response.read()
     try:

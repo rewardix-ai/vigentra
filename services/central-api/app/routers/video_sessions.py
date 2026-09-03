@@ -43,7 +43,7 @@ from ..services import audit_service, video_broker, video_permissions
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..video_adapters import VideoAdapterError, VideoNotConfigured
 
-logger = logging.getLogger("sentinel.video.router")
+logger = logging.getLogger("vigentra.video.router")
 
 router = APIRouter(tags=["video"])
 

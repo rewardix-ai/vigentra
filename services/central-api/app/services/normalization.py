@@ -35,7 +35,7 @@ def district_code(district: str | None) -> str:
 
 
 def make_camera_id(department_code: str, district: str | None, external_camera_id: str) -> str:
-    """Canonical registry ID: `SENTINEL-<DEPT>-<DISTRICT>-<SEQ>`.
+    """Canonical registry ID: `VIGENTRA-<DEPT>-<DISTRICT>-<SEQ>`.
 
     The sequence comes from the LAST segment of the department's own camera ID,
     which is how these registers are numbered in practice. A purely numeric
@@ -67,7 +67,7 @@ def make_camera_id(department_code: str, district: str | None, external_camera_i
         sequence = last_segment.upper()
     else:
         sequence = re.sub(r"[^A-Za-z0-9]+", "", external).upper() or "0000"
-    return f"SENTINEL-{department_code.upper()}-{district_code(district)}-{sequence}"
+    return f"VIGENTRA-{department_code.upper()}-{district_code(district)}-{sequence}"
 
 
 # ---------------------------------------------------------------------------

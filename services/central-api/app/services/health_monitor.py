@@ -29,7 +29,7 @@ from ..models import CameraHealth, Source as SourceRow
 from ..schemas import CameraStatus, SyncStatus
 from . import normalization as norm
 
-logger = logging.getLogger("sentinel.health")
+logger = logging.getLogger("vigentra.health")
 
 
 async def latest_health(db: AsyncSession, camera_id: str) -> CameraHealth | None:

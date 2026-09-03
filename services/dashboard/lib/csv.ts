@@ -47,9 +47,9 @@ export function cameraCsvHeader(): string[] {
     "approval_status",
     "health_status",
     "last_frame_utc",
-    "sentinel_sync_status",
+    "vigentra_sync_status",
     "last_metadata_sync_utc",
-    "footage_access_via_sentinel",
+    "footage_access_via_vigentra",
   ];
 }
 
@@ -79,11 +79,11 @@ export function cameraCsvRow(camera: Camera): unknown[] {
     camera.approval.status,
     camera.health.status,
     camera.health.last_frame_utc ?? "",
-    camera.sentinel_sync.status,
-    camera.sentinel_sync.synced_at_utc ?? "",
+    camera.vigentra_sync.status,
+    camera.vigentra_sync.synced_at_utc ?? "",
     // Always false in Module 1 - included so downstream consumers of the CSV
     // can see the boundary in their own tooling too.
-    camera.footage_access_via_sentinel ? "true" : "false",
+    camera.footage_access_via_vigentra ? "true" : "false",
   ];
 }
 

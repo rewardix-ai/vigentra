@@ -379,7 +379,7 @@ class MunicipalAdapter(SurveillanceAdapter):
         )
         severity_word = {1: "info", 2: "warning", 3: "critical"}.get(record.get("level"))
         return Event(
-            event_id=f"sentinel_evt_{digest}",
+            event_id=f"vigentra_evt_{digest}",
             source_system=self.source_system,
             external_event_id=external_id,
             camera_id=canonical_camera_id,

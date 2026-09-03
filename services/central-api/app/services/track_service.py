@@ -31,7 +31,7 @@ from ..models import PlateSighting
 from . import plate_matching
 from .plate_matching import DEFAULT_MAX_DISTANCE
 
-logger = logging.getLogger("sentinel.tracks")
+logger = logging.getLogger("vigentra.tracks")
 
 EARTH_RADIUS_KM = 6371.0
 

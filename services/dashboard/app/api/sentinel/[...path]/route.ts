@@ -1,7 +1,7 @@
 /**
- * Server-side proxy to the Sentinel central registry.
+ * Server-side proxy to the Vigentra central registry.
  *
- * The browser calls /api/sentinel/... on its own origin. This handler - which
+ * The browser calls /api/vigentra/... on its own origin. This handler - which
  * runs only on the Next.js server - reads the httpOnly session cookie and
  * attaches it as a bearer token upstream. Page scripts therefore never hold a
  * token, and the central API's URL is never exposed to the client.
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const CENTRAL_API_URL = process.env.CENTRAL_API_URL ?? "http://central-api:8000";
-const SESSION_COOKIE = "sentinel_session";
+const SESSION_COOKIE = "vigentra_session";
 
 /** Response headers safe to hand back to the browser. */
 const PASSTHROUGH = new Set([
@@ -30,9 +30,9 @@ const PASSTHROUGH = new Set([
   "content-range",
   "accept-ranges",
   "content-disposition",
-  "x-sentinel-degraded",
-  "x-sentinel-access-model",
-  "x-sentinel-video-access",
+  "x-vigentra-degraded",
+  "x-vigentra-access-model",
+  "x-vigentra-video-access",
 ]);
 
 async function handler(

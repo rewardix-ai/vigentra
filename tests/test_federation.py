@@ -68,7 +68,7 @@ async def test_local_roles_are_a_summary_only(api, admin_headers):
         assert isinstance(summary["permitted_local_roles"], list)
         # Now a real owner decision rather than a constant. What must still
         # hold is that it is a bool and never leaks a link or a token.
-        assert isinstance(summary["sentinel_video_access"], bool)
+        assert isinstance(summary["vigentra_video_access"], bool)
         # Any value that looks like a URL or a token would betray the boundary.
         for role in summary["permitted_local_roles"]:
             assert "http" not in role and "token" not in role.lower()
@@ -135,7 +135,7 @@ async def test_one_source_offline_does_not_break_the_other(api, admin_headers, t
 
 
 async def test_source_errors_become_useful_central_errors(api, admin_headers):
-    """A vendor-shaped error must be translated into Sentinel's vocabulary."""
+    """A vendor-shaped error must be translated into Vigentra's vocabulary."""
     # Ask the Traffic system for a record it does not know about.
     response = await api.get(
         "/api/v1/installation-requests/TRF-REQ-DOES-NOT-EXIST", headers=admin_headers

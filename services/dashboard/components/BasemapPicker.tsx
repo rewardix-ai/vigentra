@@ -143,7 +143,7 @@ export function BasemapLayer({ basemap }: { basemap: Basemap }) {
         // plotted over an ocean that is really the Bay of Bengal three worlds
         // along.
         noWrap
-        className={basemap.filter ? "sentinel-muted-tiles" : undefined}
+        className={basemap.filter ? "vigentra-muted-tiles" : undefined}
       />
       {basemap.labels && (
         <TileLayer

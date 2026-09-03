@@ -1,1 +1,1 @@
-"""Sentinel central federation middleware (Module 1)."""
+"""Vigentra central federation middleware (Module 1)."""

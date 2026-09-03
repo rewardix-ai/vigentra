@@ -1,4 +1,4 @@
-# Sentinel access model
+# Vigentra access model
 
 This is the load-bearing statement of who can see what, why, and how each
 guarantee is enforced in code.
@@ -28,13 +28,13 @@ or any other that federates later. That department:
 - runs its own CCTV/VMS platform;
 - holds the NVR recordings, the RTSP addresses, the camera credentials and any
   local viewing tokens;
-- decides whether Sentinel may broker its cameras at all
-  (`video_access_enabled`, which no Sentinel role can override);
+- decides whether Vigentra may broker its cameras at all
+  (`video_access_enabled`, which no Vigentra role can override);
 - retains the raw video for its own configured retention period.
 
-Sentinel never stores a stream URL, an NVR address, a credential or a media
+Vigentra never stores a stream URL, an NVR address, a credential or a media
 token. When a session is permitted, bytes are proxied through
-`GET /api/v1/streams/{session_id}` — an opaque, Sentinel-owned address — and
+`GET /api/v1/streams/{session_id}` — an opaque, Vigentra-owned address — and
 the upstream ticket never leaves the server.
 
 ## 2. Installation form creates a camera asset record
@@ -43,7 +43,7 @@ A department installer completes a CCTV installation form describing the
 camera's identity, ownership, location, technical characteristics, and the
 local viewing roles that apply once it is commissioned.
 
-The form lives in the owning department's system as a `DRAFT`. Sentinel mirrors
+The form lives in the owning department's system as a `DRAFT`. Vigentra mirrors
 the record so it is listable and auditable centrally, but the authoritative
 copy stays with the department.
 
@@ -111,8 +111,8 @@ order:
    statewide, so it never takes the ask-a-grant path. That is deliberate - the
    account that operates the broker has to be able to verify a feed - and the
    audit trail is what holds it, not a narrower permission. `state_admin` and
-   `city_admin` do NOT, unless `SENTINEL_STATE_ADMIN_VIDEO` /
-   `SENTINEL_CITY_ADMIN_VIDEO` is set, so a broad oversight account does not
+   `city_admin` do NOT, unless `VIGENTRA_STATE_ADMIN_VIDEO` /
+   `VIGENTRA_CITY_ADMIN_VIDEO` is set, so a broad oversight account does not
    silently become a viewing account;
 3. camera state — commissioned, owner-enabled, and not offline. Checked
    **before** scope, so a grant can never smuggle access to a suspended camera,

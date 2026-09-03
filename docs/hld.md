@@ -1,4 +1,4 @@
-# Sentinel — High-Level Design
+# Vigentra — High-Level Design
 
 Submitted for the Gujarat Police Innovation Challenge 2026, CCTV Integration
 Hackathon.
@@ -47,7 +47,7 @@ in real time — that scales toward 80,000 cameras without a redesign.
 The constraint that shapes every decision below is that **the departments keep
 running their own systems**. A design that requires 26 departments to migrate
 onto one VMS before anything works is a design that produces nothing for three
-years. Sentinel is built so that the first department to federate gets value on
+years. Vigentra is built so that the first department to federate gets value on
 the day it does, and the twenty-sixth changes nothing about how the first works.
 
 ## 2. Model choice and justification
@@ -77,7 +77,7 @@ flowchart TB
         W[edge-worker<br/>YOLO detection + consensus ANPR]
     end
 
-    subgraph CENTRAL["Sentinel central-api — vendor-neutral"]
+    subgraph CENTRAL["Vigentra central-api — vendor-neutral"]
         AD[Adapters<br/>normalise every dialect]
         REG[(Canonical registry<br/>+ GIS)]
         ING[Detection ingest]
@@ -152,7 +152,7 @@ Three properties that took deliberate work:
   either one alone.
 - **A source outage is isolated.** One department going down leaves the others
   fully working; its cameras go `offline` with a stated reason, listings
-  degrade to the last mirrored state and say so via `X-Sentinel-Degraded`, and
+  degrade to the last mirrored state and say so via `X-Vigentra-Degraded`, and
   every failed poll is in the audit log. Demonstrable with
   `docker compose stop municipal-vms`.
 
@@ -315,7 +315,7 @@ the account with the plate and the time.
 
 | Control | Implementation |
 |---|---|
-| Credentials never centralise | Sentinel stores no RTSP URL, no NVR address, no credential, no media token. A breach of the central tier yields no key to any camera. |
+| Credentials never centralise | Vigentra stores no RTSP URL, no NVR address, no credential, no media token. A breach of the central tier yields no key to any camera. |
 | Sessions are brokered and opaque | Short-lived, watermarked, re-authorised **per segment**. |
 | Three-dimensional scope | Department, city, zone — checked per request, plus the camera's own policy. |
 | Cross-unit access is asked for | Personal, time-boxed, revocable grants. The operator who runs a unit's cameras is the approver; there is no separate approval role to route around. |
@@ -337,7 +337,7 @@ client-facing payload.
                        ┌──────────────┐
                        │  Dashboard   │  Next.js, httpOnly session cookie
                        └──────┬───────┘
-                              │  /api/sentinel/* (server-side proxy)
+                              │  /api/vigentra/* (server-side proxy)
                        ┌──────▼───────┐
                        │ central-api  │  N replicas, stateless for ingest
                        └──────┬───────┘
@@ -367,7 +367,7 @@ Summarised; the arithmetic is in [`docs/scalability.md`](scalability.md).
 | | |
 |---|---|
 | Central video streaming at 80k cameras | ~160 Gbps, ~1.7 PB/day — **rejected** |
-| Sentinel's metadata-only crossing | ~600 Mbps – 1 Gbps — **40–250× less** |
+| Vigentra's metadata-only crossing | ~600 Mbps – 1 Gbps — **40–250× less** |
 | Edge accelerators, ANPR only where the optics allow it | ~3,000 *(estimate)* |
 | Detection retention | hot 30 d / warm 1 y / cold 7 y, plates on a shorter clock |
 
@@ -399,7 +399,7 @@ To assess integration feasibility for a department, we need:
 6. **Local role vocabulary** — who may view what inside the department today.
 7. **A technical contact** who can authorise a test integration.
 
-Sentinel needs none of these to *list* a department's cameras — bulk CSV
+Vigentra needs none of these to *list* a department's cameras — bulk CSV
 onboarding populates the registry from a spreadsheet. They are needed to move
 from registry to feed integration.
 
@@ -438,7 +438,7 @@ a deploying engineer can trust.
   tested; the local queue is not.
 - **All demonstration data is synthetic and labelled as such.** The
   official-source provider exists as a documented shape and refuses rather than
-  guesses until an authorised URL and token are configured. Sentinel does not
+  guesses until an authorised URL and token are configured. Vigentra does not
   connect to VAHAN, SARTHI, eGujCop, AFIS or NAFIS; those integrations are
   designed for and gated behind exactly the same permission and audit machinery
   the watchlist already uses.

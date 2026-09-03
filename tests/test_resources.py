@@ -135,7 +135,7 @@ async def test_source_provenance_is_preserved(api, admin_headers, cameras):
 
     # The department's own ID survives alongside the canonical one.
     assert detail["external_camera_id"]
-    assert detail["camera_id"].startswith("SENTINEL-")
+    assert detail["camera_id"].startswith("VIGENTRA-")
     assert detail["external_camera_id"] != detail["camera_id"]
 
 

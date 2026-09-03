@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Run the Sentinel edge worker on this machine.
+    Run the Vigentra edge worker on this machine.
 
 .DESCRIPTION
     The worker lives in services/edge-worker and imports its own `app` package,
@@ -14,11 +14,11 @@
     .\scripts\edge-worker.ps1 --all-cameras --forever
 
 .EXAMPLE
-    .\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
+    .\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
 
 .EXAMPLE
     # No model, no CV stack - just exercise the pipeline.
-    .\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --synthetic
+    .\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --synthetic
 #>
 [CmdletBinding()]
 param(
@@ -51,7 +51,7 @@ For real YOLO inference, also install the analytics extras (see docs\yolo-setup.
 if (-not $WorkerArgs -or $WorkerArgs.Count -eq 0) {
     Write-Host 'Give the worker something to do, for example:' -ForegroundColor Yellow
     Write-Host '    .\scripts\edge-worker.ps1 --all-cameras --forever'
-    Write-Host '    .\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40'
+    Write-Host '    .\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40'
     exit 2
 }
 

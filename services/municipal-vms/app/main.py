@@ -2,7 +2,7 @@
 
 A second STANDALONE department system that shares nothing with the Traffic VMS.
 It owns its own installation register, its own approval workflow, and its own
-footage. Sentinel reads APPROVED camera METADATA only; the local video
+footage. Vigentra reads APPROVED camera METADATA only; the local video
 endpoints at the bottom exist to represent what stays in municipal custody.
 
 Vendor dialect (deliberately unlike the Traffic system):
@@ -41,7 +41,7 @@ app = FastAPI(
     description=(
         "Municipal Corporation demo CCTV/VMS system. Owns its installation "
         "register, its approval workflow and its footage. Publishes approved "
-        "camera METADATA to Sentinel. Synthetic data only."
+        "camera METADATA to Vigentra. Synthetic data only."
     ),
     version="0.2.0",
 )
@@ -168,13 +168,13 @@ def _touch_health(device_id: str) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------
-# Validation - performed by the department system, before Sentinel sees anything
+# Validation - performed by the department system, before Vigentra sees anything
 # --------------------------------------------------------------------------
 
 #: Rough bounding box for Gujarat, padded slightly. This is a jurisdiction
 #: check, not a geocoder: it rejects the transposed digits and the pasted
 #: sample coordinate, which is what actually goes wrong on a form. It lives in
-#: the department system rather than in Sentinel because which ground a
+#: the department system rather than in Vigentra because which ground a
 #: department may commission cameras on is the department's rule.
 GUJARAT_BOUNDS = {"latitude": (20.0, 24.8), "longitude": (68.0, 74.6)}
 
@@ -504,7 +504,7 @@ def decommission_request(ref: str, request: Request, payload: dict[str, Any] = B
 
 @app.post("/vms/installation-requests/{ref}/mark-synchronized", tags=["installation"])
 def mark_synchronized(ref: str, request: Request) -> dict[str, Any]:
-    """Acknowledge that Sentinel has taken this record's metadata."""
+    """Acknowledge that Vigentra has taken this record's metadata."""
     _require_bearer(request)
     record = _record(ref)
     if record["lifecycle"] not in PUBLISHABLE_STATES:
@@ -518,7 +518,7 @@ def mark_synchronized(ref: str, request: Request) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------
-# Device asset register (metadata Sentinel may read)
+# Device asset register (metadata Vigentra may read)
 # --------------------------------------------------------------------------
 
 @app.get("/vms/approved-cameras", tags=["cameras"])
@@ -609,7 +609,7 @@ def set_availability(
 
 
 # --------------------------------------------------------------------------
-# LOCAL video - municipal custody only. Sentinel never calls these.
+# LOCAL video - municipal custody only. Vigentra never calls these.
 # --------------------------------------------------------------------------
 
 def _iter_file(path: Path, start: int, end: int, chunk: int = 64 * 1024) -> Iterator[bytes]:
@@ -727,7 +727,7 @@ def local_live(camera_id: str, request: Request) -> dict[str, Any]:
                     "id": identity["deviceId"],
                     "custody": "MUNICIPAL_CORPORATION_LOCAL",
                     "url": f"{PUBLIC_BASE_URL}/vms/local/media/{media_file}?token={token}",
-                    "note": "LOCAL_DEPARTMENT_ACCESS_ONLY - not federated to Sentinel",
+                    "note": "LOCAL_DEPARTMENT_ACCESS_ONLY - not federated to Vigentra",
                 },
             }
     raise HTTPException(status_code=404, detail={"code": "no_such_camera"})
@@ -735,7 +735,7 @@ def local_live(camera_id: str, request: Request) -> dict[str, Any]:
 
 @app.get("/vms/local/media/{filename}", tags=["local-video"])
 def local_media(filename: str, request: Request, token: str = Query(...)) -> Response:
-    """Tokenised local media. Municipal custody; Sentinel never receives a token."""
+    """Tokenised local media. Municipal custody; Vigentra never receives a token."""
     entry = GRANTS.get(token)
     if entry is None or entry["expiresAt"] < datetime.now(timezone.utc):
         GRANTS.pop(token, None)

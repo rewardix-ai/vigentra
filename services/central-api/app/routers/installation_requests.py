@@ -1,6 +1,6 @@
 """CCTV installation onboarding.
 
-Every write here is routed to the OWNING DEPARTMENT's own system. Sentinel does
+Every write here is routed to the OWNING DEPARTMENT's own system. Vigentra does
 not hold the authoritative register, does not validate on the department's
 behalf, and cannot approve a camera itself. It orchestrates, mirrors and audits.
 
@@ -107,7 +107,7 @@ async def create_request(
 ) -> InstallationRequestOut:
     """Create a draft in the operator's own department system.
 
-    The form is stored by that department, not by Sentinel. It reaches the
+    The form is stored by that department, not by Vigentra. It reaches the
     central registry as soon as it is submitted and passes validation.
     """
     try:
@@ -146,7 +146,7 @@ async def list_requests(
     if warnings:
         # Surfaced as a header so the UI can flag stale rows without the list
         # itself failing when one department system is down.
-        response.headers["X-Sentinel-Degraded"] = "; ".join(warnings)[:500]
+        response.headers["X-Vigentra-Degraded"] = "; ".join(warnings)[:500]
 
     await audit_service.record(
         db,

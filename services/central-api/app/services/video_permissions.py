@@ -103,7 +103,7 @@ def evaluate(
     # An opted-in oversight role holds no video permission in the role table -
     # the deployment flag IS its grant, so honour it here too. Without this the
     # flag opens the gate above and is then refused by this check, which made
-    # SENTINEL_STATE_ADMIN_VIDEO a switch that did nothing.
+    # VIGENTRA_STATE_ADMIN_VIDEO a switch that did nothing.
     opted_in = settings.role_video_opt_in(user.role)
     can_live = user.can(Permission.VIDEO_LIVE) or opted_in
     can_playback = user.can(Permission.VIDEO_PLAYBACK) or opted_in

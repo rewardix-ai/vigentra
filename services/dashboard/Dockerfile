@@ -1,4 +1,4 @@
-# Sentinel dashboard - metadata-only console.
+# Vigentra dashboard - metadata-only console.
 # Two stages: build the standalone Next.js bundle, then serve it from a
 # small runtime image.
 FROM node:20-alpine AS builder

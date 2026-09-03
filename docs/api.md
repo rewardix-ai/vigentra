@@ -1,4 +1,4 @@
-# Sentinel Central API — specification
+# Vigentra Central API — specification
 
 **Base URL** — `http://localhost:8000` in the demo · `http://central-api:8000` inside Compose.
 **Auth** — `Authorization: Bearer <token>` on every route except `/`, `/health` and
@@ -6,8 +6,8 @@
 before letting the browser make requests.
 **Content type** — `application/json` on request bodies; every response is JSON.
 **Timestamps** — every timestamp field is ISO-8601 UTC with a trailing `Z`.
-**Access boundary** — every response carries `X-Sentinel-Access-Model: METADATA_ONLY`
-and `X-Sentinel-Video-Access: NOT_AVAILABLE`. Module 1 exposes no video path.
+**Access boundary** — every response carries `X-Vigentra-Access-Model: METADATA_ONLY`
+and `X-Vigentra-Video-Access: NOT_AVAILABLE`. Module 1 exposes no video path.
 
 The interactive OpenAPI is at [`/docs`](http://localhost:8000/docs); this file
 is the human-readable version, per-endpoint, with sample bodies.
@@ -120,7 +120,7 @@ true) — deep mode also probes every department system.
 ```json
 {
   "status": "ok",
-  "service": "sentinel-central-api",
+  "service": "vigentra-central-api",
   "version": "0.2.0",
   "environment": "DEMO / MODULE 1",
   "module": "Module 1 - metadata-only CCTV registry federation",
@@ -159,13 +159,13 @@ Response (200):
   "expires_in": 43200,
   "user": {
     "username": "system.admin",
-    "display_name": "Sentinel Administrator",
+    "display_name": "Vigentra Administrator",
     "role": "system_admin",
     "department": "*",
     "unit": null,
     "permissions": ["audit:read", "health:read", "installation:decommission", "…"],
     "visibility_level": "full",
-    "sentinel_video_access": false
+    "vigentra_video_access": false
   }
 }
 ```
@@ -243,7 +243,7 @@ Response (abridged):
 ```json
 [
   {
-    "camera_id": "SENTINEL-TRAFFIC-AHM-0001",
+    "camera_id": "VIGENTRA-TRAFFIC-AHM-0001",
     "external_camera_id": "TRF-AHM-0001",
     "source_system": "traffic_vms",
     "owning_department": "Traffic Police",
@@ -270,15 +270,15 @@ Response (abridged):
     },
     "access_policy_summary": {
       "local_video_access": true,
-      "sentinel_video_access": false,
+      "vigentra_video_access": false,
       "permitted_local_roles": ["department_operator", "district_supervisor"],
       "footage_custodian": "Traffic Police",
       "metadata_visibility_level": "standard",
       "policy_version": 1
     },
     "health": { "status": "online", "last_frame_utc": "2026-08-19T06:52:00Z" },
-    "sentinel_sync": { "status": "SYNCHRONIZED", "synced_at_utc": "2026-08-19T06:52:15Z" },
-    "footage_access_via_sentinel": false
+    "vigentra_sync": { "status": "SYNCHRONIZED", "synced_at_utc": "2026-08-19T06:52:15Z" },
+    "footage_access_via_vigentra": false
   }
 ]
 ```
@@ -297,8 +297,8 @@ sample is returned.
 
 ### `GET /api/v1/cameras/{camera_id}/access-policy`
 
-Requires: `policy:read` + owning-department scope. Describes local vs Sentinel
-access; `sentinel_video_access` is always `false`.
+Requires: `policy:read` + owning-department scope. Describes local vs Vigentra
+access; `vigentra_video_access` is always `false`.
 
 ---
 
@@ -323,7 +323,7 @@ next sync.
 ### `GET /api/v1/installation-requests`
 
 Requires: `installation:read`. Lists records from every permitted department.
-`X-Sentinel-Degraded` header lists departments that could not be reached (rows
+`X-Vigentra-Degraded` header lists departments that could not be reached (rows
 served from the last mirror in that case). Query: `status`, `owning_department`.
 
 ### `POST /api/v1/installation-requests`
@@ -402,10 +402,10 @@ Requires: `registry:read`. Normalised generic events. Query params:
 Response element:
 ```json
 {
-  "event_id": "sentinel_evt_ab34…",
+  "event_id": "vigentra_evt_ab34…",
   "source_system": "municipal_vms",
   "external_event_id": "muni-evt-9002",
-  "camera_id": "SENTINEL-MUNICIPAL-AHM-0101",
+  "camera_id": "VIGENTRA-MUNICIPAL-AHM-0101",
   "event_type": "camera_tamper",
   "severity": "critical",
   "timestamp_utc": "2026-08-19T06:52:20Z",
@@ -548,7 +548,7 @@ console tidy is how a stolen vehicle passes a camera and nobody hears.
   "distance": 0.35,
   "exact": false,
   "sighting_id": "sight_71a…",
-  "camera_id": "SENTINEL-TRAFFIC-AHM-0001",
+  "camera_id": "VIGENTRA-TRAFFIC-AHM-0001",
   "latitude": 23.0281,
   "longitude": 72.507,
   "timestamp_utc": "2026-09-01T14:32:07Z",
@@ -695,7 +695,7 @@ either own-unit ownership or an active grant.
 
 ```json
 {
-  "camera_id": "SENTINEL-TRAFFIC-AHM-0001",
+  "camera_id": "VIGENTRA-TRAFFIC-AHM-0001",
   "mode": "live",
   "reason": "Routine department monitoring",
   "case_id": "optional"
@@ -706,7 +706,7 @@ For recorded footage, send `mode: "playback"` with the window:
 
 ```json
 {
-  "camera_id": "SENTINEL-TRAFFIC-AHM-0001",
+  "camera_id": "VIGENTRA-TRAFFIC-AHM-0001",
   "mode": "playback",
   "start_time_utc": "2026-08-21T03:30:00Z",
   "end_time_utc": "2026-08-21T03:40:00Z",
@@ -757,7 +757,7 @@ Requires: `video:request`. Raises a request against the owning department.
 
 ```json
 {
-  "camera_id": "SENTINEL-MUNICIPAL-AHM-0101",
+  "camera_id": "VIGENTRA-MUNICIPAL-AHM-0101",
   "reason": "Chain-snatching follow-up on Vasna approach",
   "case_id": "FIR 214/2026",
   "modes": ["live", "playback"]

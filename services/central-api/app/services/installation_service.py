@@ -1,6 +1,6 @@
 """Installation onboarding, routed to the owning department's own system.
 
-Sentinel does not host the installation register. Each department does. This
+Vigentra does not host the installation register. Each department does. This
 service resolves which department a form belongs to, calls that department's
 adapter, and mirrors the result centrally so the pipeline stays listable and
 auditable.
@@ -24,7 +24,7 @@ from ..models import InstallationRequest
 from ..schemas import InstallationRequestOut, RequestStatus
 from . import sync_service
 
-logger = logging.getLogger("sentinel.installation")
+logger = logging.getLogger("vigentra.installation")
 
 
 class DepartmentNotFederated(Exception):

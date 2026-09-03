@@ -1,6 +1,6 @@
 """Video session brokering.
 
-The browser never learns how Sentinel reaches the pixels. It receives one
+The browser never learns how Vigentra reaches the pixels. It receives one
 opaque path — `/api/v1/streams/{session_id}` — and everything sensitive stays
 server-side:
 
@@ -34,7 +34,7 @@ from ..video_adapters import VideoAdapterError, build_video_adapter
 from . import video_permissions
 from .normalization import to_utc
 
-logger = logging.getLogger("sentinel.video")
+logger = logging.getLogger("vigentra.video")
 
 #: Only these upstream response headers reach the client. Everything else -
 #: Set-Cookie, Server, vendor identifiers - is dropped.
@@ -409,14 +409,14 @@ def _rewrite_playlist(text: str, session_id: str) -> str:
 
     Both bare URI lines and URI="..." attributes are rewritten. What the player
     receives contains no upstream host, so a saved playlist is useless outside
-    an authorised Sentinel session.
+    an authorised Vigentra session.
     """
     from urllib.parse import quote
 
     def proxied(ref: str) -> str:
         # Deliberately relative: a bare `?p=...` resolves against whatever URL
         # the playlist itself was fetched from. That keeps the rewrite correct
-        # behind the dashboard's /api/sentinel proxy, behind any other reverse
+        # behind the dashboard's /api/vigentra proxy, behind any other reverse
         # proxy, and when the API is called directly - without this service
         # needing to know its own public prefix.
         return f"?p={quote(ref, safe='')}"
@@ -463,8 +463,8 @@ async def _open_hls(
 
     common = {
         "Cache-Control": "no-store, private, max-age=0",
-        "X-Sentinel-Session": session.session_id,
-        "X-Sentinel-Watermark": session.watermark_text,
+        "X-Vigentra-Session": session.session_id,
+        "X-Vigentra-Watermark": session.watermark_text,
         "X-Content-Type-Options": "nosniff",
     }
 
@@ -503,7 +503,7 @@ async def open_stream(
     media_root: str | None = None,
     sub_path: str | None = None,
 ) -> StreamingResponse:
-    """Proxy the department's media through Sentinel, preserving byte ranges.
+    """Proxy the department's media through Vigentra, preserving byte ranges.
 
     Range passthrough is what lets an operator scrub the timeline; without it
     the <video> element can only play from the start.
@@ -536,8 +536,8 @@ async def open_stream(
     safe_headers.setdefault("Accept-Ranges", "bytes")
     # Brokered footage must not be cached by the browser or any intermediary.
     safe_headers["Cache-Control"] = "no-store, private, max-age=0"
-    safe_headers["X-Sentinel-Session"] = session.session_id
-    safe_headers["X-Sentinel-Watermark"] = session.watermark_text
+    safe_headers["X-Vigentra-Session"] = session.session_id
+    safe_headers["X-Vigentra-Watermark"] = session.watermark_text
     safe_headers["X-Content-Type-Options"] = "nosniff"
 
     return StreamingResponse(

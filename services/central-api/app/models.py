@@ -7,7 +7,7 @@ Ten tables, matching shared/canonical-schemas.md:
     sources                          one row per federated department system
     installation_requests            central MIRROR of each department's register
     installation_request_attachments document references (never the documents)
-    camera_access_policies           local vs Sentinel access, per camera
+    camera_access_policies           local vs Vigentra access, per camera
     cameras                          the canonical metadata registry
     camera_health                    time-series health samples
     metadata_sync_logs               one row per source per synchronisation run
@@ -122,7 +122,7 @@ class InstallationRequest(Base, TimestampMixin):
     """Central mirror of one department installation record.
 
     The authoritative copy lives in the owning department's system. This mirror
-    lets Sentinel list and audit the pipeline, and keeps the last known state
+    lets Vigentra list and audit the pipeline, and keeps the last known state
     visible when a department system is unreachable.
     """
 
@@ -160,7 +160,7 @@ class InstallationRequest(Base, TimestampMixin):
     #: stream URL - the adapters strip those before they ever reach here.
     installation_form_json: Mapped[dict] = mapped_column(JSONColumn, nullable=False, default=dict)
 
-    #: When Sentinel last read this record from its owning system.
+    #: When Vigentra last read this record from its owning system.
     mirrored_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
@@ -269,7 +269,7 @@ class Camera(Base, TimestampMixin):
     last_heartbeat_utc: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_frame_utc: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    #: Whether the OWNING DEPARTMENT permits Sentinel to broker video for this
+    #: Whether the OWNING DEPARTMENT permits Vigentra to broker video for this
     #: camera at all. False here is final - no role can override it.
     video_access_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     #: Canonical capability list, e.g. ["metadata", "health", "live", "playback"].
@@ -296,7 +296,7 @@ class CameraAccessPolicy(Base, TimestampMixin):
     local_video_access_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     #: Module 1 invariant. `services/policy_service.py` refuses to write True,
     #: and no API path accepts a value for it at all.
-    sentinel_video_access_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    vigentra_video_access_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     permitted_local_roles_json: Mapped[list] = mapped_column(JSONColumn, nullable=False, default=list)
     metadata_visibility_level: Mapped[str] = mapped_column(String(32), nullable=False, default="standard")
     policy_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

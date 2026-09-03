@@ -51,7 +51,7 @@ from ..services import audit_service, plate_matching, track_service, watchlist_s
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.policy_service import may_read_detections
 
-logger = logging.getLogger("sentinel.watchlist.api")
+logger = logging.getLogger("vigentra.watchlist.api")
 
 router = APIRouter(prefix="/api/v1", tags=["watchlist"])
 
@@ -819,6 +819,6 @@ async def anpr_report(
         iter([buffer.getvalue()]),
         media_type="text/csv",
         headers={
-            "Content-Disposition": f'attachment; filename="sentinel-anpr-{stamp}.csv"'
+            "Content-Disposition": f'attachment; filename="vigentra-anpr-{stamp}.csv"'
         },
     )

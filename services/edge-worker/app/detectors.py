@@ -1,4 +1,4 @@
-"""Object detection abstraction for the Sentinel edge analytics worker.
+"""Object detection abstraction for the Vigentra edge analytics worker.
 
 Runs where the authorized video already is — inside the department's own
 environment — and sends only detection METADATA to the central API. Raw frames
@@ -30,7 +30,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-logger = logging.getLogger("sentinel.edge.detector")
+logger = logging.getLogger("vigentra.edge.detector")
 
 #: The canonical class vocabulary the central API accepts.
 DETECTION_CLASSES: tuple[str, ...] = (

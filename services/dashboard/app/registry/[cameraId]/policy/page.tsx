@@ -83,10 +83,10 @@ export default function AccessPolicyPage() {
           <LockIcon className="mt-0.5 shrink-0" />
           <div className="text-[13px]">
             <div className="font-semibold text-ink-900">
-              Video access through Sentinel:{" "}
-              {policy.sentinel_video_access ? "PERMITTED BY THE OWNER" : "NOT PERMITTED"}
+              Video access through Vigentra:{" "}
+              {policy.vigentra_video_access ? "PERMITTED BY THE OWNER" : "NOT PERMITTED"}
             </div>
-            <p className="mt-0.5 text-ink-500">{policy.sentinel_video_access_note}</p>
+            <p className="mt-0.5 text-ink-500">{policy.vigentra_video_access_note}</p>
             <p className="mt-1 text-ink-500">
               Footage owner: <strong className="text-ink-900">{policy.footage_custodian}</strong>
             </p>
@@ -95,13 +95,13 @@ export default function AccessPolicyPage() {
 
         <Card title="What this policy permits">
           <AccessRow
-            label="Sentinel metadata access"
+            label="Vigentra metadata access"
             state="Enabled by role"
             tone="ok"
-            description={`Your account reads: ${policy.sentinel_metadata_access}. Registry, health and policy records only.`}
+            description={`Your account reads: ${policy.vigentra_metadata_access}. Registry, health and policy records only.`}
           />
           <AccessRow
-            label="Sentinel video access"
+            label="Vigentra video access"
             state="Disabled"
             tone="bad"
             description="Not available in Module 1 for any camera, any role or any request. There is no video endpoint in this system to enable."
@@ -112,7 +112,7 @@ export default function AccessPolicyPage() {
             tone={policy.local_video_access_enabled ? "ok" : "idle"}
             description={`Controlled entirely by ${policy.footage_custodian} inside ${
               policy.local_vms_name ?? "its own CCTV/VMS system"
-            }. Sentinel records the summary below but grants nothing and links to nothing.`}
+            }. Vigentra records the summary below but grants nothing and links to nothing.`}
           />
         </Card>
 
@@ -136,7 +136,7 @@ export default function AccessPolicyPage() {
           )}
           <p className="border-t border-line px-4 py-2 text-2xs leading-relaxed text-ink-500">
             This is a record of the owning department&rsquo;s policy, not a grant. These role names
-            belong to that department&rsquo;s VMS and are unrelated to Sentinel roles. Sentinel
+            belong to that department&rsquo;s VMS and are unrelated to Vigentra roles. Vigentra
             provides no link, token or route to footage for any of them.
           </p>
         </Card>

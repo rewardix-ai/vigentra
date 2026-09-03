@@ -1,16 +1,16 @@
-"""Access policy: local video permissions, and Sentinel metadata visibility.
+"""Access policy: local video permissions, and Vigentra metadata visibility.
 
 Three separate concepts, kept separate on purpose:
 
   1. **Local VMS permission policy** - who may view the actual FOOTAGE inside
-     the owning department's system. Sentinel records the summary and enforces
+     the owning department's system. Vigentra records the summary and enforces
      nothing here; the department's own system does that.
-  2. **Sentinel registry permission** - who may read a camera's metadata,
-     health and policy summary in Sentinel. Federation-wide: any account with
+  2. **Vigentra registry permission** - who may read a camera's metadata,
+     health and policy summary in Vigentra. Federation-wide: any account with
      `registry:read` can see any camera in the federation, because a registry
      that hides half the state's cameras from the other half is not a registry.
      What varies is the DEPTH, handled by `effective_visibility` below.
-  3. **Sentinel video access** - a separate decision entirely, made in
+  3. **Vigentra video access** - a separate decision entirely, made in
      `video_permissions.py`. Reading a camera's record grants no footage.
 
 The split in 2 and 3 is the whole access model in one sentence: everyone can
@@ -29,7 +29,7 @@ from ..models import CameraAccessPolicy
 from ..schemas import CameraMetadata
 
 #: Fields withheld from each visibility level. FULL withholds nothing that
-#: Sentinel actually holds - and Sentinel never holds an unmasked serial, an
+#: Vigentra actually holds - and Vigentra never holds an unmasked serial, an
 #: admin contact, a credential or a stream URL in the first place.
 REDACTED_BY_VISIBILITY: dict[str, tuple[str, ...]] = {
     Visibility.FULL: (),
@@ -66,7 +66,7 @@ def assert_no_video_access(requested: bool | None) -> bool:
     """
     if requested:
         raise VideoAccessNotAvailable(
-            "Sentinel Module 1 provides metadata-only federation. "
+            "Vigentra Module 1 provides metadata-only federation. "
             "Video access cannot be enabled for any camera or role."
         )
     return False
@@ -107,7 +107,7 @@ async def upsert_policy(
 ) -> CameraAccessPolicy:
     """Record the access policy that arrived with an approved camera record.
 
-    `sentinel_video_access_enabled` is written through `assert_no_video_access`
+    `vigentra_video_access_enabled` is written through `assert_no_video_access`
     every single time, so the column cannot drift to True by any code path.
     """
     row = (
@@ -123,7 +123,7 @@ async def upsert_policy(
 
     row.owning_department = camera.owning_department
     row.local_video_access_enabled = bool(camera.local_video_access)
-    row.sentinel_video_access_enabled = assert_no_video_access(False)
+    row.vigentra_video_access_enabled = assert_no_video_access(False)
     row.permitted_local_roles_json = list(camera.permitted_local_roles)
     row.metadata_visibility_level = Visibility.STANDARD
     row.approved_by = approved_by or row.approved_by
@@ -145,7 +145,7 @@ async def get_policy(db: AsyncSession, camera_id: str) -> CameraAccessPolicy | N
 
 
 def may_read_camera(user: DemoUser, camera: CameraRow) -> bool:
-    """Sentinel registry permission - metadata only, never footage.
+    """Vigentra registry permission - metadata only, never footage.
 
     Always true for an account that reached here, because `registry:read` is
     already required by the router and the registry is federation-wide by

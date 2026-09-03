@@ -2,7 +2,7 @@
 #
 # The defaults in anpr/config.py are written for footage where a plate fills a
 # useful part of the frame. The grid's cameras are wide junction overviews at
-# 1920x1080, and a measured pass over SENTINEL-TRAFFIC-AHM-0002 found plates
+# 1920x1080, and a measured pass over VIGENTRA-TRAFFIC-AHM-0002 found plates
 # 13-17 px tall - below anything an OCR engine can read, and small enough that
 # the detector mostly missed them too: 31 vehicles, 2 plate boxes, 0 reads.
 #

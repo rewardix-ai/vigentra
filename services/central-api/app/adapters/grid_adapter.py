@@ -61,7 +61,7 @@ from .base import (
     UpstreamProtocolError,
 )
 
-logger = logging.getLogger("sentinel.adapter.grid")
+logger = logging.getLogger("vigentra.adapter.grid")
 
 #: Where the surveyed reference lives inside the image. Overridable so the
 #: test-suite and a local run can point at the repo copy.
@@ -204,11 +204,16 @@ class GridAdapter(SurveillanceAdapter):
         client = self._client
         if client is None:
             return
+        # The form grew a second field. It took a password alone and now takes
+        # a registered address alongside it; the address is omitted when none
+        # is configured, so a gateway still running the older form is unchanged.
+        form = {"password": self.config.credential}
+        if self.config.credential_identity:
+            form["email"] = self.config.credential_identity
+
         try:
             response = await client.post(
-                "/auth/login",
-                data={"password": self.config.credential},
-                follow_redirects=False,
+                "/auth/login", data=form, follow_redirects=False
             )
         except Exception as exc:  # noqa: BLE001 - surfaced as a source failure
             raise UpstreamProtocolError(
@@ -217,13 +222,28 @@ class GridAdapter(SurveillanceAdapter):
                 detail=type(exc).__name__,
             ) from exc
 
-        # A form login answers 2xx or a redirect; either is success as long as
-        # a cookie came back. httpx keeps it on the client's jar from here.
         if response.status_code >= 400:
             raise UpstreamProtocolError(
-                "The grid rejected Sentinel's access password",
+                "The grid rejected Vigentra's sign-in",
                 source_system=self.source_system,
                 detail=str(response.status_code),
+            )
+
+        # A cookie is the only proof that worked.
+        #
+        # Status alone is not. This gateway answers a REJECTED sign-in with
+        # HTTP 200 and the sign-in page again, so treating <400 as success
+        # marked the adapter authenticated, and every catalogue read after it
+        # was quietly redirected back to that page and parsed as "the upstream
+        # returned a non-JSON body" - a confusing report of a protocol fault
+        # for what is really a refused credential.
+        if not any(cookie for cookie in client.cookies.jar):
+            raise UpstreamProtocolError(
+                "The grid accepted the sign-in request but issued no session "
+                "cookie, which means the credential was refused. Check "
+                "SENTINEL_GRID_EMAIL and SENTINEL_GRID_PASSWORD.",
+                source_system=self.source_system,
+                detail=f"HTTP {response.status_code}, no Set-Cookie",
             )
         self._authenticated = True
 

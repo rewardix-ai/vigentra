@@ -2,7 +2,7 @@
  * Sign-in. Runs only on the Next.js server.
  *
  * The bearer token is placed in an httpOnly cookie, so page scripts never hold
- * a Sentinel credential or token: an XSS on this dashboard cannot read it, and
+ * a Vigentra credential or token: an XSS on this dashboard cannot read it, and
  * it is attached to upstream calls by the proxy route rather than by the page.
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 const CENTRAL_API_URL = process.env.CENTRAL_API_URL ?? "http://central-api:8000";
 // Route files may only export handlers, so keep the cookie name a local constant.
-const SESSION_COOKIE = "sentinel_session";
+const SESSION_COOKIE = "vigentra_session";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let credentials: { username?: string; password?: string };
@@ -64,9 +64,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     sameSite: "lax",
     path: "/",
     // The demo stack is served over plain HTTP on localhost, where a Secure
-    // cookie would simply never be stored. Set SENTINEL_SECURE_COOKIE=1 when
+    // cookie would simply never be stored. Set VIGENTRA_SECURE_COOKIE=1 when
     // deploying behind TLS.
-    secure: process.env.SENTINEL_SECURE_COOKIE === "1",
+    secure: process.env.VIGENTRA_SECURE_COOKIE === "1",
     maxAge: Math.max(60, Number(body.expires_in ?? 3600)),
   });
   return response;

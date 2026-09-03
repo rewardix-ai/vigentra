@@ -7,7 +7,7 @@ sync service, the routers and the dashboard stay vendor-neutral.
 
 Module 1 boundary, enforced by the shape of this contract: there is no
 `create_video_session`, no stream method and no media method. An adapter has no
-way to hand Sentinel a playable feed, because Sentinel has nowhere to put one.
+way to hand Vigentra a playable feed, because Vigentra has nowhere to put one.
 
 See docs/adapter-contract.md and docs/access-model.md.
 """
@@ -39,7 +39,7 @@ class AdapterError(Exception):
 
     `http_status` is what the central API returns to its own clients. An
     upstream 401 becomes a 502 for us: the department system rejected
-    *Sentinel's* credentials, which is a middleware fault, not an operator
+    *Vigentra's* credentials, which is a middleware fault, not an operator
     authorisation problem. Confusing the two sends people hunting the wrong bug.
     """
 
@@ -89,7 +89,7 @@ class SourceTimeoutError(SourceUnavailableError):
 
 
 class SourceAuthError(AdapterError):
-    """Sentinel's own credentials for the department system were rejected."""
+    """Vigentra's own credentials for the department system were rejected."""
 
     code = "source_auth_failed"
     http_status = 502
@@ -245,7 +245,7 @@ class SurveillanceAdapter(ABC):
             )
         if status in (401, 403):
             raise SourceAuthError(
-                f"Sentinel's credentials for {self.source_system} were rejected",
+                f"Vigentra's credentials for {self.source_system} were rejected",
                 source_system=self.source_system,
                 detail=body,
                 upstream_status=status,
@@ -266,7 +266,7 @@ class SurveillanceAdapter(ABC):
             )
         if status == 429:
             raise SourceRateLimitedError(
-                f"{self.source_system} is rate limiting Sentinel",
+                f"{self.source_system} is rate limiting Vigentra",
                 source_system=self.source_system,
                 detail=body,
                 upstream_status=status,
@@ -368,7 +368,7 @@ class SurveillanceAdapter(ABC):
 
     @abstractmethod
     async def mark_synchronized(self, request_id: str) -> InstallationRequestOut:
-        """Tell the department system Sentinel has taken this record's metadata."""
+        """Tell the department system Vigentra has taken this record's metadata."""
 
     # ----------------------------------------------------------------------
     # The contract: camera metadata

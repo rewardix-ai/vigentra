@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sentinel Module 1 - synthetic demo footage generator.
+"""Vigentra Module 1 - synthetic demo footage generator.
 
 Module 1 ships NO real CCTV footage and connects to NO real CCTV portal.
 Every clip produced here is drawn from scratch with ffmpeg primitives and is

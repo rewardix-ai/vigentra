@@ -1,4 +1,4 @@
-# Sentinel Module 1 - metadata-only CCTV registry federation.
+# Vigentra Module 1 - metadata-only CCTV registry federation.
 #
 # Four services, each with its own health check so Compose can order start-up
 # correctly:
@@ -6,7 +6,7 @@
 #   postgres        registry storage
 #   traffic-vms     Gujarat Traffic Police department system     :8001
 #   municipal-vms   Municipal Corporation department system      :8002
-#   central-api     Sentinel middleware (metadata-only)          :8000
+#   central-api     Vigentra middleware (metadata-only)          :8000
 #   dashboard       operator console                             :3000
 #
 # Bring the whole stack up with:  docker compose up --build
@@ -38,7 +38,7 @@ services:
       # Root context so the shared demo footage in data/videos/ can be baked in.
       context: .
       dockerfile: services/traffic-vms/Dockerfile
-    image: sentinel/traffic-vms:0.2.0
+    image: vigentra/traffic-vms:0.2.0
     restart: unless-stopped
     environment:
       TRAFFIC_VMS_API_KEY: ${TRAFFIC_VMS_API_KEY:-traffic-demo-key}
@@ -55,7 +55,7 @@ services:
     build:
       context: .
       dockerfile: services/municipal-vms/Dockerfile
-    image: sentinel/municipal-vms:0.2.0
+    image: vigentra/municipal-vms:0.2.0
     restart: unless-stopped
     environment:
       MUNICIPAL_VMS_TOKEN: ${MUNICIPAL_VMS_TOKEN:-municipal-demo-token}
@@ -72,7 +72,7 @@ services:
     build:
       context: .
       dockerfile: services/central-api/Dockerfile
-    image: sentinel/central-api:0.2.0
+    image: vigentra/central-api:0.2.0
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel
@@ -80,9 +80,9 @@ services:
       TRAFFIC_VMS_API_KEY: ${TRAFFIC_VMS_API_KEY:-traffic-demo-key}
       MUNICIPAL_VMS_BASE_URL: http://municipal-vms:8002
       MUNICIPAL_VMS_TOKEN: ${MUNICIPAL_VMS_TOKEN:-municipal-demo-token}
-      JWT_SECRET: ${JWT_SECRET:-sentinel-module1-demo-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET:-vigentra-module1-demo-secret-change-me}
       ENVIRONMENT_LABEL: ${ENVIRONMENT_LABEL:-DEMO / MODULE 1}
-      # Sentinel never exposes footage; both flags remain absent by design.
+      # Vigentra never exposes footage; both flags remain absent by design.
     ports: ["8000:8000"]
     depends_on:
       postgres: { condition: service_healthy }
@@ -99,13 +99,13 @@ services:
     build:
       context: services/dashboard
       dockerfile: Dockerfile
-    image: sentinel/dashboard:0.2.0
+    image: vigentra/dashboard:0.2.0
     restart: unless-stopped
     environment:
       CENTRAL_API_URL: http://central-api:8000
       NODE_ENV: production
-      # Demo runs on plain HTTP; leave SENTINEL_SECURE_COOKIE unset. When you
-      # deploy behind TLS, set SENTINEL_SECURE_COOKIE=1.
+      # Demo runs on plain HTTP; leave VIGENTRA_SECURE_COOKIE unset. When you
+      # deploy behind TLS, set VIGENTRA_SECURE_COOKIE=1.
     ports: ["3000:3000"]
     depends_on:
       central-api: { condition: service_started }

@@ -32,7 +32,7 @@ def _to_user_out(user: DemoUser, settings: Settings) -> UserOut:
         # any particular camera. That is decided per camera and per request in
         # video_permissions.evaluate, and surfaces as `video_access` on the
         # camera record itself.
-        sentinel_video_access=settings.role_grants_video(user.role),
+        vigentra_video_access=settings.role_grants_video(user.role),
     )
 
 

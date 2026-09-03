@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-logger = logging.getLogger("sentinel.edge.quality")
+logger = logging.getLogger("vigentra.edge.quality")
 
 try:  # optional, and genuinely optional
     import numpy as _np

@@ -102,7 +102,7 @@ Then run the worker with ANPR on:
 
 ```powershell
 $env:ANPR_ENABLE='true'
-.\scripts\edge-worker.ps1 --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
+.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
 ```
 
 | Variable | Default | Meaning |

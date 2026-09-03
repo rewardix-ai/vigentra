@@ -20,7 +20,7 @@ from .base import (
 )
 from .federated import FederatedProvider, MunicipalVmsProvider, TrafficVmsProvider
 from .mock import MockCameraResourceProvider
-from .official import OfficialSentinelProvider
+from .official import OfficialVigentraProvider
 
 PROVIDER_MODES = ("mock", "federated", "official")
 
@@ -36,7 +36,7 @@ def build_provider(settings: Settings, *, adapters: dict | None = None) -> Camer
     if mode == "mock":
         return MockCameraResourceProvider(settings)
     if mode == "official":
-        return OfficialSentinelProvider(settings)
+        return OfficialVigentraProvider(settings)
     if mode == "federated":
         return FederatedProvider(settings, adapters or {})
 
@@ -51,7 +51,7 @@ __all__ = [
     "FederatedProvider",
     "MockCameraResourceProvider",
     "MunicipalVmsProvider",
-    "OfficialSentinelProvider",
+    "OfficialVigentraProvider",
     "PROVIDER_MODES",
     "ProviderError",
     "ProviderNotConfigured",

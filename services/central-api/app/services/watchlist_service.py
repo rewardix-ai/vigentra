@@ -39,7 +39,7 @@ from ..models import PlateSighting, WatchlistAlert, WatchlistEntry
 from . import plate_matching
 from .plate_matching import DEFAULT_MAX_DISTANCE
 
-logger = logging.getLogger("sentinel.watchlist")
+logger = logging.getLogger("vigentra.watchlist")
 
 WATCH_CATEGORIES = ("stolen", "wanted", "blacklist", "missing", "suspect")
 

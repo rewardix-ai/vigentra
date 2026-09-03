@@ -145,7 +145,7 @@ function Registry() {
   function exportCSV() {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const contents = toCSV(visible.map(cameraCsvRow), cameraCsvHeader());
-    download(`sentinel-cameras-${stamp}.csv`, contents);
+    download(`vigentra-cameras-${stamp}.csv`, contents);
   }
 
   if (loading) return <LoadingPanel label="Loading camera registry" />;
@@ -321,7 +321,7 @@ function Registry() {
                         <InstallationPill status={camera.installation.installation_status} />
                       </td>
                       <td>
-                        <SyncPill status={camera.sentinel_sync.status} />
+                        <SyncPill status={camera.vigentra_sync.status} />
                       </td>
                       <td>
                         <HealthPill status={camera.health.status} />
@@ -331,9 +331,9 @@ function Registry() {
                       </td>
                       <td
                         className="whitespace-nowrap text-ink-500"
-                        title={ist(camera.sentinel_sync.synced_at_utc)}
+                        title={ist(camera.vigentra_sync.synced_at_utc)}
                       >
-                        {relative(camera.sentinel_sync.synced_at_utc)}
+                        {relative(camera.vigentra_sync.synced_at_utc)}
                       </td>
                       <td className="whitespace-nowrap">
                         <div className="flex gap-1.5">

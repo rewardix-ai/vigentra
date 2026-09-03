@@ -1,4 +1,4 @@
-SENTINEL CAMERA GRID - 30 CAMERAS
+VIGENTRA CAMERA GRID - 30 CAMERAS
 snapshot 2026-08-25 07:21 UTC   source https://live.corp8.cloud/api/ingest
 ==============================================================================
 

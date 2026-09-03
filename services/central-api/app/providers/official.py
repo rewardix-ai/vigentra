@@ -1,4 +1,4 @@
-"""Official Sentinel Gujarat resource provider.
+"""Official Vigentra Gujarat resource provider.
 
 **Status: not configured, and deliberately inert.**
 
@@ -35,10 +35,10 @@ from ..schemas import (
 )
 from .base import CameraResourceProvider, ProviderNotConfigured, ProviderUnavailable
 
-logger = logging.getLogger("sentinel.provider.official")
+logger = logging.getLogger("vigentra.provider.official")
 
 
-class OfficialSentinelProvider(CameraResourceProvider):
+class OfficialVigentraProvider(CameraResourceProvider):
     """Reads an authorized official camera export/API.
 
     Expects a documented JSON contract of the shape::
@@ -49,7 +49,7 @@ class OfficialSentinelProvider(CameraResourceProvider):
     the official schema is defined by the authority publishing it, not by us.
     """
 
-    name = "official_sentinel_provider"
+    name = "official_vigentra_provider"
     version = "0.1.0"
     is_demo = False
 
@@ -105,7 +105,7 @@ class OfficialSentinelProvider(CameraResourceProvider):
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/json",
-                    "User-Agent": f"Sentinel/{self.settings.service_version} (authorized integration)",
+                    "User-Agent": f"Vigentra/{self.settings.service_version} (authorized integration)",
                 },
                 follow_redirects=False,
             )
@@ -161,7 +161,7 @@ class OfficialSentinelProvider(CameraResourceProvider):
 
         return ExternalCameraRecord(
             external_camera_id=external_id,
-            source_system="official_sentinel",
+            source_system="official_vigentra",
             department=department,
             department_code=department.split()[0].upper()[:32] if department else "UNKNOWN",
             city=city,
@@ -179,7 +179,7 @@ class OfficialSentinelProvider(CameraResourceProvider):
             capabilities=["metadata", "health"],
             is_demo_data=False,
             provenance=CameraProvenance(
-                source_system="official_sentinel",
+                source_system="official_vigentra",
                 external_camera_id=external_id,
                 provider=self.name,
                 provider_version=self.version,

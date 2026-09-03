@@ -1,4 +1,4 @@
-# Sentinel Central API - metadata-only federation middleware (Module 1).
+# Vigentra Central API - metadata-only federation middleware (Module 1).
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -12,8 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY services/central-api/app ./app
 COPY data/reference ./reference
 
-RUN useradd --create-home --uid 10000 sentinel && chown -R sentinel:sentinel /app
-USER sentinel
+RUN useradd --create-home --uid 10000 vigentra && chown -R vigentra:vigentra /app
+USER vigentra
 
 EXPOSE 8000
 

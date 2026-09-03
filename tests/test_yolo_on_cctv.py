@@ -156,8 +156,8 @@ def test_the_same_frame_gives_the_same_detection_id(detector, sampled):
     assert detections, "expected at least one frame with detections"
 
     stamp = "2026-08-21T04:00:00Z"
-    first = [d.detection_id("SENTINEL-TRAFFIC-AHM-0001", stamp, i) for i, d in enumerate(detections)]
-    second = [d.detection_id("SENTINEL-TRAFFIC-AHM-0001", stamp, i) for i, d in enumerate(detections)]
+    first = [d.detection_id("VIGENTRA-TRAFFIC-AHM-0001", stamp, i) for i, d in enumerate(detections)]
+    second = [d.detection_id("VIGENTRA-TRAFFIC-AHM-0001", stamp, i) for i, d in enumerate(detections)]
     assert first == second
     assert len(set(first)) == len(first), "ids collided within one frame"
 

@@ -20,7 +20,7 @@ from ..config import Settings
 from ..schemas import CameraProvenance, ExternalCameraRecord
 from .base import CameraResourceProvider, ProviderError, ProviderUnavailable
 
-logger = logging.getLogger("sentinel.provider.federated")
+logger = logging.getLogger("vigentra.provider.federated")
 
 
 class FederatedProvider(CameraResourceProvider):

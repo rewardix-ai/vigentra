@@ -31,7 +31,7 @@ import httpx
 from .config import Settings, SourceSettings
 from .services import normalization as norm
 
-logger = logging.getLogger("sentinel.video_adapter")
+logger = logging.getLogger("vigentra.video_adapter")
 
 
 class VideoAdapterError(Exception):
@@ -125,11 +125,11 @@ class BaseVideoAdapter(ABC):
                 source_system=self.source_system,
             )
         if response.status_code in (401, 403):
-            # Sentinel's own credential was rejected: a middleware fault, not
+            # Vigentra's own credential was rejected: a middleware fault, not
             # the operator's. Surfaced as 502 upstream, never as a 403 that
             # would wrongly suggest the operator lacks permission.
             raise VideoAdapterError(
-                f"Sentinel's credentials for {self.source_system} were rejected",
+                f"Vigentra's credentials for {self.source_system} were rejected",
                 source_system=self.source_system,
             )
         if response.status_code == 503:
@@ -244,7 +244,7 @@ class MunicipalVmsVideoAdapter(BaseVideoAdapter):
         }
 
 
-class OfficialSentinelVideoAdapter(BaseVideoAdapter):
+class OfficialVigentraVideoAdapter(BaseVideoAdapter):
     """Official source video. Inert until an authorized contract is configured.
 
     No default endpoint, no probing, no fallback. See `providers/official.py`
@@ -296,7 +296,7 @@ class MockVideoAdapter(BaseVideoAdapter):
 
 
 VIDEO_ADAPTERS: dict[str, type[BaseVideoAdapter]] = {
-    "official_sentinel": OfficialSentinelVideoAdapter,
+    "official_vigentra": OfficialVigentraVideoAdapter,
 }
 
 
@@ -328,7 +328,7 @@ def build_video_adapter(
 _GRID_ID = re.compile(r"[A-Za-z][A-Za-z0-9_-]{1,31}")
 
 
-class SentinelGridVideoAdapter(BaseVideoAdapter):
+class VigentraGridVideoAdapter(BaseVideoAdapter):
     """Live HLS from the Sentinel sandbox grid.
 
     Live only, and that is a property of the source rather than a policy: the
@@ -399,7 +399,7 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
                 "source_session_reference": manifest,
                 "protocol": "hls",
                 # The grid issues no ticket of its own, so the session's lifetime
-                # is Sentinel's own TTL. Returning None lets the broker apply it.
+                # is Vigentra's own TTL. Returning None lets the broker apply it.
                 "expires_at": None,
                 "is_demo_data": False,
             }
@@ -482,7 +482,7 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
 #: whose records are read from the shared gateway streams from the shared
 #: gateway; one running its own VMS streams from that VMS.
 METADATA_ADAPTER_VIDEO: dict[str, type[BaseVideoAdapter]] = {
-    "grid_adapter": SentinelGridVideoAdapter,
+    "grid_adapter": VigentraGridVideoAdapter,
     "traffic_adapter": TrafficVmsVideoAdapter,
     "municipal_adapter": MunicipalVmsVideoAdapter,
 }

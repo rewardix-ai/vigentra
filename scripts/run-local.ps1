@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Run the whole Sentinel demo stack on one machine, without Docker.
+    Run the whole Vigentra demo stack on one machine, without Docker.
 
 .DESCRIPTION
     `docker compose up --build` is still the supported way to run this and is
@@ -51,7 +51,7 @@ if (-not (Test-Path (Join-Path $root '.env'))) {
 }
 
 if ($Fresh) {
-    $db = Join-Path $root 'sentinel-local.sqlite'
+    $db = Join-Path $root 'vigentra-local.sqlite'
     if (Test-Path $db) {
         Remove-Item $db -Force
         Write-Host "removed $db" -ForegroundColor DarkGray
@@ -65,7 +65,7 @@ if ($Fresh) {
 $env:SENTINEL_GRID_REFERENCE = Join-Path $root 'data\reference\grid_cameras.json'
 $env:VEHICLE_REGISTRY_PATH   = Join-Path $root 'data\reference\vehicle_registry.json'
 
-# Each mock hands Sentinel an absolute URL to its own media, and central-api
+# Each mock hands Vigentra an absolute URL to its own media, and central-api
 # fetches that URL server-side. The default is the Compose service name, which
 # resolves only inside the Compose network - outside it every department-VMS
 # feed dies as VIDEO_SOURCE_UNAVAILABLE with nothing on screen but "the stream
@@ -149,7 +149,7 @@ if ($failed.Count -gt 0) {
     Write-Warning ("did not start: {0}" -f ($failed -join ', '))
     Write-Warning 'The stack is NOT fully up. Check the ports below before signing in.'
 } else {
-    Write-Host 'Sentinel is up:' -ForegroundColor Green
+    Write-Host 'Vigentra is up:' -ForegroundColor Green
 }
 Write-Host '  Dashboard      http://localhost:3000'
 Write-Host '  Central API    http://localhost:8000/docs'

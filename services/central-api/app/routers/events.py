@@ -30,7 +30,7 @@ from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
 
-logger = logging.getLogger("sentinel.events")
+logger = logging.getLogger("vigentra.events")
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 

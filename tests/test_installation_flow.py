@@ -31,8 +31,8 @@ async def test_installation_form_creation(api, traffic_installer_headers):
     assert record["status"] == "DRAFT"
     assert record["owning_department"] == "Traffic Police"
     assert record["created_by"] == "traffic.installer"
-    # Sentinel never advertises video access on any installation record.
-    assert record["sentinel_video_access"] is False
+    # Vigentra never advertises video access on any installation record.
+    assert record["vigentra_video_access"] is False
 
 
 async def test_missing_required_field_is_rejected(api, traffic_installer_headers):

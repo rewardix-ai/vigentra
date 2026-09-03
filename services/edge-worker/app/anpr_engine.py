@@ -44,7 +44,7 @@ from typing import Any, Iterator
 
 from .detectors import COCO_TO_CANONICAL, Detection, DetectorError
 
-logger = logging.getLogger("sentinel.edge.anpr")
+logger = logging.getLogger("vigentra.edge.anpr")
 
 #: The vendored engine sits beside `app/`, not inside it.
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
@@ -130,7 +130,7 @@ class AnprEngine:
     Build one per camera and feed it that camera's frames in order.
     """
 
-    name = "sentinel-anpr-consensus"
+    name = "vigentra-anpr-consensus"
 
     def __init__(self, *, min_score: float = DEFAULT_MIN_SCORE) -> None:
         try:

@@ -22,7 +22,7 @@ from .schemas import (
     CameraHealthSummary,
     CameraLocation,
     InstallationSummary,
-    SentinelSyncSummary,
+    VigentraSyncSummary,
     SourceOut,
     TechnicalSummary,
 )
@@ -40,7 +40,7 @@ def _policy_summary(row: CameraRow, policy: CameraAccessPolicy | None) -> Access
         local_video_access=bool(policy.local_video_access_enabled) if policy else False,
         # The owner's decision. A precondition for brokering, never a grant on
         # its own - the caller still has to pass every scope check.
-        sentinel_video_access=bool(row.video_access_enabled),
+        vigentra_video_access=bool(row.video_access_enabled),
         permitted_local_roles=list(policy.permitted_local_roles_json or []) if policy else [],
         footage_custodian=row.owning_department,
         metadata_visibility_level=policy.metadata_visibility_level if policy else "standard",
@@ -122,7 +122,7 @@ def camera_to_schema(
             last_frame_utc=row.last_frame_utc,
             last_metadata_sync_utc=row.last_metadata_sync_utc,
         ),
-        sentinel_sync=SentinelSyncSummary(
+        vigentra_sync=VigentraSyncSummary(
             status=row.sync_status,
             synced_at_utc=row.last_metadata_sync_utc,
             source_request_id=row.installation_request_id,
@@ -229,8 +229,8 @@ def access_policy_to_schema(
         camera_name=row.name,
         owning_department=row.owning_department,
         source_system=row.source_system,
-        sentinel_metadata_access=describe_metadata_access(user),
-        sentinel_video_access=bool(row.video_access_enabled),
+        vigentra_metadata_access=describe_metadata_access(user),
+        vigentra_video_access=bool(row.video_access_enabled),
         local_video_access_enabled=bool(policy.local_video_access_enabled) if policy else False,
         permitted_local_roles=list(policy.permitted_local_roles_json or []) if policy else [],
         footage_custodian=row.owning_department,

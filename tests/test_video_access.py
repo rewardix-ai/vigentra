@@ -271,7 +271,7 @@ async def test_session_response_exposes_no_source_url_or_credential(
 
     assert_no_secrets(json.dumps(session), "video session response")
 
-    # The only address the client receives is Sentinel's own opaque route.
+    # The only address the client receives is Vigentra's own opaque route.
     assert session["stream_url"].startswith("/api/v1/streams/")
     assert "http" not in session["stream_url"]
 
@@ -352,12 +352,12 @@ async def test_official_provider_reports_not_configured():
     """
     from app.config import get_settings
     from app.providers.base import ProviderNotConfigured
-    from app.providers.official import OfficialSentinelProvider
+    from app.providers.official import OfficialVigentraProvider
 
     settings = get_settings()
     assert settings.official_provider_configured is False
 
-    provider = OfficialSentinelProvider(settings)
+    provider = OfficialVigentraProvider(settings)
     described = provider.describe()
     assert described["status"] == "SOURCE_ACCESS_NOT_CONFIGURED"
     assert described["configured"] is False
@@ -373,11 +373,11 @@ async def test_official_provider_reports_not_configured():
 
 async def test_official_video_adapter_reports_not_configured():
     from app.config import get_settings
-    from app.video_adapters import OfficialSentinelVideoAdapter, VideoNotConfigured
+    from app.video_adapters import OfficialVigentraVideoAdapter, VideoNotConfigured
 
     settings = get_settings()
     config = settings.sources[0]
-    adapter = OfficialSentinelVideoAdapter(config, settings)
+    adapter = OfficialVigentraVideoAdapter(config, settings)
     try:
         with pytest.raises(VideoNotConfigured) as excinfo:
             await adapter.create_session("any-camera", "live")
@@ -440,7 +440,7 @@ async def test_state_admin_opt_in_still_cannot_bypass_the_owning_unit(
 ):
     """A deployment flag cannot stand in for the owner's consent.
 
-    `SENTINEL_STATE_ADMIN_VIDEO` decides whether the role may hold footage at
+    `VIGENTRA_STATE_ADMIN_VIDEO` decides whether the role may hold footage at
     all. It deliberately does NOT decide whose footage: a central account still
     reaches every camera through the owning unit. Flipping a switch in a config
     file is not a person agreeing.
@@ -449,7 +449,7 @@ async def test_state_admin_opt_in_still_cannot_bypass_the_owning_unit(
     from app.services import video_permissions
 
     settings = get_settings()
-    monkeypatch.setattr(settings, "sentinel_state_admin_video", True, raising=False)
+    monkeypatch.setattr(settings, "vigentra_state_admin_video", True, raising=False)
     assert settings.role_video_opt_in(Role.STATE_ADMIN) is True
     assert settings.role_grants_video(Role.STATE_ADMIN) is True
 

@@ -1,4 +1,4 @@
-# Sentinel — demo script
+# Vigentra — demo script
 
 A walkthrough of the federated registry and the video access model. Around
 twelve minutes. Every input is synthetic.
@@ -46,7 +46,7 @@ Restore a sensible coordinate and submit again. The record goes straight to
 `REGISTERED` — there is no approval queue, and nobody had to be found to sign
 anything. The unit had already decided to install the camera.
 
-## 6. Synchronise metadata to Sentinel
+## 6. Synchronise metadata to Vigentra
 
 Click **Synchronise metadata**, or return to the overview and use the button
 at the top. The banner shows how many registered records synchronised and how
@@ -116,7 +116,7 @@ and it can be revoked at any moment.
 
 Sign back in as `municipal.operator`, open the camera, open the session. The
 video plays, watermarked with the username and timestamp. The URL in the
-address bar is `/api/v1/streams/{session_id}` — an opaque Sentinel address.
+address bar is `/api/v1/streams/{session_id}` — an opaque Vigentra address.
 Open dev tools → Network: no RTSP address, no department hostname, no upstream
 ticket anywhere in the response.
 

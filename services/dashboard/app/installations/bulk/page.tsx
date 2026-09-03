@@ -516,7 +516,7 @@ export default function BulkOnboardingPage() {
   }
 
   function downloadTemplate() {
-    download("sentinel-bulk-camera-template.csv", toCSV(TEMPLATE_ROWS, TEMPLATE_HEADER));
+    download("vigentra-bulk-camera-template.csv", toCSV(TEMPLATE_ROWS, TEMPLATE_HEADER));
   }
 
   function downloadFailedOutcomes() {
@@ -524,7 +524,7 @@ export default function BulkOnboardingPage() {
     if (rows.length === 0) return;
     const header = ["line", "external_camera_id", "camera_name", "status", "message"];
     download(
-      "sentinel-bulk-failures.csv",
+      "vigentra-bulk-failures.csv",
       toCSV(
         rows.map((o) => [o.line, o.external_camera_id, o.camera_name, o.status, o.message ?? ""]),
         header,

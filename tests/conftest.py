@@ -48,8 +48,8 @@ def _load(module_name: str, path: Path):
 
 @pytest.fixture(scope="session", autouse=True)
 def _env() -> Iterator[None]:
-    tmp = Path(tempfile.mkdtemp(prefix="sentinel-test-"))
-    os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{(tmp / 'sentinel.sqlite').as_posix()}")
+    tmp = Path(tempfile.mkdtemp(prefix="vigentra-test-"))
+    os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{(tmp / 'vigentra.sqlite').as_posix()}")
     os.environ.setdefault("AUTO_SYNC_ON_STARTUP", "false")
     os.environ.setdefault("HEALTH_MONITOR_ENABLED", "false")
     os.environ.setdefault("JWT_SECRET", "test-secret-that-is-long-enough-for-hs256")
@@ -73,7 +73,7 @@ def _env() -> Iterator[None]:
     # Point the mocks at the real bundled clips so the media proxy has bytes.
     os.environ.setdefault("TRAFFIC_VIDEO_DIR", str(VIDEO_TRAFFIC))
     os.environ.setdefault("MUNICIPAL_VIDEO_DIR", str(VIDEO_MUNICIPAL))
-    os.environ.setdefault("SENTINEL_MEDIA_ROOT", str(VIDEO_TRAFFIC))
+    os.environ.setdefault("VIGENTRA_MEDIA_ROOT", str(VIDEO_TRAFFIC))
     os.environ.setdefault(
         "VEHICLE_REGISTRY_PATH", str(ROOT / "data" / "reference" / "vehicle_registry.json")
     )
@@ -151,8 +151,8 @@ async def api(clients, traffic_app, municipal_app) -> AsyncIterator[httpx.AsyncC
 
     Fresh SQLite per test so registry state cannot leak between cases.
     """
-    tmp = Path(tempfile.mkdtemp(prefix="sentinel-test-run-"))
-    os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{(tmp / 'sentinel.sqlite').as_posix()}"
+    tmp = Path(tempfile.mkdtemp(prefix="vigentra-test-run-"))
+    os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{(tmp / 'vigentra.sqlite').as_posix()}"
 
     from app.adapters import build_adapters, close_adapters
     from app.config import get_settings
@@ -189,7 +189,7 @@ async def api(clients, traffic_app, municipal_app) -> AsyncIterator[httpx.AsyncC
         await vehicle_service.import_from_file(db, settings, force_demo_flag=True)
 
     client = httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=central_app), base_url="http://sentinel-test"
+        transport=httpx.ASGITransport(app=central_app), base_url="http://vigentra-test"
     )
     try:
         yield client
@@ -330,7 +330,7 @@ async def traffic_camera(cameras) -> dict:
         for camera in cameras
         if camera["source_system"] == "traffic_vms"
         and camera["installation"]["installation_status"] == "COMMISSIONED"
-        and camera["access_policy_summary"]["sentinel_video_access"]
+        and camera["access_policy_summary"]["vigentra_video_access"]
     )
 
 
@@ -341,7 +341,7 @@ async def municipal_camera(cameras) -> dict:
         for camera in cameras
         if camera["source_system"] == "municipal_vms"
         and camera["installation"]["installation_status"] == "COMMISSIONED"
-        and camera["access_policy_summary"]["sentinel_video_access"]
+        and camera["access_policy_summary"]["vigentra_video_access"]
     )
 
 

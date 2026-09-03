@@ -137,7 +137,7 @@ export default function DetectionsPage() {
                 className="min-w-[18rem] flex-1"
                   value={cameraId}
                   onChange={(event) => setCameraId(event.target.value)}
-                  hint="SENTINEL-TRAFFIC-AHM-0001"
+                  hint="VIGENTRA-TRAFFIC-AHM-0001"
               />
             </div>
 

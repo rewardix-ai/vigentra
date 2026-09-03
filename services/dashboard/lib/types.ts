@@ -87,7 +87,7 @@ export interface DetectorHealth {
 export type VideoMode = "live" | "playback";
 
 /**
- * An authorised viewing session. `stream_url` is a Sentinel-owned opaque path
+ * An authorised viewing session. `stream_url` is a Vigentra-owned opaque path
  * - never a department address, a ticket or a credential.
  */
 export interface VideoSession {
@@ -213,8 +213,8 @@ export interface ApprovalSummary {
 
 export interface AccessPolicySummary {
   local_video_access: boolean;
-  /** Whether the owning unit permits Sentinel to broker this camera at all. */
-  sentinel_video_access: boolean;
+  /** Whether the owning unit permits Vigentra to broker this camera at all. */
+  vigentra_video_access: boolean;
   permitted_local_roles: string[];
   footage_custodian: string;
   metadata_visibility_level: string;
@@ -230,7 +230,7 @@ export interface CameraHealthSummary {
   reconnect_count?: number | null;
 }
 
-export interface SentinelSyncSummary {
+export interface VigentraSyncSummary {
   status: SyncStatus;
   synced_at_utc: string | null;
   source_request_id: string | null;
@@ -255,7 +255,7 @@ export interface Camera {
   approval: ApprovalSummary;
   access_policy_summary: AccessPolicySummary;
   health: CameraHealthSummary;
-  sentinel_sync: SentinelSyncSummary;
+  vigentra_sync: VigentraSyncSummary;
   capabilities?: string[];
   is_demo_data?: boolean;
   /**
@@ -266,7 +266,7 @@ export interface Camera {
    */
   video_access: VideoAccessState;
   video_access_reason: string | null;
-  footage_access_via_sentinel?: boolean;
+  footage_access_via_vigentra?: boolean;
 }
 
 /**
@@ -311,9 +311,9 @@ export interface AccessPolicy {
   camera_name: string;
   owning_department: string;
   source_system: string;
-  sentinel_metadata_access: string;
-  sentinel_video_access: boolean;
-  sentinel_video_access_note: string;
+  vigentra_metadata_access: string;
+  vigentra_video_access: boolean;
+  vigentra_video_access_note: string;
   local_video_access_enabled: boolean;
   permitted_local_roles: string[];
   footage_custodian: string;
@@ -348,7 +348,7 @@ export interface InstallationRequest {
   validation_errors: string[];
   form: Record<string, unknown>;
   attachments: AttachmentRef[];
-  sentinel_video_access: boolean;
+  vigentra_video_access: boolean;
 }
 
 export interface SourceSystem {
@@ -517,7 +517,7 @@ export interface Operator {
   unit: string | null;
   permissions: string[];
   visibility_level: string;
-  sentinel_video_access: boolean;
+  vigentra_video_access: boolean;
 }
 
 /** Canonical installation form as posted to the API. */

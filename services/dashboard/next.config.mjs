@@ -1,4 +1,4 @@
-/** Next.js configuration for the Sentinel dashboard. */
+/** Next.js configuration for the Vigentra dashboard. */
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,

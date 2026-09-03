@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the Sentinel edge worker on this machine.
+# Run the Vigentra edge worker on this machine.
 #
 # The worker lives in services/edge-worker and imports its own `app` package,
 # so `python -m app.worker` only resolves from inside that directory - and only
@@ -9,8 +9,8 @@
 # straight through.
 #
 #   ./scripts/edge-worker.sh --all-cameras --forever
-#   ./scripts/edge-worker.sh --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
-#   ./scripts/edge-worker.sh --camera SENTINEL-TRAFFIC-AHM-0001 --synthetic
+#   ./scripts/edge-worker.sh --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
+#   ./scripts/edge-worker.sh --camera VIGENTRA-TRAFFIC-AHM-0001 --synthetic
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -39,7 +39,7 @@ if [ "$#" -eq 0 ]; then
   cat >&2 <<'MSG'
 Give the worker something to do, for example:
     ./scripts/edge-worker.sh --all-cameras --forever
-    ./scripts/edge-worker.sh --camera SENTINEL-TRAFFIC-AHM-0001 --max-frames 40
+    ./scripts/edge-worker.sh --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
 MSG
   exit 2
 fi

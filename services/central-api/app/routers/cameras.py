@@ -55,7 +55,7 @@ async def _authorise(
     camera: CameraRow,
     action: AuditAction,
 ) -> None:
-    """Sentinel registry permission - which records this account may READ.
+    """Vigentra registry permission - which records this account may READ.
 
     Retained as the single choke point even though the registry is now
     federation-wide, so that reintroducing a restriction is a one-line change
@@ -315,7 +315,7 @@ async def get_access_policy(
     user: DemoUser = Depends(require_permission(Permission.POLICY_READ)),
     db: AsyncSession = Depends(get_db),
 ) -> AccessPolicyOut:
-    """Who may view the FOOTAGE locally, and what Sentinel does and does not grant.
+    """Who may view the FOOTAGE locally, and what Vigentra does and does not grant.
 
     This endpoint describes a policy. It does not grant anything, and it links
     to nothing playable.

@@ -146,7 +146,7 @@ _READ_ONLY = {
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Statewide metadata oversight. Video is NOT granted by default - a state
     # admin can see every camera exists without being able to watch any of them.
-    # Set SENTINEL_STATE_ADMIN_VIDEO=true to grant it explicitly.
+    # Set VIGENTRA_STATE_ADMIN_VIDEO=true to grant it explicitly.
     Role.STATE_ADMIN: {
         *_READ_ONLY,
         Permission.INSTALLATION_READ,
@@ -451,7 +451,7 @@ DEFAULT_DEMO_USERS: list[dict[str, Any]] = [
     {
         "username": "system.admin",
         "password": "SysAdmin@2026",
-        "display_name": "Sentinel Administrator",
+        "display_name": "Vigentra Administrator",
         "role": Role.SYSTEM_ADMIN,
     },
     # --- city oversight -----------------------------------------------------
@@ -617,18 +617,22 @@ class SourceSettings(BaseModel):
     default_district: str
     department_code: str
     default_city: str = "Ahmedabad"
-    #: A source Sentinel may only read. The grid is consume-only by its own
+    #: A source Vigentra may only read. The grid is consume-only by its own
     #: rules ("do not push streams to any path, and do not call the gateway's
     #: control API"), so its adapter refuses every write rather than
     #: attempting one and being rejected upstream.
     read_only: bool = False
     #: Per-source transport budget. A department system on the same network as
-    #: Sentinel and a shared gateway reached over the public internet do not
+    #: Vigentra and a shared gateway reached over the public internet do not
     #: deserve the same deadline, and one number for both means either the
     #: local one hangs or the remote one is declared dead while it is still
     #: answering. None falls back to `upstream_timeout_seconds`.
     timeout_seconds: float | None = None
     retries: int | None = None
+    #: Second half of a two-field sign-in, where the source has one. Held
+    #: beside `credential` and treated the same way: never logged, never
+    #: echoed to a client, never placed in a URL.
+    credential_identity: str = ""
 
 
 class Settings(BaseSettings):
@@ -638,7 +642,7 @@ class Settings(BaseSettings):
 
     # --- platform -------------------------------------------------------
     environment_label: str = "DEMO / PHASE 2"
-    service_name: str = "sentinel-central-api"
+    service_name: str = "vigentra-central-api"
     service_version: str = "0.3.0"
     display_timezone: str = "Asia/Kolkata"
 
@@ -646,13 +650,13 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel"
 
     # --- identity -------------------------------------------------------
-    jwt_secret: str = "sentinel-phase2-demo-secret-change-me"
+    jwt_secret: str = "vigentra-phase2-demo-secret-change-me"
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 720
     demo_users_json: str = ""
 
     # --- federation -----------------------------------------------------
-    #: The two department systems Sentinel federates. On by default: these two
+    #: The two department systems Vigentra federates. On by default: these two
     #: ARE the federation, and a registry configured with no sources builds no
     #: adapters and answers 503 on every route that needs one.
     traffic_vms_enabled: bool = True
@@ -696,6 +700,14 @@ class Settings(BaseSettings):
     #: set, the adapter trades it for a session cookie before reading the
     #: catalogue.
     sentinel_grid_password: str = ""
+    #: Registered participant e-mail for the grid sign-in.
+    #:
+    #: The gateway's sign-in form took a password alone and now takes an
+    #: address alongside it, and answers the pair it does not recognise with
+    #: 403. Left empty the adapter posts the password by itself, which is what
+    #: the earlier form wanted - so an older deployment keeps working and a
+    #: current one needs this set.
+    sentinel_grid_email: str = ""
     #: RTSP and WHEP are served on the public gateway rather than the CDN,
     #: because a CDN cannot proxy them. The guide recommends RTSP for
     #: inference, so the edge worker wants this and the browser wants HLS.
@@ -752,8 +764,8 @@ class Settings(BaseSettings):
     #: rides on, because the plate is the identifying part.
     anpr_plate_retention_days: int = 30
     #: Statewide/city admins get metadata by default; flip these to grant video.
-    sentinel_state_admin_video: bool = False
-    sentinel_city_admin_video: bool = False
+    vigentra_state_admin_video: bool = False
+    vigentra_city_admin_video: bool = False
 
     # --- YOLO / analytics -----------------------------------------------
     yolo_enable: bool = False
@@ -833,6 +845,9 @@ class Settings(BaseSettings):
                     retries=(self.grid_upstream_retries
                              if self.traffic_vms_adapter == "grid_adapter"
                              else None),
+                    credential_identity=(self.sentinel_grid_email
+                                         if self.traffic_vms_adapter == "grid_adapter"
+                                         else ""),
                 )
             )
         if self.municipal_vms_enabled:
@@ -858,6 +873,9 @@ class Settings(BaseSettings):
                     retries=(self.grid_upstream_retries
                              if self.municipal_vms_adapter == "grid_adapter"
                              else None),
+                    credential_identity=(self.sentinel_grid_email
+                                         if self.municipal_vms_adapter == "grid_adapter"
+                                         else ""),
                 )
             )
         return entries
@@ -872,7 +890,7 @@ class Settings(BaseSettings):
         """Which configured source a camera actually arrived through.
 
         `source_system` is the authoritative link, not the department: one
-        gateway can federate assets owned by several departments (the Sentinel
+        gateway can federate assets owned by several departments (the Vigentra
         grid carries both Traffic Police and Municipal Corporation cameras), so
         resolving by department would pick the wrong adapter and ask the wrong
         system for the feed.
@@ -901,9 +919,9 @@ class Settings(BaseSettings):
         that can give them one.
         """
         if role == Role.STATE_ADMIN:
-            return self.sentinel_state_admin_video
+            return self.vigentra_state_admin_video
         if role == Role.CITY_ADMIN:
-            return self.sentinel_city_admin_video
+            return self.vigentra_city_admin_video
         return False
 
     def role_grants_video(self, role: str) -> bool:

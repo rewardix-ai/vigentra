@@ -233,13 +233,21 @@ class FederatedProvider(CameraResourceProvider):
                 f"No source configuration for '{source_system}'", provider=self.name
             )
 
-        video_adapter = build_video_adapter(config, self.settings)
+        # Reuse the metadata adapter's connection pool, exactly as the broker
+        # does. Building a fresh client here gave the video adapter one with no
+        # session on it, so a gateway behind a sign-in answered its probes with
+        # the login page instead of the playlist - and the camera was judged to
+        # have no HLS while it was streaming perfectly well.
+        shared_client = getattr(self.adapters.get(source_system), "_client", None)
+        video_adapter = build_video_adapter(config, self.settings, shared_client)
         try:
             return await video_adapter.create_session(
                 external_camera_id, mode, start_time, end_time, user_context
             )
         finally:
-            await video_adapter.aclose()
+            # Closing it would close the shared pool with it.
+            if shared_client is None:
+                await video_adapter.aclose()
 
 
 class TrafficVmsProvider(FederatedProvider):

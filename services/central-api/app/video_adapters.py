@@ -427,22 +427,55 @@ class SentinelGridVideoAdapter(BaseVideoAdapter):
             "degraded": "hls_unavailable",
         }
 
+    #: Bytes of the playlist the probe reads before making up its mind.
+    #: `#EXTM3U` is required to be the first line, so the first chunk settles
+    #: it and the rest of the file is never pulled.
+    PROBE_BYTES = 1024
+
     async def _manifest_ok(self, manifest: str) -> bool:
         """Is the HLS packager actually serving this camera right now?
 
-        Deliberately cheap and deliberately forgiving: one short GET, and any
-        transport error counts as "not ok" rather than raising. A slow probe
-        here would delay every session open, and an exception would turn a
-        recoverable degradation into a failed request.
+        Streams the response and reads only the opening bytes.
+
+        Downloading the whole playlist to check its first line looks harmless
+        and is not: these are VOD-style playlists listing every segment of a
+        long recording, and one came back at 880 KB. Against a gateway on the
+        public internet that does not finish inside a short read budget, so
+        the probe raised ReadTimeout, every camera was judged to have no HLS,
+        every session fell through to the progressive fallback - which the CDN
+        answers with 502 - and the entire estate played no video at all while
+        the manifests themselves were perfectly healthy.
+
+        Forgiving by design: any transport error counts as "not ok" rather
+        than raising, because a failed probe should degrade a session, not
+        fail the request that opens it.
         """
         try:
-            response = await self._client.get(
-                manifest, timeout=6.0, follow_redirects=True
-            )
+            async with self._client.stream(
+                "GET",
+                manifest,
+                # Generous on connect, strict on read: the read now returns
+                # after a kilobyte, so the budget covers reaching a remote
+                # gateway rather than transferring a file.
+                timeout=httpx.Timeout(15.0, read=15.0),
+                follow_redirects=True,
+            ) as response:
+                if response.status_code != 200:
+                    logger.info(
+                        "grid manifest probe: %s answered HTTP %s",
+                        manifest, response.status_code,
+                    )
+                    return False
+                async for chunk in response.aiter_bytes(self.PROBE_BYTES):
+                    return chunk.lstrip().startswith(b"#EXTM3U")
+                return False
         except httpx.HTTPError as exc:
-            logger.info("grid manifest probe failed: %s", exc)
+            # str(ReadTimeout) is empty, which made this line say nothing at
+            # all the one time it mattered. Name the class too.
+            logger.info(
+                "grid manifest probe failed: %s: %s", type(exc).__name__, exc or "(no detail)"
+            )
             return False
-        return response.status_code == 200 and response.text.lstrip().startswith("#EXTM3U")
 
 
 #: Video transport implied by a department's metadata adapter. A department

@@ -103,7 +103,7 @@ services:
       MUNICIPAL_VMS_BASE_URL: http://municipal-vms:8002
       MUNICIPAL_VMS_TOKEN: ${MUNICIPAL_VMS_TOKEN:-municipal-demo-token}
       JWT_SECRET: ${JWT_SECRET:-vigentra-module1-demo-secret-change-me}
-      ENVIRONMENT_LABEL: ${ENVIRONMENT_LABEL:-DEMO / MODULE 1}
+      ENVIRONMENT_LABEL: ${ENVIRONMENT_LABEL:-DEMO}
       # Vigentra never exposes footage; both flags remain absent by design.
     ports: ["8000:8000"]
     depends_on:

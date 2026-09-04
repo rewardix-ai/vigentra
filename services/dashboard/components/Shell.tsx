@@ -200,7 +200,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <span className="hidden rounded-sm border border-white/25 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-white/80 sm:inline">
-            {health?.environment ?? "DEMO / MODULE 1"}
+            {health?.environment ?? "DEMO"}
           </span>
           <span className="hidden rounded-sm border border-white/25 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-white/80 md:inline">
             Footage brokered

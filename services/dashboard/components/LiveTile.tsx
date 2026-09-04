@@ -39,7 +39,7 @@ import type { Camera, VideoSession } from "@/lib/types";
  * arrives, not a latency budget - a tile that starts slowly is still a tile
  * that works, and cutting it off produces a wall where nothing plays.
  */
-const START_TIMEOUT_MS = 45_000;
+const START_TIMEOUT_MS = 70_000;
 
 /** Backoff between retries: 3s, 6s, 12s, 24s, then every 30s. */
 function backoffMs(attempt: number): number {
@@ -244,7 +244,19 @@ export function LiveTile({
     } else {
       void import("hls.js").then(({ default: Hls }) => {
         if (destroyed || !Hls.isSupported()) return;
-        const instance = new Hls({ lowLatencyMode: true, backBufferLength: 10 });
+        const instance = new Hls({
+          lowLatencyMode: true,
+          backBufferLength: 10,
+          // The grid can take ~30s to serialise a camera's playlist on a cold
+          // fetch (the broker caches and trims it, but the first viewer still
+          // waits on the grid). The default 10s manifest timeout would give up
+          // long before it arrives, so the tile went black on a feed that was
+          // simply slow to start. One retry, generously spaced.
+          manifestLoadingTimeOut: 45_000,
+          manifestLoadingMaxRetry: 2,
+          manifestLoadingRetryDelay: 2_000,
+          levelLoadingTimeOut: 45_000,
+        });
         hls = instance;
         instance.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => {
           if (!data?.fatal || destroyed) return;

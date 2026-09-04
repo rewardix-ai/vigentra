@@ -15,8 +15,10 @@ read and on every refusal.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import secrets
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -443,6 +445,105 @@ def _rewrite_playlist(text: str, session_id: str) -> str:
     return "\n".join(out) + "\n"
 
 
+#: How many trailing segments of the grid's playlist to serve as "live".
+#:
+#: The grid exposes each camera as a single VOD playlist covering everything it
+#: has ever recorded - one measured 14,410 segments, near 28 hours - and takes
+#: half a minute just to serialise it. A player handed that loads the oldest
+#: footage first and stalls the whole wall behind a 30-second manifest fetch.
+#: Serving only the tail gives the operator the live edge, and a manifest a
+#: player parses in a blink.
+_LIVE_WINDOW_SEGMENTS = 24
+
+#: Seconds a fetched-and-trimmed manifest is reused before going back to the
+#: grid. The grid fetch is ~30s and single-session; without this, every tile,
+#: every player manifest-refresh and every second viewer would queue behind
+#: its own 30-second fetch of the same list. One fetch feeds them all.
+_MANIFEST_TTL = 12.0
+
+_manifest_cache: dict[str, tuple[float, str]] = {}
+_manifest_locks: dict[str, "asyncio.Lock"] = {}
+
+
+def _to_live_window(raw: str, keep: int = _LIVE_WINDOW_SEGMENTS) -> str:
+    """Trim a long VOD playlist to its last `keep` segments, as a live window.
+
+    The grid's playlist is one ever-growing VOD. Handing a player only the tail,
+    with the VOD markers removed, makes it a sliding live playlist: the player
+    shows current footage and re-requests the manifest for what comes next,
+    instead of starting hours in the past and never catching up.
+
+    Safe for the grid's AES-128 because its key line carries an explicit
+    IV=0x0 - a fixed IV, not one derived from the media sequence number - so
+    renumbering the window does not change how any segment decrypts.
+    """
+    lines = raw.splitlines()
+    header: list[str] = []
+    segments: list[tuple[list[str], str]] = []  # (tags before it, uri)
+    pending: list[str] = []
+    in_segments = False
+
+    for line in lines:
+        s = line.strip()
+        if not s:
+            continue
+        if not s.startswith("#") and ".m3u8" not in s:
+            # A media segment URI, with whatever #EXTINF/#EXT-X-* preceded it.
+            segments.append((pending, s))
+            pending = []
+            in_segments = True
+            continue
+        if s == "#EXT-X-ENDLIST":
+            continue  # a live window never ends
+        if s.startswith("#EXT-X-PLAYLIST-TYPE"):
+            continue  # ...and is not VOD
+        if not in_segments and s.startswith("#EXT-X-MEDIA-SEQUENCE"):
+            continue  # recomputed below for the window
+        if in_segments:
+            pending.append(line)  # a per-segment tag (rare); keep with its seg
+        else:
+            header.append(line)
+
+    if len(segments) <= keep:
+        return raw  # already small; nothing to gain, and no risk of mangling
+
+    first = len(segments) - keep
+    window = segments[first:]
+    out = list(header)
+    out.append(f"#EXT-X-MEDIA-SEQUENCE:{first}")
+    for tags, uri in window:
+        out.extend(tags)
+        out.append(uri)
+    return "\n".join(out) + "\n"
+
+
+async def _live_manifest(
+    client: httpx.AsyncClient, target: str, headers: dict[str, str]
+) -> str:
+    """The trimmed, rewritten live playlist for `target`, cached briefly.
+
+    A per-target lock collapses a stampede - a wall of tiles, a player's
+    refresh loop - into one upstream fetch, which matters when that fetch is
+    thirty seconds against a single-session gateway.
+    """
+    key = target.split("?")[0]
+    now = time.monotonic()
+    cached = _manifest_cache.get(key)
+    if cached and (now - cached[0]) < _MANIFEST_TTL:
+        return cached[1]
+
+    lock = _manifest_locks.setdefault(key, asyncio.Lock())
+    async with lock:
+        cached = _manifest_cache.get(key)
+        if cached and (time.monotonic() - cached[0]) < _MANIFEST_TTL:
+            return cached[1]
+        upstream = await client.get(target, headers=headers)
+        upstream.raise_for_status()
+        rewritten = _rewrite_playlist(_to_live_window(upstream.text), "")
+        _manifest_cache[key] = (time.monotonic(), rewritten)
+        return rewritten
+
+
 async def _open_hls(
     client: httpx.AsyncClient,
     session: VideoSessionRow,
@@ -470,9 +571,7 @@ async def _open_hls(
 
     is_playlist = ".m3u8" in target.split("?")[0].lower()
     if is_playlist:
-        upstream = await client.get(target, headers=headers)
-        upstream.raise_for_status()
-        body = _rewrite_playlist(upstream.text, session.session_id).encode()
+        body = (await _live_manifest(client, target, headers)).encode()
         return StreamingResponse(
             iter((body,)),
             status_code=200,

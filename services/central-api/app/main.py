@@ -54,7 +54,7 @@ import httpx
 from .adapters import build_adapters, close_adapters
 from .providers import build_provider
 from .adapters.base import AdapterError
-from .config import ROLE_PERMISSIONS, ROLE_VISIBILITY, Settings, get_settings
+from .config import GRID_BROWSER_UA, ROLE_PERMISSIONS, ROLE_VISIBILITY, Settings, get_settings
 from .database import dispose_engine, get_session_factory, init_models
 from .models import Role as RoleRow, User as UserRow
 from .routers import (
@@ -81,13 +81,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(name)s :: %(message)s",
 )
 logger = logging.getLogger("vigentra.api")
-
-#: The gateway serves video only to a browser-like User-Agent. Kept in one
-#: place; the media proxy sets the same string per request (video_broker).
-_BROWSER_UA = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-)
 
 
 async def _seed_identity(settings: Settings) -> None:
@@ -159,7 +152,7 @@ async def lifespan(app: FastAPI):
             # Origin: the gateway 403s a video request that does, which is why
             # the proxy builds each upstream request from scratch rather than
             # forwarding the browser's headers.
-            headers={"User-Agent": _BROWSER_UA},
+            headers={"User-Agent": GRID_BROWSER_UA},
         )
     app.state.grid_client = grid_client
     app.state.adapters = build_adapters(

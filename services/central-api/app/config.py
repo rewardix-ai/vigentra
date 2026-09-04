@@ -30,6 +30,15 @@ TRAFFIC_DEPARTMENT = "Traffic Police"
 MUNICIPAL_DEPARTMENT = "Municipal Corporation"
 GRID_DEPARTMENT = "Sentinel Grid"
 
+#: The grid's gateway serves its video endpoints only to a browser-like
+#: User-Agent (a default client UA is answered 403), and 403s again on any
+#: Referer or Origin. Every client that touches the grid sends this and nothing
+#: else identifying; kept here so the API and the media proxy cannot drift.
+GRID_BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
 #: A user scoped to ALL_DEPARTMENTS / ALL_CITIES sees the whole federation.
 ALL_DEPARTMENTS = "*"
 ALL_CITIES = "*"

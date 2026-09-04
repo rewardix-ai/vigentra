@@ -28,7 +28,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask
 
-from ..config import DemoUser, Settings
+from ..config import GRID_BROWSER_UA, DemoUser, Settings
 from ..models import Camera as CameraRow
 from ..models import VideoSession as VideoSessionRow
 from ..schemas import VideoMode, VideoSessionCreate, VideoSessionOut
@@ -355,14 +355,8 @@ _URI_ATTR_TAGS = (
     "#EXT-X-MEDIA:",
 )
 
-#: The grid's gateway rejects a default client UA, and 302s to http:// unless
-#: the cookieCheck flag rides on every request.
-_GRID_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    ),
-}
+#: Only a browser User-Agent, nothing else identifying (see config.GRID_BROWSER_UA).
+_GRID_HEADERS = {"User-Agent": GRID_BROWSER_UA}
 
 
 def _resolve_hls_target(reference: str, sub_path: str | None) -> str:

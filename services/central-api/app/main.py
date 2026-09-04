@@ -82,6 +82,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("vigentra.api")
 
+#: The gateway serves video only to a browser-like User-Agent. Kept in one
+#: place; the media proxy sets the same string per request (video_broker).
+_BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
 
 async def _seed_identity(settings: Settings) -> None:
     """Materialise the configured roles and accounts into the registry tables.
@@ -126,44 +133,57 @@ async def lifespan(app: FastAPI):
     await init_models()
     await _seed_identity(settings)
 
-    app.state.adapters = build_adapters(settings)
-    # A dedicated client for proxying brokered media, kept apart from the
-    # adapters' clients so a long video read cannot starve control-plane calls.
-    app.state.media_client = httpx.AsyncClient(
-        timeout=httpx.Timeout(30.0, connect=settings.upstream_timeout_seconds),
-        follow_redirects=True,
+    # One shared client for the grid, handed to BOTH department adapters.
+    #
+    # The gateway allows a single session per account and both departments use
+    # the one grid credential, so a client each meant two logins that
+    # invalidated one another. Sharing the client means one login, one cookie
+    # jar and one coordinated re-auth - see adapters/grid_adapter._GridGate.
+    grid_client: httpx.AsyncClient | None = None
+    grid_sources = {
+        s.source_system for s in settings.sources if s.adapter == "grid_adapter"
+    }
+    if grid_sources:
+        grid_client = httpx.AsyncClient(
+            base_url=settings.sentinel_grid_base_url,
+            # One budget for both roles this client now serves: a cold gateway
+            # connection (tens of seconds) and a video segment read. Connect is
+            # bounded to the grid budget; the read is generous for streaming.
+            timeout=httpx.Timeout(30.0, connect=settings.grid_upstream_timeout_seconds),
+            follow_redirects=True,
+            # The gateway gates its video endpoints on a browser User-Agent -
+            # a default client UA is answered 403 on the playlist and segments
+            # while the catalogue is served freely. So every request on this
+            # client, including the video adapter's HLS availability probe and
+            # every proxied segment, carries one. It must NOT carry Referer or
+            # Origin: the gateway 403s a video request that does, which is why
+            # the proxy builds each upstream request from scratch rather than
+            # forwarding the browser's headers.
+            headers={"User-Agent": _BROWSER_UA},
+        )
+    app.state.grid_client = grid_client
+    app.state.adapters = build_adapters(
+        settings,
+        clients={name: grid_client for name in grid_sources} if grid_client else None,
     )
-    # The grid CDN gates its playlists and segments behind the same access
-    # password as its catalogue, and answers an unauthenticated request with a
-    # 302 to the sign-in page rather than a 401. Proxied blind, that page
-    # arrives with HTTP 200 and content-type mpegurl, gets rewritten as if it
-    # were a playlist, and reaches the player as a manifest full of HTML - a
-    # failure that looks like a corrupt stream and is really a missing cookie.
-    # Signing the media client in at startup keeps the session on its jar for
-    # every segment fetch that follows.
-    if settings.sentinel_grid_password:
-        form = {"password": settings.sentinel_grid_password}
-        if settings.sentinel_grid_email:
-            form["email"] = settings.sentinel_grid_email
-        try:
-            await app.state.media_client.post(
-                settings.sentinel_grid_base_url.rstrip("/") + "/auth/login",
-                data=form,
-            )
-            # A refused sign-in comes back 200 with the sign-in page, so the
-            # cookie jar is what says whether this worked. Logging success off
-            # the status alone reported a session that did not exist, and the
-            # failure surfaced much later as unplayable video.
-            if any(cookie for cookie in app.state.media_client.cookies.jar):
-                logger.info("media client signed in to the grid")
-            else:
-                logger.warning(
-                    "media client sign-in was refused by the grid (no session "
-                    "cookie issued) - check SENTINEL_GRID_EMAIL and "
-                    "SENTINEL_GRID_PASSWORD; brokered video will not play"
-                )
-        except Exception as exc:  # noqa: BLE001 - non-fatal, logged not raised
-            logger.warning("media client could not sign in to the grid: %s", exc)
+
+    # The media proxy uses the SAME grid client, not a second one.
+    #
+    # The gateway allows one session per account, and the cookie jar cannot be
+    # shared between two httpx clients (a second client constructed from the
+    # first's cookies gets an empty jar in this version). A separate media
+    # client would therefore have to sign in again - a second session that
+    # invalidates the first. Reusing the one authenticated client is what keeps
+    # the catalogue, the HLS probe and the proxied segments all on the single
+    # session the gateway permits. A non-grid deployment still gets its own
+    # media client below.
+    if grid_client is not None:
+        app.state.media_client = grid_client
+    else:
+        app.state.media_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0, connect=settings.upstream_timeout_seconds),
+            follow_redirects=True,
+        )
     # Pay the grid's cold-connection cost here rather than on the first
     # operator request. Sequential on purpose: both department adapters point
     # at the same gateway, and warming them in parallel means two sign-ins
@@ -228,11 +248,19 @@ async def lifespan(app: FastAPI):
             app.state.monitor_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await app.state.monitor_task
-        await app.state.media_client.aclose()
         provider = getattr(app.state, "provider", None)
         if provider is not None:
             await provider.aclose()
         await close_adapters(app.state.adapters)
+        # The grid client is shared by the adapters and doubles as the media
+        # client, so neither the adapters nor the media path own it; close it
+        # once here. A non-grid deployment has a distinct media client to close.
+        grid_client = getattr(app.state, "grid_client", None)
+        media_client = getattr(app.state, "media_client", None)
+        if media_client is not None and media_client is not grid_client:
+            await media_client.aclose()
+        if grid_client is not None:
+            await grid_client.aclose()
         await dispose_engine()
 
 

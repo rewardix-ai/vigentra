@@ -31,12 +31,15 @@ never silently presented as a survey.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import time
 from datetime import datetime, timezone
 from typing import Any
+
+import httpx
 
 from ..config import SourceSettings
 from ..schemas import (
@@ -54,6 +57,7 @@ from ..schemas import (
 from ..services import normalization as norm
 from .base import (
     AdapterError,
+    SourceAuthError,
     ResourceNotFoundError,
     SourceConflictError,
     SourceUnavailableError,
@@ -160,6 +164,96 @@ def _clean(value: Any) -> str | None:
     return text
 
 
+class _GridGate:
+    """One sign-in, shared by everything that uses this client.
+
+    The gateway keeps a single session per account, so concurrent logins fight:
+    the winner is whoever logged in last, and the losers get 403. This
+    serialises sign-in behind a lock and gives every caller the same answer,
+    and it re-authenticates at most once per rejection generation - so two
+    adapters that both hit 403 at once cause one new login between them rather
+    than two that invalidate each other.
+    """
+
+    def __init__(self, client: httpx.AsyncClient) -> None:
+        self._client = client
+        self._lock = asyncio.Lock()
+        self._authenticated = False
+        #: Bumped on every successful sign-in. A caller that failed at
+        #: generation N and finds the generation already past N knows someone
+        #: else has re-authenticated and it need only retry, not log in again.
+        self._generation = 0
+
+    @property
+    def generation(self) -> int:
+        return self._generation
+
+    async def ensure(
+        self, *, source_system: str, credential: str, identity: str
+    ) -> None:
+        if self._authenticated:
+            return
+        async with self._lock:
+            if self._authenticated:
+                return
+            await self._login(source_system, credential, identity)
+
+    async def reauthenticate(
+        self, *, source_system: str, credential: str, identity: str, seen_generation: int
+    ) -> None:
+        """Sign in again after a rejection, unless someone already did.
+
+        `seen_generation` is what the caller last saw. If the live generation
+        has moved past it, a concurrent caller has already refreshed the
+        session and this one should simply retry its request.
+        """
+        async with self._lock:
+            if self._generation != seen_generation:
+                return
+            self._authenticated = False
+            await self._login(source_system, credential, identity)
+
+    async def _login(self, source_system: str, credential: str, identity: str) -> None:
+        # The form grew a second field. It took a password alone and now takes
+        # a registered address alongside it; the address is omitted when none
+        # is configured, so a gateway still running the older form is unchanged.
+        form = {"password": credential}
+        if identity:
+            form["email"] = identity
+
+        try:
+            response = await self._client.post(
+                "/auth/login", data=form, follow_redirects=False
+            )
+        except Exception as exc:  # noqa: BLE001 - surfaced as a source failure
+            raise UpstreamProtocolError(
+                "Could not reach the grid sign-in endpoint",
+                source_system=source_system,
+                detail=type(exc).__name__,
+            ) from exc
+
+        if response.status_code >= 400:
+            raise UpstreamProtocolError(
+                "The grid rejected Vigentra's sign-in",
+                source_system=source_system,
+                detail=str(response.status_code),
+            )
+
+        # A cookie is the only proof it worked. A REJECTED sign-in comes back
+        # HTTP 200 with the sign-in page again, so status alone marked the
+        # adapter authenticated over a session that did not exist.
+        if not any(cookie for cookie in self._client.cookies.jar):
+            raise UpstreamProtocolError(
+                "The grid accepted the sign-in request but issued no session "
+                "cookie, which means the credential was refused. Check "
+                "SENTINEL_GRID_EMAIL and SENTINEL_GRID_PASSWORD.",
+                source_system=source_system,
+                detail=f"HTTP {response.status_code}, no Set-Cookie",
+            )
+        self._authenticated = True
+        self._generation += 1
+
+
 class GridAdapter(SurveillanceAdapter):
     """Read-only adapter over the Sentinel grid's public catalogue."""
 
@@ -185,67 +279,41 @@ class GridAdapter(SurveillanceAdapter):
 
     # -- access ------------------------------------------------------------
 
-    async def _ensure_session(self) -> None:
-        """Trade the access password for a session cookie, once.
+    def _gate(self) -> "_GridGate | None":
+        """The one sign-in coordinator for this client.
 
-        The gateway is behind a single shared access password posted to
-        /auth/login, which answers with a session cookie. The password is
-        deployment configuration and is held on the source's `credential`, the
-        same field every other adapter uses for its vendor key - never logged,
-        never echoed to a client, never put in a URL.
+        The gateway allows a SINGLE active session per account: a second
+        sign-in silently invalidates the first. Both department adapters and
+        the media client use the one shared grid account, so three independent
+        logins left only the last alive and the other two - including the
+        client that plays video - answering 403 on every read.
 
-        Re-authentication is lazy rather than scheduled: the gateway does not
-        publish the session lifetime, so guessing it would mean either
-        re-logging in needlessly or discovering the expiry as a failed sync.
-        `_request` calls this again after an auth rejection instead.
+        The coordinator is attached to the httpx client rather than to the
+        adapter, so every consumer handed the same client shares one login,
+        one cookie jar and one re-auth. Sharing the client is what makes the
+        estate reachable; the state has to live where the sharing does.
         """
-        if self._authenticated or not self.config.credential:
-            return
         client = self._client
         if client is None:
+            return None
+        gate = getattr(client, "_grid_gate", None)
+        if gate is None:
+            gate = _GridGate(client)
+            client._grid_gate = gate  # type: ignore[attr-defined]
+        return gate
+
+    async def _ensure_session(self) -> None:
+        """Sign in once for everyone sharing this client."""
+        if not self.config.credential:
             return
-        # The form grew a second field. It took a password alone and now takes
-        # a registered address alongside it; the address is omitted when none
-        # is configured, so a gateway still running the older form is unchanged.
-        form = {"password": self.config.credential}
-        if self.config.credential_identity:
-            form["email"] = self.config.credential_identity
-
-        try:
-            response = await client.post(
-                "/auth/login", data=form, follow_redirects=False
-            )
-        except Exception as exc:  # noqa: BLE001 - surfaced as a source failure
-            raise UpstreamProtocolError(
-                "Could not reach the grid sign-in endpoint",
-                source_system=self.source_system,
-                detail=type(exc).__name__,
-            ) from exc
-
-        if response.status_code >= 400:
-            raise UpstreamProtocolError(
-                "The grid rejected Vigentra's sign-in",
-                source_system=self.source_system,
-                detail=str(response.status_code),
-            )
-
-        # A cookie is the only proof that worked.
-        #
-        # Status alone is not. This gateway answers a REJECTED sign-in with
-        # HTTP 200 and the sign-in page again, so treating <400 as success
-        # marked the adapter authenticated, and every catalogue read after it
-        # was quietly redirected back to that page and parsed as "the upstream
-        # returned a non-JSON body" - a confusing report of a protocol fault
-        # for what is really a refused credential.
-        if not any(cookie for cookie in client.cookies.jar):
-            raise UpstreamProtocolError(
-                "The grid accepted the sign-in request but issued no session "
-                "cookie, which means the credential was refused. Check "
-                "SENTINEL_GRID_EMAIL and SENTINEL_GRID_PASSWORD.",
-                source_system=self.source_system,
-                detail=f"HTTP {response.status_code}, no Set-Cookie",
-            )
-        self._authenticated = True
+        gate = self._gate()
+        if gate is None:
+            return
+        await gate.ensure(
+            source_system=self.source_system,
+            credential=self.config.credential,
+            identity=self.config.credential_identity,
+        )
 
     # -- catalogue ---------------------------------------------------------
 
@@ -268,7 +336,24 @@ class GridAdapter(SurveillanceAdapter):
         # the next migration into a reported outage.
         try:
             await self._ensure_session()
-            payload = await self._request("GET", "/cameras.json", authenticated=True)
+            gate = self._gate()
+            seen = gate.generation if gate is not None else 0
+            try:
+                payload = await self._request("GET", "/cameras.json", authenticated=True)
+            except SourceAuthError:
+                # The session was invalidated - most often because another
+                # consumer of this account signed in, which the gateway allows
+                # only one of. Re-authenticate once (a no-op if someone already
+                # did) and read again.
+                if gate is None or not self.config.credential:
+                    raise
+                await gate.reauthenticate(
+                    source_system=self.source_system,
+                    credential=self.config.credential,
+                    identity=self.config.credential_identity,
+                    seen_generation=seen,
+                )
+                payload = await self._request("GET", "/cameras.json", authenticated=True)
         except AdapterError as exc:
             # Serve the last good catalogue rather than propagating a blip.
             #
@@ -286,7 +371,9 @@ class GridAdapter(SurveillanceAdapter):
                 )
                 self._stale = True
                 return self._cache
-            self._authenticated = False
+            gate = self._gate()
+            if gate is not None:
+                gate._authenticated = False  # force a fresh sign-in next pass
             raise
         if isinstance(payload, dict):
             payload = payload.get("cameras", [])

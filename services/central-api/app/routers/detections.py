@@ -50,6 +50,7 @@ from ..services import audit_service, watchlist_service
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
+from ..services.plate_geography import origin_of
 
 logger = logging.getLogger("vigentra.detections")
 
@@ -97,6 +98,7 @@ def _to_out(
     """
     has_plate = bool(row.plate_text)
     disclose = has_plate and may_read_plate
+    origin = origin_of(row.plate_text) if disclose else None
     return DetectionOut(
         detection_id=row.detection_id,
         camera_id=row.camera_id,
@@ -122,6 +124,9 @@ def _to_out(
         plate_bbox_xyxy=list(row.plate_bbox_json or []) if disclose else None,
         plate_reader=row.plate_reader if disclose else None,
         plate_withheld=has_plate and not may_read_plate,
+        plate_state=origin.state_name if origin else None,
+        plate_rto=origin.rto if origin else None,
+        plate_district=origin.district if origin else None,
     )
 
 

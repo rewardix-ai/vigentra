@@ -235,6 +235,13 @@ export default function DetectionsPage() {
                             <span className="mono font-semibold tracking-wide text-ink-900">
                               {row.plate_text}
                             </span>
+                            {(row.plate_district || row.plate_rto) && (
+                              <div className="text-2xs text-ink-500">
+                                {row.plate_district
+                                  ? `${row.plate_district} · ${row.plate_rto}`
+                                  : `${row.plate_state ?? ""} ${row.plate_rto ?? ""}`.trim()}
+                              </div>
+                            )}
                             {row.plate_confidence != null && (
                               <div className="text-2xs tabular-nums text-ink-500">
                                 {row.plate_confidence.toFixed(2)}

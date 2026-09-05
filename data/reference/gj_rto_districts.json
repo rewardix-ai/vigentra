@@ -1,0 +1,183 @@
+{
+  "schema_version": "1.0",
+  "state_code": "GJ",
+  "state_name": "Gujarat",
+  "notes": [
+    "RTO code -> district mapping for Gujarat.",
+    "IMPORTANT: 'verified' distinguishes codes whose district we assert from codes we",
+    "accept structurally but will not name. An unverified code is NOT invalid -- it",
+    "parses and reads normally, it simply contributes no district and no district-match",
+    "bonus to confidence. This exists so the system never fabricates a district.",
+    "Before operational deployment, GJ28-GJ38 should be confirmed against the current",
+    "Gujarat RTO gazette and flipped to verified=true with the correct district."
+  ],
+  "rto_range": [
+    1,
+    38
+  ],
+  "districts": {
+    "01": {
+      "district": "Ahmedabad",
+      "verified": true
+    },
+    "02": {
+      "district": "Mehsana",
+      "verified": true
+    },
+    "03": {
+      "district": "Rajkot",
+      "verified": true
+    },
+    "04": {
+      "district": "Bhavnagar",
+      "verified": true
+    },
+    "05": {
+      "district": "Surat",
+      "verified": true
+    },
+    "06": {
+      "district": "Vadodara",
+      "verified": true
+    },
+    "07": {
+      "district": "Nadiad (Kheda)",
+      "verified": true
+    },
+    "08": {
+      "district": "Palanpur (Banaskantha)",
+      "verified": true
+    },
+    "09": {
+      "district": "Himmatnagar (Sabarkantha)",
+      "verified": true
+    },
+    "10": {
+      "district": "Jamnagar",
+      "verified": true
+    },
+    "11": {
+      "district": "Junagadh",
+      "verified": true
+    },
+    "12": {
+      "district": "Bhuj (Kachchh)",
+      "verified": true
+    },
+    "13": {
+      "district": "Surendranagar",
+      "verified": true
+    },
+    "14": {
+      "district": "Amreli",
+      "verified": true
+    },
+    "15": {
+      "district": "Valsad",
+      "verified": true
+    },
+    "16": {
+      "district": "Bharuch",
+      "verified": true
+    },
+    "17": {
+      "district": "Godhra (Panchmahal)",
+      "verified": true
+    },
+    "18": {
+      "district": "Gandhinagar",
+      "verified": true
+    },
+    "19": {
+      "district": "Bardoli (Surat Rural)",
+      "verified": true
+    },
+    "20": {
+      "district": "Dahod",
+      "verified": true
+    },
+    "21": {
+      "district": "Navsari",
+      "verified": true
+    },
+    "22": {
+      "district": "Rajpipla (Narmada)",
+      "verified": true
+    },
+    "23": {
+      "district": "Anand",
+      "verified": true
+    },
+    "24": {
+      "district": "Patan",
+      "verified": true
+    },
+    "25": {
+      "district": "Porbandar",
+      "verified": true
+    },
+    "26": {
+      "district": "Vyara (Tapi)",
+      "verified": true
+    },
+    "27": {
+      "district": "Ahmedabad East",
+      "verified": true
+    },
+    "28": {
+      "district": null,
+      "verified": false
+    },
+    "29": {
+      "district": null,
+      "verified": false
+    },
+    "30": {
+      "district": null,
+      "verified": false
+    },
+    "31": {
+      "district": null,
+      "verified": false
+    },
+    "32": {
+      "district": null,
+      "verified": false
+    },
+    "33": {
+      "district": null,
+      "verified": false
+    },
+    "34": {
+      "district": null,
+      "verified": false
+    },
+    "35": {
+      "district": null,
+      "verified": false
+    },
+    "36": {
+      "district": null,
+      "verified": false
+    },
+    "37": {
+      "district": null,
+      "verified": false
+    },
+    "38": {
+      "district": null,
+      "verified": false
+    }
+  },
+  "site": {
+    "deployment": "Gujarat CSITMS city surveillance (mixed estate)",
+    "local_rto_codes": [
+      "01",
+      "18",
+      "27",
+      "38"
+    ],
+    "evidence": "Camera stream titles name Ahmedabad-area locations (e.g. 'Chiman bhai Bridge CSITMS-32_PTZ2', 'Visat teen Rasta CSITMS-31_PTZ1'). Visat Teen Rasta and Chimanbhai Patel Bridge are in the Ahmedabad / Gandhinagar corridor.",
+    "note": "GJ01 (Ahmedabad) and GJ18 (Gandhinagar) are the locally dominant series. This is a WEAK prior used only to break ties between otherwise equally-scoring candidates; it must never override clear OCR evidence for another state or RTO."
+  }
+}

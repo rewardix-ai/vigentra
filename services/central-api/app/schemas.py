@@ -1041,6 +1041,12 @@ class DetectionOut(BaseModel):
     plate_bbox_xyxy: list[float] | None = None
     plate_reader: str | None = None
     plate_withheld: bool = False
+    #: Where the registration is registered, derived from its RTO code. Only
+    #: present when the plate itself is disclosed. `plate_district` is null for
+    #: an RTO whose district is not in the verified table - named, never guessed.
+    plate_state: str | None = None
+    plate_rto: str | None = None
+    plate_district: str | None = None
 
     @field_serializer("timestamp_utc", "created_at")
     def _ser_times(self, value: datetime | None) -> str | None:

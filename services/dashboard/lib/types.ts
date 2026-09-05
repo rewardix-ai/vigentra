@@ -67,6 +67,11 @@ export interface Detection {
   plate_reader: string | null;
   /** True when a plate exists but is withheld from this reader. */
   plate_withheld: boolean;
+  /** Where the registration is registered, from its RTO code. Null district
+   * means the RTO parses but is not in the verified table — named, not guessed. */
+  plate_state: string | null;
+  plate_rto: string | null;
+  plate_district: string | null;
 }
 
 /** What the platform is configured to run, and what has actually reported. */

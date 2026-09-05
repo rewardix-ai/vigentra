@@ -29,6 +29,7 @@ from . import layout as lay
 from .config import Config
 from .consensus import ConsensusStore, TrackConsensus, supersedes
 from .detect import Box, Detector, PlateDetection
+from .osd import OsdSuppressor
 from .ocr import OcrEnsemble
 
 log = logging.getLogger(__name__)
@@ -107,6 +108,9 @@ class AnprPipeline:
         self.ocr = OcrEnsemble(cfg.ocr)
         self.sr = enhance.SuperResolver(cfg.enhance.sr_backend, cfg.enhance.sr_scale)
         self.tracks = ConsensusStore(cfg.consensus)
+        # Learns each camera's burned-in overlays (clocks, captions) live and
+        # keeps them out of the plate vote - see anpr/osd.py.
+        self.osd = OsdSuppressor()
 
         self.frame_idx = 0
         #: track -> (text, confirmed) last pushed to the UI
@@ -125,6 +129,7 @@ class AnprPipeline:
     def reset(self) -> None:
         self.detector.reset()
         self.tracks.reset()
+        self.osd.reset()
         self.frame_idx = 0
         self._announced.clear()
         self._best_crop.clear()
@@ -191,6 +196,17 @@ class AnprPipeline:
         for det in plates:
             if det.crop is None or det.crop.size == 0:
                 continue
+            box = (det.box.x1, det.box.y1, det.box.x2, det.box.y2)
+            # Every candidate teaches the overlay detector where the detector
+            # fires; a plate already CONFIRMED on this track rescues its
+            # position from ever being masked.
+            self.osd.observe(box, confirmed=self.tracks.get(det.track_id).verdict.confirmed)
+            # A candidate sitting in a learned overlay region is the camera's
+            # own clock or caption, not a plate. Dropped before it can cost OCR
+            # or enter the vote.
+            if self.osd.is_overlay(box):
+                self._skipped += 1
+                continue
             q = enhance.assess(det.crop)
             # A plate touching the frame edge is probably only partly in
             # shot, and a half-visible plate reads as a *shorter* plate that
@@ -204,6 +220,8 @@ class AnprPipeline:
                 self._skipped += 1
                 continue
             scored.append((tc.priority(q.score), det, q, tc))
+
+        self.osd.advance()
 
         scored.sort(key=lambda t: t[0], reverse=True)
         budget = max(1, self.cfg.scheduler.max_ocr_per_frame)

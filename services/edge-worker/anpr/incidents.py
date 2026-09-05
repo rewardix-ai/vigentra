@@ -20,6 +20,8 @@ almost nothing on top of detection that is already running.
     STOPPED_IN_LANE    a vehicle stationary while other vehicles keep moving past it
     COLLISION_CANDIDATE two vehicles overlapping AND both losing speed sharply together
     WRONG_WAY          a vehicle travelling against the camera's established flow
+    PERSON_ON_CARRIAGEWAY
+                       a person in the path of moving traffic
 
 SCALE, AND WHY SPEED IS NOT IN PIXELS
 
@@ -75,6 +77,28 @@ WRONG_WAY_DEG = 115.0      # heading this far from flow is against it
 MIN_TRACK_SECONDS = 1.2    # ignore tracks too short to have a trustworthy velocity
 COOLDOWN_S = 20.0          # per track+kind, so one event is not reported repeatedly
 
+#: Labels that behave like traffic. The motion rules below - decelerating,
+#: stopping in a lane, travelling against the flow - are statements about a
+#: VEHICLE, and firing them on a pedestrian produces nonsense: a person who
+#: stops walking has not stopped in a lane, and a person crossing the road is
+#: not going the wrong way.
+VEHICLE_LABELS = frozenset({"car", "motorcycle", "bus", "truck", "auto-rickshaw", "bicycle"})
+PERSON_LABEL = "person"
+
+#: Image-plane overlap between a person and a MOVING vehicle. Overlap is not
+#: contact and this is not a collision detector - from a typical CCTV angle it
+#: is a usable proxy for "in the carriageway rather than beside it", which is
+#: the distinction that matters and the one a footpath pedestrian fails.
+PERSON_VEHICLE_IOU = 0.05
+#: How long exposure has to persist. A pedestrian crossing at a signal is clear
+#: of the carriageway well inside this; someone standing in live traffic is not.
+PERSON_EXPOSED_SECONDS = 2.0
+#: Exposure is not one continuous overlap. A vehicle passing a stationary person
+#: overlaps for a fraction of a second, so what marks danger is that vehicles
+#: KEEP passing. Exposure is only considered over once nothing has passed close
+#: for this long.
+PERSON_CLEAR_SECONDS = 3.0
+
 
 @dataclass
 class Incident:
@@ -113,6 +137,12 @@ class _State:
     #: without this STOPPED_IN_LANE fires on every parked vehicle beside a busy road --
     #: 40 alarms in ten minutes on the estate, which is a detector nobody will read.
     was_moving: bool = False
+    #: When a person first overlapped moving traffic, or None.
+    exposed_since: float | None = None
+    #: The most recent moment they did. A single vehicle only overlaps for a
+    #: fraction of a second as it passes, so exposure is judged over the gap
+    #: between passes rather than one continuous overlap.
+    last_exposed: float = 0.0
     first_seen: float = 0.0
     last_seen: float = 0.0
     label: str = "?"
@@ -288,6 +318,13 @@ class IncidentDetector:
         return out
 
     def _per_track(self, tid, st, sp, hd, tracks, now) -> list[Incident]:
+        # A person is not traffic. The motion rules below describe a vehicle,
+        # and applying them to a pedestrian says things that are not true.
+        if st.label == PERSON_LABEL:
+            return self._person(tid, st, tracks, now)
+        if st.label not in VEHICLE_LABELS:
+            return []
+
         out = []
         decel = self._decel(st)
 
@@ -347,13 +384,77 @@ class IncidentDetector:
                               "vehicle": st.label}))
         return out
 
+    def _person(self, tid, st, tracks, now) -> list[Incident]:
+        """A person in the carriageway while traffic is moving.
+
+        Not an accident, and deliberately not named as one - it is the
+        condition that precedes one, and the thing an operator can still act
+        on. The test is overlap in the image plane with a vehicle that is
+        genuinely moving, held for a couple of seconds: a pedestrian crossing
+        at a signal passes through that in well under a second, and one
+        standing on a footpath beside traffic never overlaps at all.
+        """
+        exposed_to = None
+        for other in tracks:
+            if other.track_id == tid:
+                continue
+            os_ = self._tracks.get(other.track_id)
+            if os_ is None or os_.label not in VEHICLE_LABELS:
+                continue
+            if not (os_.speeds and os_.speeds[-1][1] > MOVING_SPEED):
+                continue
+            # Boxes rather than centre points: a person is narrow, and a
+            # centre-only test misses a vehicle passing right alongside.
+            if _iou(self._box_of(st), self._box_of(os_)) >= PERSON_VEHICLE_IOU:
+                exposed_to = other.track_id
+                break
+
+        if exposed_to is not None:
+            st.last_exposed = now
+            if st.exposed_since is None:
+                st.exposed_since = now
+        elif st.exposed_since is not None and now - st.last_exposed > PERSON_CLEAR_SECONDS:
+            # Nothing has passed close for a while: they are out of the road.
+            st.exposed_since = None
+
+        if st.exposed_since is None or now - st.exposed_since < PERSON_EXPOSED_SECONDS:
+            return []
+        exposed_to = exposed_to if exposed_to is not None else "recent"
+        if not self._fire((tid, "PERSON_ON_CARRIAGEWAY"), now):
+            return []
+        involved = [tid] + ([exposed_to] if isinstance(exposed_to, int) else [])
+        return [Incident(
+            self.camera_id, "PERSON_ON_CARRIAGEWAY", "HIGH", involved,
+            st.exposed_since, now,
+            reason=(f"a person has been in the path of moving traffic for "
+                    f"{now - st.exposed_since:.0f}s, with vehicles passing "
+                    f"through their position"),
+            evidence={"exposed_s": round(now - st.exposed_since, 1),
+                      "last_pass_s_ago": round(now - st.last_exposed, 1),
+                      "overlap_threshold_iou": PERSON_VEHICLE_IOU})]
+
+    @staticmethod
+    def _box_of(st: _State) -> tuple[float, float, float, float]:
+        """Reconstruct the last box from the retained centre and height.
+
+        Width is not kept per frame, so it is taken as the height - close
+        enough for an overlap test whose threshold is deliberately loose, and
+        it avoids carrying a fourth deque for one rule.
+        """
+        cx, cy = st.centres[-1]
+        h = max(st.heights[-1], 1.0)
+        return (cx - h / 2.0, cy - h / 2.0, cx + h / 2.0, cy + h / 2.0)
+
     def _pairs(self, tracks, now) -> list[Incident]:
         """Two vehicles overlapping while both lose speed. Overlap alone is not enough --
         on an overhead view vehicles in adjacent lanes overlap constantly."""
         out = []
         cand = [t for t in tracks
                 if (s := self._tracks.get(t.track_id)) is not None
-                and len(s.speeds) >= 4]
+                and len(s.speeds) >= 4
+                # Vehicles only: a person overlapping a car is the pedestrian
+                # rule's business, not a two-vehicle collision.
+                and s.label in VEHICLE_LABELS]
         for i in range(len(cand)):
             for j in range(i + 1, len(cand)):
                 a, b = cand[i], cand[j]

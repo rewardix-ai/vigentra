@@ -274,7 +274,7 @@ class Detector:
             results = self.vehicle_model.track(
                 frame, persist=True, verbose=False, tracker=self.cfg.tracker,
                 conf=self.cfg.vehicle_conf, imgsz=self.cfg.vehicle_imgsz,
-                classes=list(self.cfg.vehicle_classes), device=self.device,
+                classes=list(self.cfg.tracked_classes), device=self.device,
                 **self._precision,
             )
         except Exception as exc:                # noqa: BLE001 - never kill a frame
@@ -369,6 +369,11 @@ class Detector:
 
         for v in vehicles:
             if v.track_id is not None and v.track_id in skip:
+                continue
+            # A person or a bicycle is tracked but has no plate, so it never
+            # earns the ROI pass - the crop would cost the same as a car's and
+            # can only produce a false positive.
+            if int(v.cls) not in self.cfg.vehicle_classes:
                 continue
             # Plates sit low on a vehicle, but a little margin costs nothing
             # and protects against a tight or slightly-off vehicle box.

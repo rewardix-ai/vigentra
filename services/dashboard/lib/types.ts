@@ -723,7 +723,13 @@ export interface Incident {
   camera_name: string | null;
   owning_department: string | null;
   source_system: string | null;
-  kind: "WRONG_WAY" | "STOPPED_IN_LANE" | "SUDDEN_STOP" | "COLLISION_CANDIDATE" | string;
+  kind:
+    | "WRONG_WAY"
+    | "STOPPED_IN_LANE"
+    | "SUDDEN_STOP"
+    | "COLLISION_CANDIDATE"
+    | "PERSON_ON_CARRIAGEWAY"
+    | string;
   severity: "LOW" | "MEDIUM" | "HIGH" | string;
   status: "CANDIDATE" | "REVIEWING" | "CONFIRMED" | "DISMISSED" | string;
   track_ids: number[];

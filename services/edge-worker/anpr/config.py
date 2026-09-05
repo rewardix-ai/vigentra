@@ -83,8 +83,19 @@ class DetectConfig:
     #: Per frame. Each prior costs a full OCR call on a crop that may hold
     #: nothing, so this is the throttle.
     prior_max_per_frame: int = 4
-    #: COCO classes treated as vehicles: car, motorcycle, bus, truck.
+    #: COCO classes that can carry a registration plate: car, motorcycle,
+    #: bus, truck. Only these get the expensive ROI plate pass.
     vehicle_classes: tuple[int, ...] = (2, 3, 5, 7)
+    #: Every road user the tracker follows: the plate-bearing classes above
+    #: plus person and bicycle.
+    #:
+    #: Tracking is not the same question as plate-reading. A person never has a
+    #: plate, but a person in a live carriageway is exactly the thing an
+    #: operator needs to see, and a pedestrian the tracker never followed
+    #: cannot be counted, cannot appear in a vehicle-vs-pedestrian mix, and
+    #: cannot raise a safety incident. Filtering them out at the tracker - as
+    #: this did - makes them invisible to everything downstream.
+    tracked_classes: tuple[int, ...] = (0, 1, 2, 3, 5, 7)
     tracker: str = "bytetrack.yaml"
     device: str = "auto"          # "auto" | "cpu" | "0"
     half: bool = True             # fp16 on GPU - roughly 1.6x throughput

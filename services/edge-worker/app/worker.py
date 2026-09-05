@@ -43,6 +43,11 @@ try:
     from anpr.incidents import IncidentDetector
 except Exception:  # pragma: no cover - analytics extras absent
     IncidentDetector = None  # type: ignore[assignment,misc]
+
+try:
+    from anpr.sampling import AdaptiveSampler
+except Exception:  # pragma: no cover - analytics extras absent
+    AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
 from .plates import (
     PLATE_BEARING_CLASSES,
@@ -543,6 +548,14 @@ def run(
     # unchanged, only the transport differs.
     grid_camera = None if (synthetic or clip) else grid_camera_for(camera_id, external_camera_id)
 
+    # Adaptive sampling, live grid only. The other sources already arrive
+    # pre-sampled and are short enough that a stride is the right tool.
+    sampler = (
+        AdaptiveSampler(stride=max(1, sample_interval))
+        if AdaptiveSampler is not None and grid_camera is not None
+        else None
+    )
+
     if synthetic:
         frames = _plain(
             iter_synthetic_frames(max_frames * max(1, sample_interval), sample_interval)
@@ -551,7 +564,14 @@ def run(
         frames = _plain(iter_clip_frames(clip, sample_interval))
     elif grid_camera is not None:
         logger.info("live capture: %s", grid_camera.described)
-        frames = iter_grid_frames(grid_camera, sample_interval, max_frames)
+        # Look at every frame across the SAME footage window the fixed stride
+        # would have spanned, and let the sampler decide where to spend the
+        # expensive passes. Decoding is cheap; missing the second a plate is
+        # large is not.
+        if sampler is not None:
+            frames = iter_grid_frames(grid_camera, 1, max_frames * max(1, sample_interval))
+        else:
+            frames = iter_grid_frames(grid_camera, sample_interval, max_frames)
     elif session and client:
         frames = _plain(iter_session_frames(client, session, sample_interval))
     else:
@@ -568,6 +588,10 @@ def run(
         for frame_index, frame, pts_seconds, discontinuity in frames:
             if processed >= max_frames:
                 break
+            # Cheap rejection: a frame the sampler does not want costs nothing
+            # beyond the decode that already happened.
+            if sampler is not None and not discontinuity and not sampler.should_process(frame_index):
+                continue
             processed += 1
 
             frame_to_detect, assessment = router.route(frame)
@@ -605,6 +629,16 @@ def run(
                     detections = detector.detect(frame_to_detect)
             else:
                 detections = detector.detect(frame_to_detect)
+
+            # A vehicle wide enough to be carrying a readable plate buys a
+            # burst of dense frames - the plate is growing and the best crop is
+            # a moment away.
+            if sampler is not None:
+                sampler.note(
+                    d.bbox_xyxy[2] - d.bbox_xyxy[0]
+                    for d in detections
+                    if d.class_name in PLATE_BEARING_CLASSES
+                )
 
             base_provenance = {
                 "frame_index": frame_index,
@@ -735,6 +769,13 @@ def run(
         processed, skipped, produced, plates_read, elapsed,
         processed / elapsed if elapsed else 0.0,
     )
+    if sampler is not None:
+        d = sampler.describe()
+        logger.info(
+            "sampling: looked at %d frames, processed %d, %d burst(s) on a "
+            "close vehicle (stride %d)",
+            d["looked"], d["processed"], d["bursts"], d["stride"],
+        )
     if dry_run:
         logger.info("dry run - nothing was sent to the central API")
     return 0

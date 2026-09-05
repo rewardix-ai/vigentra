@@ -163,6 +163,10 @@ class PaddleEngine:
             # call, so running it on every variant of every unreadable crop
             # dominates the frame budget for no gain - if the fast path could
             # not read a *single-row* crop, detection will not rescue it.
+            #
+            # Running it on EVERY plate was measured and rejected: it cost 75%
+            # more time for one extra near-miss across eight ground-truth crops,
+            # and turned one already-close read (GJ11GO1008) into a worse one.
             if (allow_fallback and needs_det and self._ocr is not None
                     and not self._full_failed):
                 i = needs_det[0]
@@ -685,6 +689,59 @@ def _align_track(crops: "list[np.ndarray]") -> "list[np.ndarray] | None":
     return out if len(out) >= 2 else None
 
 
+def _vote_across_variants(candidates: "list[pr.PlateCandidate]") -> "pr.PlateCandidate | None":
+    """One more candidate: what the variants AGREE on, character by character.
+
+    Each variant is the same plate rendered differently, so where they disagree
+    they disagree about a glyph, not about a plate - and the disagreement is
+    usually one variant's artefact. Measured on this estate: a crop whose
+    upscaled rendering read GJ11CL7005 and whose native pixels read GJ11GL7005
+    is resolved correctly by a majority over the two, plus a third variant that
+    also saw C. Taking only the single best-scoring variant throws that
+    corroboration away, and on a tie it picks by list order, which is not
+    evidence.
+
+    Deliberately conservative:
+
+      * only reads of the SAME length vote together, because a vote across
+        different lengths is a vote across different segmentations and would
+        invent a character;
+      * it needs at least two agreeing readings, so this can never manufacture
+        an answer from a single variant;
+      * the result is scored as the mean of its contributors and then passed
+        through the ordinary grammar, so it competes with the others rather
+        than overriding them, and a vote that lands on nonsense still loses.
+    """
+    usable = [c for c in candidates if c.text and c.variant != "vote"]
+    if len(usable) < 2:
+        return None
+
+    by_length: dict[int, list] = {}
+    for cand in usable:
+        by_length.setdefault(len(cand.text), []).append(cand)
+    group = max(by_length.values(), key=lambda g: (len(g), sum(c.score for c in g)))
+    if len(group) < 2:
+        return None
+
+    width = len(group[0].text)
+    voted = []
+    for i in range(width):
+        tally: dict[str, float] = {}
+        for cand in group:
+            ch = cand.text[i]
+            # Weighted by the reading's own score, so a confident variant
+            # counts for more than a doubtful one.
+            tally[ch] = tally.get(ch, 0.0) + max(cand.score, 0.01)
+        voted.append(max(tally.items(), key=lambda kv: kv[1])[0])
+
+    text = "".join(voted)
+    if any(text == c.text for c in group):
+        return None          # the vote agrees with a variant already present
+
+    mean = sum(c.score for c in group) / len(group)
+    return pr.normalise(text, mean, engine="ensemble", variant="vote")
+
+
 class OcrEnsemble:
     """Runs every configured engine over every enhancement variant."""
 
@@ -771,6 +828,10 @@ class OcrEnsemble:
                     continue
                 candidates.append(pr.normalise(
                     raw, float(conf), engine=engine.name, variant=variant))
+
+        voted = _vote_across_variants(candidates)
+        if voted is not None:
+            candidates.append(voted)
 
         candidates.sort(key=lambda c: (c.valid, c.score), reverse=True)
         return OcrResult(candidates, pr.best_of(candidates), trace)

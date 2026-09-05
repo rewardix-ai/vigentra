@@ -429,4 +429,19 @@ def build_variants(crop: np.ndarray, cfg: EnhanceConfig,
     if q.contrast < 45.0:
         add("binary", binarise(base))
 
+    # The crop exactly as it left the frame, at its own resolution.
+    #
+    # Every other variant is fitted to `ocr_height`, which for a plate already
+    # 80-100px wide is a 4x upscale, so the recogniser partly reads the
+    # interpolation. The untouched pixels sometimes disagree with the fitted
+    # ones, and that disagreement is useful: it is what the cross-variant vote
+    # in the OCR ensemble resolves. Only padded, because a glyph touching the
+    # border reads badly and padding does not resample.
+    #
+    # LAST on purpose. It is another opinion, not a better one - measured on
+    # this estate it reads nothing on some crops and misreads others, so it must
+    # never win a tie against a variant that actually read the plate.
+    if crop is not None and crop.size:
+        variants.append(("native", _pad(crop)))
+
     return variants[: max(1, cfg.max_variants)]

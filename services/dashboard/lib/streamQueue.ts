@@ -30,19 +30,25 @@ class StreamQueue {
   /**
    * Feeds allowed to be *starting* simultaneously.
    *
-   * Three is a working compromise rather than a measured constant: enough that
-   * a wall of thirty fills in a few seconds, few enough that the gateway is
-   * never asked to set up more streams than a person could be watching.
+   * Raised from 3 to 12 once session-opens stopped costing a slow grid probe
+   * and all consumers moved onto one shared grid session. The old limit was
+   * conservative for a reason that no longer holds: each start used to hold
+   * its slot through a ~30s cold manifest fetch, so at 3-at-a-time a wall of
+   * thirty took minutes to fill. A slot is still held only across the start,
+   * and the per-camera manifest cache means most starts after the first are
+   * near-instant - so twelve lets the wall come up all at once without asking
+   * the browser to spin up thirty video decoders in the very same tick.
    */
-  private limit = 3;
+  private limit = 12;
 
   /**
    * Milliseconds between consecutive starts, even with slots free.
    *
-   * Releasing three slots in the same tick re-creates the burst in miniature.
-   * A short gap spreads the handshakes out and costs nothing perceptible.
+   * Small: it exists only to keep a dozen hls.js instances from initialising
+   * in one synchronous burst, not to pace the gateway (the shared session and
+   * manifest cache do that). At 80ms the wall still reads as filling at once.
    */
-  private gapMs = 350;
+  private gapMs = 80;
 
   private active = 0;
   private queue: Waiter[] = [];

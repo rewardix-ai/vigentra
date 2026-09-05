@@ -453,7 +453,7 @@ _LIVE_WINDOW_SEGMENTS = 24
 #: grid. The grid fetch is ~30s and single-session; without this, every tile,
 #: every player manifest-refresh and every second viewer would queue behind
 #: its own 30-second fetch of the same list. One fetch feeds them all.
-_MANIFEST_TTL = 12.0
+_MANIFEST_TTL = 20.0
 
 _manifest_cache: dict[str, tuple[float, str]] = {}
 _manifest_locks: dict[str, "asyncio.Lock"] = {}

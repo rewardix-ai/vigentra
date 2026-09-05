@@ -384,98 +384,27 @@ class VigentraGridVideoAdapter(BaseVideoAdapter):
             )
 
         base = self.config.base_url.rstrip("/")
-        # Path shape changed with the move: /live/stream/<n>/index.m3u8 became
-        # /<id>/index.m3u8 on the CDN host.
-        manifest = (f"{base}/{raw}/index.m3u8" if not raw.isdigit()
-                    else f"{base}/live/stream/{raw}/index.m3u8?cookieCheck=1")
 
-        # Probe the manifest before handing it over. The grid's HLS packager
-        # fails independently of the rest of the gateway - the catalogue keeps
-        # answering 200 and reporting the camera live while every playlist
-        # returns 502 - so a session opened blind produces a player stuck on a
-        # black frame with nothing to say about why.
-        if await self._manifest_ok(manifest):
-            return {
-                "source_session_reference": manifest,
-                "protocol": "hls",
-                # The grid issues no ticket of its own, so the session's lifetime
-                # is Vigentra's own TTL. Returning None lets the broker apply it.
-                "expires_at": None,
-                "is_demo_data": False,
-            }
-
-        # Fall back to the endpoint the guide itself names "the browser playback
-        # fallback": /stream/<id> answers range requests for a media player.
-        #
-        # This is NOT the thing the guide warns against. That warning is about
-        # planning around *obtaining a copy* - pulling the path with curl and
-        # building a pipeline against a local file that looks complete but is
-        # not. Serving it to a <video> element is its stated purpose, and the
-        # broker still proxies it, still range-limits it, still watermarks the
-        # session and still expires it. Inference never uses this path.
-        progressive = f"{base}/stream/{raw}"
-        logger.warning(
-            "grid camera %s: HLS manifest unavailable, using the browser "
-            "playback fallback for this session",
-            external_camera_id,
-        )
+        # No probe here on purpose. Opening a session used to GET the manifest
+        # first to decide HLS-vs-fallback, but the fallback (/stream/<id>) is a
+        # dead 404 on this gateway, so the probe only ever chose HLS or a broken
+        # path - at the cost of a slow grid round-trip on every open. On a wall
+        # opening thirty tiles at once that was thirty slow calls funnelled
+        # through one session, which is exactly why the wall could only fill a
+        # few tiles at a time. The broker fetches the manifest at play time
+        # (cached and trimmed to a live window), and a camera whose packager is
+        # genuinely down surfaces as a tile that retries - not a blocked wall.
         return {
-            "source_session_reference": progressive,
-            "protocol": "http-mp4",
+            "source_session_reference": f"{base}/{raw}/index.m3u8"
+            if not raw.isdigit()
+            else f"{base}/live/stream/{raw}/index.m3u8?cookieCheck=1",
+            "protocol": "hls",
+            # The grid issues no ticket of its own, so the session's lifetime is
+            # Vigentra's own TTL. Returning None lets the broker apply it.
             "expires_at": None,
             "is_demo_data": False,
-            "degraded": "hls_unavailable",
         }
 
-    #: Bytes of the playlist the probe reads before making up its mind.
-    #: `#EXTM3U` is required to be the first line, so the first chunk settles
-    #: it and the rest of the file is never pulled.
-    PROBE_BYTES = 1024
-
-    async def _manifest_ok(self, manifest: str) -> bool:
-        """Is the HLS packager actually serving this camera right now?
-
-        Streams the response and reads only the opening bytes.
-
-        Downloading the whole playlist to check its first line looks harmless
-        and is not: these are VOD-style playlists listing every segment of a
-        long recording, and one came back at 880 KB. Against a gateway on the
-        public internet that does not finish inside a short read budget, so
-        the probe raised ReadTimeout, every camera was judged to have no HLS,
-        every session fell through to the progressive fallback - which the CDN
-        answers with 502 - and the entire estate played no video at all while
-        the manifests themselves were perfectly healthy.
-
-        Forgiving by design: any transport error counts as "not ok" rather
-        than raising, because a failed probe should degrade a session, not
-        fail the request that opens it.
-        """
-        try:
-            async with self._client.stream(
-                "GET",
-                manifest,
-                # Generous on connect, strict on read: the read now returns
-                # after a kilobyte, so the budget covers reaching a remote
-                # gateway rather than transferring a file.
-                timeout=httpx.Timeout(15.0, read=15.0),
-                follow_redirects=True,
-            ) as response:
-                if response.status_code != 200:
-                    logger.info(
-                        "grid manifest probe: %s answered HTTP %s",
-                        manifest, response.status_code,
-                    )
-                    return False
-                async for chunk in response.aiter_bytes(self.PROBE_BYTES):
-                    return chunk.lstrip().startswith(b"#EXTM3U")
-                return False
-        except httpx.HTTPError as exc:
-            # str(ReadTimeout) is empty, which made this line say nothing at
-            # all the one time it mattered. Name the class too.
-            logger.info(
-                "grid manifest probe failed: %s: %s", type(exc).__name__, exc or "(no detail)"
-            )
-            return False
 
 
 #: Video transport implied by a department's metadata adapter. A department

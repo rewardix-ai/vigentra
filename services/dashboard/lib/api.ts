@@ -5,7 +5,7 @@
  * proxies using an httpOnly session cookie. Nothing here knows a department
  * credential, an internal hostname, or a video URL - because none exists.
  */
-import type {
+import type { Incident,
   CameraTrafficSummary,
   AccessPolicy,
   Alert,
@@ -110,6 +110,14 @@ function post<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
+function patch<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+}
+
 export const api = {
   // --- platform ---------------------------------------------------------
   health: () => request<PlatformHealth>("/health"),
@@ -172,6 +180,16 @@ export const api = {
   // What the edge workers saw. Scoped to the owning department: a detection
   // describes a place at a time, so it follows the video rules, not the
   // registry ones.
+
+  incidents: (filters: {
+    camera_id?: string;
+    kind?: string;
+    status?: string;
+    since_hours?: string;
+  } = {}) => request<Incident[]>(`/api/v1/incidents${query(filters)}`),
+
+  reviewIncident: (incidentId: string, status: string, note?: string) =>
+    patch<Incident>(`/api/v1/incidents/${encodeURIComponent(incidentId)}`, { status, note }),
 
   detections: (filters: {
     camera_id?: string;

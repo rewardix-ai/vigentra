@@ -18,6 +18,7 @@ import {
   MonitorPlay,
   Radio,
   Route,
+  TriangleAlert,
   ScanEye,
   ScrollText,
   Upload,
@@ -53,6 +54,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/live", label: "Live wall", icon: MonitorPlay, permission: "video:live" },
       { href: "/events", label: "Federated events", icon: Radio, permission: "registry:read" },
       { href: "/detections", label: "Object detections", icon: ScanEye, permission: "detection:read" },
+      { href: "/incidents", label: "Incident review", icon: TriangleAlert, permission: "detection:read" },
     ],
   },
   {

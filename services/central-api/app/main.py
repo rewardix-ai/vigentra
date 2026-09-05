@@ -62,6 +62,7 @@ from .routers import (
     auth,
     cameras,
     detections,
+    incidents,
     directory,
     events,
     health,
@@ -314,6 +315,7 @@ app.include_router(cameras.router)
 app.include_router(overview.router)
 app.include_router(events.router)
 app.include_router(detections.router)
+app.include_router(incidents.router)
 app.include_router(reports.router)
 app.include_router(vehicles.router)
 app.include_router(audit.router)

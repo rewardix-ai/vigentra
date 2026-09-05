@@ -711,3 +711,24 @@ export interface CameraTrafficSummary {
   first_seen_utc: string | null;
   last_seen_utc: string | null;
 }
+
+export interface Incident {
+  incident_id: string;
+  camera_id: string;
+  camera_name: string | null;
+  owning_department: string | null;
+  source_system: string | null;
+  kind: "WRONG_WAY" | "STOPPED_IN_LANE" | "SUDDEN_STOP" | "COLLISION_CANDIDATE" | string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | string;
+  status: "CANDIDATE" | "REVIEWING" | "CONFIRMED" | "DISMISSED" | string;
+  track_ids: number[];
+  first_seen_utc: string;
+  last_seen_utc: string;
+  duration_s: number | null;
+  reason: string;
+  evidence: Record<string, unknown>;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  is_demo_data: boolean;
+}

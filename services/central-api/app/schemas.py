@@ -1578,3 +1578,79 @@ class AnalyticsReportRow(BaseModel):
     @field_serializer("timestamp_utc")
     def _ser_time(self, value: datetime) -> str | None:
         return iso_z(value)
+
+
+# ---------------------------------------------------------------------------
+# Incidents (edge-raised traffic-event candidates)
+# ---------------------------------------------------------------------------
+
+#: The patterns the edge detector can match. A closed set: an incident whose
+#: kind is not one of these is a client fault, not a new category.
+INCIDENT_KINDS = (
+    "WRONG_WAY",
+    "STOPPED_IN_LANE",
+    "SUDDEN_STOP",
+    "COLLISION_CANDIDATE",
+)
+INCIDENT_SEVERITIES = ("LOW", "MEDIUM", "HIGH")
+INCIDENT_STATUSES = ("CANDIDATE", "REVIEWING", "CONFIRMED", "DISMISSED")
+
+
+class IncidentIn(BaseModel):
+    """One incident candidate as the edge worker submits it.
+
+    Field names match the detector's own `to_dict()` so the worker ships what
+    it computed without a translation layer that could drift.
+    """
+
+    camera_id: str
+    kind: str
+    severity: str = "LOW"
+    track_ids: list[int] = Field(default_factory=list)
+    #: Stream-relative capture seconds (PTS), as the detector saw them.
+    first_seen: float
+    last_seen: float
+    reason: str = ""
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    status: str = "CANDIDATE"
+
+
+class IncidentBatch(BaseModel):
+    incidents: list[IncidentIn] = Field(min_length=1, max_length=200)
+
+
+class IncidentIngestResult(BaseModel):
+    accepted: int = 0
+    duplicates: int = 0
+    rejected: int = 0
+    errors: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class IncidentOut(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    incident_id: str
+    camera_id: str
+    camera_name: str | None = None
+    owning_department: str | None = None
+    source_system: str | None = None
+    kind: str
+    severity: str
+    status: str
+    track_ids: list[int] = Field(default_factory=list)
+    first_seen_utc: datetime
+    last_seen_utc: datetime
+    duration_s: float | None = None
+    reason: str = ""
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    review_note: str | None = None
+    is_demo_data: bool = True
+
+
+class IncidentReview(BaseModel):
+    """An operator's disposition of a candidate."""
+
+    status: str
+    note: str | None = None

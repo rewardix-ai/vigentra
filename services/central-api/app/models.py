@@ -806,3 +806,56 @@ class WatchlistAlert(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )
+
+
+class Incident(Base):
+    """A traffic-incident CANDIDATE raised at the edge for a human to review.
+
+    It shares ANPR's governing rule and inverts it into this domain: ANPR must
+    never invent a registration, and incident detection must never assert an
+    accident. So every row here is a pattern the tracker matched - wrong-way,
+    stopped-in-lane, sudden-stop, two boxes overlapping while both brake - with
+    its evidence attached, and a status that starts at CANDIDATE. It is never a
+    finding. The thresholds behind it are reasoned, not validated against real
+    incident footage, and the payload says so.
+
+    Derived entirely from the vehicle tracking the edge already runs, so it
+    costs no extra model and carries no imagery - only boxes, speeds and the
+    reason a rule fired.
+    """
+
+    __tablename__ = "incidents"
+    __table_args__ = (
+        Index("ix_incidents_camera_time", "camera_id", "last_seen_utc"),
+        Index("ix_incidents_kind_time", "kind", "last_seen_utc"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    #: Deterministic, so a worker restart re-raising the same incident collapses
+    #: onto one row rather than filling the review queue with duplicates.
+    incident_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    source_system: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+
+    kind: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="LOW")
+    #: CANDIDATE -> REVIEWING -> CONFIRMED | DISMISSED. Starts as a candidate;
+    #: only a human moves it further.
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="CANDIDATE", index=True)
+
+    first_seen_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    track_ids: Mapped[list] = mapped_column(JSONColumn, nullable=False, default=list)
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    evidence: Mapped[dict] = mapped_column(JSONColumn, nullable=False, default=dict)
+
+    reviewed_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    is_demo_data: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )

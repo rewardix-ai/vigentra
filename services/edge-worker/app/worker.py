@@ -38,6 +38,11 @@ import httpx
 from . import grid
 from .anpr_engine import build_engine
 from .detectors import Detection, DetectorError, build_detector
+
+try:
+    from anpr.incidents import IncidentDetector
+except Exception:  # pragma: no cover - analytics extras absent
+    IncidentDetector = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
 from .plates import (
     PLATE_BEARING_CLASSES,
@@ -353,6 +358,21 @@ class CentralClient:
         response.raise_for_status()
         return response.json()
 
+    def ingest_incidents(self, incidents: list[dict]) -> dict:
+        """Submit incident CANDIDATES for the review queue.
+
+        Kept separate from detection ingest on purpose: a detection is a fact
+        (a box existed), an incident is a pattern that a human must confirm, so
+        they land in different stores with different retention and review.
+        """
+        response = self._client.post(
+            "/api/v1/incidents/ingest",
+            headers=self._headers(),
+            json={"incidents": incidents},
+        )
+        response.raise_for_status()
+        return response.json()
+
     def report_frame_quality(self, camera_id: str, assessment: dict) -> None:
         try:
             self._client.post(
@@ -434,6 +454,23 @@ def _sighting_payload(
     }
 
 
+from dataclasses import dataclass as _dataclass
+
+
+@_dataclass
+class _IncidentTrack:
+    """The minimal track view the incident detector reads.
+
+    The detector is deliberately agnostic about where its tracks come from - it
+    needs an id, a box and a label and nothing else - so Vigentra's vehicle
+    detections are adapted to this rather than the detector being coupled to
+    them.
+    """
+    track_id: int
+    box: tuple
+    label: str
+
+
 def run(
     *,
     camera_id: str,
@@ -464,6 +501,18 @@ def run(
     anpr = build_engine()
     plate_reader = build_plate_reader() if anpr is None else None
     plates_read = 0
+
+    # Incident detection rides on the same tracker the ANPR engine already
+    # runs - no extra model, no extra inference. It watches the vehicle boxes
+    # move and raises CANDIDATES (never findings) for a human to look at:
+    # wrong-way, stopped-in-lane, sudden-stop, collision. Off when tracking is
+    # off, because it has nothing to watch without stable track ids.
+    incidents = (
+        IncidentDetector(camera_id)
+        if anpr is not None and IncidentDetector is not None
+        else None
+    )
+    incident_batch: list[dict] = []
 
     # The supervisor already logged this once for the whole process; repeating
     # it per camera per cycle would bury the actual results.
@@ -627,6 +676,34 @@ def run(
                     "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
                 )
 
+            # Incident detection from the same boxes. `detections` carry the
+            # tracker's id in `extra`; only tracked vehicles can be judged for
+            # motion, so untracked ones are skipped rather than guessed at.
+            if incidents is not None:
+                if discontinuity:
+                    incidents.reset()
+                views = [
+                    _IncidentTrack(
+                        track_id=int(d.extra["track_id"]),
+                        box=tuple(d.bbox_xyxy),
+                        label=d.class_name,
+                    )
+                    for d in detections
+                    if d.extra.get("track_id") is not None
+                ]
+                for inc in incidents.update(views, pts_seconds):
+                    incident_batch.append(inc.to_dict())
+                    logger.info(
+                        "incident %s (%s) on camera %s: %s",
+                        inc.kind, inc.severity, camera_id, inc.reason,
+                    )
+                if client and incident_batch:
+                    try:
+                        client.ingest_incidents(incident_batch)
+                    except Exception as exc:  # pragma: no cover - non-fatal
+                        logger.warning("incident ingest failed: %s", exc)
+                    incident_batch.clear()
+
             if client and len(pending) >= BATCH_SIZE:
                 result = client.ingest(pending)
                 logger.info("ingested batch: %s", result)
@@ -635,6 +712,13 @@ def run(
         if client and pending:
             result = client.ingest(pending)
             logger.info("ingested final batch: %s", result)
+
+        if client and incident_batch:
+            try:
+                client.ingest_incidents(incident_batch)
+            except Exception as exc:  # pragma: no cover - non-fatal
+                logger.warning("final incident ingest failed: %s", exc)
+            incident_batch.clear()
 
     except DetectorError as exc:
         logger.error("%s", exc)

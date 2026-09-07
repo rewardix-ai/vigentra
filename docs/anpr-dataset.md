@@ -79,9 +79,10 @@ it.
 ### 5. Evaluate, stratified by size
 
 ```bash
-# compare two sets of weights, per size band: precision, recall and AP
-python tools/eval_by_size.py --weights D:/ANPR/models/plate_detector.pt --imgsz 640
-python tools/eval_by_size.py --weights runs/plate/C_smallobj_aug/weights/best.pt --imgsz 960
+# compare two sets of weights, per size band: precision, recall and AP.
+# imgsz defaults to 960 and NMS to 0.7 - what the deployed ROI pass runs.
+python tools/eval_by_size.py --weights D:/ANPR/models/plate_detector.pt --tag baseline
+python tools/eval_by_size.py --weights runs/detect/runs/plate/C_smallobj_aug/weights/best.pt
 
 # the pipeline's own view: recall through the deployed Detector wrapper
 python tools/eval_plate_detector.py --version v2 --split test
@@ -152,13 +153,27 @@ python tools/train_plate_detector.py --experiment C_smallobj_aug --epochs 60
 
 | experiment | what changes |
 |---|---|
-| `A_baseline_640` | deployed resolution, stock augmentation - the control |
-| `B_highres_960` | resolution only, so any difference is attributable to it |
-| `C_smallobj_aug` | B plus scale / mosaic / copy-paste aimed at small objects |
-| `D_tiny_oversample` | C plus 3x exposure to tiny-plate images |
+| `A_baseline_640` | low-resolution control, stock augmentation |
+| `B_highres_960` | the deployed ROI resolution (`roi_imgsz: 960`); only imgsz differs from A |
+| `C_smallobj_aug` | B plus scale jitter / mosaic / small rotation aimed at small objects |
+| `D_tiny_oversample` | C plus 3x exposure to tiny-plate images at an **equal step budget** |
 
 Each writes weights, `args.yaml`, `results.csv`, `experiment.json` and both
-checkpoints under `runs/plate/<name>/`. Nothing overwrites the deployed weights.
+checkpoints under `services/edge-worker/runs/plate/<name>/` — a rerun gets
+`<name>2`, never an overwrite. Nothing touches the deployed weights.
+
+### Before retraining: the association step
+
+Retraining cannot help a plate the pipeline discards after finding it. The
+funnel on cam06/cam07 showed 18 of 20 detected plates orphaned — not attached
+to any vehicle — for two reasons that were fixed in `anpr/detect.py` before
+any training result was trusted: the ROI pass searched a vehicle box expanded
+by 4% but attachment tested containment against the *unexpanded* box, so a
+bumper plate flush with the searched edge failed the 0.55 floor exactly when it
+was small; and vehicles the tracker had not yet assigned an id were skipped
+outright, which on sparse frames is most of them. An ROI box now attaches to
+the vehicle whose crop found it, and id-less vehicles get a stable fallback id.
+Same footage: attached 2 → 15.
 
 ### Why 960 and not 1280
 
@@ -199,12 +214,19 @@ The training images are already real CCTV - vehicle crops from H.264 streams at
 400 kbps-2 Mbps, arriving with genuine compression blocking, motion blur and
 sensor noise. Synthesising more of it would produce double-degraded images no
 camera ever emits. So the augmentation budget goes on *geometry and exposure* -
-`scale=0.9`, `mosaic=1.0`, `copy_paste=0.3`, `hsv_v=0.5` - which genuinely vary
-between cameras and times of day.
+`scale=0.9`, `mosaic=1.0`, `hsv_v=0.5` - which genuinely vary between cameras
+and times of day.
 
 `fliplr=0.0` throughout: a registration is directional text, and a mirrored
-plate teaches a glyph shape that does not exist. `erasing=0.0`: occluding a
-20 px plate does not augment it, it deletes it.
+plate teaches a glyph shape that does not exist. Two knobs that look relevant
+are deliberately absent because they do nothing here: `copy_paste` is a no-op
+on box-only labels (ultralytics returns early without segments), and
+`erasing` is classification-only.
+
+Early stopping is off. ultralytics closes mosaic only at `epochs − close_mosaic`
+and breaks out first if `patience` fires, so with it on, whether a run ever
+trained mosaic-free depended on when it happened to peak — an undocumented
+variable in a comparison meant to be controlled.
 
 ### Tiny-plate oversampling
 
@@ -215,6 +237,11 @@ different pictures of the same plate rather than the identical tensor three
 times. The factor stays at 3: past that the tiny images dominate the batch
 statistics and the larger bands regress, which is this project's own failure
 in reverse. Val and test lists are untouched, so metrics stay comparable.
+
+Repeating images makes the epoch ~46% longer, so at equal epochs the
+oversampled run would also simply have trained longer. The harness scales its
+epochs down by the list's growth to hold optimizer steps equal, so exposure is
+the only thing that differs from C.
 
 ## Evaluation
 

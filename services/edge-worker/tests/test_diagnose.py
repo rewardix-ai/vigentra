@@ -1,4 +1,10 @@
-"""The ANPR-suitability verdict: measured floors, favourable-case estimate."""
+"""The ANPR-suitability verdict: measured floors, favourable-case estimate.
+
+The floors are imported rather than written down again. This tool shares
+them with the running pipeline (anpr/readability.py), and a test that
+hardcoded its own copy would keep passing while the two drifted apart -
+which is precisely the failure the sharing exists to prevent.
+"""
 import importlib.util
 from pathlib import Path
 
@@ -15,15 +21,18 @@ def test_no_vehicles_is_its_own_verdict():
     assert v["anpr_verdict"] == "NO_VEHICLES_OBSERVED"
 
 
+def _boxes_for(plate_px: float) -> float:
+    """The vehicle-box width whose estimated plate is this wide."""
+    return plate_px / diag.PLATE_FACTOR
+
+
 def test_large_vehicles_are_capable():
-    # ~500px cars -> ~125px estimated plate, above the comfortable floor.
-    v = diag._verdict([500.0] * 20, frames_scored=40)
+    v = diag._verdict([_boxes_for(diag.COMFORTABLE_PX + 10)] * 20, frames_scored=40)
     assert v["anpr_verdict"] == "ANPR_CAPABLE"
 
 
 def test_tiny_vehicles_are_infeasible():
-    # ~120px cars -> ~30px estimated plate, below the marginal floor.
-    v = diag._verdict([120.0] * 20, frames_scored=40)
+    v = diag._verdict([_boxes_for(diag.MARGINAL_PX - 30)] * 20, frames_scored=40)
     assert v["anpr_verdict"] == "ANPR_INFEASIBLE"
 
 
@@ -33,7 +42,15 @@ def test_the_estimate_is_a_quarter_of_box_width():
 
 
 def test_a_borderline_estate_lands_marginal():
-    # ~280px vehicles -> ~70px estimated plate: over the 60px marginal floor,
-    # under the 90px readable one. Marginal, not capable.
-    v = diag._verdict([280.0] * 20, frames_scored=40)
+    # Between the marginal floor and the readable one: worth trying, not
+    # worth promising.
+    midway = (diag.MARGINAL_PX + diag.READABLE_PX) / 2
+    v = diag._verdict([_boxes_for(midway)] * 20, frames_scored=40)
     assert v["anpr_verdict"] == "ANPR_MARGINAL"
+
+
+def test_the_floors_are_the_ones_the_pipeline_enforces():
+    from anpr import readability
+    assert diag.COMFORTABLE_PX == readability.COMFORTABLE_PX
+    assert diag.READABLE_PX == readability.READABLE_PX
+    assert diag.MARGINAL_PX == readability.MARGINAL_PX

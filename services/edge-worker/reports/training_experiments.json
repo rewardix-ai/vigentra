@@ -53,9 +53,9 @@
         "precision": 0.8765,
         "recall": 0.5556
       },
-      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640",
-      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640\\weights\\best.pt",
-      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640\\weights\\last.pt"
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\A_baseline_640",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\A_baseline_640\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\A_baseline_640\\weights\\last.pt"
     },
     {
       "experiment": "B_highres_960",
@@ -108,9 +108,9 @@
         "precision": 0.798,
         "recall": 0.5778
       },
-      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960",
-      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960\\weights\\best.pt",
-      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960\\weights\\last.pt"
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\B_highres_960",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\B_highres_960\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\B_highres_960\\weights\\last.pt"
     }
   ]
 }

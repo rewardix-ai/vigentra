@@ -134,6 +134,82 @@ EXPERIMENTS: dict[str, dict] = {
 
 
 # ---------------------------------------------------------------------------
+# Curriculum over synthetic hard cases
+# ---------------------------------------------------------------------------
+
+#: Stages written by tools/synthesize_hard_cases.py, easiest first. Each stage
+#: fine-tunes from the previous stage's best.pt, so the detector meets the
+#: smears only after it has learned what a plate looks like - the order a
+#: person would teach it in, and the one that does not collapse recall on the
+#: plates it could already find.
+CURRICULUM_STAGES = (
+    "stage1_real_mild",
+    "stage2_plus_moderate",
+    "stage3_plus_severe",
+    "stage4_all",
+)
+
+
+def run_curriculum(name: str, dataset: Path, epochs_per_stage: int, device: str,
+                   batch_override: int | None, base_model: str = "yolo11s.pt") -> dict:
+    """Train stage by stage, each from the previous stage's best weights.
+
+    Same augmentation, imgsz and batch as C_smallobj_aug so the curriculum
+    is the only thing that differs from it. Reports the final stage's metrics
+    and the best checkpoint of every stage, so a regression at a later stage
+    can be caught rather than averaged away.
+    """
+    from ultralytics import YOLO
+    import torch
+
+    spec = dict(EXPERIMENTS["C_smallobj_aug"])
+    spec.pop("_note", None); spec.pop("_oversample", None); spec.pop("model", None)
+    if batch_override:
+        spec["batch"] = batch_override
+
+    weights = base_model
+    stages_out = []
+    started = time.time()
+    for stage in CURRICULUM_STAGES:
+        data = dataset / f"{stage}.yaml"
+        if not data.exists():
+            raise SystemExit(f"missing {data} - run tools/synthesize_hard_cases.py first")
+        args = {**COMMON, **spec, "data": str(data), "epochs": epochs_per_stage,
+                "name": f"{name}_{stage}", "device": device}
+        log.info("=" * 70)
+        log.info("CURRICULUM %s  stage %s  from %s", name, stage, weights)
+        log.info("=" * 70)
+        if device != "cpu" and torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+        results = YOLO(weights).train(**args)
+        run_dir = Path(results.save_dir)
+        weights = str(run_dir / "weights" / "best.pt")
+        box = getattr(results, "box", None)
+        stages_out.append({
+            "stage": stage, "run_dir": str(run_dir), "best_checkpoint": weights,
+            "val_metrics": ({"mAP50": round(float(box.map50), 4),
+                             "mAP50_95": round(float(box.map), 4),
+                             "precision": round(float(box.mp), 4),
+                             "recall": round(float(box.mr), 4)} if box is not None else {}),
+        })
+        write_json(run_dir / "curriculum_stage.json", stages_out[-1])
+
+    record = {
+        "experiment": name,
+        "note": "C_smallobj_aug settings, trained stage-by-stage over real + synthetic hard cases",
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+        "elapsed_h": round((time.time() - started) / 3600, 2),
+        "model": base_model, "dataset": str(dataset), "device": device,
+        "epochs_per_stage": epochs_per_stage,
+        "stages": stages_out,
+        "val_metrics": stages_out[-1]["val_metrics"] if stages_out else {},
+        "best_checkpoint": weights,
+        "run_dir": stages_out[-1]["run_dir"] if stages_out else "",
+    }
+    return record
+
+
+# ---------------------------------------------------------------------------
 # Tiny-plate oversampling
 # ---------------------------------------------------------------------------
 
@@ -305,6 +381,10 @@ def main() -> int:
     parser.add_argument("--batch", type=int, default=None,
                         help="Override the experiment's batch size (VRAM).")
     parser.add_argument("--summary", default="reports/training_experiments.json")
+    parser.add_argument("--curriculum", default=None, metavar="SYNTH_DATASET",
+                        help="Run the curriculum experiment over this synthetic "
+                             "dataset (from synthesize_hard_cases.py) instead of "
+                             "the named experiments. --epochs is per stage.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -313,6 +393,28 @@ def main() -> int:
         for name, spec in EXPERIMENTS.items():
             print(f"{name:<24} model={spec['model']:<12} imgsz={spec['imgsz']:<5} "
                   f"batch={spec['batch']:<3} {spec.get('_note','')}")
+        return 0
+
+    if args.curriculum:
+        summary_path = Path(args.summary)
+        records = []
+        if summary_path.exists():
+            try:
+                with open(summary_path, encoding="utf-8") as fh:
+                    records = json.load(fh).get("runs", [])
+            except Exception:                      # noqa: BLE001
+                records = []
+        record = run_curriculum("E_curriculum_synth", Path(args.curriculum),
+                                args.epochs, args.device, args.batch)
+        records = [r for r in records if r.get("experiment") != record["experiment"]]
+        records.append(record)
+        write_json(summary_path, {"updated_at": datetime.now(timezone.utc).isoformat(),
+                                  "seed": SEED, "runs": records})
+        print("CURRICULUM COMPLETE")
+        for st in record["stages"]:
+            m = st["val_metrics"]
+            print(f"  {st['stage']:<24} mAP50={m.get('mAP50','?')} R={m.get('recall','?')}")
+        print(f"best: {record['best_checkpoint']}")
         return 0
 
     names = list(EXPERIMENTS) if args.all else (args.experiment or [])

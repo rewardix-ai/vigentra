@@ -68,3 +68,7 @@ services/edge-worker/dataset/*/data_oversampled_*.yaml
 services/edge-worker/reports/*.log
 # Error-analysis contact sheets are derived images, like review/.
 services/edge-worker/reports/error_analysis/
+
+services/edge-worker/dataset/*/stage*.txt
+services/edge-worker/dataset/*/stage*.yaml
+services/edge-worker/reports/synth_smoke_sheet.jpg

@@ -1,0 +1,84 @@
+{
+  "version": "v2",
+  "built_at": "2026-09-07T05:54:08.617584+00:00",
+  "unit": "vehicle_crop",
+  "seed": 0,
+  "time_block_frames": 20,
+  "split_rule": "stable sha256 of (camera_id, frame_number // time_block); a vehicle sequence cannot straddle splits",
+  "sources": {
+    "proposals": "D:\\tessttt\\testttttt\\reports\\proposals\\proposals.json",
+    "verdicts": "D:\\tessttt\\testttttt\\reports\\proposals\\verdicts.json",
+    "frames_root": "D:\\tessttt\\testttttt\\reports\\deep\\frames",
+    "unverified_samples": ""
+  },
+  "label_provenance": {
+    "label_source": "adjudicated_proposal",
+    "adjudicated_by": {
+      "vlm": 1175
+    },
+    "human_verified": false,
+    "WARNING": "human_verified is false unless every adjudication came from a person. A vision-model adjudication is a stronger filter than an unreviewed proposal and a weaker one than human review. Do not report accuracy from this set as measured against human ground truth.",
+    "KNOWN_RESIDUAL": "Plates no proposer ever proposed are absent from the labels and act as false negatives. This residual is unmeasured and cannot be measured without an exhaustively hand-labelled set. It biases most strongly against the smallest plates, which is the very class this dataset exists to improve."
+  },
+  "size_bands": {
+    "edges_px": {
+      "EXTREMELY_TINY": "<8",
+      "VERY_SMALL": "8-10",
+      "SMALL": "10-22",
+      "MEDIUM": "22-43",
+      "LARGE": ">=43"
+    },
+    "physical_readability_floor_px": 60.0,
+    "provenance": "692 adjudicated plate boxes in dataset v2",
+    "sample_size": 692
+  },
+  "counts": {
+    "plate_boxes_val": 93,
+    "images_positive": 619,
+    "skipped_contains_unsure": 112,
+    "images_negative": 314,
+    "negatives_val": 16,
+    "plate_boxes_test": 164,
+    "negatives_test": 70,
+    "plate_boxes_train": 413,
+    "negatives_train": 228
+  },
+  "images_per_split": {
+    "val": 106,
+    "test": 223,
+    "train": 604
+  },
+  "plate_boxes": 670,
+  "size_distribution": {
+    "VERY_SMALL": 135,
+    "SMALL": 167,
+    "MEDIUM": 132,
+    "EXTREMELY_TINY": 135,
+    "LARGE": 101
+  },
+  "difficulty_distribution": {
+    "tiny": 270,
+    "low_light": 101,
+    "low_contrast": 299,
+    "unreadable": 660,
+    "low_confidence": 224,
+    "blur": 17,
+    "overexposed": 21,
+    "partial": 1,
+    "glare": 5,
+    "angled": 1
+  },
+  "plate_width_px": {
+    "p5": 4.4,
+    "p25": 8.2,
+    "p50": 13.3,
+    "p75": 29.98,
+    "p90": 52.0,
+    "p95": 52.3,
+    "p99": 66.35,
+    "min": 3.6,
+    "max": 120.0,
+    "n": 670
+  },
+  "unverified_proposals": 0
+}

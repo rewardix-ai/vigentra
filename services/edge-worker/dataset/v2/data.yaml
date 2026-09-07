@@ -1,0 +1,9 @@
+# Vigentra plate-detection dataset v2
+# Built 2026-09-07T05:54:08.614579+00:00
+# Labels: NOT human verified - see manifest.json
+path: D:/CCTV Management/CCTV_management/services/edge-worker/dataset/v2
+train: images/train
+val: images/val
+test: images/test
+nc: 1
+names: ['plate']

@@ -52,3 +52,12 @@ services/central-api/reference/
 
 # Runtime logs from the local stack.
 logs/
+
+# Generated ANPR dataset artifacts. The images and labels are derived - rebuild
+# them with services/edge-worker/tools/prepare_dataset.py from the capture
+# corpus. The manifest, metadata and reports ARE committed: they are the
+# provenance record and are small.
+services/edge-worker/dataset/*/images/
+services/edge-worker/dataset/*/labels/
+services/edge-worker/dataset/*/review/
+services/edge-worker/runs/

@@ -1,0 +1,627 @@
+{
+  "generated_at": "2026-09-07T05:46:40.593599+00:00",
+  "roots": [
+    "D:\\CCTV Management\\CCTV_management\\data\\videos",
+    "D:\\tessttt\\testttttt\\reports\\deep\\frames",
+    "D:\\tessttt\\testttttt\\reports\\frames"
+  ],
+  "feeds": 4,
+  "frames_analysed": 16,
+  "ocr_run": false,
+  "detector_config": {
+    "plate_model": "plate_detector.pt",
+    "vehicle_model": "yolo11n.pt",
+    "plate_imgsz": 1280,
+    "roi_imgsz": 960,
+    "vehicle_imgsz": 640,
+    "roi_min_size": 640,
+    "plate_conf": 0.15,
+    "vehicle_conf": 0.3,
+    "process_width": 1920
+  },
+  "size_bands": {
+    "edges_px": {
+      "EXTREMELY_TINY": "<20",
+      "VERY_SMALL": "20-40",
+      "SMALL": "40-60",
+      "MEDIUM": "60-120",
+      "LARGE": ">=120"
+    },
+    "physical_readability_floor_px": 60.0,
+    "provenance": "15 detected plate boxes across 4 feeds, 16 frames (too few observations for quantiles; anchored on the 60px physical floor)",
+    "sample_size": 15
+  },
+  "estate_totals": {
+    "plate_width_px": {
+      "p5": 12.31,
+      "p25": 23.04,
+      "p50": 31.28,
+      "p75": 48.14,
+      "p90": 73.83,
+      "p95": 345.16,
+      "p99": 826.23,
+      "min": 10.34,
+      "max": 946.5,
+      "n": 15
+    },
+    "size_distribution": {
+      "VERY_SMALL": 7,
+      "MEDIUM": 1,
+      "SMALL": 3,
+      "EXTREMELY_TINY": 3,
+      "LARGE": 1
+    },
+    "difficulty_distribution": {
+      "tiny": 10,
+      "low_light": 23,
+      "multi_vehicle": 28,
+      "low_confidence": 30,
+      "blur": 19,
+      "low_contrast": 5,
+      "partial": 1,
+      "glare": 1,
+      "angled": 1
+    },
+    "detection_source": {
+      "frame": 7,
+      "prior": 20,
+      "roi": 8
+    },
+    "readability": {
+      "NOT_ATTEMPTED": 35
+    }
+  },
+  "funnel_total": {
+    "frames_processed": 16,
+    "vehicles_detected": 39,
+    "vehicles_plate_bearing": 33,
+    "roi_crops_submitted": 33,
+    "prior_blocked_vehicle_too_narrow": 5,
+    "plates_won_by_full_frame_pass": 7,
+    "plates_won_by_roi_pass": 8,
+    "plates_after_nms": 15,
+    "prior_bands_emitted": 20,
+    "plates_attached_to_vehicle": 9,
+    "plates_orphaned": 6,
+    "crops_measured": 35,
+    "crops_below_physical_floor": 14
+  },
+  "per_camera": [
+    {
+      "camera_id": "cam01",
+      "frames_analysed": 4,
+      "resolutions": [
+        [
+          "1920x1080",
+          4
+        ]
+      ],
+      "lighting": [
+        [
+          "DAY",
+          4
+        ]
+      ],
+      "frame_blur": {
+        "p5": 729.73,
+        "p25": 800.59,
+        "p50": 853.81,
+        "p75": 880.82,
+        "p90": 886.8,
+        "p95": 888.79,
+        "p99": 890.39,
+        "min": 712.01,
+        "max": 890.79,
+        "n": 4
+      },
+      "frame_brightness": {
+        "p5": 135.91,
+        "p25": 136.47,
+        "p50": 136.73,
+        "p75": 137.0,
+        "p90": 137.43,
+        "p95": 137.57,
+        "p99": 137.69,
+        "min": 135.78,
+        "max": 137.72,
+        "n": 4
+      },
+      "frame_contrast": {
+        "p5": 75.74,
+        "p25": 75.97,
+        "p50": 76.21,
+        "p75": 76.52,
+        "p90": 76.84,
+        "p95": 76.95,
+        "p99": 77.04,
+        "min": 75.68,
+        "max": 77.06,
+        "n": 4
+      },
+      "vehicles_total": 16,
+      "vehicles_per_frame": 4.0,
+      "plate_boxes": 10,
+      "plate_width_px": {
+        "p5": 11.6,
+        "p25": 15.96,
+        "p50": 25.02,
+        "p75": 30.8,
+        "p90": 51.84,
+        "p95": 69.65,
+        "p99": 83.89,
+        "min": 10.34,
+        "max": 87.45,
+        "n": 10
+      },
+      "plate_height_px": {
+        "p5": 3.69,
+        "p25": 5.6,
+        "p50": 12.41,
+        "p75": 17.02,
+        "p90": 25.99,
+        "p95": 57.06,
+        "p99": 81.92,
+        "min": 3.59,
+        "max": 88.13,
+        "n": 10
+      },
+      "plate_area_frac": {
+        "p5": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "n": 10
+      },
+      "plate_aspect": {
+        "p5": 1.18,
+        "p25": 1.73,
+        "p50": 2.44,
+        "p75": 2.63,
+        "p90": 3.5,
+        "p95": 3.72,
+        "p99": 3.89,
+        "min": 0.99,
+        "max": 3.93,
+        "n": 10
+      },
+      "detection_confidence": {
+        "p5": 0.17,
+        "p25": 0.2,
+        "p50": 0.26,
+        "p75": 0.32,
+        "p90": 0.44,
+        "p95": 0.5,
+        "p99": 0.55,
+        "min": 0.16,
+        "max": 0.56,
+        "n": 10
+      },
+      "size_distribution": {
+        "VERY_SMALL": 5,
+        "MEDIUM": 1,
+        "SMALL": 1,
+        "EXTREMELY_TINY": 3
+      },
+      "difficulty_distribution": {
+        "tiny": 8,
+        "low_light": 11,
+        "multi_vehicle": 12,
+        "low_confidence": 13,
+        "blur": 5,
+        "low_contrast": 1
+      },
+      "detection_source": {
+        "frame": 6,
+        "prior": 5,
+        "roi": 4
+      },
+      "readability": {
+        "NOT_ATTEMPTED": 15
+      },
+      "funnel": {
+        "frames_processed": 4,
+        "vehicles_detected": 16,
+        "vehicles_plate_bearing": 12,
+        "roi_crops_submitted": 12,
+        "prior_blocked_vehicle_too_narrow": 3,
+        "plates_won_by_full_frame_pass": 6,
+        "plates_won_by_roi_pass": 4,
+        "plates_after_nms": 10,
+        "prior_bands_emitted": 5,
+        "plates_attached_to_vehicle": 7,
+        "plates_orphaned": 3,
+        "crops_measured": 15,
+        "crops_below_physical_floor": 10
+      }
+    },
+    {
+      "camera_id": "cam06",
+      "frames_analysed": 4,
+      "resolutions": [
+        [
+          "1920x1080",
+          4
+        ]
+      ],
+      "lighting": [
+        [
+          "DAY",
+          2
+        ],
+        [
+          "NIGHT",
+          1
+        ],
+        [
+          "DIM",
+          1
+        ]
+      ],
+      "frame_blur": {
+        "p5": 222.11,
+        "p25": 439.72,
+        "p50": 550.89,
+        "p75": 638.3,
+        "p90": 758.76,
+        "p95": 798.91,
+        "p99": 831.03,
+        "min": 167.7,
+        "max": 839.06,
+        "n": 4
+      },
+      "frame_brightness": {
+        "p5": 30.35,
+        "p25": 72.28,
+        "p50": 148.76,
+        "p75": 218.78,
+        "p90": 238.61,
+        "p95": 245.22,
+        "p99": 250.51,
+        "min": 19.86,
+        "max": 251.83,
+        "n": 4
+      },
+      "frame_contrast": {
+        "p5": 18.82,
+        "p25": 23.78,
+        "p50": 54.59,
+        "p75": 84.81,
+        "p90": 87.44,
+        "p95": 88.32,
+        "p99": 89.02,
+        "min": 17.58,
+        "max": 89.19,
+        "n": 4
+      },
+      "vehicles_total": 0,
+      "vehicles_per_frame": 0.0,
+      "plate_boxes": 0,
+      "plate_width_px": {},
+      "plate_height_px": {},
+      "plate_area_frac": {},
+      "plate_aspect": {},
+      "detection_confidence": {},
+      "size_distribution": {},
+      "difficulty_distribution": {},
+      "detection_source": {},
+      "readability": {},
+      "funnel": {
+        "frames_processed": 4,
+        "vehicles_detected": 0,
+        "vehicles_plate_bearing": 0,
+        "plates_won_by_full_frame_pass": 0,
+        "plates_won_by_roi_pass": 0,
+        "plates_after_nms": 0,
+        "prior_bands_emitted": 0,
+        "plates_attached_to_vehicle": 0,
+        "plates_orphaned": 0
+      }
+    },
+    {
+      "camera_id": "cam01",
+      "frames_analysed": 4,
+      "resolutions": [
+        [
+          "1920x1080",
+          4
+        ]
+      ],
+      "lighting": [
+        [
+          "DIM",
+          4
+        ]
+      ],
+      "frame_blur": {
+        "p5": 392.35,
+        "p25": 397.09,
+        "p50": 416.85,
+        "p75": 438.16,
+        "p90": 444.51,
+        "p95": 446.63,
+        "p99": 448.32,
+        "min": 391.16,
+        "max": 448.75,
+        "n": 4
+      },
+      "frame_brightness": {
+        "p5": 83.37,
+        "p25": 85.9,
+        "p50": 87.72,
+        "p75": 89.03,
+        "p90": 90.01,
+        "p95": 90.33,
+        "p99": 90.59,
+        "min": 82.73,
+        "max": 90.66,
+        "n": 4
+      },
+      "frame_contrast": {
+        "p5": 64.82,
+        "p25": 65.22,
+        "p50": 65.44,
+        "p75": 66.01,
+        "p90": 66.95,
+        "p95": 67.27,
+        "p99": 67.52,
+        "min": 64.72,
+        "max": 67.58,
+        "n": 4
+      },
+      "vehicles_total": 16,
+      "vehicles_per_frame": 4.0,
+      "plate_boxes": 1,
+      "plate_width_px": {
+        "p5": 946.5,
+        "p25": 946.5,
+        "p50": 946.5,
+        "p75": 946.5,
+        "p90": 946.5,
+        "p95": 946.5,
+        "p99": 946.5,
+        "min": 946.5,
+        "max": 946.5,
+        "n": 1
+      },
+      "plate_height_px": {
+        "p5": 162.07,
+        "p25": 162.07,
+        "p50": 162.07,
+        "p75": 162.07,
+        "p90": 162.07,
+        "p95": 162.07,
+        "p99": 162.07,
+        "min": 162.07,
+        "max": 162.07,
+        "n": 1
+      },
+      "plate_area_frac": {
+        "p5": 0.07,
+        "p25": 0.07,
+        "p50": 0.07,
+        "p75": 0.07,
+        "p90": 0.07,
+        "p95": 0.07,
+        "p99": 0.07,
+        "min": 0.07,
+        "max": 0.07,
+        "n": 1
+      },
+      "plate_aspect": {
+        "p5": 5.84,
+        "p25": 5.84,
+        "p50": 5.84,
+        "p75": 5.84,
+        "p90": 5.84,
+        "p95": 5.84,
+        "p99": 5.84,
+        "min": 5.84,
+        "max": 5.84,
+        "n": 1
+      },
+      "detection_confidence": {
+        "p5": 0.24,
+        "p25": 0.24,
+        "p50": 0.24,
+        "p75": 0.24,
+        "p90": 0.24,
+        "p95": 0.24,
+        "p99": 0.24,
+        "min": 0.24,
+        "max": 0.24,
+        "n": 1
+      },
+      "size_distribution": {
+        "LARGE": 1
+      },
+      "difficulty_distribution": {
+        "low_light": 6,
+        "partial": 1,
+        "multi_vehicle": 11,
+        "low_confidence": 13,
+        "blur": 12,
+        "low_contrast": 3,
+        "glare": 1,
+        "angled": 1
+      },
+      "detection_source": {
+        "frame": 1,
+        "prior": 12
+      },
+      "readability": {
+        "NOT_ATTEMPTED": 13
+      },
+      "funnel": {
+        "frames_processed": 4,
+        "vehicles_detected": 16,
+        "vehicles_plate_bearing": 16,
+        "roi_crops_submitted": 16,
+        "prior_blocked_vehicle_too_narrow": 2,
+        "plates_won_by_full_frame_pass": 1,
+        "plates_won_by_roi_pass": 0,
+        "plates_after_nms": 1,
+        "prior_bands_emitted": 12,
+        "plates_attached_to_vehicle": 0,
+        "plates_orphaned": 1,
+        "crops_measured": 13
+      }
+    },
+    {
+      "camera_id": "cam06",
+      "frames_analysed": 4,
+      "resolutions": [
+        [
+          "1920x1080",
+          4
+        ]
+      ],
+      "lighting": [
+        [
+          "DAY",
+          3
+        ],
+        [
+          "DIM",
+          1
+        ]
+      ],
+      "frame_blur": {
+        "p5": 454.85,
+        "p25": 564.02,
+        "p50": 644.33,
+        "p75": 1817.37,
+        "p90": 3866.13,
+        "p95": 4549.05,
+        "p99": 5095.38,
+        "min": 427.56,
+        "max": 5231.97,
+        "n": 4
+      },
+      "frame_brightness": {
+        "p5": 95.39,
+        "p25": 158.86,
+        "p50": 200.87,
+        "p75": 221.62,
+        "p90": 230.97,
+        "p95": 234.08,
+        "p99": 236.57,
+        "min": 79.53,
+        "max": 237.2,
+        "n": 4
+      },
+      "frame_contrast": {
+        "p5": 36.42,
+        "p25": 39.59,
+        "p50": 53.71,
+        "p75": 70.23,
+        "p90": 76.95,
+        "p95": 79.19,
+        "p99": 80.98,
+        "min": 35.62,
+        "max": 81.43,
+        "n": 4
+      },
+      "vehicles_total": 7,
+      "vehicles_per_frame": 1.75,
+      "plate_boxes": 4,
+      "plate_width_px": {
+        "p5": 38.9,
+        "p25": 39.09,
+        "p50": 43.77,
+        "p75": 49.64,
+        "p90": 51.9,
+        "p95": 52.66,
+        "p99": 53.26,
+        "min": 38.85,
+        "max": 53.41,
+        "n": 4
+      },
+      "plate_height_px": {
+        "p5": 8.21,
+        "p25": 18.95,
+        "p50": 24.06,
+        "p75": 24.9,
+        "p90": 25.26,
+        "p95": 25.38,
+        "p99": 25.47,
+        "min": 5.52,
+        "max": 25.5,
+        "n": 4
+      },
+      "plate_area_frac": {
+        "p5": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "n": 4
+      },
+      "plate_aspect": {
+        "p5": 1.53,
+        "p25": 1.57,
+        "p50": 1.83,
+        "p75": 3.97,
+        "p90": 7.39,
+        "p95": 8.53,
+        "p99": 9.45,
+        "min": 1.52,
+        "max": 9.68,
+        "n": 4
+      },
+      "detection_confidence": {
+        "p5": 0.28,
+        "p25": 0.56,
+        "p50": 0.72,
+        "p75": 0.78,
+        "p90": 0.8,
+        "p95": 0.81,
+        "p99": 0.82,
+        "min": 0.21,
+        "max": 0.82,
+        "n": 4
+      },
+      "size_distribution": {
+        "VERY_SMALL": 2,
+        "SMALL": 2
+      },
+      "difficulty_distribution": {
+        "tiny": 2,
+        "low_light": 6,
+        "multi_vehicle": 5,
+        "low_confidence": 4,
+        "blur": 2,
+        "low_contrast": 1
+      },
+      "detection_source": {
+        "roi": 4,
+        "prior": 3
+      },
+      "readability": {
+        "NOT_ATTEMPTED": 7
+      },
+      "funnel": {
+        "frames_processed": 4,
+        "vehicles_detected": 7,
+        "vehicles_plate_bearing": 5,
+        "roi_crops_submitted": 5,
+        "plates_won_by_full_frame_pass": 0,
+        "plates_won_by_roi_pass": 4,
+        "plates_after_nms": 4,
+        "prior_bands_emitted": 3,
+        "plates_attached_to_vehicle": 2,
+        "plates_orphaned": 2,
+        "crops_measured": 7,
+        "crops_below_physical_floor": 4
+      }
+    }
+  ]
+}

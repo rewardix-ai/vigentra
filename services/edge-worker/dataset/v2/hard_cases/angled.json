@@ -1,0 +1,8 @@
+{
+  "difficulty": "angled",
+  "count": 1,
+  "note": "Index into images/, not a copy. The same image may appear under several tags, and duplicating it would silently reweight the training set.",
+  "images": [
+    "images/train/cam13_130104_908_351_295x248.jpg"
+  ]
+}

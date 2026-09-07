@@ -1,0 +1,2581 @@
+{
+  "generated_at": "2026-09-07T06:02:12.911801+00:00",
+  "source_samples": "reports/plate_samples_cam0607.json",
+  "size_bands": {
+    "edges_px": {
+      "EXTREMELY_TINY": "<39",
+      "VERY_SMALL": "39-51",
+      "SMALL": "51-68",
+      "MEDIUM": "68-90",
+      "LARGE": ">=90"
+    },
+    "physical_readability_floor_px": 60.0,
+    "provenance": "20 detected plate boxes across 3 feeds, 90 frames",
+    "sample_size": 20
+  },
+  "per_category_limit": 100,
+  "neighbours_kept": 2,
+  "counts": {
+    "samples_considered": 46,
+    "unique_hard_cases": 46,
+    "by_category": {
+      "blur": 25,
+      "low_confidence": 36,
+      "low_contrast": 20,
+      "low_light": 38,
+      "multi_vehicle": 35,
+      "partial": 2,
+      "tiny": 9,
+      "unreadable": 45
+    },
+    "flagged_for_human_review": 36,
+    "temporal_neighbourhood_frames": 73
+  },
+  "extremes": {
+    "smallest_plate_px": 18.1985,
+    "plate_width_of_mined": {
+      "p5": 37.67,
+      "p25": 55.65,
+      "p50": 71.01,
+      "p75": 119.5,
+      "p90": 128.89,
+      "p95": 133.89,
+      "p99": 732.32,
+      "min": 18.2,
+      "max": 941.65,
+      "n": 46
+    }
+  },
+  "feeds_losing_plates": [
+    {
+      "feed_id": "cam07",
+      "plate_bearing_vehicles": 7,
+      "plate_boxes": 5,
+      "plate_miss_rate": 0.286,
+      "frames_analysed": 30,
+      "difficulty": [
+        "vehicle_without_visible_plate"
+      ]
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "plate_bearing_vehicles": 14,
+      "plate_boxes": 15,
+      "plate_miss_rate": -0.071,
+      "frames_analysed": 30,
+      "difficulty": [
+        "vehicle_without_visible_plate"
+      ]
+    }
+  ],
+  "hard_cases": [
+    {
+      "image_id": "cam07_00110_025",
+      "feed_id": "cam07",
+      "frame_number": 110,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0110.jpg",
+      "bbox": [
+        591.31,
+        331.85,
+        609.51,
+        346.84
+      ],
+      "plate_width_px": 18.1985,
+      "plate_height_px": 14.9915,
+      "plate_area_px": 272.8235,
+      "plate_area_frac": 0.0001,
+      "plate_aspect": 1.2139,
+      "plate_size_category": "EXTREMELY_TINY",
+      "detection_confidence": 0.194,
+      "detection_source": "frame",
+      "blur_score": 313.0859,
+      "brightness": 47.9795,
+      "contrast": 17.3888,
+      "glare": 0.0,
+      "crop_quality": 0.4544,
+      "skew_deg": -3.3665,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 1,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "low_contrast",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "unreadable",
+        "low_contrast",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam07_00031_001",
+      "feed_id": "cam07",
+      "frame_number": 31,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0031.jpg",
+      "bbox": [
+        425.99,
+        900.2,
+        445.22,
+        912.34
+      ],
+      "plate_width_px": 19.2243,
+      "plate_height_px": 12.1454,
+      "plate_area_px": 233.4861,
+      "plate_area_frac": 0.0001,
+      "plate_aspect": 1.5828,
+      "plate_size_category": "EXTREMELY_TINY",
+      "detection_confidence": 0.1818,
+      "detection_source": "roi",
+      "blur_score": 890.8348,
+      "brightness": 63.0571,
+      "contrast": 30.2507,
+      "glare": 0.0,
+      "crop_quality": 0.5158,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00204_011",
+      "feed_id": "cam06.d32924",
+      "frame_number": 204,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0204.jpg",
+      "bbox": [
+        1365.03,
+        139.99,
+        1402.31,
+        160.15
+      ],
+      "plate_width_px": 37.2817,
+      "plate_height_px": 20.1568,
+      "plate_area_px": 751.4788,
+      "plate_area_frac": 0.0004,
+      "plate_aspect": 1.8496,
+      "plate_size_category": "EXTREMELY_TINY",
+      "detection_confidence": 0.2432,
+      "detection_source": "frame",
+      "blur_score": 9949.834,
+      "brightness": 80.749,
+      "contrast": 78.8626,
+      "glare": 0.0,
+      "crop_quality": 0.6783,
+      "skew_deg": -0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DAY",
+      "vehicles_in_frame": 1,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "unreadable",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00180_009",
+      "feed_id": "cam06.d32924",
+      "frame_number": 180,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0180.jpg",
+      "bbox": [
+        1258.01,
+        141.82,
+        1296.87,
+        167.31
+      ],
+      "plate_width_px": 38.854,
+      "plate_height_px": 25.4985,
+      "plate_area_px": 990.7194,
+      "plate_area_frac": 0.0005,
+      "plate_aspect": 1.5238,
+      "plate_size_category": "EXTREMELY_TINY",
+      "detection_confidence": 0.676,
+      "detection_source": "roi",
+      "blur_score": 6271.747,
+      "brightness": 75.8824,
+      "contrast": 59.8465,
+      "glare": 0.0,
+      "crop_quality": 0.6745,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DAY",
+      "vehicles_in_frame": 2,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam07_00110_026",
+      "feed_id": "cam07",
+      "frame_number": 110,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0110.jpg",
+      "bbox": [
+        526.76,
+        366.25,
+        565.82,
+        387.66
+      ],
+      "plate_width_px": 39.061,
+      "plate_height_px": 21.41,
+      "plate_area_px": 836.2944,
+      "plate_area_frac": 0.0004,
+      "plate_aspect": 1.8244,
+      "plate_size_category": "VERY_SMALL",
+      "detection_confidence": 0.1561,
+      "detection_source": "frame",
+      "blur_score": 1146.8387,
+      "brightness": 54.4732,
+      "contrast": 24.0007,
+      "glare": 0.0,
+      "crop_quality": 0.5336,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 1,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "low_contrast",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "unreadable",
+        "low_contrast",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00000_000",
+      "feed_id": "cam06.d32924",
+      "frame_number": 0,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0000.jpg",
+      "bbox": [
+        887.2,
+        172.98,
+        926.36,
+        197.68
+      ],
+      "plate_width_px": 39.1623,
+      "plate_height_px": 24.6971,
+      "plate_area_px": 967.1971,
+      "plate_area_frac": 0.0005,
+      "plate_aspect": 1.5857,
+      "plate_size_category": "VERY_SMALL",
+      "detection_confidence": 0.8194,
+      "detection_source": "roi",
+      "blur_score": 9026.059,
+      "brightness": 79.5399,
+      "contrast": 72.3676,
+      "glare": 0.0,
+      "crop_quality": 0.681,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 5,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam07_00031_000",
+      "feed_id": "cam07",
+      "frame_number": 31,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0031.jpg",
+      "bbox": [
+        376.45,
+        911.78,
+        419.42,
+        931.99
+      ],
+      "plate_width_px": 42.9717,
+      "plate_height_px": 20.2098,
+      "plate_area_px": 868.4502,
+      "plate_area_frac": 0.0004,
+      "plate_aspect": 2.1263,
+      "plate_size_category": "VERY_SMALL",
+      "detection_confidence": 0.4439,
+      "detection_source": "roi",
+      "blur_score": 1291.9426,
+      "brightness": 67.8787,
+      "contrast": 34.1135,
+      "glare": 0.0,
+      "crop_quality": 0.59,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00000_001",
+      "feed_id": "cam06.d32924",
+      "frame_number": 0,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0000.jpg",
+      "bbox": [
+        1189.23,
+        424.04,
+        1237.62,
+        447.47
+      ],
+      "plate_width_px": 48.383,
+      "plate_height_px": 23.4272,
+      "plate_area_px": 1133.4774,
+      "plate_area_frac": 0.0005,
+      "plate_aspect": 2.0652,
+      "plate_size_category": "VERY_SMALL",
+      "detection_confidence": 0.7645,
+      "detection_source": "roi",
+      "blur_score": 6914.6781,
+      "brightness": 94.3593,
+      "contrast": 84.1985,
+      "glare": 0.0,
+      "crop_quality": 0.7192,
+      "skew_deg": -3.1798,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 5,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "tiny",
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam07_00095_014",
+      "feed_id": "cam07",
+      "frame_number": 95,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0095.jpg",
+      "bbox": [
+        602.55,
+        1038.16,
+        653.58,
+        1068.81
+      ],
+      "plate_width_px": 51.0271,
+      "plate_height_px": 30.6544,
+      "plate_area_px": 1564.2033,
+      "plate_area_frac": 0.0008,
+      "plate_aspect": 1.6646,
+      "plate_size_category": "VERY_SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.02,
+      "brightness": 78.4532,
+      "contrast": 38.0423,
+      "glare": 0.0,
+      "crop_quality": 0.5738,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "tiny",
+        "blur",
+        "low_light",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "tiny",
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00180_010",
+      "feed_id": "cam06.d32924",
+      "frame_number": 180,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0180.jpg",
+      "bbox": [
+        1320.06,
+        307.48,
+        1373.47,
+        313.0
+      ],
+      "plate_width_px": 53.4116,
+      "plate_height_px": 5.5205,
+      "plate_area_px": 294.8566,
+      "plate_area_frac": 0.0001,
+      "plate_aspect": 9.6752,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.2069,
+      "detection_source": "roi",
+      "blur_score": 3232.1826,
+      "brightness": 40.2991,
+      "contrast": 32.9663,
+      "glare": 0.0,
+      "crop_quality": 0.582,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DAY",
+      "vehicles_in_frame": 2,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "unreadable",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam07_00091_011",
+      "feed_id": "cam07",
+      "frame_number": 91,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0091.jpg",
+      "bbox": [
+        599.52,
+        1038.49,
+        653.32,
+        1069.38
+      ],
+      "plate_width_px": 53.7928,
+      "plate_height_px": 30.8927,
+      "plate_area_px": 1661.8082,
+      "plate_area_frac": 0.0008,
+      "plate_aspect": 1.7413,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.0794,
+      "brightness": 82.3862,
+      "contrast": 39.3203,
+      "glare": 0.0,
+      "crop_quality": 0.5825,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00087_008",
+      "feed_id": "cam07",
+      "frame_number": 87,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0087.jpg",
+      "bbox": [
+        597.36,
+        1038.09,
+        652.6,
+        1069.34
+      ],
+      "plate_width_px": 55.2448,
+      "plate_height_px": 31.2443,
+      "plate_area_px": 1726.0836,
+      "plate_area_frac": 0.0008,
+      "plate_aspect": 1.7682,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.0402,
+      "brightness": 82.9657,
+      "contrast": 39.4518,
+      "glare": 0.0,
+      "crop_quality": 0.5835,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00083_005",
+      "feed_id": "cam07",
+      "frame_number": 83,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0083.jpg",
+      "bbox": [
+        593.67,
+        1037.26,
+        650.53,
+        1068.51
+      ],
+      "plate_width_px": 56.8664,
+      "plate_height_px": 31.2428,
+      "plate_area_px": 1776.6684,
+      "plate_area_frac": 0.0009,
+      "plate_aspect": 1.8201,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 0.9847,
+      "brightness": 82.3595,
+      "contrast": 38.3074,
+      "glare": 0.0,
+      "crop_quality": 0.579,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00011_016",
+      "feed_id": "cam06.d32924",
+      "frame_number": 11,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06_buffered\\cam06_0011.jpg",
+      "bbox": [
+        786.7,
+        745.59,
+        844.0,
+        755.94
+      ],
+      "plate_width_px": 57.2973,
+      "plate_height_px": 10.3552,
+      "plate_area_px": 593.3229,
+      "plate_area_frac": 0.0003,
+      "plate_aspect": 5.5332,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.3029,
+      "detection_source": "roi",
+      "blur_score": 3938.9622,
+      "brightness": 111.7878,
+      "contrast": 84.9895,
+      "glare": 0.0,
+      "crop_quality": 0.7603,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 7,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam07_00038_002",
+      "feed_id": "cam07",
+      "frame_number": 38,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0038.jpg",
+      "bbox": [
+        756.77,
+        253.37,
+        815.77,
+        269.98
+      ],
+      "plate_width_px": 59.0063,
+      "plate_height_px": 16.6068,
+      "plate_area_px": 979.9054,
+      "plate_area_frac": 0.0005,
+      "plate_aspect": 3.5531,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.7859,
+      "detection_source": "roi",
+      "blur_score": 2266.3484,
+      "brightness": 36.0,
+      "contrast": 32.1021,
+      "glare": 0.0,
+      "crop_quality": 0.5884,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 1,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "low_light",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam07_00102_018",
+      "feed_id": "cam07",
+      "frame_number": 102,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0102.jpg",
+      "bbox": [
+        7.8,
+        925.33,
+        67.38,
+        1056.09
+      ],
+      "plate_width_px": 59.5797,
+      "plate_height_px": 130.753,
+      "plate_area_px": 7790.2297,
+      "plate_area_frac": 0.0038,
+      "plate_aspect": 0.4557,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 0.7818,
+      "brightness": 62.396,
+      "contrast": 21.9863,
+      "glare": 0.0,
+      "crop_quality": 0.5025,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00106_022",
+      "feed_id": "cam07",
+      "frame_number": 106,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0106.jpg",
+      "bbox": [
+        7.81,
+        925.49,
+        67.55,
+        1056.32
+      ],
+      "plate_width_px": 59.7401,
+      "plate_height_px": 130.8291,
+      "plate_area_px": 7815.7347,
+      "plate_area_frac": 0.0038,
+      "plate_aspect": 0.4566,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 0.7889,
+      "brightness": 62.4233,
+      "contrast": 21.9902,
+      "glare": 0.0,
+      "crop_quality": 0.5025,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_TOO_SMALL",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00106_024",
+      "feed_id": "cam07",
+      "frame_number": 106,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0106.jpg",
+      "bbox": [
+        590.61,
+        1039.5,
+        655.72,
+        1070.42
+      ],
+      "plate_width_px": 65.1051,
+      "plate_height_px": 30.916,
+      "plate_area_px": 2012.788,
+      "plate_area_frac": 0.001,
+      "plate_aspect": 2.1059,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.1354,
+      "brightness": 78.643,
+      "contrast": 31.751,
+      "glare": 0.0,
+      "crop_quality": 0.5532,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00102_020",
+      "feed_id": "cam07",
+      "frame_number": 102,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0102.jpg",
+      "bbox": [
+        590.52,
+        1039.58,
+        655.79,
+        1070.81
+      ],
+      "plate_width_px": 65.2687,
+      "plate_height_px": 31.2328,
+      "plate_area_px": 2038.5219,
+      "plate_area_frac": 0.001,
+      "plate_aspect": 2.0898,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.1185,
+      "brightness": 78.7069,
+      "contrast": 31.9508,
+      "glare": 0.0,
+      "crop_quality": 0.5539,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00011_017",
+      "feed_id": "cam06.d32924",
+      "frame_number": 11,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06_buffered\\cam06_0011.jpg",
+      "bbox": [
+        469.43,
+        483.19,
+        535.21,
+        497.67
+      ],
+      "plate_width_px": 65.7735,
+      "plate_height_px": 14.4784,
+      "plate_area_px": 952.2966,
+      "plate_area_frac": 0.0005,
+      "plate_aspect": 4.5429,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.2082,
+      "detection_source": "frame",
+      "blur_score": 994.6407,
+      "brightness": 29.7608,
+      "contrast": 26.8178,
+      "glare": 0.0,
+      "crop_quality": 0.5799,
+      "skew_deg": 1.5911,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 7,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam07_00098_016",
+      "feed_id": "cam07",
+      "frame_number": 98,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0098.jpg",
+      "bbox": [
+        589.41,
+        1039.68,
+        656.0,
+        1071.48
+      ],
+      "plate_width_px": 66.5918,
+      "plate_height_px": 31.7962,
+      "plate_area_px": 2117.3703,
+      "plate_area_frac": 0.001,
+      "plate_aspect": 2.0943,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.071,
+      "brightness": 82.3144,
+      "contrast": 33.5475,
+      "glare": 0.0,
+      "crop_quality": 0.5631,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 2,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00011_014",
+      "feed_id": "cam06.d32924",
+      "frame_number": 11,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06_buffered\\cam06_0011.jpg",
+      "bbox": [
+        453.35,
+        534.41,
+        521.28,
+        551.5
+      ],
+      "plate_width_px": 67.9304,
+      "plate_height_px": 17.0907,
+      "plate_area_px": 1160.9778,
+      "plate_area_frac": 0.0006,
+      "plate_aspect": 3.9747,
+      "plate_size_category": "SMALL",
+      "detection_confidence": 0.6127,
+      "detection_source": "roi",
+      "blur_score": 2526.5272,
+      "brightness": 46.3685,
+      "contrast": 39.8513,
+      "glare": 0.0,
+      "crop_quality": 0.6476,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 7,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00011_013",
+      "feed_id": "cam06.d32924",
+      "frame_number": 11,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06_buffered\\cam06_0011.jpg",
+      "bbox": [
+        1314.01,
+        907.69,
+        1382.31,
+        942.75
+      ],
+      "plate_width_px": 68.2944,
+      "plate_height_px": 35.0607,
+      "plate_area_px": 2394.4485,
+      "plate_area_frac": 0.0012,
+      "plate_aspect": 1.9479,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.6899,
+      "detection_source": "frame",
+      "blur_score": 2760.8433,
+      "brightness": 90.7153,
+      "contrast": 47.1294,
+      "glare": 0.0,
+      "crop_quality": 0.7203,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 7,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00108_008",
+      "feed_id": "cam06.d32924",
+      "frame_number": 108,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0108.jpg",
+      "bbox": [
+        694.61,
+        129.28,
+        768.34,
+        147.26
+      ],
+      "plate_width_px": 73.7332,
+      "plate_height_px": 17.9821,
+      "plate_area_px": 1325.8805,
+      "plate_area_frac": 0.0006,
+      "plate_aspect": 4.1004,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.782,
+      "detection_source": "roi",
+      "blur_score": 7013.7354,
+      "brightness": 46.0838,
+      "contrast": 50.9626,
+      "glare": 0.0,
+      "crop_quality": 0.6963,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DAY",
+      "vehicles_in_frame": 1,
+      "readability": "READABLE",
+      "ocr_text": "EJ0J81435",
+      "ocr_confidence": 0.2411,
+      "difficulty": [
+        "low_light"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "low_light"
+      ]
+    },
+    {
+      "image_id": "cam07_00095_013",
+      "feed_id": "cam07",
+      "frame_number": 95,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0095.jpg",
+      "bbox": [
+        585.47,
+        1040.59,
+        663.57,
+        1072.93
+      ],
+      "plate_width_px": 78.0965,
+      "plate_height_px": 32.3459,
+      "plate_area_px": 2526.1025,
+      "plate_area_frac": 0.0012,
+      "plate_aspect": 2.4144,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.2519,
+      "brightness": 93.5889,
+      "contrast": 34.646,
+      "glare": 0.0,
+      "crop_quality": 0.5794,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00011_012",
+      "feed_id": "cam06.d32924",
+      "frame_number": 11,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06_buffered\\cam06_0011.jpg",
+      "bbox": [
+        787.05,
+        744.46,
+        865.89,
+        763.61
+      ],
+      "plate_width_px": 78.8376,
+      "plate_height_px": 19.1502,
+      "plate_area_px": 1509.7579,
+      "plate_area_frac": 0.0007,
+      "plate_aspect": 4.1168,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.7553,
+      "detection_source": "roi",
+      "blur_score": 3031.5307,
+      "brightness": 76.6417,
+      "contrast": 81.3567,
+      "glare": 0.0,
+      "crop_quality": 0.7718,
+      "skew_deg": -0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 7,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam07_00083_004",
+      "feed_id": "cam07",
+      "frame_number": 83,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0083.jpg",
+      "bbox": [
+        567.44,
+        1039.06,
+        653.07,
+        1071.62
+      ],
+      "plate_width_px": 85.631,
+      "plate_height_px": 32.5563,
+      "plate_area_px": 2787.8312,
+      "plate_area_frac": 0.0013,
+      "plate_aspect": 2.6302,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.3303,
+      "brightness": 91.3626,
+      "contrast": 33.5766,
+      "glare": 0.0,
+      "crop_quality": 0.5734,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00012_005",
+      "feed_id": "cam06.d32924",
+      "frame_number": 12,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0012.jpg",
+      "bbox": [
+        584.19,
+        924.71,
+        670.56,
+        945.88
+      ],
+      "plate_width_px": 86.3754,
+      "plate_height_px": 21.1712,
+      "plate_area_px": 1828.666,
+      "plate_area_frac": 0.0009,
+      "plate_aspect": 4.0799,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.716,
+      "detection_source": "roi",
+      "blur_score": 1323.0752,
+      "brightness": 37.6913,
+      "contrast": 33.8513,
+      "glare": 0.0,
+      "crop_quality": 0.6621,
+      "skew_deg": -0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable"
+      ]
+    },
+    {
+      "image_id": "cam07_00091_010",
+      "feed_id": "cam07",
+      "frame_number": 91,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0091.jpg",
+      "bbox": [
+        570.36,
+        1040.06,
+        657.06,
+        1072.03
+      ],
+      "plate_width_px": 86.7055,
+      "plate_height_px": 31.9747,
+      "plate_area_px": 2772.3793,
+      "plate_area_frac": 0.0013,
+      "plate_aspect": 2.7117,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.3965,
+      "brightness": 92.8212,
+      "contrast": 33.4528,
+      "glare": 0.0,
+      "crop_quality": 0.5747,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00087_007",
+      "feed_id": "cam07",
+      "frame_number": 87,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0087.jpg",
+      "bbox": [
+        567.98,
+        1039.79,
+        656.79,
+        1072.34
+      ],
+      "plate_width_px": 88.8159,
+      "plate_height_px": 32.5455,
+      "plate_area_px": 2890.5576,
+      "plate_area_frac": 0.0014,
+      "plate_aspect": 2.729,
+      "plate_size_category": "MEDIUM",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.3815,
+      "brightness": 92.092,
+      "contrast": 33.3471,
+      "glare": 0.0,
+      "crop_quality": 0.5735,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00000_004",
+      "feed_id": "cam06.d32924",
+      "frame_number": 0,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0000.jpg",
+      "bbox": [
+        865.77,
+        246.97,
+        975.57,
+        328.56
+      ],
+      "plate_width_px": 109.8014,
+      "plate_height_px": 81.5889,
+      "plate_area_px": 8958.5692,
+      "plate_area_frac": 0.0043,
+      "plate_aspect": 1.3458,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 2.5186,
+      "brightness": 38.9904,
+      "contrast": 30.3827,
+      "glare": 0.0,
+      "crop_quality": 0.5069,
+      "skew_deg": -1.9091,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 5,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00048_007",
+      "feed_id": "cam06.d32924",
+      "frame_number": 48,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0048.jpg",
+      "bbox": [
+        35.73,
+        0.0,
+        146.94,
+        105.19
+      ],
+      "plate_width_px": 111.2148,
+      "plate_height_px": 105.1941,
+      "plate_area_px": 11699.1324,
+      "plate_area_frac": 0.0056,
+      "plate_aspect": 1.0572,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.1825,
+      "detection_source": "roi",
+      "blur_score": 5148.9534,
+      "brightness": 72.1448,
+      "contrast": 61.1486,
+      "glare": 0.0,
+      "crop_quality": 0.8469,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": true,
+      "lighting": "DAY",
+      "vehicles_in_frame": 2,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "partial",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "unreadable",
+        "low_confidence",
+        "partial"
+      ]
+    },
+    {
+      "image_id": "cam07_00110_027",
+      "feed_id": "cam07",
+      "frame_number": 110,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0110.jpg",
+      "bbox": [
+        1524.54,
+        1022.89,
+        1640.82,
+        1073.65
+      ],
+      "plate_width_px": 116.2821,
+      "plate_height_px": 50.768,
+      "plate_area_px": 5903.4132,
+      "plate_area_frac": 0.0028,
+      "plate_aspect": 2.2905,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.5522,
+      "brightness": 74.4606,
+      "contrast": 14.389,
+      "glare": 0.0,
+      "crop_quality": 0.4913,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 1,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00106_023",
+      "feed_id": "cam07",
+      "frame_number": 106,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0106.jpg",
+      "bbox": [
+        1523.02,
+        1024.03,
+        1642.05,
+        1073.72
+      ],
+      "plate_width_px": 119.0312,
+      "plate_height_px": 49.6952,
+      "plate_area_px": 5915.2777,
+      "plate_area_frac": 0.0029,
+      "plate_aspect": 2.3952,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.5478,
+      "brightness": 72.6403,
+      "contrast": 13.1292,
+      "glare": 0.0,
+      "crop_quality": 0.4851,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00011_015",
+      "feed_id": "cam06.d32924",
+      "frame_number": 11,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06_buffered\\cam06_0011.jpg",
+      "bbox": [
+        1285.9,
+        1013.51,
+        1405.55,
+        1052.5
+      ],
+      "plate_width_px": 119.6528,
+      "plate_height_px": 38.9897,
+      "plate_area_px": 4665.2335,
+      "plate_area_frac": 0.0022,
+      "plate_aspect": 3.0688,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.3042,
+      "detection_source": "frame",
+      "blur_score": 549.8017,
+      "brightness": 54.171,
+      "contrast": 31.9727,
+      "glare": 0.0,
+      "crop_quality": 0.7538,
+      "skew_deg": -0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 7,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": false,
+      "review_reason": "",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam07_00098_015",
+      "feed_id": "cam07",
+      "frame_number": 98,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0098.jpg",
+      "bbox": [
+        1521.99,
+        1023.14,
+        1642.6,
+        1073.5
+      ],
+      "plate_width_px": 120.6061,
+      "plate_height_px": 50.358,
+      "plate_area_px": 6073.4748,
+      "plate_area_frac": 0.0029,
+      "plate_aspect": 2.395,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.6147,
+      "brightness": 71.8568,
+      "contrast": 13.1051,
+      "glare": 0.0,
+      "crop_quality": 0.4842,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 2,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00102_019",
+      "feed_id": "cam07",
+      "frame_number": 102,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0102.jpg",
+      "bbox": [
+        1522.2,
+        1023.39,
+        1643.26,
+        1073.61
+      ],
+      "plate_width_px": 121.0584,
+      "plate_height_px": 50.2167,
+      "plate_area_px": 6079.1591,
+      "plate_area_frac": 0.0029,
+      "plate_aspect": 2.4107,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.5957,
+      "brightness": 72.3776,
+      "contrast": 13.1328,
+      "glare": 0.0,
+      "crop_quality": 0.4849,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00095_012",
+      "feed_id": "cam07",
+      "frame_number": 95,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0095.jpg",
+      "bbox": [
+        1520.46,
+        1021.74,
+        1642.79,
+        1072.81
+      ],
+      "plate_width_px": 122.3337,
+      "plate_height_px": 51.0747,
+      "plate_area_px": 6248.1515,
+      "plate_area_frac": 0.003,
+      "plate_aspect": 2.3952,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.6102,
+      "brightness": 71.5508,
+      "contrast": 13.4287,
+      "glare": 0.0,
+      "crop_quality": 0.485,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00087_006",
+      "feed_id": "cam07",
+      "frame_number": 87,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0087.jpg",
+      "bbox": [
+        1516.71,
+        1016.96,
+        1643.07,
+        1072.92
+      ],
+      "plate_width_px": 126.3664,
+      "plate_height_px": 55.96,
+      "plate_area_px": 7071.4592,
+      "plate_area_frac": 0.0034,
+      "plate_aspect": 2.2582,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.5206,
+      "brightness": 70.0133,
+      "contrast": 13.8978,
+      "glare": 0.0,
+      "crop_quality": 0.4847,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00091_009",
+      "feed_id": "cam07",
+      "frame_number": 91,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0091.jpg",
+      "bbox": [
+        1515.34,
+        1016.72,
+        1643.55,
+        1072.51
+      ],
+      "plate_width_px": 128.2123,
+      "plate_height_px": 55.7867,
+      "plate_area_px": 7152.5375,
+      "plate_area_frac": 0.0034,
+      "plate_aspect": 2.2983,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.5255,
+      "brightness": 70.3039,
+      "contrast": 13.7679,
+      "glare": 0.0,
+      "crop_quality": 0.4846,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00083_003",
+      "feed_id": "cam07",
+      "frame_number": 83,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0083.jpg",
+      "bbox": [
+        1514.15,
+        1015.88,
+        1642.41,
+        1072.81
+      ],
+      "plate_width_px": 128.2606,
+      "plate_height_px": 56.9325,
+      "plate_area_px": 7302.1985,
+      "plate_area_frac": 0.0035,
+      "plate_aspect": 2.2529,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 1.5299,
+      "brightness": 69.8069,
+      "contrast": 14.3894,
+      "glare": 0.0,
+      "crop_quality": 0.4862,
+      "skew_deg": null,
+      "angle_category": "UNKNOWN",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00106_021",
+      "feed_id": "cam07",
+      "frame_number": 106,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0106.jpg",
+      "bbox": [
+        263.43,
+        948.47,
+        392.94,
+        1060.3
+      ],
+      "plate_width_px": 129.5154,
+      "plate_height_px": 111.8281,
+      "plate_area_px": 14483.4659,
+      "plate_area_frac": 0.007,
+      "plate_aspect": 1.1582,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 2.0916,
+      "brightness": 66.1189,
+      "contrast": 25.0241,
+      "glare": 0.0,
+      "crop_quality": 0.5182,
+      "skew_deg": 0.1726,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam07_00102_017",
+      "feed_id": "cam07",
+      "frame_number": 102,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\deep\\frames\\cam07_0102.jpg",
+      "bbox": [
+        262.9,
+        948.68,
+        393.09,
+        1061.1
+      ],
+      "plate_width_px": 130.1873,
+      "plate_height_px": 112.4197,
+      "plate_area_px": 14635.6239,
+      "plate_area_frac": 0.0071,
+      "plate_aspect": 1.158,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 2.1651,
+      "brightness": 66.3382,
+      "contrast": 25.1496,
+      "glare": 0.0,
+      "crop_quality": 0.519,
+      "skew_deg": 8.1104,
+      "angle_category": "SLIGHT",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 4,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "low_contrast",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_contrast",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00000_003",
+      "feed_id": "cam06.d32924",
+      "frame_number": 0,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0000.jpg",
+      "bbox": [
+        1145.12,
+        391.71,
+        1280.24,
+        499.05
+      ],
+      "plate_width_px": 135.1207,
+      "plate_height_px": 107.3398,
+      "plate_area_px": 14503.8343,
+      "plate_area_frac": 0.007,
+      "plate_aspect": 1.2588,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 24.1605,
+      "brightness": 59.6507,
+      "contrast": 60.8423,
+      "glare": 0.0016,
+      "crop_quality": 0.65,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 5,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "blur",
+        "low_light",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "blur"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00000_002",
+      "feed_id": "cam06.d32924",
+      "frame_number": 0,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0000.jpg",
+      "bbox": [
+        604.86,
+        878.77,
+        1081.33,
+        1051.43
+      ],
+      "plate_width_px": 476.4704,
+      "plate_height_px": 172.6554,
+      "plate_area_px": 82265.1987,
+      "plate_area_frac": 0.0397,
+      "plate_aspect": 2.7597,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.0,
+      "detection_source": "prior",
+      "blur_score": 263.054,
+      "brightness": 79.3347,
+      "contrast": 54.2791,
+      "glare": 0.0,
+      "crop_quality": 0.9277,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": false,
+      "lighting": "DIM",
+      "vehicles_in_frame": 5,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "low_light",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "detector confidence too low to trust unreviewed",
+      "mined_for": [
+        "low_light",
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence"
+      ]
+    },
+    {
+      "image_id": "cam06.d32924_00012_006",
+      "feed_id": "cam06.d32924",
+      "frame_number": 12,
+      "frame_path": "D:\\tessttt\\testttttt\\reports\\frames\\cam06\\cam06_0012.jpg",
+      "bbox": [
+        978.35,
+        0.0,
+        1920.0,
+        130.52
+      ],
+      "plate_width_px": 941.6468,
+      "plate_height_px": 130.5191,
+      "plate_area_px": 122902.8809,
+      "plate_area_frac": 0.0593,
+      "plate_aspect": 7.2146,
+      "plate_size_category": "LARGE",
+      "detection_confidence": 0.1874,
+      "detection_source": "frame",
+      "blur_score": 3425.2494,
+      "brightness": 92.7611,
+      "contrast": 47.4116,
+      "glare": 0.0,
+      "crop_quality": 0.9195,
+      "skew_deg": 0.0,
+      "angle_category": "FRONTAL",
+      "touches_border": true,
+      "lighting": "DIM",
+      "vehicles_in_frame": 3,
+      "readability": "UNREADABLE_QUALITY",
+      "ocr_text": "",
+      "ocr_confidence": 0.0,
+      "difficulty": [
+        "partial",
+        "multi_vehicle",
+        "low_confidence",
+        "unreadable"
+      ],
+      "needs_human_review": true,
+      "review_reason": "aspect ratio outside the plausible range for a plate",
+      "mined_for": [
+        "multi_vehicle",
+        "unreadable",
+        "low_confidence",
+        "partial"
+      ]
+    }
+  ],
+  "temporal_neighbourhood": [
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": -2
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": -1
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 0
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 1
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 2
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 9
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 10
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 11
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 12
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 13
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 14
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 46
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 47
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 48
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 49
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 50
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 106
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 107
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 108
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 109
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 110
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 178
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 179
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 180
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 181
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 182
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 202
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 203
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 204
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 205
+    },
+    {
+      "feed_id": "cam06.d32924",
+      "frame_number": 206
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 29
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 30
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 31
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 32
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 33
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 36
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 37
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 38
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 39
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 40
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 81
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 82
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 83
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 84
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 85
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 86
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 87
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 88
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 89
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 90
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 91
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 92
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 93
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 94
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 95
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 96
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 97
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 98
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 99
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 100
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 101
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 102
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 103
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 104
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 105
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 106
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 107
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 108
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 109
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 110
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 111
+    },
+    {
+      "feed_id": "cam07",
+      "frame_number": 112
+    }
+  ]
+}

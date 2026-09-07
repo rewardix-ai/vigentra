@@ -1,0 +1,12 @@
+{
+  "difficulty": "glare",
+  "count": 5,
+  "note": "Index into images/, not a copy. The same image may appear under several tags, and duplicating it would silently reweight the training set.",
+  "images": [
+    "images/train/cam04_40058_866_151_97x103.jpg",
+    "images/train/cam04_40059_866_151_97x103.jpg",
+    "images/train/cam05_50072_0_691_263x225.jpg",
+    "images/val/cam04_40060_866_151_97x103.jpg",
+    "images/val/cam04_40061_866_151_97x103.jpg"
+  ]
+}

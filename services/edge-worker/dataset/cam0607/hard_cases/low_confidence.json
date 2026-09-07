@@ -1,0 +1,9 @@
+{
+  "difficulty": "low_confidence",
+  "count": 2,
+  "note": "Index into images/, not a copy. The same image may appear under several tags, and duplicating it would silently reweight the training set.",
+  "images": [
+    "images/train/cam07_70100_585_304_101x160.jpg",
+    "images/val/cam07_70099_585_304_101x160.jpg"
+  ]
+}

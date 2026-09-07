@@ -799,6 +799,32 @@ def run(
             "close vehicle (stride %d)",
             d["looked"], d["processed"], d["bursts"], d["stride"],
         )
+    if anpr is not None:
+        report = anpr.stats()
+        r = report.get("readability") or {}
+        if r.get("crops_measured"):
+            # The answer to "why did this camera produce no plates". Said out
+            # loud every run, because the alternative is an operator inferring
+            # a quiet road from a camera that simply cannot resolve a plate.
+            logger.info(
+                "readability %s: %d plate crop(s), %d at a readable size, "
+                "%d below the floor; tracks settled %d confirmed / %d "
+                "uncertain / %d unreadable",
+                r.get("verdict"), r.get("crops_measured"),
+                r.get("crops_at_readable_size"), r.get("crops_below_floor"),
+                r.get("confirmed"), r.get("uncertain"), r.get("unreadable"),
+            )
+        stages = (report.get("timings") or {}).get("stages") or {}
+        if stages:
+            # P99, not the mean: the frame in each hundred that overruns is
+            # what a viewer experiences, and an average hides exactly that.
+            logger.info(
+                "timings p50/p99 ms: %s",
+                "  ".join(
+                    f"{name}={d['p50_ms']:.0f}/{d['p99_ms']:.0f}"
+                    for name, d in sorted(stages.items())
+                ),
+            )
     if dry_run:
         logger.info("dry run - nothing was sent to the central API")
     return 0

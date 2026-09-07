@@ -1,0 +1,122 @@
+{
+  "generated_at": "2026-09-07T05:55:44.288516+00:00",
+  "version": "v2",
+  "unit": "vehicle_crop",
+  "label_provenance": {
+    "label_source": "adjudicated_proposal",
+    "adjudicated_by": {
+      "vlm": 1175
+    },
+    "human_verified": false,
+    "WARNING": "human_verified is false unless every adjudication came from a person. A vision-model adjudication is a stronger filter than an unreviewed proposal and a weaker one than human review. Do not report accuracy from this set as measured against human ground truth.",
+    "KNOWN_RESIDUAL": "Plates no proposer ever proposed are absent from the labels and act as false negatives. This residual is unmeasured and cannot be measured without an exhaustively hand-labelled set. It biases most strongly against the smallest plates, which is the very class this dataset exists to improve."
+  },
+  "size_bands": {
+    "edges_px": {
+      "EXTREMELY_TINY": "<8",
+      "VERY_SMALL": "8-10",
+      "SMALL": "10-22",
+      "MEDIUM": "22-43",
+      "LARGE": ">=43"
+    },
+    "physical_readability_floor_px": 60.0,
+    "provenance": "692 adjudicated plate boxes in dataset v2",
+    "sample_size": 692
+  },
+  "plate_boxes": 670,
+  "boxes_per_split": {
+    "val": 93,
+    "test": 164,
+    "train": 413
+  },
+  "images_per_split": {
+    "val": 106,
+    "test": 223,
+    "train": 604
+  },
+  "plate_width_px": {
+    "p5": 4.4,
+    "p25": 8.2,
+    "p50": 13.3,
+    "p75": 29.98,
+    "p90": 52.0,
+    "p95": 52.3,
+    "p99": 66.35,
+    "min": 3.6,
+    "max": 120.0,
+    "n": 670
+  },
+  "size_distribution_by_split": {
+    "val": {
+      "VERY_SMALL": 22,
+      "SMALL": 25,
+      "MEDIUM": 23,
+      "EXTREMELY_TINY": 18,
+      "LARGE": 5
+    },
+    "test": {
+      "EXTREMELY_TINY": 26,
+      "MEDIUM": 35,
+      "VERY_SMALL": 28,
+      "SMALL": 64,
+      "LARGE": 11
+    },
+    "train": {
+      "VERY_SMALL": 85,
+      "MEDIUM": 74,
+      "SMALL": 78,
+      "EXTREMELY_TINY": 91,
+      "LARGE": 85
+    }
+  },
+  "difficulty_by_split": {
+    "val": {
+      "tiny": 40,
+      "low_light": 14,
+      "low_contrast": 36,
+      "unreadable": 93,
+      "low_confidence": 38,
+      "overexposed": 5,
+      "glare": 2,
+      "blur": 2
+    },
+    "test": {
+      "tiny": 54,
+      "blur": 4,
+      "low_contrast": 90,
+      "low_confidence": 47,
+      "unreadable": 162,
+      "low_light": 27,
+      "overexposed": 3
+    },
+    "train": {
+      "tiny": 176,
+      "low_confidence": 139,
+      "unreadable": 405,
+      "low_contrast": 173,
+      "low_light": 60,
+      "blur": 11,
+      "overexposed": 13,
+      "partial": 1,
+      "glare": 3,
+      "angled": 1
+    }
+  },
+  "readability": {
+    "UNREADABLE_TOO_SMALL": 660,
+    "NOT_ATTEMPTED": 10
+  },
+  "balance": {
+    "train_boxes": 413,
+    "train_tiny_or_smaller": 176,
+    "train_hard_share": 0.426,
+    "note": "Share of training boxes in the two smallest bands. Below ~0.3 the set is dominated by plates the detector already finds, and training on it will not move small-plate recall."
+  },
+  "temporal_leakage": {
+    "time_blocks": 58,
+    "blocks_in_multiple_splits": 0,
+    "offenders": {},
+    "verdict": "CLEAN"
+  },
+  "contact_sheets": 6
+}

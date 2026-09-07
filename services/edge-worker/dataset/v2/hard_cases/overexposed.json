@@ -1,0 +1,27 @@
+{
+  "difficulty": "overexposed",
+  "count": 21,
+  "note": "Index into images/, not a copy. The same image may appear under several tags, and duplicating it would silently reweight the training set.",
+  "images": [
+    "images/test/cam13_130064_1073_258_194x154.jpg",
+    "images/test/cam13_130070_310_295_162x117.jpg",
+    "images/test/cam13_130071_411_269_276x129.jpg",
+    "images/train/cam01_10078_906_816_85x104.jpg",
+    "images/train/cam04_40031_700_140_116x79.jpg",
+    "images/train/cam04_40058_866_151_97x103.jpg",
+    "images/train/cam04_40059_866_151_97x103.jpg",
+    "images/train/cam05_50031_1054_364_117x122.jpg",
+    "images/train/cam05_50072_0_691_263x225.jpg",
+    "images/train/cam05_50077_1269_442_327x273.jpg",
+    "images/train/cam05_50078_1437_503_483x411.jpg",
+    "images/train/cam05_50083_1456_594_277x209.jpg",
+    "images/train/cam05_50101_135_471_169x141.jpg",
+    "images/train/cam05_50106_1226_502_173x138.jpg",
+    "images/train/cam18_180001_491_36_144x89.jpg",
+    "images/val/cam04_40060_866_151_97x103.jpg",
+    "images/val/cam04_40061_866_151_97x103.jpg",
+    "images/val/cam05_50002_1198_482_116x104.jpg",
+    "images/val/cam05_50009_392_458_124x123.jpg",
+    "images/val/cam16_160055_865_140_192x126.jpg"
+  ]
+}

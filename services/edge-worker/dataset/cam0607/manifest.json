@@ -1,0 +1,76 @@
+{
+  "version": "cam0607",
+  "built_at": "2026-09-07T06:02:19.607207+00:00",
+  "cameras": [
+    "cam06",
+    "cam07"
+  ],
+  "unit": "vehicle_crop",
+  "seed": 0,
+  "time_block_frames": 20,
+  "split_rule": "stable sha256 of (camera_id, frame_number // time_block); a vehicle sequence cannot straddle splits",
+  "sources": {
+    "proposals": "D:\\tessttt\\testttttt\\reports\\proposals\\proposals.json",
+    "verdicts": "D:\\tessttt\\testttttt\\reports\\proposals\\verdicts.json",
+    "frames_root": "D:\\tessttt\\testttttt\\reports\\deep\\frames",
+    "unverified_samples": "reports/plate_samples_cam0607.json"
+  },
+  "label_provenance": {
+    "label_source": "adjudicated_proposal",
+    "adjudicated_by": {
+      "vlm": 1175
+    },
+    "human_verified": false,
+    "WARNING": "human_verified is false unless every adjudication came from a person. A vision-model adjudication is a stronger filter than an unreviewed proposal and a weaker one than human review. Do not report accuracy from this set as measured against human ground truth.",
+    "KNOWN_RESIDUAL": "Plates no proposer ever proposed are absent from the labels and act as false negatives. This residual is unmeasured and cannot be measured without an exhaustively hand-labelled set. It biases most strongly against the smallest plates, which is the very class this dataset exists to improve."
+  },
+  "size_bands": {
+    "edges_px": {
+      "EXTREMELY_TINY": "<20",
+      "VERY_SMALL": "20-40",
+      "SMALL": "40-60",
+      "MEDIUM": "60-120",
+      "LARGE": ">=120"
+    },
+    "physical_readability_floor_px": 60.0,
+    "provenance": "6 adjudicated plate boxes in dataset cam0607 (too few observations for quantiles; anchored on the 60px physical floor)",
+    "sample_size": 6
+  },
+  "counts": {
+    "skipped_contains_unsure": 7,
+    "plate_boxes_train": 5,
+    "images_positive": 6,
+    "plate_boxes_val": 1
+  },
+  "images_per_split": {
+    "train": 5,
+    "val": 1
+  },
+  "plate_boxes": 6,
+  "size_distribution": {
+    "MEDIUM": 2,
+    "SMALL": 2,
+    "EXTREMELY_TINY": 2
+  },
+  "difficulty_distribution": {
+    "low_light": 3,
+    "unreadable": 4,
+    "tiny": 2,
+    "low_confidence": 2
+  },
+  "plate_width_px": {
+    "p5": 15.2,
+    "p25": 25.9,
+    "p50": 58.0,
+    "p75": 65.12,
+    "p90": 79.0,
+    "p95": 84.75,
+    "p99": 89.35,
+    "min": 15.2,
+    "max": 90.5,
+    "n": 6
+  },
+  "unverified_proposals": 20,
+  "quarantined_boxes": 0,
+  "quarantine_rule": "aspect < 1.2 (geometrically impossible for a plate); min_plate_width=0.0px"
+}

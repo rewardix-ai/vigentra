@@ -1,0 +1,24 @@
+{
+  "difficulty": "blur",
+  "count": 17,
+  "note": "Index into images/, not a copy. The same image may appear under several tags, and duplicating it would silently reweight the training set.",
+  "images": [
+    "images/test/cam01_10020_392_605_121x76.jpg",
+    "images/test/cam01_10033_393_607_119x76.jpg",
+    "images/test/cam01_10034_393_607_119x75.jpg",
+    "images/test/cam14_140018_891_612_341x276.jpg",
+    "images/train/cam01_10067_394_605_119x74.jpg",
+    "images/train/cam01_10068_392_605_121x75.jpg",
+    "images/train/cam01_10069_403_652_168x113.jpg",
+    "images/train/cam01_10077_792_628_88x95.jpg",
+    "images/train/cam14_140035_1068_271_646x519.jpg",
+    "images/train/cam14_140044_1399_590_344x317.jpg",
+    "images/train/cam14_140045_1399_591_344x316.jpg",
+    "images/train/cam14_140046_1399_590_345x318.jpg",
+    "images/train/cam14_140047_1400_591_343x316.jpg",
+    "images/train/cam14_140048_1393_614_397x308.jpg",
+    "images/train/cam14_140088_840_563_208x283.jpg",
+    "images/val/cam16_160047_831_157_658x718.jpg",
+    "images/val/cam16_160048_835_166_459x489.jpg"
+  ]
+}

@@ -10,7 +10,8 @@ noise:
     D_tiny_oversample    C plus extra exposure to tiny-plate images
 
 Each writes weights, `args.yaml`, `results.csv` and both checkpoints under
-`runs/plate/<name>/`. Nothing here overwrites the deployed weights.
+`services/edge-worker/runs/plate/<name>/` (a rerun gets `<name>2`, never an
+overwrite). Nothing here touches the deployed weights.
 
 What the augmentation choices are, and are not, based on
 --------------------------------------------------------
@@ -37,11 +38,9 @@ import argparse
 import csv
 import json
 import logging
-import shutil
 import sys
 import time
 import warnings
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -63,7 +62,12 @@ SEED = 0
 COMMON = dict(
     seed=SEED,
     deterministic=True,
-    patience=30,
+    # Early stopping is OFF. ultralytics closes mosaic only at
+    # epochs - close_mosaic and breaks out first if patience fires, so with it
+    # on, whether a run ever trained mosaic-free depended on when it peaked -
+    # an undocumented variable in what is meant to be a controlled comparison.
+    # Every experiment runs the full schedule; best.pt is still the best epoch.
+    patience=0,
     optimizer="auto",
     amp=True,                 # mixed precision: roughly halves activation memory
     fliplr=0.0,               # see module docstring
@@ -72,9 +76,14 @@ COMMON = dict(
     plots=True,
     save_period=-1,
     workers=0,                # 8 GB of RAM; forked workers risk the host OOM
-                          # that killed the first attempt, and buy ~nothing on 604 crops
-    project="runs/plate",
-    exist_ok=True,
+                              # that killed the first attempt, and buy ~nothing on 604 crops
+    # Absolute, because ultralytics nests a RELATIVE project under
+    # runs/<task>/ and every documented path then pointed at nothing.
+    project=str(WORKER_ROOT / "runs" / "plate"),
+    # A rerun gets its own directory (name2, name3...). With exist_ok the
+    # rerun overwrote best.pt under the feet of every report that cited it,
+    # and appended a second headerless block to results.csv.
+    exist_ok=False,
 )
 
 #: Augmentation aimed at small objects.
@@ -89,36 +98,38 @@ SMALL_OBJECT_AUG = dict(
     scale=0.9,
     mosaic=1.0,
     close_mosaic=10,          # last 10 epochs without mosaic, to settle
-    copy_paste=0.3,
     degrees=7.0,
     perspective=0.0005,
     translate=0.15,
     hsv_h=0.015,
     hsv_s=0.6,
     hsv_v=0.5,                # the estate is largely night and dim
-    erasing=0.0,              # occluding a 20px plate deletes it entirely
 )
+# Deliberately absent: copy_paste (a no-op on box-only labels - ultralytics
+# returns early when there are no segments, so an earlier version claimed an
+# effect it could not have had) and erasing (classification-only; ignored by
+# the detect trainer).
 
 CONSERVATIVE_AUG = dict(
-    scale=0.5, mosaic=1.0, close_mosaic=10, copy_paste=0.0,
+    scale=0.5, mosaic=1.0, close_mosaic=10,
     degrees=0.0, perspective=0.0, translate=0.1,
-    hsv_h=0.015, hsv_s=0.7, hsv_v=0.4, erasing=0.0,
+    hsv_h=0.015, hsv_s=0.7, hsv_v=0.4,
 )
 
 EXPERIMENTS: dict[str, dict] = {
     "A_baseline_640": dict(
         model="yolo11s.pt", imgsz=640, batch=8, **CONSERVATIVE_AUG,
-        _note="Deployed resolution, stock augmentation. The control."),
+        _note="Low-resolution control with stock augmentation."),
     "B_highres_960": dict(
         model="yolo11s.pt", imgsz=960, batch=4, **CONSERVATIVE_AUG,
-        _note="Only the resolution changes, so any difference is attributable."),
+        _note="Deployed ROI resolution (roi_imgsz=960); only imgsz differs from A."),
     "C_smallobj_aug": dict(
         model="yolo11s.pt", imgsz=960, batch=4, **SMALL_OBJECT_AUG,
-        _note="B plus scale/mosaic/copy-paste aimed at small objects."),
+        _note="B plus scale jitter / mosaic / small rotation aimed at small objects."),
     "D_tiny_oversample": dict(
-        model="yolo11s.pt", imgsz=960, batch=4, _oversample=True,
+        model="yolo11s.pt", imgsz=960, batch=4, _oversample=3,
         **SMALL_OBJECT_AUG,
-        _note="C plus 3x exposure to images containing a tiny plate."),
+        _note="C plus 3x exposure to tiny-plate images, at an EQUAL step budget."),
 }
 
 
@@ -143,7 +154,8 @@ def build_oversampled_list(dataset: Path, factor: int = 3) -> Path:
     dominate the batch statistics and the larger bands regress, which is the
     failure this whole exercise is trying not to cause in reverse.
     """
-    rows = list(csv.DictReader(open(dataset / "metadata.csv", encoding="utf-8")))
+    with open(dataset / "metadata.csv", newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
     tiny_images = {r["image_file"] for r in rows
                    if r["split"] == "train" and r["plate_size_category"] in TINY_BANDS}
 
@@ -164,9 +176,13 @@ def build_oversampled_list(dataset: Path, factor: int = 3) -> Path:
     return out
 
 
-def data_yaml_for(dataset: Path, oversample: bool, factor: int = 3) -> Path:
-    """The data.yaml an experiment should train against."""
-    if not oversample:
+def data_yaml_for(dataset: Path, factor: int) -> Path:
+    """The data.yaml an experiment should train against.
+
+    *factor* 0 or 1 means the plain dataset; otherwise a train list with
+    tiny-plate images repeated *factor* times.
+    """
+    if factor <= 1:
         return dataset / "data.yaml"
     listing = build_oversampled_list(dataset, factor)
     path = dataset / f"data_oversampled_x{factor}.yaml"
@@ -195,12 +211,26 @@ def run_experiment(name: str, dataset: Path, epochs: int, device: str,
 
     spec = dict(EXPERIMENTS[name])
     note = spec.pop("_note", "")
-    oversample = spec.pop("_oversample", False)
+    factor = int(spec.pop("_oversample", 0) or 0)
     model_name = spec.pop("model")
     if batch_override:
         spec["batch"] = batch_override
 
-    data = data_yaml_for(dataset, oversample)
+    data = data_yaml_for(dataset, factor)
+    # Equal STEP budget, not equal epochs. Repeating tiny-plate images makes
+    # the epoch ~46% longer, so at equal epochs the oversampled run would also
+    # simply have trained longer - and any gain could be either. Scaling the
+    # epochs down by the list's growth keeps optimizer steps matched to the
+    # other experiments, so the only remaining difference is exposure.
+    if factor > 1:
+        listing = dataset / f"train_oversampled_x{factor}.txt"
+        entries = sum(1 for line in listing.read_text(encoding="utf-8").splitlines()
+                      if line.strip())
+        plain = len(list((dataset / "images" / "train").glob("*.jpg")))
+        scaled = max(1, round(epochs * plain / max(1, entries)))
+        log.info("oversample x%d: %d list entries vs %d images -> %d epochs "
+                 "for an equal step budget", factor, entries, plain, scaled)
+        epochs = scaled
     args = {**COMMON, **spec, "data": str(data), "epochs": epochs,
             "name": name, "device": device}
 
@@ -244,11 +274,14 @@ def run_experiment(name: str, dataset: Path, epochs: int, device: str,
         "model": model_name,
         "dataset": str(dataset),
         "data_yaml": str(data),
-        "oversampled": oversample,
+        "oversample_factor": factor,
         "epochs_requested": epochs,
         "device": device,
-        "peak_vram_gb": peak_vram_gb,
-        "args": {k: v for k, v in args.items() if not k.startswith("_")},
+        # max_memory_allocated understates what the card actually holds (the
+    # caching allocator's reserved blocks and the CUDA context are on top),
+    # so this is a lower bound on the real footprint, and is named as one.
+    "peak_vram_allocated_gb": peak_vram_gb,
+        "args": dict(args),
         "val_metrics": metrics,
         "run_dir": str(run_dir),
         "best_checkpoint": str(run_dir / "weights" / "best.pt"),
@@ -267,8 +300,8 @@ def main() -> int:
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--dataset", default="dataset/v2")
     parser.add_argument("--epochs", type=int, default=80)
-    parser.add_argument("--device", default="0",
-                        help="'0' for the first GPU, 'cpu' to force CPU.")
+    parser.add_argument("--device", default=None,
+                        help="None lets ultralytics pick; '0' first GPU; 'cpu'.")
     parser.add_argument("--batch", type=int, default=None,
                         help="Override the experiment's batch size (VRAM).")
     parser.add_argument("--summary", default="reports/training_experiments.json")
@@ -294,20 +327,27 @@ def main() -> int:
         raise SystemExit(f"No data.yaml under {dataset}. Run prepare_dataset.py.")
 
     summary_path = Path(args.summary)
-    records = []
+    records: list[dict] = []
     if summary_path.exists():
         try:
-            records = json.load(open(summary_path, encoding="utf-8")).get("runs", [])
+            with open(summary_path, encoding="utf-8") as fh:
+                records = json.load(fh).get("runs", [])
         except Exception:                          # noqa: BLE001
             records = []
 
+    def remember(record: dict) -> None:
+        # One record per experiment name: a rerun replaces its predecessor
+        # rather than leaving a FAILED entry beside a later success.
+        records[:] = [r for r in records if r.get("experiment") != record["experiment"]]
+        records.append(record)
+
     for name in names:
         try:
-            records.append(run_experiment(name, dataset, args.epochs,
-                                          args.device, args.batch))
+            remember(run_experiment(name, dataset, args.epochs,
+                                    args.device, args.batch))
         except Exception as exc:                   # noqa: BLE001
             log.error("experiment %s failed: %s", name, exc)
-            records.append({"experiment": name, "error": str(exc)})
+            remember({"experiment": name, "error": str(exc)})
         write_json(summary_path, {
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "seed": SEED, "runs": records})
@@ -322,7 +362,7 @@ def main() -> int:
         m = record.get("val_metrics") or {}
         print(f"  {record['experiment']:<24} mAP50={m.get('mAP50','?'):<8} "
               f"R={m.get('recall','?'):<8} {record['elapsed_h']}h "
-              f"vram={record.get('peak_vram_gb')}GB")
+              f"vram>={record.get('peak_vram_allocated_gb')}GB")
     print(f"\nWritten: {summary_path}")
     return 0
 

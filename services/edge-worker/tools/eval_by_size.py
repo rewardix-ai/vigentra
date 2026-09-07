@@ -26,8 +26,10 @@ Pass --iou 0.5 to see the stricter number too.
 Usage
 -----
     python tools/eval_by_size.py --weights D:/ANPR/models/plate_detector.pt
-    python tools/eval_by_size.py --weights runs/plate/C_smallobj_aug/weights/best.pt \
-        --imgsz 960 --split test --tag C_smallobj_aug
+    python tools/eval_by_size.py --weights runs/detect/runs/plate/C_smallobj_aug/weights/best.pt
+
+The tag defaults to the experiment name (the run directory), never to
+"best", so successive experiments do not overwrite each other's reports.
 """
 from __future__ import annotations
 
@@ -51,33 +53,26 @@ for candidate in (str(WORKER_ROOT), str(HERE)):
 
 import numpy as np  # noqa: E402
 
-from _corpus import load_json, write_json  # noqa: E402
+from _corpus import (  # noqa: E402
+    MATCH_IOU, SIZE_BANDS, DifficultyTag, Readability, experiment_name,
+    greedy_match, write_json,
+)
 
 log = logging.getLogger("eval_by_size")
 
-BANDS = ("EXTREMELY_TINY", "VERY_SMALL", "SMALL", "MEDIUM", "LARGE")
-#: Difficulty tags reported alongside the size bands.
-TAGS = ("tiny", "blur", "low_light", "overexposed", "glare", "low_contrast",
-        "angled", "partial", "multi_vehicle", "low_confidence", "unreadable")
-READABILITY = ("READABLE", "UNREADABLE_TOO_SMALL", "UNREADABLE_QUALITY",
-               "NOT_ATTEMPTED")
+BANDS = SIZE_BANDS
+#: Difficulty tags reported alongside the size bands - every tag the
+#: classifier can emit, so a new one cannot silently vanish from the report.
+TAGS = tuple(t.value for t in DifficultyTag)
+READABILITY = tuple(r.value for r in Readability)
 
-
-def iou_matrix(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
-    """IoU of every prediction against every ground-truth box."""
-    if len(preds) == 0 or len(gts) == 0:
-        return np.zeros((len(preds), len(gts)), dtype=np.float32)
-    px1, py1, px2, py2 = preds[:, 0:1], preds[:, 1:2], preds[:, 2:3], preds[:, 3:4]
-    gx1, gy1, gx2, gy2 = gts[:, 0], gts[:, 1], gts[:, 2], gts[:, 3]
-    ix1 = np.maximum(px1, gx1)
-    iy1 = np.maximum(py1, gy1)
-    ix2 = np.minimum(px2, gx2)
-    iy2 = np.minimum(py2, gy2)
-    inter = np.clip(ix2 - ix1, 0, None) * np.clip(iy2 - iy1, 0, None)
-    pa = np.clip(px2 - px1, 0, None) * np.clip(py2 - py1, 0, None)
-    ga = np.clip(gx2 - gx1, 0, None) * np.clip(gy2 - gy1, 0, None)
-    union = pa + ga - inter
-    return np.where(union > 0, inter / np.maximum(union, 1e-9), 0.0)
+#: NMS IoU. 0.7 is what the deployed Detector runs (it passes none, and that
+#: is ultralytics' default), so numbers here describe the same boxes the
+#: pipeline would emit.
+DEPLOYED_NMS_IOU = 0.7
+#: The deployed ROI pass runs vehicle crops at roi_imgsz = 960 (config.yaml);
+#: that is the resolution a vehicle-crop dataset must be evaluated at.
+DEPLOYED_IMGSZ = 960
 
 
 def average_precision(tp: np.ndarray, fp: np.ndarray, n_gt: int) -> float:
@@ -98,50 +93,38 @@ def average_precision(tp: np.ndarray, fp: np.ndarray, n_gt: int) -> float:
 def score_stratum(per_image: list[dict], selector, iou_thresh: float) -> dict:
     """Precision/recall/AP for the subset of ground truth *selector* picks.
 
-    `per_image` holds, for each image, its predictions (sorted later) and its
-    ground-truth boxes with their attributes. Ground truth the selector rejects
-    becomes an ignore region rather than background - see the module docstring.
+    Matching is done ONCE per image against every label by the shared
+    `greedy_match`; this function only decides, per stratum, whether the label
+    a prediction claimed is a target (TP), an ignore region (skipped), or
+    nothing (FP). Ground truth the selector rejects becomes an ignore region
+    rather than background - see the module docstring.
     """
     records: list[tuple[float, int, int]] = []      # (conf, tp, fp)
     n_gt = 0
 
     for item in per_image:
         gts = item["gts"]
-        target_idx = [i for i, g in enumerate(gts) if selector(g)]
-        ignore_idx = [i for i, g in enumerate(gts) if not selector(g)]
-        n_gt += len(target_idx)
-
+        targets = {i for i, g in enumerate(gts) if selector(g)}
+        n_gt += len(targets)
         preds = item["preds"]
-        if len(preds) == 0:
+        if not preds:
             continue
-        boxes = np.array([p[:4] for p in preds], dtype=np.float32)
-        confs = np.array([p[4] for p in preds], dtype=np.float32)
-        order = np.argsort(-confs)
-
-        gt_boxes = np.array([g["bbox"] for g in gts], dtype=np.float32) \
-            if gts else np.zeros((0, 4), np.float32)
-        ious = iou_matrix(boxes, gt_boxes)
-
-        claimed_target: set[int] = set()
-        for pi in order:
-            best_t, best_iou = -1, iou_thresh
-            for gi in target_idx:
-                if gi in claimed_target:
-                    continue
-                if ious[pi, gi] >= best_iou:
-                    best_t, best_iou = gi, ious[pi, gi]
-            if best_t >= 0:
-                claimed_target.add(best_t)
-                records.append((float(confs[pi]), 1, 0))
-                continue
-            # Landed on a plate of a different size: not this band's business.
-            if any(ious[pi, gi] >= iou_thresh for gi in ignore_idx):
-                continue
-            records.append((float(confs[pi]), 0, 1))
+        claimed = item.get("_claimed")
+        if claimed is None:
+            claimed = item["_claimed"] = greedy_match(
+                [p[:4] for p in preds], [p[4] for p in preds],
+                [g["bbox"] for g in gts], iou_thresh)
+        for pred, gi in zip(preds, claimed):
+            if gi >= 0 and gi in targets:
+                records.append((float(pred[4]), 1, 0))
+            elif gi >= 0:
+                continue                    # another band's plate: ignored
+            else:
+                records.append((float(pred[4]), 0, 1))
 
     if not records:
         return {"gt": n_gt, "detected": 0, "precision": 0.0, "recall": 0.0,
-                "AP": float("nan") if n_gt == 0 else 0.0, "predictions": 0}
+                "AP": None if n_gt == 0 else 0.0, "predictions": 0}
 
     records.sort(key=lambda r: -r[0])
     tp = np.array([r[1] for r in records], dtype=np.float32)
@@ -153,7 +136,7 @@ def score_stratum(per_image: list[dict], selector, iou_thresh: float) -> dict:
         "predictions": len(records),
         "precision": round(float(detected / max(1, len(records))), 4),
         "recall": round(float(detected / n_gt), 4) if n_gt else 0.0,
-        "AP": round(average_precision(tp, fp, n_gt), 4),
+        "AP": None if n_gt == 0 else round(average_precision(tp, fp, n_gt), 4),
     }
 
 
@@ -202,28 +185,37 @@ def collect(dataset: Path, split: str, weights: str, imgsz: int, conf: float,
     return per_image
 
 
+def _row(name: str, s: dict) -> None:
+    ap = "     n/a" if s["AP"] is None else f"{s['AP']:>8.3f}"
+    print(f"{name:<22}{s['gt']:>6}{s['detected']:>6}"
+          f"{s['recall']:>9.3f}{s['precision']:>8.3f}{ap}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--weights", required=True)
     parser.add_argument("--dataset", default="dataset/v2")
     parser.add_argument("--split", default="test", choices=("train", "val", "test"))
-    parser.add_argument("--imgsz", type=int, default=640)
+    parser.add_argument("--imgsz", type=int, default=DEPLOYED_IMGSZ,
+                        help="Default matches the deployed ROI pass (roi_imgsz).")
     parser.add_argument("--conf", type=float, default=0.001,
                         help="Detection floor for the PR curve. Low on purpose - "
                              "AP integrates the whole curve, so this is not a "
                              "deployment threshold.")
-    parser.add_argument("--nms-iou", type=float, default=0.45)
-    parser.add_argument("--iou", type=float, default=0.30,
+    parser.add_argument("--nms-iou", type=float, default=DEPLOYED_NMS_IOU,
+                        help="Default matches the deployed Detector.")
+    parser.add_argument("--iou", type=float, default=MATCH_IOU,
                         help="Match IoU. 0.30 by default; see the docstring.")
-    parser.add_argument("--device", default="0")
+    parser.add_argument("--device", default=None,
+                        help="None lets ultralytics pick (GPU if present, else CPU).")
     parser.add_argument("--tag", default=None, help="Name for this run's report.")
     parser.add_argument("--out", default="reports/eval_by_size")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     dataset = Path(args.dataset)
-    tag = args.tag or Path(args.weights).stem
+    tag = args.tag or experiment_name(args.weights)
 
     log.info("evaluating %s on %s/%s at imgsz=%d", args.weights, dataset,
              args.split, args.imgsz)
@@ -274,26 +266,22 @@ def main() -> int:
     print("=" * 78)
     print(f"{'stratum':<22}{'GT':>6}{'det':>6}{'recall':>9}{'prec':>8}{'AP':>8}")
     print("-" * 78)
-    print(f"{'OVERALL':<22}{overall['gt']:>6}{overall['detected']:>6}"
-          f"{overall['recall']:>9.3f}{overall['precision']:>8.3f}{overall['AP']:>8.3f}")
+    _row("OVERALL", overall)
     print("-" * 78)
     for band in BANDS:
         s = by_size[band]
         if s["gt"]:
-            print(f"{band:<22}{s['gt']:>6}{s['detected']:>6}"
-                  f"{s['recall']:>9.3f}{s['precision']:>8.3f}{s['AP']:>8.3f}")
+            _row(band, s)
     print("-" * 78)
     for name in TAGS:
         s = by_tag[name]
         if s["gt"]:
-            print(f"{name:<22}{s['gt']:>6}{s['detected']:>6}"
-                  f"{s['recall']:>9.3f}{s['precision']:>8.3f}{s['AP']:>8.3f}")
+            _row(name, s)
     print("-" * 78)
     for name in READABILITY:
         s = by_read[name]
         if s["gt"]:
-            print(f"{name:<22}{s['gt']:>6}{s['detected']:>6}"
-                  f"{s['recall']:>9.3f}{s['precision']:>8.3f}{s['AP']:>8.3f}")
+            _row(name, s)
     fp = report["false_positives_on_plate_free_images"]
     print("-" * 78)
     print(f"false positives on the {fp['images']} plate-free images: "

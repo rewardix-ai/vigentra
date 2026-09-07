@@ -15,8 +15,7 @@ concentrate and where they are hardest to spot:
 
 Usage
 -----
-    python tools/error_analysis.py --weights runs/plate/C_smallobj_aug/weights/best.pt \
-        --imgsz 960 --tag C_smallobj_aug
+    python tools/error_analysis.py --weights runs/detect/runs/plate/C_smallobj_aug/weights/best.pt
 """
 from __future__ import annotations
 
@@ -38,8 +37,8 @@ for candidate in (str(HERE.parent), str(HERE)):
 import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 
-from _corpus import write_json  # noqa: E402
-from eval_by_size import collect, iou_matrix  # noqa: E402
+from _corpus import MATCH_IOU, experiment_name, greedy_match, write_json  # noqa: E402
+from eval_by_size import DEPLOYED_IMGSZ, DEPLOYED_NMS_IOU, collect  # noqa: E402
 
 log = logging.getLogger("error_analysis")
 
@@ -123,48 +122,40 @@ def sheets(entries: list[dict], dataset: Path, out_dir: Path, title: str,
 
 
 def classify(per_image: list[dict], match_iou: float) -> dict[str, list[dict]]:
-    """Split every label and every prediction into hit / miss / false positive."""
+    """Split every label and every prediction into hit / miss / false positive.
+
+    Uses the same `greedy_match` as the metrics, so a plate the numbers count
+    as found is a HIT tile here and never a MISS.
+    """
     buckets: dict[str, list[dict]] = defaultdict(list)
     for item in per_image:
         gts, preds = item["gts"], item["preds"]
-        pboxes = (np.array([p[:4] for p in preds], np.float32) if preds
-                  else np.zeros((0, 4), np.float32))
-        gboxes = (np.array([g["bbox"] for g in gts], np.float32) if gts
-                  else np.zeros((0, 4), np.float32))
-        ious = iou_matrix(pboxes, gboxes)
-        matched: set[int] = set()
+        claimed = greedy_match([p[:4] for p in preds], [p[4] for p in preds],
+                               [g["bbox"] for g in gts], match_iou)
+        by_gt = {gi: pi for pi, gi in enumerate(claimed) if gi >= 0}
 
         for gi, gt in enumerate(gts):
-            best, best_iou = -1, match_iou
-            for pi in range(len(preds)):
-                if pi in matched:
-                    continue
-                if ious[pi, gi] >= best_iou:
-                    best, best_iou = pi, float(ious[pi, gi])
             width = gt["bbox"][2] - gt["bbox"][0]
             common = {"image": item["image"], "gt_bbox": gt["bbox"],
                       "tags": "|".join(gt["tags"]), "band": gt["size"],
                       "width_px": width}
-            if best >= 0:
-                matched.add(best)
-                entry = {**common, "kind": "hit", "pred_bboxes": [preds[best]],
+            pi = by_gt.get(gi)
+            if pi is not None:
+                entry = {**common, "kind": "hit", "pred_bboxes": [preds[pi]],
                          "headline": f"HIT  {width:.0f}px  {gt['size']}",
-                         "detail": f"conf {preds[best][4]:.2f}  IoU {best_iou:.2f}"}
+                         "detail": f"conf {preds[pi][4]:.2f}"}
                 buckets[f"hit_{gt['size']}"].append(entry)
             else:
                 entry = {**common, "kind": "miss", "pred_bboxes": [],
                          "headline": f"MISS  {width:.0f}px  {gt['size']}",
-                         "detail": f"{len(preds)} prediction(s) here, none matched"}
+                         "detail": f"{len(preds)} prediction(s) in image, "
+                                   f"{len(by_gt)} matched other labels"}
                 buckets[f"miss_{gt['size']}"].append(entry)
             for tag in gt["tags"]:
                 buckets[f"tag_{tag}"].append(entry)
 
         for pi, pred in enumerate(preds):
-            if pi in matched:
-                continue
-            # Overlapping a label of any size is a duplicate or a loose box,
-            # not an invention. Only a box sitting on nothing is counted here.
-            if len(gts) and float(ious[pi].max()) >= match_iou:
+            if claimed[pi] >= 0:
                 continue
             width = pred[2] - pred[0]
             height = max(1e-6, pred[3] - pred[1])
@@ -183,12 +174,12 @@ def main() -> int:
     ap.add_argument("--weights", required=True)
     ap.add_argument("--dataset", default="dataset/v2")
     ap.add_argument("--split", default="test")
-    ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument("--imgsz", type=int, default=DEPLOYED_IMGSZ)
     ap.add_argument("--conf", type=float, default=0.25,
                     help="A DEPLOYMENT threshold, not the AP floor: these sheets "
                          "should show what an operator would actually see.")
-    ap.add_argument("--iou", type=float, default=0.30)
-    ap.add_argument("--device", default="0")
+    ap.add_argument("--iou", type=float, default=MATCH_IOU)
+    ap.add_argument("--device", default=None)
     ap.add_argument("--tag", default=None)
     ap.add_argument("--limit", type=int, default=24)
     ap.add_argument("--out", default="reports/error_analysis")
@@ -196,11 +187,11 @@ def main() -> int:
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     dataset = Path(args.dataset)
-    tag = args.tag or Path(args.weights).stem
+    tag = args.tag or experiment_name(args.weights)
     out_dir = Path(args.out) / tag
 
     per_image = collect(dataset, args.split, args.weights, args.imgsz,
-                        args.conf, args.device, 0.45)
+                        args.conf, args.device, DEPLOYED_NMS_IOU)
     buckets = classify(per_image, args.iou)
 
     written = {}

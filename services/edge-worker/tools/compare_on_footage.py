@@ -22,7 +22,8 @@ Reported per camera and in total:
 Usage
 -----
     python tools/compare_on_footage.py \
-        --weights D:/ANPR/models/plate_detector.pt runs/plate/C_smallobj_aug/weights/best.pt \
+        --weights D:/ANPR/models/plate_detector.pt \
+                  runs/detect/runs/plate/C_smallobj_aug/weights/best.pt \
         --labels baseline C_smallobj_aug --cameras cam06 cam07 --per-camera 25
 """
 from __future__ import annotations
@@ -47,7 +48,7 @@ for candidate in (str(WORKER_ROOT), str(HERE)):
 import cv2  # noqa: E402
 
 from _corpus import (  # noqa: E402
-    discover_feeds, measure_frame, percentiles, sample_frames, write_json,
+    discover_feeds, experiment_name, percentiles, write_json,
 )
 
 log = logging.getLogger("compare_on_footage")
@@ -61,6 +62,33 @@ DEFAULT_ROOTS = (
 #: the camera's caption bar. Counted rather than filtered, so the two weight
 #: sets can be compared on how often they fire on one.
 BANNER_ASPECT = 8.0
+
+
+def contiguous_window(feed, count: int) -> list:
+    """*count* CONSECUTIVE frames from the middle of the feed.
+
+    Not an even spread. The tracker needs consecutive sightings to assign an
+    id and consensus needs several looks at one track; frames sampled seconds
+    apart defeat both, and the reads column then compares zero with zero
+    whatever the weights. Consecutive frames from the busiest part of the
+    capture (its middle, as a cheap proxy) are what a live stream delivers.
+    """
+    frames = feed.frames
+    if count <= 0 or count >= len(frames):
+        return list(frames)
+    start = max(0, (len(frames) - count) // 2)
+    return frames[start:start + count]
+
+
+def lighting_of(bgr) -> str:
+    """DAY / DIM / NIGHT from mean luma alone - the only thing needed here.
+
+    measure_frame() also computes a Laplacian variance over the whole 1080p
+    frame (~50 ms); for a lighting label that is wasted on every frame.
+    """
+    from _corpus import DIM_LUMA, NIGHT_LUMA
+    luma = float(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY).mean())
+    return "NIGHT" if luma < NIGHT_LUMA else "DIM" if luma < DIM_LUMA else "DAY"
 
 
 def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
@@ -77,9 +105,19 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
     if conf is not None:
         cfg.detect.plate_conf = conf
     if device:
-        cfg.detect.device = device
+        cfg.detect.device = device      # None keeps config.yaml's "auto"
 
     pipeline = AnprPipeline(cfg)
+    if not pipeline.ready:
+        # Detector._load swallows the load error and carries on with no plate
+        # model, which would make these weights look like they find nothing.
+        raise SystemExit(
+            f"plate weights did not load: {weights}\n"
+            "Pass an absolute path, or a path that exists relative to "
+            f"{Path.cwd()}.")
+    # Compile the CUDA kernels before the clock starts, or the first weight
+    # set pays a multi-second one-off that the second inherits for free.
+    pipeline.warmup()
     per_camera_out = []
     widths, all_reads = [], []
     totals = Counter()
@@ -87,17 +125,18 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
 
     for feed in feeds:
         pipeline.reset()
-        frames = sample_frames(feed, per_camera)
+        frames = contiguous_window(feed, per_camera)
         counts = Counter()
+        lighting = Counter()
         cam_widths, cam_reads = [], []
+        interval = feed.frame_interval_s or 1.0
         for index, path in enumerate(frames):
             image = cv2.imread(str(path))
             if image is None:
                 continue
-            stats = measure_frame(image)
-            result = pipeline.process_frame(image, timestamp=index * 1.0)
+            result = pipeline.process_frame(image, timestamp=index * interval)
             counts["frames"] += 1
-            counts[f"lighting_{stats.lighting}"] += 1
+            lighting[lighting_of(image)] += 1
             counts["vehicles"] += len(result.vehicles)
             for det in result.plates:
                 if det.source == "prior":
@@ -133,8 +172,7 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
             "reads": counts["reads"],
             "reads_confirmed": counts["reads_confirmed"],
             "plate_width_px": percentiles(cam_widths),
-            "lighting": {k[9:]: v for k, v in counts.items()
-                         if k.startswith("lighting_")},
+            "lighting": dict(lighting),
         })
         widths.extend(cam_widths)
         all_reads.extend(cam_reads)
@@ -168,7 +206,8 @@ def main() -> int:
     ap.add_argument("--imgsz", type=int, default=None,
                     help="Override plate_imgsz and roi_imgsz for both runs.")
     ap.add_argument("--conf", type=float, default=None)
-    ap.add_argument("--device", default="0")
+    ap.add_argument("--device", default=None,
+                    help="None lets the pipeline pick (GPU if present).")
     ap.add_argument("--out", default="reports/footage_comparison.json")
     args = ap.parse_args()
 
@@ -181,9 +220,11 @@ def main() -> int:
     if not feeds:
         raise SystemExit("No frame feeds found. Pass --roots.")
 
-    labels = args.labels or [Path(w).stem for w in args.weights]
+    labels = args.labels or [experiment_name(w) for w in args.weights]
     if len(labels) != len(args.weights):
         raise SystemExit("--labels must have one entry per --weights")
+    if len(set(labels)) != len(labels):
+        raise SystemExit(f"labels collide: {labels} - pass distinct --labels")
 
     results = {}
     for label, weights in zip(labels, args.weights):

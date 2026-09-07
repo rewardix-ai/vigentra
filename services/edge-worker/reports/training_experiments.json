@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-07T07:25:23.433801+00:00",
+  "updated_at": "2026-09-07T08:12:12.975201+00:00",
   "seed": 0,
   "runs": [
     {
@@ -56,6 +56,61 @@
       "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640",
       "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640\\weights\\best.pt",
       "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640\\weights\\last.pt"
+    },
+    {
+      "experiment": "B_highres_960",
+      "note": "Only the resolution changes, so any difference is attributable.",
+      "finished_at": "2026-09-07T08:12:12.968310+00:00",
+      "elapsed_s": 2809.5,
+      "elapsed_h": 0.78,
+      "model": "yolo11s.pt",
+      "dataset": "dataset\\v2",
+      "data_yaml": "dataset\\v2\\data.yaml",
+      "oversampled": false,
+      "epochs_requested": 60,
+      "device": "0",
+      "peak_vram_gb": 2.41,
+      "args": {
+        "seed": 0,
+        "deterministic": true,
+        "patience": 30,
+        "optimizer": "auto",
+        "amp": true,
+        "fliplr": 0.0,
+        "flipud": 0.0,
+        "val": true,
+        "plots": true,
+        "save_period": -1,
+        "workers": 0,
+        "project": "runs/plate",
+        "exist_ok": true,
+        "imgsz": 960,
+        "batch": 4,
+        "scale": 0.5,
+        "mosaic": 1.0,
+        "close_mosaic": 10,
+        "copy_paste": 0.0,
+        "degrees": 0.0,
+        "perspective": 0.0,
+        "translate": 0.1,
+        "hsv_h": 0.015,
+        "hsv_s": 0.7,
+        "hsv_v": 0.4,
+        "erasing": 0.0,
+        "data": "dataset\\v2\\data.yaml",
+        "epochs": 60,
+        "name": "B_highres_960",
+        "device": "0"
+      },
+      "val_metrics": {
+        "mAP50": 0.6296,
+        "mAP50_95": 0.416,
+        "precision": 0.798,
+        "recall": 0.5778
+      },
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960\\weights\\last.pt"
     }
   ]
 }

@@ -61,5 +61,10 @@ services/edge-worker/dataset/*/images/
 services/edge-worker/dataset/*/labels/
 services/edge-worker/dataset/*/review/
 services/edge-worker/runs/
-services/edge-worker/runs/
 services/edge-worker/dataset/*/train_oversampled_*.txt
+services/edge-worker/dataset/*/data_oversampled_*.yaml
+# Training and probe logs churn on every run; the JSON summaries are
+# the provenance record and stay committed.
+services/edge-worker/reports/*.log
+# Error-analysis contact sheets are derived images, like review/.
+services/edge-worker/reports/error_analysis/

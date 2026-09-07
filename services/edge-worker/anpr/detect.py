@@ -26,6 +26,8 @@ log = logging.getLogger(__name__)
 #: Track ids for plates with no parent vehicle start here, so they can never
 #: collide with the tracker's own vehicle ids.
 ORPHAN_ID_BASE = 1_000_000
+#: Ids for vehicles the tracker returned without an id (see Detector.process).
+VEHICLE_FALLBACK_ID_BASE = 2_000_000
 
 
 @dataclass
@@ -45,6 +47,13 @@ class Box:
     #: pass never sees small plates" becomes unmeasurable - which is exactly
     #: the question that matters on wide junction cameras.
     source: str = "frame"
+    #: Index into the frame's vehicle list of the vehicle whose crop this box
+    #: was found in, for ROI-pass boxes. None for the full-frame pass.
+    #:
+    #: The ROI pass already knows which vehicle it was searching; throwing that
+    #: away and re-deriving it by geometry afterwards is how plates were being
+    #: orphaned - see Detector.process.
+    parent: int | None = None
 
     @property
     def w(self) -> float:
@@ -72,13 +81,13 @@ class Box:
     def clipped(self, w: int, h: int) -> "Box":
         return Box(max(0.0, min(self.x1, w - 1)), max(0.0, min(self.y1, h - 1)),
                    max(0.0, min(self.x2, w)), max(0.0, min(self.y2, h)),
-                   self.conf, self.cls, self.track_id, self.source)
+                   self.conf, self.cls, self.track_id, self.source, self.parent)
 
     def expand(self, fx: float, fy: float, w: int, h: int) -> "Box":
         """Grow the box by a fraction of its size, clipped to the frame."""
         dx, dy = self.w * fx, self.h * fy
         return Box(self.x1 - dx, self.y1 - dy, self.x2 + dx, self.y2 + dy,
-                   self.conf, self.cls, self.track_id, self.source).clipped(w, h)
+                   self.conf, self.cls, self.track_id, self.source, self.parent).clipped(w, h)
 
     def scaled(self, factor: float) -> "Box":
         """Same box in a coordinate space *factor* times larger."""
@@ -86,7 +95,7 @@ class Box:
             return self
         return Box(self.x1 * factor, self.y1 * factor, self.x2 * factor,
                    self.y2 * factor, self.conf, self.cls, self.track_id,
-                   self.source)
+                   self.source, self.parent)
 
     def as_dict(self) -> dict:
         return {"x1": round(self.x1), "y1": round(self.y1),
@@ -142,13 +151,15 @@ class IouTracker:
     """
 
     def __init__(self, iou_threshold: float = 0.2, max_age: int = 20,
-                 max_centroid_dist: float = 2.2) -> None:
+                 max_centroid_dist: float = 2.2,
+                 id_base: int = ORPHAN_ID_BASE) -> None:
         self.iou_threshold = iou_threshold
         self.max_age = max_age
         #: centroid distance limit, in multiples of the box's diagonal
         self.max_centroid_dist = max_centroid_dist
+        self._id_base = id_base
         self._tracks: dict[int, tuple[Box, int]] = {}     # id -> (box, last_frame)
-        self._next = ORPHAN_ID_BASE
+        self._next = id_base
 
     def update(self, boxes: list[Box], frame: int) -> list[int]:
         # Drop tracks that have not been seen for a while.
@@ -197,7 +208,7 @@ class IouTracker:
 
     def reset(self) -> None:
         self._tracks.clear()
-        self._next = ORPHAN_ID_BASE
+        self._next = self._id_base
 
 
 def _precision_kwargs(half: bool, device: str) -> dict:
@@ -231,6 +242,15 @@ class Detector:
         self.vehicle_model = None
         self.plate_model = None
         self.orphan_tracker = IouTracker()
+        # BoT-SORT/ByteTrack hand back a detection with no id until it has been
+        # matched on consecutive frames. On a worker that samples every Nth
+        # frame - or an offline tool that samples sparsely - that is most
+        # vehicles most of the time, and a plate on an id-less vehicle had
+        # nowhere to attach. These ids are stable across the gaps the real
+        # tracker cannot bridge, and live in their own range so they can never
+        # be mistaken for its.
+        self.vehicle_tracker = IouTracker(max_age=60,
+                                          id_base=VEHICLE_FALLBACK_ID_BASE)
         self._precision = _precision_kwargs(cfg.half, self.device)
         self._load()
 
@@ -269,6 +289,7 @@ class Detector:
     def reset(self) -> None:
         """Forget all track state - call between videos."""
         self.orphan_tracker.reset()
+        self.vehicle_tracker.reset()
         if self.vehicle_model is not None:
             try:
                 self.vehicle_model.predictor = None     # drops ByteTrack state
@@ -374,9 +395,9 @@ class Detector:
         skip = skip or set()
         h, w = frame.shape[:2]
         crops: list[np.ndarray] = []
-        origins: list[tuple[int, int, float]] = []
+        origins: list[tuple[int, int, float, int]] = []
 
-        for v in vehicles:
+        for index, v in enumerate(vehicles):
             if v.track_id is not None and v.track_id in skip:
                 continue
             # A person or a bicycle is tracked but has no plate, so it never
@@ -401,16 +422,16 @@ class Detector:
                 crop = cv2.resize(crop, None, fx=scale, fy=scale,
                                   interpolation=cv2.INTER_CUBIC)
             crops.append(crop)
-            origins.append((x1, y1, scale))
+            origins.append((x1, y1, scale, index))
 
         found: list[Box] = []
         roi_results = self._detect_plates_batch(crops, imgsz=self.cfg.roi_imgsz)
-        for boxes, (x1, y1, scale) in zip(roi_results, origins):
+        for boxes, (x1, y1, scale, index) in zip(roi_results, origins):
             for b in boxes:
                 found.append(Box(
                     x1 + b.x1 / scale, y1 + b.y1 / scale,
                     x1 + b.x2 / scale, y1 + b.y2 / scale, b.conf,
-                    source="roi"))
+                    source="roi", parent=index))
         return found
 
     # -- the whole frame -------------------------------------------------
@@ -438,23 +459,47 @@ class Detector:
             inv = 1.0 / factor
 
         vehicles = [v.scaled(inv).clipped(w, h) for v in self.track_vehicles(proc)]
+
+        # Every vehicle gets an id. The tracker withholds one until it has
+        # matched a detection on consecutive frames, which never happens when
+        # frames arrive seconds apart - and a plate on an id-less vehicle used
+        # to be discarded here as an orphan, however clearly it sat on the car.
+        unassigned = [i for i, v in enumerate(vehicles) if v.track_id is None]
+        if unassigned:
+            fallback = self.vehicle_tracker.update(
+                [vehicles[i] for i in unassigned], frame_idx)
+            for i, tid in zip(unassigned, fallback):
+                vehicles[i].track_id = tid
+
         plates = [p.scaled(inv) for p in self._detect_plates(proc)]
         if self.cfg.roi_pass and vehicles:
             plates.extend(self._roi_plates(frame, vehicles, skip=settled))
         plates = nms([p.clipped(w, h) for p in plates])
 
-        # Attach each plate to the vehicle that best contains it.
+        # Attach each plate to its vehicle.
+        #
+        # A plate the ROI pass found already knows its vehicle: it was cut from
+        # that vehicle's crop. Only a full-frame plate needs geometry - and the
+        # geometry is tested against the same 4%-expanded region the ROI pass
+        # searches. Testing against the bare box, as this used to, orphaned a
+        # bumper plate flush with the crop edge (containment 1 - 0.04*vh/ph,
+        # under the 0.55 floor whenever the plate was small for its vehicle),
+        # then let the prior band fire on the "uncovered" vehicle, so the same
+        # plate was read twice under two ids and neither reached the vote.
+        expanded = [v.expand(0.04, 0.04, w, h) for v in vehicles]
         detections: list[PlateDetection] = []
         orphans: list[Box] = []
         orphan_idx: list[int] = []
         for p in plates:
-            parent, best = None, 0.55
-            for v in vehicles:
-                if v.track_id is None:
-                    continue
-                score = containment(p, v)
-                if score > best:
-                    parent, best = v, score
+            parent = None
+            if p.parent is not None and p.parent < len(vehicles):
+                parent = vehicles[p.parent]
+            else:
+                best = 0.55
+                for v, region in zip(vehicles, expanded):
+                    score = containment(p, region)
+                    if score > best:
+                        parent, best = v, score
             if parent is not None:
                 detections.append(PlateDetection(
                     box=p, track_id=parent.track_id, vehicle=parent,

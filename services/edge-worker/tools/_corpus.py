@@ -574,6 +574,71 @@ def frame_number_of(path: Path) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Matching predictions to labels - ONE implementation
+# ---------------------------------------------------------------------------
+
+#: Match IoU for scoring a prediction against a label. Deliberately below the
+#: usual 0.50: at 12 px wide a one-pixel offset costs ~0.25 IoU, so 0.50 scores
+#: a correct small-plate detection as a miss and bakes the bias being measured
+#: into the measurement.
+MATCH_IOU = 0.30
+
+
+def iou_matrix(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
+    """IoU of every prediction row (x1,y1,x2,y2) against every label row."""
+    preds = np.asarray(preds, dtype=np.float32).reshape(-1, 4)
+    gts = np.asarray(gts, dtype=np.float32).reshape(-1, 4)
+    if len(preds) == 0 or len(gts) == 0:
+        return np.zeros((len(preds), len(gts)), dtype=np.float32)
+    px1, py1, px2, py2 = preds[:, 0:1], preds[:, 1:2], preds[:, 2:3], preds[:, 3:4]
+    gx1, gy1, gx2, gy2 = gts[:, 0], gts[:, 1], gts[:, 2], gts[:, 3]
+    inter = (np.clip(np.minimum(px2, gx2) - np.maximum(px1, gx1), 0, None)
+             * np.clip(np.minimum(py2, gy2) - np.maximum(py1, gy1), 0, None))
+    pa = np.clip(px2 - px1, 0, None) * np.clip(py2 - py1, 0, None)
+    ga = np.clip(gx2 - gx1, 0, None) * np.clip(gy2 - gy1, 0, None)
+    union = pa + ga - inter
+    return np.where(union > 0, inter / np.maximum(union, 1e-9), 0.0)
+
+
+def greedy_match(pred_boxes, pred_confs, gt_boxes,
+                 thresh: float = MATCH_IOU) -> list[int]:
+    """For each prediction, the index of the label it claims, or -1.
+
+    Prediction-major in descending confidence, one label per prediction,
+    IoU >= *thresh*. This is the only matcher the tools use: the metrics, the
+    contact sheets and the pipeline check all call it, so a plate scored as
+    found in one report cannot render as a miss in another.
+    """
+    confs = np.asarray(pred_confs, dtype=np.float32)
+    ious = iou_matrix(pred_boxes, gt_boxes)
+    claimed: list[int] = [-1] * len(confs)
+    taken: set[int] = set()
+    for pi in np.argsort(-confs):
+        best, best_iou = -1, thresh
+        for gi in range(ious.shape[1]):
+            if gi in taken:
+                continue
+            if ious[pi, gi] >= best_iou:
+                best, best_iou = gi, float(ious[pi, gi])
+        if best >= 0:
+            taken.add(best)
+            claimed[int(pi)] = best
+    return claimed
+
+
+def experiment_name(weights: str | Path) -> str:
+    """A label for a weights file that survives every run being 'best.pt'.
+
+    `runs/plate/C_smallobj_aug/weights/best.pt` -> `C_smallobj_aug`. Any other
+    layout falls back to the file stem.
+    """
+    path = Path(weights)
+    if path.stem in ("best", "last") and path.parent.name == "weights":
+        return path.parent.parent.name
+    return path.stem
+
+
+# ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
 
@@ -608,10 +673,21 @@ def percentiles(values: Sequence[float],
     return out
 
 
+def _finite(value):
+    """NaN and infinity are not JSON. Emit null rather than an invalid file."""
+    if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
+        return None
+    if isinstance(value, dict):
+        return {k: _finite(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_finite(v) for v in value]
+    return value
+
+
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2, default=str)
+        json.dump(_finite(payload), fh, indent=2, default=str, allow_nan=False)
 
 
 def load_json(path: Path) -> dict:

@@ -1,0 +1,8 @@
+# Same dataset, with `val` pointed at the held-out TEST split so ultralytics'
+# validator reports test metrics. Kept separate so the real data.yaml stays
+# the training contract.
+path: D:/CCTV Management/CCTV_management/services/edge-worker/dataset/v2
+train: images/train
+val: images/test
+nc: 1
+names: ['plate']

@@ -1,0 +1,195 @@
+{
+  "generated_at": "2026-09-07T06:39:17.285070+00:00",
+  "tag": "baseline_plate_detector",
+  "weights": "D:/ANPR/models/plate_detector.pt",
+  "dataset": "dataset\\v2",
+  "split": "test",
+  "settings": {
+    "imgsz": 640,
+    "conf_floor": 0.001,
+    "nms_iou": 0.45,
+    "match_iou": 0.3
+  },
+  "images": 223,
+  "overall": {
+    "gt": 158,
+    "detected": 123,
+    "predictions": 1875,
+    "precision": 0.0656,
+    "recall": 0.7785,
+    "AP": 0.5014
+  },
+  "by_size": {
+    "EXTREMELY_TINY": {
+      "gt": 21,
+      "detected": 5,
+      "predictions": 1734,
+      "precision": 0.0029,
+      "recall": 0.2381,
+      "AP": 0.007
+    },
+    "VERY_SMALL": {
+      "gt": 28,
+      "detected": 19,
+      "predictions": 1748,
+      "precision": 0.0109,
+      "recall": 0.6786,
+      "AP": 0.0268
+    },
+    "SMALL": {
+      "gt": 63,
+      "detected": 53,
+      "predictions": 1792,
+      "precision": 0.0296,
+      "recall": 0.8413,
+      "AP": 0.4157
+    },
+    "MEDIUM": {
+      "gt": 35,
+      "detected": 35,
+      "predictions": 1777,
+      "precision": 0.0197,
+      "recall": 1.0,
+      "AP": 0.7608
+    },
+    "LARGE": {
+      "gt": 11,
+      "detected": 11,
+      "predictions": 1740,
+      "precision": 0.0063,
+      "recall": 1.0,
+      "AP": 0.601
+    }
+  },
+  "by_difficulty": {
+    "tiny": {
+      "gt": 49,
+      "detected": 24,
+      "predictions": 1753,
+      "precision": 0.0137,
+      "recall": 0.4898,
+      "AP": 0.0256
+    },
+    "blur": {
+      "gt": 4,
+      "detected": 1,
+      "predictions": 1730,
+      "precision": 0.0006,
+      "recall": 0.25,
+      "AP": 0.0312
+    },
+    "low_light": {
+      "gt": 24,
+      "detected": 11,
+      "predictions": 1743,
+      "precision": 0.0063,
+      "recall": 0.4583,
+      "AP": 0.0251
+    },
+    "overexposed": {
+      "gt": 3,
+      "detected": 1,
+      "predictions": 1730,
+      "precision": 0.0006,
+      "recall": 0.3333,
+      "AP": 0.0002
+    },
+    "glare": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 1729,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": NaN
+    },
+    "low_contrast": {
+      "gt": 85,
+      "detected": 59,
+      "predictions": 1800,
+      "precision": 0.0328,
+      "recall": 0.6941,
+      "AP": 0.2307
+    },
+    "angled": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 1729,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": NaN
+    },
+    "partial": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 1729,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": NaN
+    },
+    "multi_vehicle": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 1729,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": NaN
+    },
+    "low_confidence": {
+      "gt": 45,
+      "detected": 27,
+      "predictions": 1760,
+      "precision": 0.0153,
+      "recall": 0.6,
+      "AP": 0.0762
+    },
+    "unreadable": {
+      "gt": 156,
+      "detected": 121,
+      "predictions": 1873,
+      "precision": 0.0646,
+      "recall": 0.7756,
+      "AP": 0.492
+    }
+  },
+  "by_readability": {
+    "READABLE": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 1729,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": NaN
+    },
+    "UNREADABLE_TOO_SMALL": {
+      "gt": 156,
+      "detected": 121,
+      "predictions": 1873,
+      "precision": 0.0646,
+      "recall": 0.7756,
+      "AP": 0.492
+    },
+    "UNREADABLE_QUALITY": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 1729,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": NaN
+    },
+    "NOT_ATTEMPTED": {
+      "gt": 2,
+      "detected": 2,
+      "predictions": 1731,
+      "precision": 0.0012,
+      "recall": 1.0,
+      "AP": 1.0
+    }
+  },
+  "false_positives_on_plate_free_images": {
+    "images": 75,
+    "predictions": 407,
+    "per_image": 5.427
+  },
+  "total_predictions": 1875,
+  "CAVEAT": "Recall is an upper bound: the labels contain only plates some proposer proposed, so a plate no model ever saw is invisible here. The residual biases against small plates."
+}

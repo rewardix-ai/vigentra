@@ -1,0 +1,17 @@
+{
+  "640/8": {
+    "ok": true,
+    "peak_vram_gb": 1.94,
+    "epoch_s": 113.3
+  },
+  "960/4": {
+    "ok": true,
+    "peak_vram_gb": 2.31,
+    "epoch_s": 106.1
+  },
+  "960/6": {
+    "ok": true,
+    "peak_vram_gb": 3.31,
+    "epoch_s": 82.6
+  }
+}

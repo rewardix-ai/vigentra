@@ -151,7 +151,8 @@ CURRICULUM_STAGES = (
 
 
 def run_curriculum(name: str, dataset: Path, epochs_per_stage: int, device: str,
-                   batch_override: int | None, base_model: str = "yolo11s.pt") -> dict:
+                   batch_override: int | None, base_model: str = "yolo11s.pt",
+                   stages: tuple[str, ...] = CURRICULUM_STAGES) -> dict:
     """Train stage by stage, each from the previous stage's best weights.
 
     Same augmentation, imgsz and batch as C_smallobj_aug so the curriculum
@@ -170,7 +171,7 @@ def run_curriculum(name: str, dataset: Path, epochs_per_stage: int, device: str,
     weights = base_model
     stages_out = []
     started = time.time()
-    for stage in CURRICULUM_STAGES:
+    for stage in stages:
         data = dataset / f"{stage}.yaml"
         if not data.exists():
             raise SystemExit(f"missing {data} - run tools/synthesize_hard_cases.py first")
@@ -381,6 +382,13 @@ def main() -> int:
     parser.add_argument("--batch", type=int, default=None,
                         help="Override the experiment's batch size (VRAM).")
     parser.add_argument("--summary", default="reports/training_experiments.json")
+    parser.add_argument("--stages", default=None,
+                        help="Comma-separated curriculum stages to run (default: all "
+                             "four). e.g. --stages stage4_all for hard-first.")
+    parser.add_argument("--base-model", default="yolo11s.pt",
+                        help="Weights to start the first stage from - a trained "
+                             "best.pt to fine-tune, or a pretrained yolo11*.pt.")
+    parser.add_argument("--name", default="E_curriculum_synth")
     parser.add_argument("--curriculum", default=None, metavar="SYNTH_DATASET",
                         help="Run the curriculum experiment over this synthetic "
                              "dataset (from synthesize_hard_cases.py) instead of "
@@ -404,8 +412,10 @@ def main() -> int:
                     records = json.load(fh).get("runs", [])
             except Exception:                      # noqa: BLE001
                 records = []
-        record = run_curriculum("E_curriculum_synth", Path(args.curriculum),
-                                args.epochs, args.device, args.batch)
+        stages = tuple(x.strip() for x in args.stages.split(",")) if args.stages             else CURRICULUM_STAGES
+        record = run_curriculum(args.name, Path(args.curriculum), args.epochs,
+                                args.device, args.batch, base_model=args.base_model,
+                                stages=stages)
         records = [r for r in records if r.get("experiment") != record["experiment"]]
         records.append(record)
         write_json(summary_path, {"updated_at": datetime.now(timezone.utc).isoformat(),

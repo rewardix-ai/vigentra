@@ -162,6 +162,12 @@ def jitter_window(img: np.ndarray, boxes, rng: np.random.Generator):
     window origin and that is the whole of the arithmetic.
     """
     h, w = img.shape[:2]
+    # A verified box can run a little past the crop edge - a plate partly out
+    # of frame. Its label inside this image is the visible part, so clamp
+    # first; otherwise no window can contain it and the guard below fires.
+    boxes = [(max(0.0, b[0]), max(0.0, b[1]), min(float(w), b[2]), min(float(h), b[3]))
+             for b in boxes]
+    boxes = [b for b in boxes if b[2] - b[0] >= 2 and b[3] - b[1] >= 2]
     if boxes:
         bx1 = min(b[0] for b in boxes); by1 = min(b[1] for b in boxes)
         bx2 = max(b[2] for b in boxes); by2 = max(b[3] for b in boxes)
@@ -255,16 +261,26 @@ def synthesize(dataset: Path, out_root: Path, target: int, seed: int,
         if made % 500 == 0:
             log.info("  %d synthetic images", made)
 
+    def emit_safely(src: Source, i: int) -> None:
+        # One bad sample must not kill a run that has an hour invested. It is
+        # counted, named in the manifest, and the run continues.
+        try:
+            emit(src, i)
+        except (AssertionError, cv2.error, ValueError) as exc:
+            counts["skipped_error"] += 1
+            if counts["skipped_error"] <= 20:
+                log.warning("skipped %s variant %d: %s", src.image.name, i, exc)
+
     for src in positives:
         for i in range(per_pos):
             if counts["positive"] >= n_pos_target:
                 break
-            emit(src, i)
+            emit_safely(src, i)
     for src in negatives:
         for i in range(per_neg):
             if counts["negative"] >= n_neg_target:
                 break
-            emit(src, i)
+            emit_safely(src, i)
 
     # Real train images are copied in too, so one directory is the whole
     # training set and val/test stay the untouched real splits.

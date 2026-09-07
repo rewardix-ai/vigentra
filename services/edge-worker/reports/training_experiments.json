@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-07T08:12:12.975201+00:00",
+  "updated_at": "2026-09-07T13:53:11.979631+00:00",
   "seed": 0,
   "runs": [
     {
@@ -53,9 +53,9 @@
         "precision": 0.8765,
         "recall": 0.5556
       },
-      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\A_baseline_640",
-      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\A_baseline_640\\weights\\best.pt",
-      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\A_baseline_640\\weights\\last.pt"
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\A_baseline_640\\weights\\last.pt"
     },
     {
       "experiment": "B_highres_960",
@@ -108,9 +108,62 @@
         "precision": 0.798,
         "recall": 0.5778
       },
-      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\B_highres_960",
-      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\B_highres_960\\weights\\best.pt",
-      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\B_highres_960\\weights\\last.pt"
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\detect\\runs\\plate\\B_highres_960\\weights\\last.pt"
+    },
+    {
+      "experiment": "C_smallobj_aug",
+      "note": "B plus scale jitter / mosaic / small rotation aimed at small objects.",
+      "finished_at": "2026-09-07T13:53:11.975321+00:00",
+      "elapsed_s": 15725.7,
+      "elapsed_h": 4.37,
+      "model": "yolo11s.pt",
+      "dataset": "dataset\\v2",
+      "data_yaml": "dataset\\v2\\data.yaml",
+      "oversample_factor": 0,
+      "epochs_requested": 60,
+      "device": "0",
+      "peak_vram_allocated_gb": 2.26,
+      "args": {
+        "seed": 0,
+        "deterministic": true,
+        "patience": 0,
+        "optimizer": "auto",
+        "amp": true,
+        "fliplr": 0.0,
+        "flipud": 0.0,
+        "val": true,
+        "plots": true,
+        "save_period": -1,
+        "workers": 0,
+        "project": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate",
+        "exist_ok": false,
+        "imgsz": 960,
+        "batch": 4,
+        "scale": 0.9,
+        "mosaic": 1.0,
+        "close_mosaic": 10,
+        "degrees": 7.0,
+        "perspective": 0.0005,
+        "translate": 0.15,
+        "hsv_h": 0.015,
+        "hsv_s": 0.6,
+        "hsv_v": 0.5,
+        "data": "dataset\\v2\\data.yaml",
+        "epochs": 60,
+        "name": "C_smallobj_aug",
+        "device": "0"
+      },
+      "val_metrics": {
+        "mAP50": 0.6018,
+        "mAP50_95": 0.3914,
+        "precision": 0.7288,
+        "recall": 0.5333
+      },
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\C_smallobj_aug",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\C_smallobj_aug\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\C_smallobj_aug\\weights\\last.pt"
     }
   ]
 }

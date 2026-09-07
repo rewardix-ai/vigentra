@@ -72,3 +72,4 @@ services/edge-worker/reports/error_analysis/
 services/edge-worker/dataset/*/stage*.txt
 services/edge-worker/dataset/*/stage*.yaml
 services/edge-worker/reports/synth_smoke_sheet.jpg
+services/edge-worker/reports/hard_first_stdout.log

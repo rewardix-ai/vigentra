@@ -1,0 +1,6 @@
+path: D:/CCTV Management/CCTV_management/services/edge-worker/dataset/v3_synth
+train: images/train
+val: images/val
+test: images/test
+nc: 1
+names: ['plate']

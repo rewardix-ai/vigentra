@@ -224,3 +224,78 @@ anything.
 Do not present a plate read as identification. It is a probabilistic reading of
 a photograph; the confidence score is a model score, not a guarantee. If a plate
 matters to a case, a human should look at the frame.
+
+---
+
+## 9. Why a camera reads nothing
+
+Silence used to be ambiguous. A camera reporting no plates might have seen no
+traffic, or might have seen two hundred vehicles whose plates were forty pixels
+wide — opposite situations with opposite fixes, and the platform could not tell
+them apart.
+
+Every vehicle that leaves the frame now settles into one of three outcomes
+(`services/edge-worker/anpr/readability.py`):
+
+| Verdict | Meaning | Whose problem |
+| --- | --- | --- |
+| `CONFIRMED` | the vote settled and the restorations agreed | — |
+| `UNCERTAIN` | the plate was big enough to read; the readings disagreed | this vehicle: blur, angle, glare |
+| `UNREADABLE` | the plate never reached a size any recogniser resolves | this camera's placement |
+
+Only `UNREADABLE` is a statement about the camera. It is the honest answer on a
+wide junction view, and it is a siting finding rather than a software defect.
+
+The size bands are shared with `tools/diagnose_cameras.py` so the suitability
+survey and the running pipeline cannot drift apart:
+
+| Band | Plate width | Behaviour |
+| --- | --- | --- |
+| `COMFORTABLE` | ≥160 px | reads off the unmodified crop |
+| `READABLE` | ≥120 px | restoration recovers the read |
+| `MARGINAL` | ≥80 px | reads only when several restorations agree |
+| `SUB_MARGINAL` | ≥40 px | attempted; agreement decides |
+| `UNREADABLE` | <40 px | not attempted |
+
+**The gate sits at 40 px and must not be raised.** Plates on this estate have
+been read correctly by eye at 53–90 px, and no width separates the legible ones
+from the illegible: a 71 px motion-blurred plate is unreadable while a 53 px
+sharp one is not. Raising the floor discards real evidence; a 100 px floor
+confirms nothing anywhere. Agreement across restorations — not size — is what
+separates a real read from an invented one, and that is already what
+`consensus.py` requires.
+
+Lowering the gate below 40 px is worse still. Undersized crops pushed through
+the recogniser do not come back as near misses, they come back as fabrications:
+`GJ06D02415` read as `LD607415`, `GJ01MR4873` as `GI667673`. A fabricated
+registration is a wrong vehicle attached to a real place and time.
+
+## 10. Timings
+
+`anpr/metrics.py` reports P50/P95/P99 per stage — detect, assess, enhance, ocr,
+and the whole frame — and the worker logs them at the end of each run.
+
+Percentiles rather than an average, because the average is the summary that
+hides the failure. Ninety-nine frames at 40 ms and one at 900 ms average to
+48 ms and look healthy, while the 900 ms frame is the one a viewer sees as a
+freeze. Read `frame.p99`: a 25 fps feed needs it under 40 ms to never fall
+behind.
+
+`capacity_fps` is the rate this machine could sustain if it never waited for
+anything; comparing it against `fps` separates "the box is too slow" from "the
+network delivered frames slowly".
+
+## 11. Engines are cached per camera
+
+A worker cycling its cameras used to build an ANPR engine per camera per pass,
+reloading hundreds of megabytes of weights and discarding everything the camera
+had learned about itself — where its burned-in clock sits, its prevailing
+direction of travel, the plate sizes it delivers. A 25-frame pass barely
+reaches those thresholds once.
+
+`EngineCache` keeps one engine per camera between cycles. A reused engine is
+told the stream restarted (`new_stream`), so track ids never cross a cycle
+boundary and an old plate can never attach to a new vehicle. The cache is
+bounded by `ANPR_ENGINE_CACHE` (default 4) because engines are heavy; with more
+cameras than that in rotation every lookup misses and behaviour degrades to
+what it was before — correct, just no faster.

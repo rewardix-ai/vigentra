@@ -79,13 +79,24 @@ it.
 ### 5. Evaluate, stratified by size
 
 ```bash
+# compare two sets of weights, per size band: precision, recall and AP
+python tools/eval_by_size.py --weights D:/ANPR/models/plate_detector.pt --imgsz 640
+python tools/eval_by_size.py --weights runs/plate/C_smallobj_aug/weights/best.pt --imgsz 960
+
+# the pipeline's own view: recall through the deployed Detector wrapper
 python tools/eval_plate_detector.py --version v2 --split test
-python tools/eval_plate_detector.py --version v2 --split test --imgsz 1536
+
+# what the errors actually look like
+python tools/error_analysis.py --weights <weights> --imgsz 960 --conf 0.25
+
+# and the far end: the full pipeline on untouched full frames
+python tools/compare_on_footage.py --weights <baseline> <candidate>     --labels baseline candidate --cameras cam06 cam07
 ```
 
-Reports recall per size band, per difficulty tag and per readability class. The
-headline number is recall on tiny plates; a model strong on large plates and
-weak on small ones has not solved this problem.
+`eval_by_size.py` is the tool for comparing weights; `eval_plate_detector.py`
+answers the different question of how the assembled pipeline behaves. The
+headline number in both is recall on tiny plates - a model strong on large
+plates and weak on small ones has not solved this problem.
 
 ---
 
@@ -126,47 +137,84 @@ For a genuine generalisation test, hold out whole cameras with `--cameras`.
 
 ## Training
 
-Not run automatically. The dataset must be reviewed first — see the provenance
-warning in `manifest.json`.
+Not run automatically. Review the dataset first - see the provenance warning in
+`manifest.json`.
+
+`tools/train_plate_detector.py` runs four controlled configurations over the
+same dataset with the same seed, so the difference between them is the
+measurement rather than run-to-run noise:
 
 ```bash
-yolo detect train \
-  data=dataset/v2/data.yaml \
-  model=yolo11s.pt \
-  imgsz=960 \
-  epochs=120 \
-  batch=8 \
-  patience=30 \
-  scale=0.9 mosaic=1.0 copy_paste=0.3 \
-  degrees=7 perspective=0.0005 \
-  hsv_v=0.5 hsv_s=0.6 \
-  fliplr=0.0 \
-  project=runs/plate name=v2
+python tools/train_plate_detector.py --list
+python tools/train_plate_detector.py --all --epochs 60 --device 0
+python tools/train_plate_detector.py --experiment C_smallobj_aug --epochs 60
 ```
 
-**Image size 960, not 640.** The dataset unit is a vehicle crop, and the median
-plate in it is a small fraction of that crop's width. At 640 a crop is
-downscaled before the model sees it and the plate loses the pixels that carry
-the characters. 960 matches `roi_imgsz` in `config.yaml`, so training and
-deployment see the plate at the same scale.
+| experiment | what changes |
+|---|---|
+| `A_baseline_640` | deployed resolution, stock augmentation - the control |
+| `B_highres_960` | resolution only, so any difference is attributable to it |
+| `C_smallobj_aug` | B plus scale / mosaic / copy-paste aimed at small objects |
+| `D_tiny_oversample` | C plus 3x exposure to tiny-plate images |
 
-**`fliplr=0.0`.** Horizontal flipping is on by default in ultralytics and is
-wrong here: a registration is directional text, and a mirrored plate teaches
-the model a glyph shape that does not exist.
+Each writes weights, `args.yaml`, `results.csv`, `experiment.json` and both
+checkpoints under `runs/plate/<name>/`. Nothing overwrites the deployed weights.
 
-**`scale=0.9`, `mosaic=1.0`, `copy_paste=0.3`.** Aggressive scale jitter and
-mosaic put the same plate into the batch at many apparent distances, which is
-the augmentation that matters for small-object recall. Copy-paste multiplies
-the small-plate instances without duplicating whole frames.
+### Why 960 and not 1280
 
-**`hsv_v=0.5`, `hsv_s=0.6`.** The estate is largely night and dim footage;
-exposure jitter is doing real work, colour jitter less so.
+Measured, not assumed. The dataset unit is a vehicle crop whose median longest
+side is 168 px, so letterboxing to 640 already upscales the plate about 3.8x.
+Median effective plate width is **53 px at imgsz 640** and 79 px at 960, and
+**zero** boxes fall below the stride-8 floor of the detection head at any of
+these sizes. 1280 would therefore spend 4x the compute on interpolated pixels
+that carry no additional information, and a P2 (stride-4) head is not the fix
+here. The information ceiling is the original crop, not the input size.
 
-**Do not add `fliplr`, `shear` or heavy `degrees`.** Plates on these cameras are
-close to frontal; teaching severe rotation costs capacity that small plates
-need.
+### Hardware, measured on the target card
 
----
+An RTX 3050 with 4 GB:
+
+| config | peak VRAM | epoch |
+|---|---|---|
+| 640 / batch 8 | 1.94 GB | ~21 s |
+| 960 / batch 4 | 2.31 GB | ~35 s |
+| 960 / batch 6 | 3.31 GB | - |
+
+960/batch 6 fits but leaves little headroom for validation, so the 960
+experiments use batch 4. AMP is on throughout, which roughly halves activation
+memory.
+
+**Host RAM matters more than VRAM here.** Training first failed with
+`CUBLAS_STATUS_NOT_SUPPORTED` at every batch size - the giveaway that it was
+not VRAM, since a real OOM would have succeeded at the smallest. The full
+traceback showed `fatal: Memory allocation failure` while CUDA compiled
+kernels, on a box with 0.44 GB of system RAM free. Stop the app containers
+(`docker compose stop`) and, if needed, `wsl --shutdown` before training.
+`workers=0` for the same reason: forked dataloader workers make that failure
+more likely and buy almost nothing on 604 small crops.
+
+### Augmentation, and what is deliberately absent
+
+The training images are already real CCTV - vehicle crops from H.264 streams at
+400 kbps-2 Mbps, arriving with genuine compression blocking, motion blur and
+sensor noise. Synthesising more of it would produce double-degraded images no
+camera ever emits. So the augmentation budget goes on *geometry and exposure* -
+`scale=0.9`, `mosaic=1.0`, `copy_paste=0.3`, `hsv_v=0.5` - which genuinely vary
+between cameras and times of day.
+
+`fliplr=0.0` throughout: a registration is directional text, and a mirrored
+plate teaches a glyph shape that does not exist. `erasing=0.0`: occluding a
+20 px plate does not augment it, it deletes it.
+
+### Tiny-plate oversampling
+
+`D_tiny_oversample` repeats tiny-plate image *paths* in the train list rather
+than copying files. Each appearance is independently augmented - different
+mosaic partners, scale, crop and exposure - so the model sees genuinely
+different pictures of the same plate rather than the identical tensor three
+times. The factor stays at 3: past that the tiny images dominate the batch
+statistics and the larger bands regress, which is this project's own failure
+in reverse. Val and test lists are untouched, so metrics stay comparable.
 
 ## Evaluation
 

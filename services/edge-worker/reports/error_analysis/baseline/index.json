@@ -1,0 +1,166 @@
+{
+  "generated_at": "2026-09-07T07:27:11.402499+00:00",
+  "weights": "D:/ANPR/models/plate_detector.pt",
+  "tag": "baseline",
+  "split": "test",
+  "settings": {
+    "imgsz": 640,
+    "conf": 0.25,
+    "match_iou": 0.3
+  },
+  "categories": {
+    "false_positive": {
+      "count": 21,
+      "sheets": [
+        {
+          "sheet": "false_positive_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "hit_EXTREMELY_TINY": {
+      "count": 1,
+      "sheets": [
+        {
+          "sheet": "hit_EXTREMELY_TINY_00.jpg",
+          "n": 1
+        }
+      ]
+    },
+    "hit_LARGE": {
+      "count": 8,
+      "sheets": [
+        {
+          "sheet": "hit_LARGE_00.jpg",
+          "n": 8
+        }
+      ]
+    },
+    "hit_MEDIUM": {
+      "count": 29,
+      "sheets": [
+        {
+          "sheet": "hit_MEDIUM_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "hit_SMALL": {
+      "count": 25,
+      "sheets": [
+        {
+          "sheet": "hit_SMALL_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "miss_EXTREMELY_TINY": {
+      "count": 20,
+      "sheets": [
+        {
+          "sheet": "miss_EXTREMELY_TINY_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "miss_LARGE": {
+      "count": 3,
+      "sheets": [
+        {
+          "sheet": "miss_LARGE_00.jpg",
+          "n": 3
+        }
+      ]
+    },
+    "miss_MEDIUM": {
+      "count": 6,
+      "sheets": [
+        {
+          "sheet": "miss_MEDIUM_00.jpg",
+          "n": 6
+        }
+      ]
+    },
+    "miss_SMALL": {
+      "count": 38,
+      "sheets": [
+        {
+          "sheet": "miss_SMALL_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "miss_VERY_SMALL": {
+      "count": 28,
+      "sheets": [
+        {
+          "sheet": "miss_VERY_SMALL_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "tag_blur": {
+      "count": 4,
+      "sheets": [
+        {
+          "sheet": "tag_blur_00.jpg",
+          "n": 4
+        }
+      ]
+    },
+    "tag_low_confidence": {
+      "count": 45,
+      "sheets": [
+        {
+          "sheet": "tag_low_confidence_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "tag_low_contrast": {
+      "count": 85,
+      "sheets": [
+        {
+          "sheet": "tag_low_contrast_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "tag_low_light": {
+      "count": 24,
+      "sheets": [
+        {
+          "sheet": "tag_low_light_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "tag_overexposed": {
+      "count": 3,
+      "sheets": [
+        {
+          "sheet": "tag_overexposed_00.jpg",
+          "n": 3
+        }
+      ]
+    },
+    "tag_tiny": {
+      "count": 49,
+      "sheets": [
+        {
+          "sheet": "tag_tiny_00.jpg",
+          "n": 12
+        }
+      ]
+    },
+    "tag_unreadable": {
+      "count": 156,
+      "sheets": [
+        {
+          "sheet": "tag_unreadable_00.jpg",
+          "n": 12
+        }
+      ]
+    }
+  }
+}

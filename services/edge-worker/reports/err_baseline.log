@@ -1,0 +1,24 @@
+  100/223 images (41s)
+  200/223 images (69s)
+================================================================
+ERROR ANALYSIS baseline   conf=0.25   imgsz=640
+================================================================
+  tag_unreadable                 156  (1 sheet/s)
+  tag_low_contrast                85  (1 sheet/s)
+  tag_tiny                        49  (1 sheet/s)
+  tag_low_confidence              45  (1 sheet/s)
+  miss_SMALL                      38  (1 sheet/s)
+  hit_MEDIUM                      29  (1 sheet/s)
+  miss_VERY_SMALL                 28  (1 sheet/s)
+  hit_SMALL                       25  (1 sheet/s)
+  tag_low_light                   24  (1 sheet/s)
+  false_positive                  21  (1 sheet/s)
+  miss_EXTREMELY_TINY             20  (1 sheet/s)
+  hit_LARGE                        8  (1 sheet/s)
+  miss_MEDIUM                      6  (1 sheet/s)
+  tag_blur                         4  (1 sheet/s)
+  miss_LARGE                       3  (1 sheet/s)
+  tag_overexposed                  3  (1 sheet/s)
+  hit_EXTREMELY_TINY               1  (1 sheet/s)
+
+Written: reports\error_analysis\baseline

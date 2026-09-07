@@ -38,6 +38,7 @@ import logging
 import os
 import sys
 import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
@@ -173,6 +174,19 @@ class AnprEngine:
         self._emitted.clear()
         logger.info("ANPR state reset on stream discontinuity")
 
+    def new_stream(self) -> None:
+        """A fresh capture of the same camera is starting.
+
+        Not the same as `reset`. Between two cycles the vehicles are gone and
+        the track ids mean nothing, so the votes and the tracker must go - but
+        the camera has not moved, so where its burned-in clock sits, the plate
+        sizes it delivers and its measured timings are all still true. Keeping
+        those is the entire reason an engine is cached per camera rather than
+        rebuilt: a 25-frame pass is too short to learn them twice.
+        """
+        self._pipeline.on_discontinuity()
+        self._emitted.clear()
+
     def describe(self) -> dict[str, Any]:
         return {
             "detector": self.name,
@@ -288,7 +302,7 @@ class AnprEngine:
 
     def stats(self) -> dict:
         elapsed = time.perf_counter() - self._started
-        engine = self._pipeline.stats()
+        engine = self._pipeline.report()
         return {
             "frames": self._frames,
             "fps": round(self._frames / elapsed, 2) if elapsed else 0.0,
@@ -338,3 +352,90 @@ def build_engine(*, min_score: float = DEFAULT_MIN_SCORE) -> AnprEngine | None:
         return None
     logger.info("ANPR engine ready: %s", engine.describe())
     return engine
+
+
+#: How many per-camera engines to keep loaded at once.
+#:
+#: Each engine owns a vehicle detector, a plate detector and an OCR ensemble,
+#: so this is a memory dial, not a speed dial. Four suits the documented
+#: deployment - one worker per site, a handful of cameras - and the default is
+#: deliberately not raised for the 30-camera sandbox: past the capacity every
+#: lookup misses and the cache degrades to exactly the old behaviour, which is
+#: correct but pointless, whereas an oversized cache would exhaust the box.
+ENGINE_CACHE_SIZE = int(os.getenv("ANPR_ENGINE_CACHE", "4"))
+
+
+class EngineCache:
+    """One ANPR engine per camera, kept between cycles, bounded.
+
+    A worker cycling its cameras used to build a fresh engine for every camera
+    on every pass. That threw away two things:
+
+    **The weights.** Loading them costs seconds and hundreds of megabytes, and
+    on a short cycle that load was a large fraction of the whole pass.
+
+    **Everything the camera had learned about itself.** The overlay suppressor
+    needs several frames to work out where a burned-in clock sits; the plate
+    vote accumulates across frames; the incident detector learns the junction's
+    prevailing direction before it can call anything wrong-way. A 25-frame pass
+    barely reaches those thresholds, and discarding the state at the end of it
+    meant every pass started from nothing and the second pass was no wiser than
+    the first.
+
+    Bounded because engines are heavy. Eviction is least-recently-used, which
+    on a round-robin over more cameras than the capacity means every lookup
+    misses - the old behaviour, no worse. On a site with fewer cameras than the
+    capacity, nothing is ever evicted and every camera keeps its history.
+    """
+
+    def __init__(self, capacity: int = ENGINE_CACHE_SIZE) -> None:
+        self.capacity = max(1, capacity)
+        # Insertion-ordered: the first key is the least recently used.
+        self._engines: "OrderedDict[str, AnprEngine]" = OrderedDict()
+        self.hits = 0
+        self.misses = 0
+        self.evictions = 0
+        #: Set once ANPR is found to be off or unavailable, so a worker with no
+        #: analytics extras does not retry a failing build on every camera of
+        #: every cycle and log the same error a thousand times.
+        self._unavailable = False
+
+    def get(self, camera_id: str) -> AnprEngine | None:
+        """The engine for this camera, built on first use."""
+        if self._unavailable:
+            return None
+        engine = self._engines.get(camera_id)
+        if engine is not None:
+            self._engines.move_to_end(camera_id)
+            self.hits += 1
+            # Time has passed and this is a new capture: the vehicles it saw
+            # last cycle are long gone, and their track ids must not be
+            # inherited by whatever the tracker numbers next.
+            engine.new_stream()
+            return engine
+
+        self.misses += 1
+        engine = build_engine()
+        if engine is None:
+            self._unavailable = True
+            return None
+
+        self._engines[camera_id] = engine
+        if len(self._engines) > self.capacity:
+            evicted, _ = self._engines.popitem(last=False)
+            self.evictions += 1
+            logger.info(
+                "ANPR engine for %s evicted to stay within %d loaded engines",
+                evicted, self.capacity,
+            )
+        return engine
+
+    def describe(self) -> dict:
+        return {
+            "loaded": len(self._engines),
+            "capacity": self.capacity,
+            "hits": self.hits,
+            "misses": self.misses,
+            "evictions": self.evictions,
+            "cameras": list(self._engines),
+        }

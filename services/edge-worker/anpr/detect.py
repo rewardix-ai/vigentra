@@ -37,6 +37,14 @@ class Box:
     conf: float = 0.0
     cls: int = 0
     track_id: int | None = None
+    #: Which detector pass produced this box: "frame" (full-frame pass) or
+    #: "roi" (the upscaled pass inside a vehicle box).
+    #:
+    #: Carried so the two passes can be told apart downstream. Without it the
+    #: passes are indistinguishable after the NMS merge, and "the full-frame
+    #: pass never sees small plates" becomes unmeasurable - which is exactly
+    #: the question that matters on wide junction cameras.
+    source: str = "frame"
 
     @property
     def w(self) -> float:
@@ -64,20 +72,21 @@ class Box:
     def clipped(self, w: int, h: int) -> "Box":
         return Box(max(0.0, min(self.x1, w - 1)), max(0.0, min(self.y1, h - 1)),
                    max(0.0, min(self.x2, w)), max(0.0, min(self.y2, h)),
-                   self.conf, self.cls, self.track_id)
+                   self.conf, self.cls, self.track_id, self.source)
 
     def expand(self, fx: float, fy: float, w: int, h: int) -> "Box":
         """Grow the box by a fraction of its size, clipped to the frame."""
         dx, dy = self.w * fx, self.h * fy
         return Box(self.x1 - dx, self.y1 - dy, self.x2 + dx, self.y2 + dy,
-                   self.conf, self.cls, self.track_id).clipped(w, h)
+                   self.conf, self.cls, self.track_id, self.source).clipped(w, h)
 
     def scaled(self, factor: float) -> "Box":
         """Same box in a coordinate space *factor* times larger."""
         if factor == 1.0:
             return self
         return Box(self.x1 * factor, self.y1 * factor, self.x2 * factor,
-                   self.y2 * factor, self.conf, self.cls, self.track_id)
+                   self.y2 * factor, self.conf, self.cls, self.track_id,
+                   self.source)
 
     def as_dict(self) -> dict:
         return {"x1": round(self.x1), "y1": round(self.y1),
@@ -400,7 +409,8 @@ class Detector:
             for b in boxes:
                 found.append(Box(
                     x1 + b.x1 / scale, y1 + b.y1 / scale,
-                    x1 + b.x2 / scale, y1 + b.y2 / scale, b.conf))
+                    x1 + b.x2 / scale, y1 + b.y2 / scale, b.conf,
+                    source="roi"))
         return found
 
     # -- the whole frame -------------------------------------------------
@@ -448,11 +458,12 @@ class Detector:
             if parent is not None:
                 detections.append(PlateDetection(
                     box=p, track_id=parent.track_id, vehicle=parent,
-                    crop=self._crop(frame, p)))
+                    crop=self._crop(frame, p), source=p.source))
             else:
                 orphan_idx.append(len(detections))
                 detections.append(PlateDetection(box=p, track_id=-1,
-                                                 crop=self._crop(frame, p)))
+                                                 crop=self._crop(frame, p),
+                                                 source=p.source))
                 orphans.append(p)
 
         if orphans:

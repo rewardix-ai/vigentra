@@ -29,8 +29,10 @@ from . import layout as lay
 from .config import Config
 from .consensus import ConsensusStore, TrackConsensus, supersedes
 from .detect import Box, Detector, PlateDetection
+from .metrics import Metrics
 from .osd import OsdSuppressor
 from .ocr import OcrEnsemble
+from .readability import ReadabilityLedger
 
 log = logging.getLogger(__name__)
 
@@ -111,6 +113,12 @@ class AnprPipeline:
         # Learns each camera's burned-in overlays (clocks, captions) live and
         # keeps them out of the plate vote - see anpr/osd.py.
         self.osd = OsdSuppressor()
+        # What the plates on this feed physically looked like, so the
+        # camera can say "unreadable" instead of saying nothing.
+        self.readability = ReadabilityLedger()
+        # Per-stage timings as percentiles - see anpr/metrics.py for why
+        # an average is the wrong summary here.
+        self.metrics = Metrics()
 
         self.frame_idx = 0
         #: track -> (text, confirmed) last pushed to the UI
@@ -130,6 +138,8 @@ class AnprPipeline:
         self.detector.reset()
         self.tracks.reset()
         self.osd.reset()
+        self.readability.reset()
+        self.metrics.reset()
         self.frame_idx = 0
         self._announced.clear()
         self._best_crop.clear()
@@ -150,6 +160,7 @@ class AnprPipeline:
         log.info("scene discontinuity - resetting track state")
         self.detector.reset()
         self.tracks.reset()
+        self.readability.drop_tracks()
         self._announced.clear()
         self._best_crop.clear()
         self._fuse_crops.clear()
@@ -188,7 +199,8 @@ class AnprPipeline:
         # 4K junction the ROI pass is the single largest cost in the frame.
         settled = {tid for tid, tc in self.tracks.tracks.items()
                    if tc.verdict.confirmed}
-        vehicles, plates = self.detector.process(frame, idx, settled)
+        with self.metrics.time("detect"):
+            vehicles, plates = self.detector.process(frame, idx, settled)
 
         # --- measure every crop, then decide where to spend OCR ----------
         height, width = frame.shape[:2]
@@ -207,7 +219,15 @@ class AnprPipeline:
             if self.osd.is_overlay(box):
                 self._skipped += 1
                 continue
-            q = enhance.assess(det.crop)
+            # Is there enough resolution here for a reading to mean
+            # anything? Below the floor the characters are fewer than four
+            # pixels wide and every read measured on this estate came back
+            # invented rather than wrong - see anpr/readability.py.
+            if not self.readability.observe(det.track_id, det.box.w):
+                self._skipped += 1
+                continue
+            with self.metrics.time("assess"):
+                q = enhance.assess(det.crop)
             # A plate touching the frame edge is probably only partly in
             # shot, and a half-visible plate reads as a *shorter* plate that
             # can still satisfy a legal format.  Discounting these keeps the
@@ -229,7 +249,9 @@ class AnprPipeline:
         events: list[PlateEvent] = []
         fallbacks_left = self.cfg.ocr.max_fallback_per_frame
         for _prio, det, q, tc in scored[:budget]:
-            variants = enhance.build_variants(det.crop, self.cfg.enhance, self.sr, q)
+            with self.metrics.time("enhance"):
+                variants = enhance.build_variants(det.crop, self.cfg.enhance,
+                                                  self.sr, q)
             if not variants:
                 continue
             # The detection escalation is the most expensive thing the OCR
@@ -238,7 +260,9 @@ class AnprPipeline:
             # only on crops big enough to rescue, and only a few per frame.
             allow_fallback = (fallbacks_left > 0
                               and q.width >= self.cfg.ocr.fallback_min_width)
-            result = self.ocr.read(variants, allow_fallback=allow_fallback)
+            with self.metrics.time("ocr"):
+                result = self.ocr.read(variants, allow_fallback=allow_fallback)
+            self.readability.note_read(det.track_id)
             if allow_fallback:
                 fallbacks_left -= 1
             self._ocr_calls += 1
@@ -291,6 +315,9 @@ class AnprPipeline:
             v.track_id for v in vehicles if v.track_id is not None}
         for tc in self.tracks.retire_missing(alive, idx, now=captured):
             v = tc.verdict
+            # Every departing vehicle gets a reason, including the ones
+            # that produced no plate at all. Silence is what this replaces.
+            self.readability.retire(tc.track_id, confirmed=bool(v.text and v.confirmed))
             if v.text and v.confirmed and self._announced.get(tc.track_id) != (v.text, True):
                 self._announced[tc.track_id] = (v.text, True)
                 events.append(PlateEvent(
@@ -300,7 +327,9 @@ class AnprPipeline:
                     observations=v.observations, box={}, quality={},
                     frame=idx, timestamp=captured, method=v.method))
 
-        self._times.append(time.perf_counter() - started)
+        elapsed = time.perf_counter() - started
+        self._times.append(elapsed)
+        self.metrics.record("frame", elapsed * 1000.0)
         return FrameResult(idx, vehicles, plates, events, self.stats(),
                            {tid: c for tid, (_, c) in self._best_crop.items()})
 
@@ -367,6 +396,23 @@ class AnprPipeline:
             "ocr_calls": self._ocr_calls,
             "ocr_skipped": self._skipped,
             "engines": self.ocr.engine_names,
+        }
+
+    def report(self) -> dict:
+        """The full picture, for a periodic log line or an operator report.
+
+        Separate from `stats()` because `stats()` rides on every FrameResult
+        and this does not: computing percentiles sorts each stage's window, so
+        doing it per frame would put the measurement inside the thing being
+        measured.
+        """
+        return {
+            **self.stats(),
+            # Why this camera produced what it produced. An empty plate list
+            # with `unreadable` high is a camera placement finding, not a
+            # pipeline failure, and the two must not look alike.
+            "readability": self.readability.describe(),
+            "timings": self.metrics.describe(),
         }
 
     def results(self) -> list[dict]:

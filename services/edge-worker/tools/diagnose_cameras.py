@@ -28,13 +28,29 @@ import time
 from collections import Counter
 from pathlib import Path
 
+#: The worker package sits one level up from tools/, and this file is run both
+#: as `python -m tools.diagnose_cameras` and as a plain script - only the first
+#: of those puts the parent on the path by itself.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # The plate is roughly a quarter of a vehicle box's width, head-on. A generous
 # upper bound on purpose - see the module docstring.
 PLATE_FACTOR = 0.25
-#: Estimated plate-width floors, in pixels, measured on a real estate.
-COMFORTABLE_PX = 120.0
-READABLE_PX = 90.0
-MARGINAL_PX = 60.0
+
+# The size bands come from the running pipeline rather than being restated
+# here. They describe the same physical quantity - plate width in pixels - and
+# two copies of that number drifting apart is how a tool ends up calling a
+# camera capable that the pipeline then reports as unreadable.
+#
+# This tool applies them to an ESTIMATE of plate width, and the pipeline
+# applies them to a measured plate box, so this side is the optimistic one.
+# Sharing the constants keeps the two answers comparable and makes the
+# optimism the only difference between them.
+from anpr.readability import (  # noqa: E402 - needs the path setup above
+    COMFORTABLE_PX,
+    MARGINAL_PX,
+    READABLE_PX,
+)
 
 #: COCO vehicle class ids -> label, matching the edge detector's vocabulary.
 VEHICLE_CLASSES = {1: "bicycle", 2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}
@@ -157,7 +173,6 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", help="write the full JSON report here")
     args = ap.parse_args(argv)
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from app import grid
 
     base = os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud")

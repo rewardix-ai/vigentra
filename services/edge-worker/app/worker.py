@@ -36,7 +36,7 @@ from typing import Any, Iterator
 import httpx
 
 from . import grid
-from .anpr_engine import build_engine
+from .anpr_engine import EngineCache, build_engine
 from .detectors import Detection, DetectorError, build_detector
 
 try:
@@ -487,6 +487,8 @@ def run(
     source_mode: str,
     detector: Any = None,
     external_camera_id: str | None = None,
+    anpr_cache: Any = None,
+    incidents_by_camera: dict[str, Any] | None = None,
 ) -> int:
     # Loading weights costs seconds and hundreds of megabytes. A supervisor
     # covering several cameras builds the detector once and passes it in;
@@ -503,7 +505,12 @@ def run(
     # cameras. The single-frame reader is the fallback for when the analytics
     # extras are missing - it is worse, and it says so in docs/anpr.md, but a
     # worker that reads no plates at all is worse still.
-    anpr = build_engine()
+    #
+    # A supervisor passes a cache so the engine - and everything the camera has
+    # learned about itself: its overlays, its plate votes - survives from one
+    # cycle to the next. A one-shot run builds its own and throws it away,
+    # which is right for a single pass.
+    anpr = anpr_cache.get(camera_id) if anpr_cache is not None else build_engine()
     plate_reader = build_plate_reader() if anpr is None else None
     plates_read = 0
 
@@ -512,11 +519,18 @@ def run(
     # move and raises CANDIDATES (never findings) for a human to look at:
     # wrong-way, stopped-in-lane, sudden-stop, collision. Off when tracking is
     # off, because it has nothing to watch without stable track ids.
-    incidents = (
-        IncidentDetector(camera_id)
-        if anpr is not None and IncidentDetector is not None
-        else None
-    )
+    # Kept per camera across cycles for the same reason the engine is: this
+    # detector learns the junction's prevailing direction of travel before it
+    # can call anything wrong-way, and a 25-frame pass does not teach it that
+    # twice over if the first pass is discarded.
+    incidents = None
+    if anpr is not None and IncidentDetector is not None:
+        if incidents_by_camera is None:
+            incidents = IncidentDetector(camera_id)
+        else:
+            incidents = incidents_by_camera.get(camera_id)
+            if incidents is None:
+                incidents = incidents_by_camera[camera_id] = IncidentDetector(camera_id)
     incident_batch: list[dict] = []
 
     # The supervisor already logged this once for the whole process; repeating
@@ -548,11 +562,17 @@ def run(
     # unchanged, only the transport differs.
     grid_camera = None if (synthetic or clip) else grid_camera_for(camera_id, external_camera_id)
 
-    # Adaptive sampling, live grid only. The other sources already arrive
-    # pre-sampled and are short enough that a stride is the right tool.
+    # Adaptive sampling on every real video source - live grid and local clip
+    # alike. A fixed stride spends its frames evenly and so spends most of them
+    # on empty road; the sampler spends them when a vehicle is close enough to
+    # carry a plate wide enough to read. Measured on identical footage and an
+    # identical budget, that was 6 plate boxes against 42.
+    #
+    # Synthetic frames are excluded because there is nothing in them to bunch
+    # around, and a burst there would only distort the wiring test.
     sampler = (
         AdaptiveSampler(stride=max(1, sample_interval))
-        if AdaptiveSampler is not None and grid_camera is not None
+        if AdaptiveSampler is not None and not synthetic
         else None
     )
 
@@ -561,7 +581,10 @@ def run(
             iter_synthetic_frames(max_frames * max(1, sample_interval), sample_interval)
         )
     elif clip:
-        frames = _plain(iter_clip_frames(clip, sample_interval))
+        # Decode every frame and let the sampler choose, exactly as on the
+        # grid path: decoding is the cheap half, and the stride's cost is the
+        # plate it was not looking at.
+        frames = _plain(iter_clip_frames(clip, 1 if sampler is not None else sample_interval))
     elif grid_camera is not None:
         logger.info("live capture: %s", grid_camera.described)
         # Look at every frame across the SAME footage window the fixed stride
@@ -901,6 +924,12 @@ def supervise(
     detector = build_detector()
     logger.info("detector: %s", detector.describe())
 
+    # ANPR engines and incident detectors are per camera, not per process, and
+    # both now survive between cycles: see EngineCache for why a camera that
+    # forgets itself every 25 frames never learns anything.
+    anpr_cache = EngineCache()
+    incidents_by_camera: dict[str, Any] = {}
+
     cycle = 0
     stop = False
 
@@ -963,6 +992,8 @@ def supervise(
                         source_mode=source_mode,
                         detector=detector,
                         external_camera_id=external_id,
+                        anpr_cache=anpr_cache,
+                        incidents_by_camera=incidents_by_camera,
                     )
                 except Exception as exc:
                     # One camera failing must not take the site offline. A
@@ -976,7 +1007,10 @@ def supervise(
                 return worst
 
             if not stop:
-                logger.info("cycle %d complete; sleeping %ds", cycle, cycle_seconds)
+                logger.info(
+                    "cycle %d complete; sleeping %ds; anpr engines %s",
+                    cycle, cycle_seconds, anpr_cache.describe(),
+                )
                 for _ in range(cycle_seconds):
                     if stop:
                         break

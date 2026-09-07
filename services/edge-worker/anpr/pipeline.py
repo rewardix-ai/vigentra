@@ -327,6 +327,12 @@ class AnprPipeline:
                     observations=v.observations, box={}, quality={},
                     frame=idx, timestamp=captured, method=v.method))
 
+        # `retire_missing` only hands back tracks that produced a reading, so
+        # a vehicle whose plate was never even attempted would never reach the
+        # loop above - and those are exactly the UNREADABLE ones this ledger
+        # exists to count. Sweep for anything the consensus store has dropped.
+        self.readability.settle_absent(set(self.tracks.tracks))
+
         elapsed = time.perf_counter() - started
         self._times.append(elapsed)
         self.metrics.record("frame", elapsed * 1000.0)

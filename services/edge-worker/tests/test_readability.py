@@ -102,3 +102,26 @@ def test_reset_clears_the_ledger():
     d = led.describe()
     assert d["tracks_settled"] == 0
     assert d["crops_measured"] == 0
+
+
+def test_a_track_that_was_never_read_still_gets_a_verdict():
+    # The case the whole module exists for. Consensus only reports a departing
+    # track that produced a reading, so without this sweep the vehicles whose
+    # plates were too small to attempt would leave uncounted - and the
+    # UNREADABLE total would under-report exactly what it is meant to show.
+    led = ReadabilityLedger()
+    for tid in (1, 2, 3):
+        led.observe(tid, 30.0)          # below the floor: never read
+    assert led.settle_absent(live={3}) == 2
+    d = led.describe()
+    assert d["unreadable"] == 2
+    assert d["tracks_settled"] == 2      # track 3 is still in frame
+
+
+def test_settling_is_idempotent_for_a_track_already_retired():
+    led = ReadabilityLedger()
+    led.observe(1, 130.0)
+    led.retire(1, confirmed=True)
+    assert led.settle_absent(live=set()) == 0
+    assert led.describe()["confirmed"] == 1
+    assert led.describe()["unreadable"] == 0

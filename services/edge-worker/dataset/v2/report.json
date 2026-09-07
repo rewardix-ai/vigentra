@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-07T05:55:44.288516+00:00",
+  "generated_at": "2026-09-07T06:13:07.817063+00:00",
   "version": "v2",
   "unit": "vehicle_crop",
   "label_provenance": {
@@ -23,11 +23,11 @@
     "provenance": "692 adjudicated plate boxes in dataset v2",
     "sample_size": 692
   },
-  "plate_boxes": 670,
+  "plate_boxes": 634,
   "boxes_per_split": {
-    "val": 93,
-    "test": 164,
-    "train": 413
+    "val": 90,
+    "test": 158,
+    "train": 386
   },
   "images_per_split": {
     "val": 106,
@@ -35,66 +35,66 @@
     "train": 604
   },
   "plate_width_px": {
-    "p5": 4.4,
-    "p25": 8.2,
-    "p50": 13.3,
-    "p75": 29.98,
-    "p90": 52.0,
+    "p5": 4.7,
+    "p25": 8.4,
+    "p50": 14.65,
+    "p75": 32.72,
+    "p90": 52.1,
     "p95": 52.3,
-    "p99": 66.35,
-    "min": 3.6,
+    "p99": 66.53,
+    "min": 3.7,
     "max": 120.0,
-    "n": 670
+    "n": 634
   },
   "size_distribution_by_split": {
     "val": {
-      "VERY_SMALL": 22,
+      "VERY_SMALL": 21,
       "SMALL": 25,
       "MEDIUM": 23,
-      "EXTREMELY_TINY": 18,
+      "EXTREMELY_TINY": 16,
       "LARGE": 5
     },
     "test": {
-      "EXTREMELY_TINY": 26,
+      "EXTREMELY_TINY": 21,
       "MEDIUM": 35,
       "VERY_SMALL": 28,
-      "SMALL": 64,
+      "SMALL": 63,
       "LARGE": 11
     },
     "train": {
-      "VERY_SMALL": 85,
+      "VERY_SMALL": 83,
       "MEDIUM": 74,
-      "SMALL": 78,
-      "EXTREMELY_TINY": 91,
+      "SMALL": 75,
+      "EXTREMELY_TINY": 69,
       "LARGE": 85
     }
   },
   "difficulty_by_split": {
     "val": {
-      "tiny": 40,
-      "low_light": 14,
-      "low_contrast": 36,
-      "unreadable": 93,
-      "low_confidence": 38,
+      "tiny": 37,
+      "low_light": 12,
+      "low_contrast": 34,
+      "unreadable": 90,
+      "low_confidence": 36,
       "overexposed": 5,
       "glare": 2,
       "blur": 2
     },
     "test": {
-      "tiny": 54,
+      "tiny": 49,
       "blur": 4,
-      "low_contrast": 90,
-      "low_confidence": 47,
-      "unreadable": 162,
-      "low_light": 27,
+      "low_contrast": 85,
+      "low_confidence": 45,
+      "unreadable": 156,
+      "low_light": 24,
       "overexposed": 3
     },
     "train": {
-      "tiny": 176,
-      "low_confidence": 139,
-      "unreadable": 405,
-      "low_contrast": 173,
-      "low_light": 60,
+      "tiny": 152,
+      "low_confidence": 123,
+      "unreadable": 378,
+      "low_contrast": 156,
+      "low_light": 42,
       "blur": 11,
       "overexposed": 13,
       "partial": 1,
@@ -103,13 +103,13 @@
     }
   },
   "readability": {
-    "UNREADABLE_TOO_SMALL": 660,
+    "UNREADABLE_TOO_SMALL": 624,
     "NOT_ATTEMPTED": 10
   },
   "balance": {
-    "train_boxes": 413,
-    "train_tiny_or_smaller": 176,
-    "train_hard_share": 0.426,
+    "train_boxes": 386,
+    "train_tiny_or_smaller": 152,
+    "train_hard_share": 0.394,
     "note": "Share of training boxes in the two smallest bands. Below ~0.3 the set is dominated by plates the detector already finds, and training on it will not move small-plate recall."
   },
   "temporal_leakage": {
@@ -117,6 +117,5 @@
     "blocks_in_multiple_splits": 0,
     "offenders": {},
     "verdict": "CLEAN"
-  },
-  "contact_sheets": 6
+  }
 }

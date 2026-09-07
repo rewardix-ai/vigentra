@@ -1,0 +1,583 @@
+{
+  "generated_at": "2026-09-07T06:12:56.064009+00:00",
+  "why": "Adjudicated 'plate' but excluded from the training labels on geometry, not on size. Retained here so the exclusion is auditable and a reviewer can overrule it.",
+  "count": 36,
+  "boxes": [
+    {
+      "proposal_id": "p000090",
+      "frame": "cam01_0044.jpg",
+      "camera_id": "cam01",
+      "plate_box": [
+        1447.7,
+        649.8,
+        1452.1,
+        653.5
+      ],
+      "plate_w_px": 4.4,
+      "plate_h_px": 3.7,
+      "aspect": 1.189,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x4px is aspect 1.19, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000133",
+      "frame": "cam01_0074.jpg",
+      "camera_id": "cam01",
+      "plate_box": [
+        608.4,
+        857.0,
+        616.4,
+        863.7
+      ],
+      "plate_w_px": 8.0,
+      "plate_h_px": 6.7,
+      "aspect": 1.194,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 8x7px is aspect 1.19, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000156",
+      "frame": "cam01_0085.jpg",
+      "camera_id": "cam01",
+      "plate_box": [
+        1172.2,
+        630.9,
+        1186.0,
+        642.8
+      ],
+      "plate_w_px": 13.9,
+      "plate_h_px": 11.9,
+      "aspect": 1.168,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 14x12px is aspect 1.17, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000199",
+      "frame": "cam01_0110.jpg",
+      "camera_id": "cam01",
+      "plate_box": [
+        671.5,
+        710.8,
+        679.3,
+        718.8
+      ],
+      "plate_w_px": 7.8,
+      "plate_h_px": 8.0,
+      "aspect": 0.975,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 8x8px is aspect 0.97, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000226",
+      "frame": "cam02_0009.jpg",
+      "camera_id": "cam02",
+      "plate_box": [
+        1148.4,
+        777.0,
+        1153.4,
+        782.3
+      ],
+      "plate_w_px": 5.0,
+      "plate_h_px": 5.3,
+      "aspect": 0.943,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 5x5px is aspect 0.94, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000255",
+      "frame": "cam02_0069.jpg",
+      "camera_id": "cam02",
+      "plate_box": [
+        1477.5,
+        593.7,
+        1482.1,
+        598.5
+      ],
+      "plate_w_px": 4.6,
+      "plate_h_px": 4.8,
+      "aspect": 0.958,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 5x5px is aspect 0.96, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000290",
+      "frame": "cam02_0117.jpg",
+      "camera_id": "cam02",
+      "plate_box": [
+        1278.5,
+        660.4,
+        1287.3,
+        671.4
+      ],
+      "plate_w_px": 8.8,
+      "plate_h_px": 11.1,
+      "aspect": 0.793,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 9x11px is aspect 0.79, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000371",
+      "frame": "cam04_0074.jpg",
+      "camera_id": "cam04",
+      "plate_box": [
+        515.0,
+        201.8,
+        518.8,
+        209.1
+      ],
+      "plate_w_px": 3.8,
+      "plate_h_px": 7.3,
+      "aspect": 0.521,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x7px is aspect 0.52, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000600",
+      "frame": "cam12_0109.jpg",
+      "camera_id": "cam12",
+      "plate_box": [
+        120.2,
+        355.5,
+        138.2,
+        371.2
+      ],
+      "plate_w_px": 18.0,
+      "plate_h_px": 15.8,
+      "aspect": 1.139,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 18x16px is aspect 1.14, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000601",
+      "frame": "cam12_0110.jpg",
+      "camera_id": "cam12",
+      "plate_box": [
+        120.2,
+        355.5,
+        138.2,
+        371.2
+      ],
+      "plate_w_px": 18.0,
+      "plate_h_px": 15.8,
+      "aspect": 1.139,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 18x16px is aspect 1.14, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000611",
+      "frame": "cam13_0008.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        588.1,
+        192.3,
+        592.2,
+        197.3
+      ],
+      "plate_w_px": 4.1,
+      "plate_h_px": 5.1,
+      "aspect": 0.804,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.80, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000612",
+      "frame": "cam13_0011.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        588.1,
+        192.3,
+        592.2,
+        197.3
+      ],
+      "plate_w_px": 4.1,
+      "plate_h_px": 5.1,
+      "aspect": 0.804,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.80, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000613",
+      "frame": "cam13_0013.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        533.9,
+        547.8,
+        549.6,
+        561.8
+      ],
+      "plate_w_px": 15.8,
+      "plate_h_px": 14.0,
+      "aspect": 1.129,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 16x14px is aspect 1.13, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000616",
+      "frame": "cam13_0013.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        588.4,
+        192.1,
+        592.1,
+        197.0
+      ],
+      "plate_w_px": 3.8,
+      "plate_h_px": 4.8,
+      "aspect": 0.792,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.79, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000618",
+      "frame": "cam13_0015.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.6,
+        592.1,
+        197.6
+      ],
+      "plate_w_px": 4.4,
+      "plate_h_px": 5.0,
+      "aspect": 0.88,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.88, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000620",
+      "frame": "cam13_0016.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.9,
+        191.9,
+        592.2,
+        197.3
+      ],
+      "plate_w_px": 4.3,
+      "plate_h_px": 5.4,
+      "aspect": 0.796,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.80, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000622",
+      "frame": "cam13_0017.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.0,
+        592.2,
+        197.5
+      ],
+      "plate_w_px": 4.5,
+      "plate_h_px": 5.6,
+      "aspect": 0.804,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x6px is aspect 0.80, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000625",
+      "frame": "cam13_0018.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.1,
+        592.4,
+        197.3
+      ],
+      "plate_w_px": 4.6,
+      "plate_h_px": 5.2,
+      "aspect": 0.885,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 5x5px is aspect 0.88, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000632",
+      "frame": "cam13_0023.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        190.5,
+        592.1,
+        197.3
+      ],
+      "plate_w_px": 4.3,
+      "plate_h_px": 6.9,
+      "aspect": 0.623,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x7px is aspect 0.62, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000647",
+      "frame": "cam13_0037.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.5,
+        592.2,
+        197.5
+      ],
+      "plate_w_px": 4.4,
+      "plate_h_px": 5.0,
+      "aspect": 0.88,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.88, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000651",
+      "frame": "cam13_0042.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        588.4,
+        192.2,
+        592.1,
+        196.3
+      ],
+      "plate_w_px": 3.6,
+      "plate_h_px": 4.1,
+      "aspect": 0.878,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x4px is aspect 0.88, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000652",
+      "frame": "cam13_0043.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.9,
+        192.2,
+        592.0,
+        197.4
+      ],
+      "plate_w_px": 4.1,
+      "plate_h_px": 5.2,
+      "aspect": 0.788,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.79, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000655",
+      "frame": "cam13_0047.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        577.7,
+        196.0,
+        581.3,
+        199.6
+      ],
+      "plate_w_px": 3.6,
+      "plate_h_px": 3.6,
+      "aspect": 1.0,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x4px is aspect 1.00, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000657",
+      "frame": "cam13_0048.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        588.1,
+        192.2,
+        592.1,
+        197.3
+      ],
+      "plate_w_px": 3.9,
+      "plate_h_px": 5.1,
+      "aspect": 0.765,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.76, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000659",
+      "frame": "cam13_0049.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.4,
+        592.1,
+        197.3
+      ],
+      "plate_w_px": 4.3,
+      "plate_h_px": 4.9,
+      "aspect": 0.878,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.88, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000663",
+      "frame": "cam13_0055.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.2,
+        592.1,
+        197.5
+      ],
+      "plate_w_px": 4.3,
+      "plate_h_px": 5.3,
+      "aspect": 0.811,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.81, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000667",
+      "frame": "cam13_0059.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        487.5,
+        228.4,
+        496.2,
+        238.6
+      ],
+      "plate_w_px": 8.7,
+      "plate_h_px": 10.2,
+      "aspect": 0.853,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 9x10px is aspect 0.85, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000671",
+      "frame": "cam13_0062.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.1,
+        592.2,
+        197.7
+      ],
+      "plate_w_px": 4.5,
+      "plate_h_px": 5.6,
+      "aspect": 0.804,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x6px is aspect 0.80, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000679",
+      "frame": "cam13_0067.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        578.0,
+        195.6,
+        582.1,
+        199.4
+      ],
+      "plate_w_px": 4.1,
+      "plate_h_px": 3.8,
+      "aspect": 1.079,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x4px is aspect 1.08, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000692",
+      "frame": "cam13_0073.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.8,
+        192.1,
+        592.2,
+        197.3
+      ],
+      "plate_w_px": 4.4,
+      "plate_h_px": 5.2,
+      "aspect": 0.846,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.85, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000694",
+      "frame": "cam13_0074.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        599.6,
+        196.4,
+        603.9,
+        200.0
+      ],
+      "plate_w_px": 4.3,
+      "plate_h_px": 3.6,
+      "aspect": 1.194,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x4px is aspect 1.19, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000711",
+      "frame": "cam13_0090.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        761.7,
+        240.3,
+        767.8,
+        245.4
+      ],
+      "plate_w_px": 6.1,
+      "plate_h_px": 5.1,
+      "aspect": 1.196,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 6x5px is aspect 1.20, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000725",
+      "frame": "cam13_0100.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.9,
+        191.8,
+        592.4,
+        197.0
+      ],
+      "plate_w_px": 4.5,
+      "plate_h_px": 5.3,
+      "aspect": 0.849,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.85, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000729",
+      "frame": "cam13_0102.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.9,
+        192.1,
+        592.2,
+        197.3
+      ],
+      "plate_w_px": 4.3,
+      "plate_h_px": 5.2,
+      "aspect": 0.827,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.83, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000746",
+      "frame": "cam13_0111.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        1323.6,
+        272.6,
+        1328.9,
+        280.5
+      ],
+      "plate_w_px": 5.3,
+      "plate_h_px": 7.9,
+      "aspect": 0.671,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 5x8px is aspect 0.67, a plate is never taller than it is wide"
+    },
+    {
+      "proposal_id": "p000753",
+      "frame": "cam13_0114.jpg",
+      "camera_id": "cam13",
+      "plate_box": [
+        587.9,
+        191.8,
+        592.4,
+        197.2
+      ],
+      "plate_w_px": 4.4,
+      "plate_h_px": 5.4,
+      "aspect": 0.815,
+      "adjudicated_by": "vlm",
+      "reason": "implausible geometry: 4x5px is aspect 0.81, a plate is never taller than it is wide"
+    }
+  ]
+}

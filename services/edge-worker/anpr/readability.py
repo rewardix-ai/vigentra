@@ -180,6 +180,19 @@ class ReadabilityLedger:
         self.verdicts[verdict] += 1
         return verdict
 
+    def settle_absent(self, live: set[int]) -> int:
+        """Settle every track that is no longer being followed.
+
+        The consensus store only reports a departing track when it produced a
+        reading, so a vehicle whose plate was never attempted leaves without
+        being announced anywhere - and that is precisely the UNREADABLE case.
+        Given the ids still alive, this settles the rest. Returns how many.
+        """
+        gone = [tid for tid in self.tracks if tid not in live]
+        for tid in gone:
+            self.retire(tid, confirmed=False)
+        return len(gone)
+
     def drop_tracks(self) -> None:
         """Forget the vehicles, keep what the camera has told us about itself.
 

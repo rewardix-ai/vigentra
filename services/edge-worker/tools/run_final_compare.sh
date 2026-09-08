@@ -19,6 +19,7 @@ step() { echo "=== $(date '+%H:%M:%S') $*" | tee -a "$LOG"; }
 
 DW=$(ls -d runs/plate/${DETECTOR}_stage_all*/weights/best.pt 2>/dev/null | tail -1)
 [ -n "$DW" ] || DW=runs/plate/B_highres_960/weights/best.pt
+LABEL=$(basename "$(dirname "$(dirname "$DW")")")
 [ -f "$READER" ] || { step "no reader at $READER"; exit 1; }
 [ -f "$SR" ] || { step "no upscaler at $SR"; exit 1; }
 
@@ -44,7 +45,7 @@ EOF
 step "real footage no floor: baseline+paddle@40 vs new detector+reader+SR, every plate read (cam06, cam07)"
 $PY -u tools/compare_on_footage.py \
   --weights "D:/ANPR/models/plate_detector.pt" "$DW" \
-  --labels baseline_paddle_40px "${DETECTOR}_reader_sr_nofloor" --cameras cam06 cam07 --per-camera 30 \
+  --labels baseline_paddle_40px "${LABEL}_reader_sr_nofloor" --cameras cam06 cam07 --per-camera 30 \
   --engines paddle reader,paddle --min-plate-width 40 0 \
   --out "reports/footage_comparison_final.json" >> "$LOG" 2>&1
 

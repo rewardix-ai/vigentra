@@ -243,7 +243,7 @@ def evaluate_mf(model, pairs: list[dict], device, single=None, reader=None) -> d
 
 
 def train_mf(dataset: Path, name: str, epochs: int, batch: int, lr: float, device_arg: str | None,
-             limit: int | None, frames: int) -> dict:
+             limit: int | None, frames: int, init: Path | None = None) -> dict:
     import torch
     from torch.utils.data import DataLoader, WeightedRandomSampler
 
@@ -267,6 +267,10 @@ def train_mf(dataset: Path, name: str, epochs: int, batch: int, lr: float, devic
     sampler = WeightedRandomSampler(weights, num_samples=len(weights), replacement=True)
     loader = DataLoader(ds, batch_size=batch, sampler=sampler, num_workers=0, drop_last=True)
     model = build_mf_model(spec).to(device)
+    if init is not None:
+        ck = torch.load(init, map_location="cpu", weights_only=False)
+        model.load_state_dict(ck["model"])
+        log.info("initialised from %s (epoch %s)", init, ck.get("epoch"))
     n_params = sum(p.numel() for p in model.parameters())
     log.info("mfsr params: %.2fM", n_params / 1e6)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-5)
@@ -341,11 +345,11 @@ def mf_sheet(weights: Path, dataset: Path, out: Path, count: int, single_w: Path
     tiles = []
     for p in pairs:
         lrs = [cv2.imread(str(q)) for q in p["lrs"]]; hr = cv2.imread(str(p["hr"]))
-        out = mf.upscale(lrs)
-        bic = cv2.resize(lrs[0], (out.shape[1], out.shape[0]), interpolation=cv2.INTER_CUBIC)
+        fused = mf.upscale(lrs)
+        bic = cv2.resize(lrs[0], (fused.shape[1], fused.shape[0]), interpolation=cv2.INTER_CUBIC)
         sf = single.upscale(lrs[0]) if single else bic
-        row = np.hstack([fit(cv2.resize(lrs[0], (out.shape[1], out.shape[0]), interpolation=cv2.INTER_NEAREST)),
-                         fit(bic), fit(sf), fit(out), fit(cv2.resize(hr, (out.shape[1], out.shape[0])))])
+        row = np.hstack([fit(cv2.resize(lrs[0], (fused.shape[1], fused.shape[0]), interpolation=cv2.INTER_NEAREST)),
+                         fit(bic), fit(sf), fit(fused), fit(cv2.resize(hr, (fused.shape[1], fused.shape[0])))])
         cv2.putText(row, f"{p['tier']} lr {lrs[0].shape[1]}px {p['text']}", (2, 66), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 200), 1)
         tiles.append(row)
     header = np.full((24, 5 * W, 3), 255, np.uint8)
@@ -538,7 +542,7 @@ def main() -> int:
         return 0
     if args.frames:
         rec = train_mf(Path(args.dataset), args.name, args.epochs, args.batch, args.lr, args.device,
-                       args.limit, args.frames)
+                       args.limit, args.frames, Path(args.init) if args.init else None)
         print("MFSR TRAINING COMPLETE")
         print(f"best epoch {rec['best_epoch']}  hard psnr {rec['best']['hard_lr_under_24px'] if rec['best'] else None}")
         print(f"best: {rec['best_checkpoint']}")

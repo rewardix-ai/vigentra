@@ -308,14 +308,41 @@ class SuperResolver:
         "FSRCNN_x3.pb": ("fsrcnn", 3),
     }
 
+    #: Weights for the plate-trained upscaler (anpr/sr.py), looked for first
+    #: under "auto": it was trained on this footage's own degradation, where
+    #: the photographic ESPCN weights were not.
+    PLATE_SR = "plate_sr.pt"
+
     def __init__(self, backend: str = "auto", scale: int = 4) -> None:
         self.backend = backend
         self.scale = scale
         self._net = None
+        self._plate = None
         self._name = "lanczos"
         if backend in ("off", "lanczos"):
             return
-        self._try_load(backend)
+        if backend in ("auto", "plate"):
+            self._try_load_plate()
+        if self._plate is None and backend != "plate":
+            self._try_load(backend)
+
+    def _try_load_plate(self) -> None:
+        path = MODELS_DIR / self.PLATE_SR
+        if not path.exists():
+            if self.backend == "plate":
+                log.info("no %s in %s; using Lanczos upscaling", self.PLATE_SR, MODELS_DIR)
+            return
+        try:
+            from .sr import PlateUpscaler
+            up = PlateUpscaler(str(path), "cpu")
+            if up.scale != self.scale:
+                log.warning("%s is x%d, configured scale is x%d; ignoring it",
+                            self.PLATE_SR, up.scale, self.scale)
+                return
+            self._plate, self._name = up, up.name
+            log.info("super-resolution: %s (plate-trained)", self._name)
+        except Exception as exc:                # noqa: BLE001 - optional
+            log.warning("failed to load %s: %s", path, exc)
 
     def _try_load(self, backend: str) -> None:
         try:
@@ -346,6 +373,11 @@ class SuperResolver:
     def upscale(self, bgr: np.ndarray) -> np.ndarray:
         if self.backend == "off":
             return bgr
+        if self._plate is not None and bgr.shape[0] * bgr.shape[1] <= 160 * 640:
+            try:
+                return self._plate.upscale(bgr)
+            except Exception as exc:            # noqa: BLE001 - fall through
+                log.debug("plate SR failed (%s); falling back", exc)
         if self._net is not None:
             # These nets are cheap on small crops but blow up on large ones,
             # so only feed them genuinely small plates.

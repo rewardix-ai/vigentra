@@ -52,13 +52,19 @@ from synthesize_hard_cases import (TIERS, PLATE_PX, TIER_SHARE, NIGHT_FRACTION, 
                                    night, jitter_window, load_sources, Source)
 from synthesize_plates import render_plate                       # noqa: E402
 
-#: Below this final plate width the characters are not in the pixels. The
-#: reader still sees these crops - labelled EMPTY - so it learns to return
-#: nothing for a smear instead of inventing a plate. The detector keeps the
-#: box regardless: finding a 7 px plate is still a finding.
+#: Below this final plate width the characters are, by any honest measure,
+#: not in the pixels. The flag is recorded per crop for the per-width
+#: evaluation; it does NOT change the label. Every crop carries its plate's
+#: text, at every size - the reader is trained on the worst cases with the
+#: truth attached, and the evaluation per width band says where it can and
+#: cannot deliver. The detector keeps every box: finding a 7 px plate is
+#: still a finding.
 READABLE_MIN_PX = 24
-#: Share of reader samples kept from below the floor.
-EMPTY_SHARE_CAP = 0.06
+#: Super-resolution pairs (degraded crop at its information size -> the same
+#: region from the sharp composite at SR_SCALE times that size), one framing
+#: per composite, for tools/train_plate_sr.py.
+SR_SCALE = 4
+SR_MAX_LR_W = 96
 #: The H.264 pass is a subprocess per image and dominates build time; a third
 #: of the crops carry it, which is enough for the reader and detector to have
 #: met macroblocking at every tier.
@@ -77,6 +83,11 @@ BOOST_PX = {"extreme": (16, 30), "severe": (24, 45), "moderate": (35, 70), "mild
 #: Reader crops cut per plate row from each composite, each framed a little
 #: differently, the way successive detector boxes on one track are.
 FRAMINGS_PER_PLATE = 3
+#: Replay mode (--reader-only): the composites are regenerated from the same
+#: seeds, the stored images and labels are left alone, and only the reader
+#: crops, SR pairs and plates.csv are rewritten.
+REPLAY = False
+SR_SPLITS = ("train", "val_synth")
 #: Working width the plate is composited at, before degradation. Sharp text
 #: at 140-220 px is what a plate looks like before the camera happens to it.
 COMPOSITE_W = (140, 220)
@@ -249,6 +260,7 @@ def make_one(src: Source, index: int, seed: int, out_root: Path, split: str) -> 
     if is_night:
         crop = night(crop, rng)
     glare = rng.random() < (GLARE_NIGHT_SHARE if is_night else GLARE_DAY_SHARE)
+    clean = crop.copy()                     # sharp composite: the SR target
     if glare:
         crop = headlight_glare(crop, new_box, rng)
     degraded = dg.degrade(crop, tcfg, seed=int(rng.integers(2**31 - 1)))
@@ -265,9 +277,15 @@ def make_one(src: Source, index: int, seed: int, out_root: Path, split: str) -> 
     plate_px = float(pb[2] - pb[0]) * scale       # information actually left
     stem = f"{split}_{index:06d}"
     img_path = out_root / "images" / split / f"{stem}.jpg"
-    cv2.imwrite(str(img_path), img, [cv2.IMWRITE_JPEG_QUALITY, 92])
-    lines = _yolo_lines(wboxes, iw, ih)
-    (out_root / "labels" / split / f"{stem}.txt").write_text("\n".join(lines) + ("\n" if lines else ""))
+    # Window origin, so the clean composite can be cut on the same grid.
+    ox = int(round(boxes[target_i][0] - pb[0]))
+    oy = int(round(boxes[target_i][1] - pb[1]))
+    if not REPLAY:
+        cv2.imwrite(str(img_path), img, [cv2.IMWRITE_JPEG_QUALITY, 92])
+        lines = _yolo_lines(wboxes, iw, ih)
+        (out_root / "labels" / split / f"{stem}.txt").write_text("\n".join(lines) + ("\n" if lines else ""))
+    elif not img_path.exists():
+        return None
 
     # Reader crops from the SAME vehicle image: the plate box with the
     # detector's kind of looseness - several framings, because a detector
@@ -294,9 +312,24 @@ def make_one(src: Source, index: int, seed: int, out_root: Path, split: str) -> 
         patch = img[cy1:cy2, cx1:cx2]
         p_path = out_root / "plates" / split / f"{stem}_r{r_i}_f{f_i}.jpg"
         cv2.imwrite(str(p_path), patch, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        if f_i == 0 and split in SR_SPLITS:
+            # LR: the degraded crop at its information size. HR: the same
+            # region of the sharp composite, SR_SCALE times larger.
+            lr_w = int(np.clip(round((cx2 - cx1) * scale), 8, SR_MAX_LR_W))
+            lr_h = max(4, int(round((cy2 - cy1) * lr_w / max(1, cx2 - cx1))))
+            lr = cv2.resize(patch, (lr_w, lr_h), interpolation=cv2.INTER_AREA)
+            hy1, hy2 = min(max(0, cy1 + oy), clean.shape[0]), min(max(0, cy2 + oy), clean.shape[0])
+            hx1, hx2 = min(max(0, cx1 + ox), clean.shape[1]), min(max(0, cx2 + ox), clean.shape[1])
+            if hy2 - hy1 >= 3 and hx2 - hx1 >= 4:
+                hr = cv2.resize(clean[hy1:hy2, hx1:hx2], (lr_w * SR_SCALE, lr_h * SR_SCALE),
+                                interpolation=cv2.INTER_AREA)
+                cv2.imwrite(str(out_root / "sr" / split / f"{stem}_r{r_i}_lr.png"), lr)
+                cv2.imwrite(str(out_root / "sr" / split / f"{stem}_r{r_i}_hr.jpg"), hr,
+                            [cv2.IMWRITE_JPEG_QUALITY, 95])
         reader.append({
             "plate_image": f"plates/{split}/{stem}_r{r_i}_f{f_i}.jpg",
-            "text": row_text if readable else "",
+            "text": row_text,
+            "sr_pair": f"sr/{split}/{stem}_r{r_i}" if (f_i == 0 and split in SR_SPLITS) else "",
             "full_text": plate.text, "row": r_i, "stacked": int(plate.stacked),
             "readable": int(readable), "tier": tier, "plate_px": round(plate_px, 1),
             "crop_w": cx2 - cx1, "crop_h": cy2 - cy1, "night": int(is_night),
@@ -376,23 +409,35 @@ def _emit_safely(args):
 def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int,
           workers: int, boost: int = 0) -> dict:
     started = time.time()
-    if out_root.exists():
-        shutil.rmtree(out_root)
-    for split in ("train", "val", "test"):
-        (out_root / "images" / split).mkdir(parents=True)
-        (out_root / "labels" / split).mkdir(parents=True)
-    for split in ("train", "val"):
-        (out_root / "plates" / split).mkdir(parents=True)
-
-    # Real images: train alongside the synthetic; val/test untouched.
     real = {"train": 0, "val": 0, "test": 0}
-    for split in ("train", "val", "test"):
-        for img in sorted((dataset / "images" / split).glob("*.jpg")):
-            shutil.copy(img, out_root / "images" / split / img.name)
-            lbl = dataset / "labels" / split / (img.stem + ".txt")
-            if lbl.exists():
-                shutil.copy(lbl, out_root / "labels" / split / lbl.name)
-            real[split] += 1
+    if REPLAY:
+        if not (out_root / "images" / "train").exists():
+            raise SystemExit(f"{out_root} has no images to replay against")
+        for split in real:
+            real[split] = sum(1 for _ in (dataset / "images" / split).glob("*.jpg"))
+        # plates/ is overwritten in place, never removed: a reader may be
+        # training on it while the replay runs, and the replay writes the
+        # same files with the same content plus the ones the earlier build
+        # left out.
+        for split in ("train", "val_synth"):
+            shutil.rmtree(out_root / "sr" / split, ignore_errors=True)
+    else:
+        if out_root.exists():
+            shutil.rmtree(out_root)
+        for split in ("train", "val", "test"):
+            (out_root / "images" / split).mkdir(parents=True)
+            (out_root / "labels" / split).mkdir(parents=True)
+        # Real images: train alongside the synthetic; val/test untouched.
+        for split in ("train", "val", "test"):
+            for img in sorted((dataset / "images" / split).glob("*.jpg")):
+                shutil.copy(img, out_root / "images" / split / img.name)
+                lbl = dataset / "labels" / split / (img.stem + ".txt")
+                if lbl.exists():
+                    shutil.copy(lbl, out_root / "labels" / split / lbl.name)
+                real[split] += 1
+    for split in ("train", "val_synth"):
+        (out_root / "plates" / split).mkdir(parents=True, exist_ok=True)
+        (out_root / "sr" / split).mkdir(parents=True, exist_ok=True)
 
     train_sources = [s for s in load_sources(dataset) if not s.negative and s.boxes]
     # Reader validation composites on the REAL VAL crops so its backgrounds
@@ -408,7 +453,6 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
         jobs.append((s, i, int(rng.integers(2**31 - 1)), out_root, "val_synth"))
     (out_root / "images" / "val_synth").mkdir(parents=True, exist_ok=True)
     (out_root / "labels" / "val_synth").mkdir(parents=True, exist_ok=True)
-    (out_root / "plates" / "val_synth").mkdir(parents=True, exist_ok=True)
 
     emitted: list[Emitted] = []
     skipped = 0
@@ -457,34 +501,32 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
             else:
                 skipped += 1
 
-    # Reader table, with the empty-label share capped over both sources.
+    # Reader table: every crop, every size, its text attached.
     rows = [r for e in emitted for r in e.reader_crops]
     for r in rows:
         r["source"] = "composite"
     for r in boost_rows:
         r["source"] = "plate_only"
+        r.setdefault("sr_pair", "")
     rows.extend(boost_rows)
-    empties = [r for r in rows if not r["readable"]]
-    keep_empty = int(EMPTY_SHARE_CAP * len(rows))
-    rng.shuffle(empties)
-    drop = {id(r) for r in empties[keep_empty:]}
-    rows = [r for r in rows if id(r) not in drop]
     with open(out_root / "plates.csv", "w", newline="", encoding="utf-8") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(rows[0]))
         wr.writeheader(); wr.writerows(rows)
 
     # Detector stage lists: hard tiers first, then everything (+ real train).
     train_e = [e for e in emitted if e.image.startswith("images/train/")]
+    sr_pairs = sum(1 for r in rows if r.get("sr_pair"))
     real_train = [f"images/train/{p.name}" for p in sorted((dataset / "images" / "train").glob("*.jpg"))]
     hard = [e.image for e in train_e if e.tier in ("severe", "extreme")]
     everything = [e.image for e in train_e] + real_train
-    for name, items in (("stage_hard", hard + real_train), ("stage_all", everything)):
+    for name, items in (() if REPLAY else (("stage_hard", hard + real_train), ("stage_all", everything))):
         (out_root / f"{name}.txt").write_text("\n".join(str(out_root / p) for p in items) + "\n")
         (out_root / f"{name}.yaml").write_text(
             f"# Vigentra uniform dataset - {name}\n"
             f"path: {out_root.as_posix()}\ntrain: {name}.txt\nval: images/val\ntest: images/test\n"
             f"nc: 1\nnames: ['plate']\n")
-    (out_root / "data.yaml").write_text(
+    if not REPLAY:
+      (out_root / "data.yaml").write_text(
         f"# Vigentra uniform dataset (detector + reader)\n"
         f"path: {out_root.as_posix()}\ntrain: stage_all.txt\nval: images/val\ntest: images/test\n"
         f"nc: 1\nnames: ['plate']\n")
@@ -500,7 +542,9 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
         "source_dataset": str(dataset), "seed": seed,
         "real_images": real, "synthetic_train_images": len(train_e),
         "synthetic_val_images": len(emitted) - len(train_e),
-        "reader_crops": len(rows), "reader_empty_labels": sum(1 for r in rows if not r["readable"]),
+        "reader_crops": len(rows), "reader_empty_labels": 0,
+        "reader_crops_below_readable_px": sum(1 for r in rows if not r["readable"]),
+        "sr_pairs": sr_pairs, "sr_scale": SR_SCALE, "replayed": REPLAY,
         "reader_composite_crops": sum(1 for r in rows if r["source"] == "composite"),
         "reader_plate_only_crops": sum(1 for r in rows if r["source"] == "plate_only"),
         "skipped": skipped, "tiers": tiers,
@@ -547,16 +591,22 @@ def main() -> int:
     ap.add_argument("--val-target", type=int, default=800)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--reader-only", action="store_true",
+                    help="Replay the same seeds against an existing build: leave "
+                         "images/labels alone, rewrite plates/, sr/ and plates.csv.")
     ap.add_argument("--boost", type=int, default=0,
                     help="Reader-only plate renders (no vehicle) added to plates.csv. "
                          "Off by default: every image in the set is a vehicle.")
     args = ap.parse_args()
+    global REPLAY
+    REPLAY = bool(args.reader_only)
     m = build(Path(args.dataset), Path(args.out), args.target, args.val_target, args.seed,
               args.workers, args.boost)
     print("UNIFORM DATASET", m["version"])
     print(f"synthetic train {m['synthetic_train_images']}  synthetic val {m['synthetic_val_images']}  "
           f"reader crops {m['reader_crops']} (composite {m['reader_composite_crops']}, "
-          f"plate-only {m['reader_plate_only_crops']}, empty {m['reader_empty_labels']})  skipped {m['skipped']}")
+          f"plate-only {m['reader_plate_only_crops']}, below {READABLE_MIN_PX}px "
+          f"{m['reader_crops_below_readable_px']})  sr pairs {m['sr_pairs']}  skipped {m['skipped']}")
     for t, info in m["tiers"].items():
         print(f"  {t:<9} {info['images']:>6}  plate px median {info['plate_px_median']}")
     print(f"elapsed {m['elapsed_s']}s")

@@ -120,7 +120,9 @@ class EnhanceConfig:
     sr_width_threshold: int = 140
     #: Super-resolution backend: "auto" uses a real SR net when its weights
     #: are present, otherwise high-quality Lanczos + unsharp.
-    sr_backend: str = "auto"      # "auto" | "espcn" | "lanczos" | "off"
+    #: "auto" prefers models/plate_sr.pt (anpr/sr.py, trained on this
+    #: footage), then the OpenCV dnn_superres weights, then Lanczos.
+    sr_backend: str = "auto"      # "auto" | "plate" | "espcn" | "lanczos" | "off"
     sr_scale: int = 4
     clahe_clip: float = 2.5
     clahe_grid: int = 8

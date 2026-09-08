@@ -310,7 +310,8 @@ def predict_rows(model, root: Path, rows: list[dict], device, batch: int = 256) 
 
 def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: int,
           lr: float, device_arg: str | None, workers: int, limit: int | None,
-          sr_weights: Path | None = None, init: Path | None = None, use_cache: bool = False) -> dict:
+          sr_weights: Path | None = None, init: Path | None = None, use_cache: bool = False,
+          stage_widths: list[float] | None = None, stage_epochs: list[int] | None = None) -> dict:
     import torch
     from torch.utils.data import DataLoader
 
@@ -344,8 +345,18 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
 
-    stages = [("hard", hard_rows, epochs_hard), ("all", train_rows, epochs_all)]
-    total_epochs = epochs_hard + epochs_all
+    if stage_widths:
+        # Readable first: the reader must learn what a stroke is before it
+        # can be asked to find one in a smear. Nothing is excluded - the last
+        # stage (floor 0) holds every crop - only the order changes. The
+        # hard-first order collapsed three runs to a constant output.
+        stages = [(f">={int(w)}px", [r for r in train_rows if float(r["plate_px"]) >= w], ep)
+                  for w, ep in zip(stage_widths, stage_epochs or [max(1, (epochs_hard + epochs_all) // len(stage_widths))] * len(stage_widths))]
+    else:
+        stages = [("hard", hard_rows, epochs_hard), ("all", train_rows, epochs_all)]
+    for name_, rows_, ep_ in stages:
+        log.info("stage %-8s %6d crops  %d epochs", name_, len(rows_), ep_)
+    total_epochs = sum(ep for _, _, ep in stages)
     sched = torch.optim.lr_scheduler.OneCycleLR(
         opt, max_lr=lr, total_steps=sum(max(1, len(rows) // batch) * ep for _, rows, ep in stages),
         pct_start=0.15)
@@ -422,6 +433,7 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
         "experiment": name, "dataset": str(dataset), "device": str(device),
         "params_m": round(n_params / 1e6, 2), "batch": batch, "lr": lr,
         "epochs_hard": epochs_hard, "epochs_all": epochs_all,
+        "stage_widths": stage_widths, "stage_epochs": stage_epochs,
         "train_crops": len(train_rows), "hard_train_crops": len(hard_rows), "val_crops": len(val_rows),
         "enhanced_with": str(sr_weights) if sr_weights else None,
         "cached": use_cache,
@@ -558,6 +570,11 @@ def main() -> int:
                          "(detection -> enhancement -> OCR), for training and evaluation.")
     ap.add_argument("--init", default=None, metavar="READER_WEIGHTS",
                     help="Start training from these reader weights instead of scratch.")
+    ap.add_argument("--stage-widths", default=None, metavar="W,W,...",
+                    help="Width-staged curriculum, e.g. 40,24,0: crops >=40 px first, then >=24, "
+                         "then all. Every crop is trained on; only the order changes.")
+    ap.add_argument("--stage-epochs", default=None, metavar="N,N,...",
+                    help="Epochs per stage for --stage-widths.")
     ap.add_argument("--cache", action="store_true",
                     help="Preprocess all training crops into RAM once (~470 MB for 78k) and "
                          "augment on the device; ~10x faster epochs.")
@@ -576,7 +593,9 @@ def main() -> int:
     rec = train(Path(args.dataset), args.name, args.epochs_hard, args.epochs_all, args.batch,
                 args.lr, args.device, args.workers, args.limit,
                 Path(args.sr) if args.sr else None, Path(args.init) if args.init else None,
-                args.cache)
+                args.cache,
+                [float(x) for x in args.stage_widths.split(",")] if args.stage_widths else None,
+                [int(x) for x in args.stage_epochs.split(",")] if args.stage_epochs else None)
     print("READER TRAINING COMPLETE")
     print(f"best epoch {rec['best_epoch']}  exact (all sizes) {rec['best']['overall']['exact'] if rec['best'] else None}")
     print(f"best: {rec['best_checkpoint']}")

@@ -28,6 +28,7 @@ import numpy as np
 
 from . import enhance
 from . import layout as lay
+from . import plate_rules as pr
 from .config import Config
 from .consensus import ConsensusStore, TrackConsensus, supersedes
 from .detect import Box, Detector, PlateDetection

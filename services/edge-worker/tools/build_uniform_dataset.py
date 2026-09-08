@@ -88,6 +88,7 @@ class Emitted:
     tier: str
     plate_px: float
     night: bool
+    glare: bool
     text: str
     stacked: bool
     fmt: str
@@ -141,6 +142,62 @@ def composite(crop: np.ndarray, box, plate: np.ndarray, rng: np.random.Generator
     return out, nb, M
 
 
+#: Headlight glare: how often it is applied to night crops, and to day crops
+#: (sun on a reflective plate, or daytime running lights).
+GLARE_NIGHT_SHARE = 0.55
+GLARE_DAY_SHARE = 0.10
+
+
+def headlight_glare(img: np.ndarray, box, rng: np.random.Generator) -> np.ndarray:
+    """Bloom from the lamps either side of the plate, and the veil it casts.
+
+    On this footage a plate at night is rarely dark: it sits between two
+    headlights that saturate the sensor, and the camera's own bloom spills
+    across it. Three effects, applied before the camera model so they are
+    blurred and compressed along with everything else:
+
+      * two soft, near-white discs at plate height, one each side, sized to
+        the plate (a car's lamps are about a plate-width out from the plate);
+      * a veil over the plate region: additive light that lifts the blacks
+        and flattens contrast, which is what makes glare plates unreadable
+        long before they are clipped;
+      * sometimes, clipping: the plate's bright field pushed to 255 so the
+        characters survive only as a faint negative.
+    """
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = box
+    pw, ph = max(4.0, x2 - x1), max(2.0, y2 - y1)
+    cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+    glow = np.zeros((h, w), np.float32)
+    lamp_dx = pw * rng.uniform(0.9, 1.8)
+    lamp_r = pw * rng.uniform(0.35, 0.9)
+    lamp_dy = ph * rng.uniform(-1.5, 0.8)
+    for side in (-1, 1):
+        if rng.random() < 0.85:                       # one lamp can be out of shot / off
+            lx, ly = cx + side * lamp_dx, cy + lamp_dy
+            cv2.circle(glow, (int(lx), int(ly)), int(lamp_r), 1.0, -1)
+    glow = cv2.GaussianBlur(glow, (0, 0), max(1.0, lamp_r * rng.uniform(0.6, 1.4)))
+    bloom = float(rng.uniform(140, 255))
+    warm = np.array(rng.choice([[0.85, 0.95, 1.0], [1.0, 1.0, 1.0], [0.8, 0.9, 1.0]]), np.float32)
+    out = img.astype(np.float32) + glow[..., None] * bloom * warm[None, None, :]
+
+    # Veil over the plate and its surroundings.
+    veil = np.zeros((h, w), np.float32)
+    ex, ey = int(pw * rng.uniform(0.9, 2.0)), int(ph * rng.uniform(1.5, 4.0))
+    cv2.ellipse(veil, (int(cx), int(cy)), (max(2, ex), max(2, ey)), 0, 0, 360, 1.0, -1)
+    veil = cv2.GaussianBlur(veil, (0, 0), max(1.0, pw * 0.5))
+    lift = float(rng.uniform(25, 110))
+    out = out + veil[..., None] * lift
+    # Contrast loss under the veil: pull towards the local bright level.
+    flat = float(rng.uniform(0.0, 0.45))
+    out = out * (1 - veil[..., None] * flat) + veil[..., None] * flat * 235.0
+
+    if rng.random() < 0.25:                           # clipping
+        region = out[int(max(0, y1)):int(min(h, y2)) + 1, int(max(0, x1)):int(min(w, x2)) + 1]
+        region += float(rng.uniform(40, 120))
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def _pick_tier(rng: np.random.Generator) -> str:
     names = list(TIER_SHARE)
     p = np.array([TIER_SHARE[n] for n in names]); p /= p.sum()
@@ -191,6 +248,9 @@ def make_one(src: Source, index: int, seed: int, out_root: Path, split: str) -> 
     is_night = rng.random() < NIGHT_FRACTION
     if is_night:
         crop = night(crop, rng)
+    glare = rng.random() < (GLARE_NIGHT_SHARE if is_night else GLARE_DAY_SHARE)
+    if glare:
+        crop = headlight_glare(crop, new_box, rng)
     degraded = dg.degrade(crop, tcfg, seed=int(rng.integers(2**31 - 1)))
 
     # Reframe. jitter_window returns (image, boxes) shifted by the window.
@@ -240,10 +300,11 @@ def make_one(src: Source, index: int, seed: int, out_root: Path, split: str) -> 
             "full_text": plate.text, "row": r_i, "stacked": int(plate.stacked),
             "readable": int(readable), "tier": tier, "plate_px": round(plate_px, 1),
             "crop_w": cx2 - cx1, "crop_h": cy2 - cy1, "night": int(is_night),
+            "glare": int(glare),
             "fmt": plate.fmt, "style": plate.style, "split": split,
             "image": f"images/{split}/{stem}.jpg",
         })
-    return Emitted(f"images/{split}/{stem}.jpg", tier, plate_px, is_night, plate.text,
+    return Emitted(f"images/{split}/{stem}.jpg", tier, plate_px, is_night, glare, plate.text,
                    plate.stacked, plate.fmt, plate.style, str(src.image), reader)
 
 
@@ -292,7 +353,7 @@ def make_boost(index: int, seed: int, out_root: Path, split: str) -> list[dict]:
             "plate_image": f"plates/{split}/{stem}.jpg", "text": row_text if readable else "",
             "full_text": plate.text, "row": r_i, "stacked": int(plate.stacked),
             "readable": int(readable), "tier": tier, "plate_px": round(target_px, 1),
-            "crop_w": patch.shape[1], "crop_h": patch.shape[0], "night": 0,
+            "crop_w": patch.shape[1], "crop_h": patch.shape[0], "night": 0, "glare": 0,
             "fmt": plate.fmt, "style": plate.style, "split": split, "image": "",
         })
     return out
@@ -444,6 +505,8 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
         "reader_plate_only_crops": sum(1 for r in rows if r["source"] == "plate_only"),
         "skipped": skipped, "tiers": tiers,
         "readable_min_px": READABLE_MIN_PX,
+        "night_images": sum(1 for e in train_e if e.night),
+        "glare_images": sum(1 for e in train_e if e.glare),
         "stages": ["stage_hard", "stage_all"],
         "labels": "plate text is synthetic and exact; boxes come from the real "
                   "VLM-adjudicated positions and are NOT human verified",

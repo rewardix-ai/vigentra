@@ -56,7 +56,8 @@ def main() -> int:
         ps = min(150 / pw, 44 / ph)
         patch = cv2.resize(patch, (max(1, int(pw * ps)), max(1, int(ph * ps))), interpolation=cv2.INTER_NEAREST)
         tile[250:250 + patch.shape[0], W - patch.shape[1] - 4:W - 4] = patch
-        cv2.putText(tile, f"{r['tier']} {float(r['plate_px']):.0f}px{' night' if r['night'] == '1' else ''}",
+        cv2.putText(tile, f"{r['tier']} {float(r['plate_px']):.0f}px{' night' if r['night'] == '1' else ''}"
+                          f"{' glare' if r.get('glare') == '1' else ''}",
                     (2, 262), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 0, 200), 1)
         cv2.putText(tile, f"{w}x{h} crop", (2, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (90, 90, 90), 1)
         cv2.putText(tile, f"label: {r['text'] or '(empty: unreadable)'}", (2, 300),
@@ -85,6 +86,7 @@ def main() -> int:
     print("plate px median per tier:", {t: v["plate_px_median"] for t, v in m["tiers"].items()})
     print(f"reader crops train: {len(train_r)} (labelled {sum(1 for r in train_r if r['text'])}, "
           f"empty {sum(1 for r in train_r if not r['text'])}), night {sum(1 for r in train_r if r['night']=='1')}, "
+          f"glare {sum(1 for r in train_r if r.get('glare')=='1')}, "
           f"stacked {sum(1 for r in train_r if r['stacked']=='1')}")
     bands = Counter()
     for r in train_r:

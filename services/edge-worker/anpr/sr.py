@@ -70,6 +70,148 @@ def build_model(spec: SrSpec | None = None):
     return PlateSR()
 
 
+# ---------------------------------------------------------------------------
+# Multi-frame
+# ---------------------------------------------------------------------------
+
+#: Frames fused per plate. Fewer are repeated to fill; more are trimmed to
+#: the sharpest.
+MF_FRAMES = 5
+
+
+@dataclass(frozen=True)
+class MfSpec:
+    scale: int = SCALE
+    frames: int = MF_FRAMES
+    features: int = 64
+    blocks: int = 6
+
+
+def build_mf_model(spec: MfSpec | None = None):
+    """The multi-frame upscaler.
+
+    Early fusion: the K aligned frames are stacked on the channel axis so the
+    first convolution already sees every frame's version of each pixel, and
+    the residual body learns which frame to trust where. A blurred frame
+    contributes its low frequencies, a sharp one its strokes, and sub-pixel
+    shifts between frames add the detail no single frame carries. The output
+    is a correction over the bicubic upscale of the frames' median, so with
+    nothing learned it is a denoised bicubic.
+    """
+    import torch
+    from torch import nn
+
+    spec = spec or MfSpec()
+
+    class Residual(nn.Module):
+        def __init__(self, c: int) -> None:
+            super().__init__()
+            self.body = nn.Sequential(nn.Conv2d(c, c, 3, padding=1), nn.PReLU(c),
+                                      nn.Conv2d(c, c, 3, padding=1))
+
+        def forward(self, x):
+            return x + self.body(x)
+
+    class PlateMFSR(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            f = spec.features
+            self.head = nn.Sequential(nn.Conv2d(3 * spec.frames, f, 5, padding=2), nn.PReLU(f))
+            self.body = nn.Sequential(*[Residual(f) for _ in range(spec.blocks)])
+            self.tail = nn.Sequential(nn.Conv2d(f, 3 * spec.scale * spec.scale, 3, padding=1),
+                                      nn.PixelShuffle(spec.scale))
+            self.scale, self.frames = spec.scale, spec.frames
+
+        def forward(self, x):
+            """[B, K*3, h, w] in [0, 1] -> [B, 3, h*s, w*s]."""
+            B, C, h, w = x.shape
+            stack = x.view(B, self.frames, 3, h, w)
+            anchor = stack.median(dim=1).values
+            base = torch.nn.functional.interpolate(anchor, scale_factor=self.scale,
+                                                   mode="bicubic", align_corners=False)
+            return (base + self.tail(self.body(self.head(x)))).clamp(0.0, 1.0)
+
+    return PlateMFSR()
+
+
+def align_frames(frames: list[np.ndarray], size: tuple[int, int] | None = None) -> list[np.ndarray]:
+    """Resize every frame to one grid and register it to the sharpest by
+    translation (ECC). Frames that will not converge are kept unshifted rather
+    than dropped: a mis-registered frame costs less than a missing one when
+    the network has learned to weigh frames.
+    """
+    if not frames:
+        return []
+    if size is None:
+        # The sharpest frame (highest Laplacian variance) sets the grid.
+        def sharp(f):
+            g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) if f.ndim == 3 else f
+            return cv2.Laplacian(g, cv2.CV_32F).var()
+        ref = max(frames, key=sharp)
+        size = (ref.shape[1], ref.shape[0])
+    W, H = size
+    out = []
+    ref_gray = None
+    for f in frames:
+        if f.ndim == 2:
+            f = cv2.cvtColor(f, cv2.COLOR_GRAY2BGR)
+        r = cv2.resize(f, (W, H), interpolation=cv2.INTER_CUBIC if f.shape[1] < W else cv2.INTER_AREA)
+        g = cv2.cvtColor(r, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
+        if ref_gray is None:
+            ref_gray = g
+            out.append(r)
+            continue
+        warp = np.eye(2, 3, dtype=np.float32)
+        try:
+            cv2.findTransformECC(ref_gray, g, warp, cv2.MOTION_TRANSLATION,
+                                 (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 1e-4), None, 3)
+            r = cv2.warpAffine(r, warp, (W, H), flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
+                               borderMode=cv2.BORDER_REPLICATE)
+        except cv2.error:
+            pass
+        out.append(r)
+    return out
+
+
+def stack_frames(frames: list[np.ndarray], k: int):
+    """K aligned BGR frames -> [1, K*3, H, W] tensor; repeats or trims to K."""
+    import torch
+    if not frames:
+        raise ValueError("no frames")
+    frames = list(frames)
+    while len(frames) < k:
+        frames.append(frames[len(frames) % max(1, len(frames))])
+    frames = frames[:k]
+    arr = np.concatenate([f.astype(np.float32) / 255.0 for f in frames], axis=2)  # H, W, K*3
+    return torch.from_numpy(arr).permute(2, 0, 1)[None]
+
+
+class MultiFrameUpscaler:
+    """Loads plate_mfsr.pt and fuses a track's crops into one upscaled plate."""
+
+    def __init__(self, weights: str, device: str = "cpu") -> None:
+        import torch
+        ck = torch.load(weights, map_location="cpu", weights_only=False)
+        self.spec = MfSpec(**ck.get("spec", {}))
+        self.model = build_mf_model(self.spec)
+        self.model.load_state_dict(ck["model"])
+        self.model.eval()
+        self.device = torch.device(device)
+        self.model.to(self.device)
+        self.scale, self.frames = self.spec.scale, self.spec.frames
+        self.name = f"plate_mfsr_x{self.scale}_k{self.frames}"
+
+    def upscale(self, frames: list[np.ndarray]) -> np.ndarray | None:
+        import torch
+        frames = [f for f in frames if f is not None and f.size]
+        if not frames:
+            return None
+        aligned = align_frames(frames)
+        with torch.no_grad():
+            out = self.model(stack_frames(aligned, self.frames).to(self.device))
+        return to_image(out)
+
+
 def to_tensor(bgr: np.ndarray):
     import torch
     x = bgr.astype(np.float32) / 255.0

@@ -65,6 +65,14 @@ READABLE_MIN_PX = 24
 #: per composite, for tools/train_plate_sr.py.
 SR_SCALE = 4
 SR_MAX_LR_W = 96
+#: Multi-frame super-resolution pairs: MFSR_FRAMES degradations of the SAME
+#: composited plate - different blur, noise, blocking and a sub-pixel shift
+#: each, the way successive frames of one track differ - against one sharp
+#: target. Emitted for every MFSR_EVERY-th composite (0 = off). The frames'
+#: randomness comes from a separate generator seeded from the job seed, so
+#: adding them changes nothing about the images the replay reproduces.
+MFSR_FRAMES = 0
+MFSR_EVERY = 3
 #: The H.264 pass is a subprocess per image and dominates build time; a third
 #: of the crops carry it, which is enough for the reader and detector to have
 #: met macroblocking at every tier.
@@ -337,6 +345,46 @@ def make_one(src: Source, index: int, seed: int, out_root: Path, split: str) -> 
             "fmt": plate.fmt, "style": plate.style, "split": split,
             "image": f"images/{split}/{stem}.jpg",
         })
+    # Multi-frame pairs: the same plate as five frames of a track would show it.
+    if MFSR_FRAMES > 0 and index % MFSR_EVERY == 0 and split in SR_SPLITS and reader:
+        rng2 = np.random.default_rng((seed * 1_000_003 + 17) % (2**31 - 1))
+        x1p, y1p, x2p, y2p = pb
+        padx, pady = (x2p - x1p) * 0.05, (y2p - y1p) * 0.10
+        rx1, ry1 = int(max(0, x1p - padx)), int(max(0, y1p - pady))
+        rx2, ry2 = int(min(iw, x2p + padx)), int(min(ih, y2p + pady))
+        if rx2 - rx1 >= 4 and ry2 - ry1 >= 3:
+            lr_w = int(np.clip(round((rx2 - rx1) * scale), 8, SR_MAX_LR_W))
+            lr_h = max(4, int(round((ry2 - ry1) * lr_w / max(1, rx2 - rx1))))
+            hy1, hy2 = min(max(0, ry1 + oy), clean.shape[0]), min(max(0, ry2 + oy), clean.shape[0])
+            hx1, hx2 = min(max(0, rx1 + ox), clean.shape[1]), min(max(0, rx2 + ox), clean.shape[1])
+            if hy2 - hy1 >= 3 and hx2 - hx1 >= 4:
+                frames_ok = 0
+                for k in range(MFSR_FRAMES):
+                    # Sub-pixel motion between frames, expressed at the
+                    # composite's resolution so it is a fraction of an LR pixel.
+                    dx, dy = rng2.uniform(-1.5, 1.5) / scale, rng2.uniform(-1.0, 1.0) / scale
+                    M = np.float32([[1, 0, dx], [0, 1, dy]])
+                    shifted = cv2.warpAffine(crop, M, (crop.shape[1], crop.shape[0]),
+                                             flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+                    fcfg = dg.DegradeConfig(**{**tcfg.__dict__,
+                                               "codec": bool(cfg.codec and rng2.random() < CODEC_SHARE)})
+                    dk = dg.degrade(shifted, fcfg, seed=int(rng2.integers(2**31 - 1)))
+                    region = dk[ry1 + oy:ry2 + oy, rx1 + ox:rx2 + ox] if (ry1 + oy >= 0 and rx1 + ox >= 0
+                                                                          and ry2 + oy <= dk.shape[0]
+                                                                          and rx2 + ox <= dk.shape[1]) else None
+                    if region is None or region.size == 0:
+                        break
+                    lr = cv2.resize(region, (lr_w, lr_h), interpolation=cv2.INTER_AREA)
+                    cv2.imwrite(str(out_root / "mfsr" / split / f"{stem}_f{k}_lr.png"), lr)
+                    frames_ok += 1
+                if frames_ok == MFSR_FRAMES:
+                    hr = cv2.resize(clean[hy1:hy2, hx1:hx2], (lr_w * SR_SCALE, lr_h * SR_SCALE),
+                                    interpolation=cv2.INTER_AREA)
+                    cv2.imwrite(str(out_root / "mfsr" / split / f"{stem}_hr.jpg"), hr,
+                                [cv2.IMWRITE_JPEG_QUALITY, 95])
+                    reader[0]["mfsr_pair"] = f"mfsr/{split}/{stem}"
+    for r in reader:
+        r.setdefault("mfsr_pair", "")
     return Emitted(f"images/{split}/{stem}.jpg", tier, plate_px, is_night, glare, plate.text,
                    plate.stacked, plate.fmt, plate.style, str(src.image), reader)
 
@@ -438,6 +486,9 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
     for split in ("train", "val_synth"):
         (out_root / "plates" / split).mkdir(parents=True, exist_ok=True)
         (out_root / "sr" / split).mkdir(parents=True, exist_ok=True)
+        if MFSR_FRAMES > 0:
+            shutil.rmtree(out_root / "mfsr" / split, ignore_errors=True)
+            (out_root / "mfsr" / split).mkdir(parents=True, exist_ok=True)
 
     train_sources = [s for s in load_sources(dataset) if not s.negative and s.boxes]
     # Reader validation composites on the REAL VAL crops so its backgrounds
@@ -509,9 +560,16 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
         r["source"] = "plate_only"
         r.setdefault("sr_pair", "")
     rows.extend(boost_rows)
-    with open(out_root / "plates.csv", "w", newline="", encoding="utf-8") as fh:
-        wr = csv.DictWriter(fh, fieldnames=list(rows[0]))
+    fields = list(rows[0])
+    for r in rows:
+        for k in fields:
+            r.setdefault(k, "")
+    tmp = out_root / "plates.csv.tmp"
+    with open(tmp, "w", newline="", encoding="utf-8") as fh:
+        wr = csv.DictWriter(fh, fieldnames=fields)
         wr.writeheader(); wr.writerows(rows)
+    import os
+    os.replace(tmp, out_root / "plates.csv")
 
     # Detector stage lists: hard tiers first, then everything (+ real train).
     train_e = [e for e in emitted if e.image.startswith("images/train/")]
@@ -545,6 +603,7 @@ def build(dataset: Path, out_root: Path, target: int, val_target: int, seed: int
         "reader_crops": len(rows), "reader_empty_labels": 0,
         "reader_crops_below_readable_px": sum(1 for r in rows if not r["readable"]),
         "sr_pairs": sr_pairs, "sr_scale": SR_SCALE, "replayed": REPLAY,
+        "mfsr_pairs": sum(1 for r in rows if r.get("mfsr_pair")), "mfsr_frames": MFSR_FRAMES,
         "reader_composite_crops": sum(1 for r in rows if r["source"] == "composite"),
         "reader_plate_only_crops": sum(1 for r in rows if r["source"] == "plate_only"),
         "skipped": skipped, "tiers": tiers,
@@ -591,6 +650,10 @@ def main() -> int:
     ap.add_argument("--val-target", type=int, default=800)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--mfsr-frames", type=int, default=0,
+                    help="Emit multi-frame SR pairs with this many frames per plate (0 = off).")
+    ap.add_argument("--mfsr-every", type=int, default=3,
+                    help="Emit a multi-frame pair for every N-th composite.")
     ap.add_argument("--reader-only", action="store_true",
                     help="Replay the same seeds against an existing build: leave "
                          "images/labels alone, rewrite plates/, sr/ and plates.csv.")
@@ -598,15 +661,17 @@ def main() -> int:
                     help="Reader-only plate renders (no vehicle) added to plates.csv. "
                          "Off by default: every image in the set is a vehicle.")
     args = ap.parse_args()
-    global REPLAY
+    global REPLAY, MFSR_FRAMES, MFSR_EVERY
     REPLAY = bool(args.reader_only)
+    MFSR_FRAMES, MFSR_EVERY = int(args.mfsr_frames), max(1, int(args.mfsr_every))
     m = build(Path(args.dataset), Path(args.out), args.target, args.val_target, args.seed,
               args.workers, args.boost)
     print("UNIFORM DATASET", m["version"])
     print(f"synthetic train {m['synthetic_train_images']}  synthetic val {m['synthetic_val_images']}  "
           f"reader crops {m['reader_crops']} (composite {m['reader_composite_crops']}, "
           f"plate-only {m['reader_plate_only_crops']}, below {READABLE_MIN_PX}px "
-          f"{m['reader_crops_below_readable_px']})  sr pairs {m['sr_pairs']}  skipped {m['skipped']}")
+          f"{m['reader_crops_below_readable_px']})  sr pairs {m['sr_pairs']}  "
+          f"mfsr pairs {m['mfsr_pairs']}x{m['mfsr_frames']}  skipped {m['skipped']}")
     for t, info in m["tiers"].items():
         print(f"  {t:<9} {info['images']:>6}  plate px median {info['plate_px_median']}")
     print(f"elapsed {m['elapsed_s']}s")

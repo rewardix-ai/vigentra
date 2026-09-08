@@ -42,11 +42,12 @@ enhance:
 
 ocr:
   min_confidence: 0.25
-  # Plate crops narrower than this are not sent to OCR. The old floor of 40 px
-  # was where the general-purpose recogniser stopped returning anything but
-  # inventions; the plate-trained reader (anpr/reader.py) is asked to read
-  # from 10 px, and the grammar and confidence gates decide what is reported.
-  min_plate_width: 10
+  # No size floor: every plate the detector finds is enhanced and read,
+  # whatever its width. The old floor of 40 px was where the general-purpose
+  # recogniser stopped returning anything but inventions; with the
+  # plate-trained reader (anpr/reader.py) the grammar and confidence gates
+  # alone decide what is reported.
+  min_plate_width: 0
 
 consensus:
   # Traffic crosses these junctions quickly and the worker samples every 5th

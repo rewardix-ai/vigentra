@@ -41,6 +41,15 @@ enhance:
   max_variants: 6
 
 ocr:
+  # The plate reader first (anpr/reader.py, models/plate_reader.pt), PaddleOCR
+  # as the second opinion. A missing reader file logs one line and falls back.
+  engines: [reader, paddle]
+  # Sum the reader's per-column log-probabilities across the frames of a track
+  # and decode once. Off for PaddleOCR (its columns shift with the crop); the
+  # reader's 48-column grid is fixed, which is what makes this valid.
+  fuse_track_logits: true
+  fuse_frames: 5
+  fuse_min_frames: 2
   min_confidence: 0.25
   # No size floor: every plate the detector finds is enhanced and read,
   # whatever its width. The old floor of 40 px was where the general-purpose

@@ -43,11 +43,6 @@ from _corpus import write_json                                        # noqa: E4
 log = logging.getLogger("train_plate_reader")
 SEED = 0
 HARD_TIERS = ("severe", "extreme")
-#: Checkpoint selection band, px: the worst plates that can still carry
-#: characters. Below 24 px the exact-match rate is noise whatever the
-#: model; above 60 px every model reads. Selecting here picks the
-#: checkpoint that wins the fight that matters.
-SELECT_BAND = (24.0, 60.0)
 WIDTH_BANDS = ((0, 24, "<24"), (24, 32, "24-32"), (32, 40, "32-40"), (40, 60, "40-60"),
                (60, 100, "60-100"), (100, 10_000, ">=100"))
 
@@ -224,8 +219,6 @@ def summarise(preds: list[tuple[str, str, float, dict]]) -> dict:
     out = {
         "overall": block(labelled),
         "hard_tiers": block([p for p in labelled if p[3].get("tier") in HARD_TIERS]),
-        "select_band": block([p for p in labelled
-                              if SELECT_BAND[0] <= float(p[3]["plate_px"]) < SELECT_BAND[1]]),
         "by_tier": {t: block([p for p in labelled if p[3].get("tier") == t])
                     for t in ("extreme", "severe", "moderate", "mild")},
         "by_width": {b[2]: block([p for p in labelled if band_of(p[3]["plate_px"]) == b[2]])
@@ -335,7 +328,9 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
                 losses.append(loss.item())
             preds = predict_rows(model, dataset, val_rows, device)
             m = summarise(preds)
-            hard_exact = m["select_band"]["exact"] or 0.0
+            # Selection on every crop at every size: the checkpoint that
+            # reads the most plates overall, no band, no floor.
+            hard_exact = m["overall"]["exact"] or 0.0
             rec = {"epoch": epoch_no, "stage": stage, "loss": round(float(np.mean(losses)), 4),
                    "val_exact": m["overall"]["exact"], "val_hard_exact": hard_exact,
                    "val_char_acc": m["overall"]["char_acc"],
@@ -360,7 +355,7 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
         "train_crops": len(train_rows), "hard_train_crops": len(hard_rows), "val_crops": len(val_rows),
         "enhanced_with": str(sr_weights) if sr_weights else None,
         "initialised_from": str(init) if init else None,
-        "selected_on": f"exact match on synthetic val crops {SELECT_BAND[0]:.0f}-{SELECT_BAND[1]:.0f} px wide",
+        "selected_on": "exact match on all synthetic val crops, every size",
         "best_epoch": best.get("epoch"), "best": best.get("metrics"),
         "elapsed_min": round((time.time() - started) / 60, 1),
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -461,7 +456,6 @@ def print_report(rep: dict) -> None:
         print(f"== {key}")
         _print_block("overall", m["overall"])
         _print_block("hard tiers", m["hard_tiers"])
-        _print_block("24-60px band", m["select_band"])
         for t, b in m["by_tier"].items():
             if b["n"]:
                 _print_block(t, b)
@@ -509,7 +503,7 @@ def main() -> int:
                 args.lr, args.device, args.workers, args.limit,
                 Path(args.sr) if args.sr else None, Path(args.init) if args.init else None)
     print("READER TRAINING COMPLETE")
-    print(f"best epoch {rec['best_epoch']}  24-60px exact {rec['best']['select_band']['exact'] if rec['best'] else None}")
+    print(f"best epoch {rec['best_epoch']}  exact (all sizes) {rec['best']['overall']['exact'] if rec['best'] else None}")
     print(f"best: {rec['best_checkpoint']}")
     return 0
 

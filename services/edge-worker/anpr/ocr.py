@@ -465,6 +465,90 @@ class TesseractEngine:
 
 
 # --------------------------------------------------------------------------
+# The plate reader
+# --------------------------------------------------------------------------
+
+class ReaderEngine:
+    """The CRNN from anpr/reader.py, trained on plates rather than on text.
+
+    Reads every variant in one batch and, because its output is a CTC score
+    matrix on a fixed 48-column grid, can also decode a whole track at once:
+    the log-probabilities of each frame are summed after alignment and decoded
+    once, so a character only one frame was sure about still wins its slot.
+    That is the fusion the Paddle head could not support (see
+    OcrConfig.fuse_track_logits); here the head is ours.
+    """
+
+    name = "reader"
+
+    def __init__(self, cfg: OcrConfig) -> None:
+        self.cfg = cfg
+        self._model = None
+        self._device = None
+        self._lock = threading.Lock()
+        try:
+            import torch
+            from .config import resolve_model
+            from . import reader as rd
+            path = resolve_model(cfg.reader_model)
+            ck = torch.load(path, map_location="cpu", weights_only=False)
+            spec = rd.ReaderSpec(**ck.get("spec", {}))
+            model = rd.build_model(spec)
+            model.load_state_dict(ck["model"])
+            model.eval()
+            device = torch.device(cfg.reader_device if cfg.reader_device != "auto"
+                                  else ("cuda" if torch.cuda.is_available() else "cpu"))
+            self._model = model.to(device)
+            self._device = device
+            self._rd = rd
+            log.info("plate reader loaded from %s on %s (epoch %s)", path, device, ck.get("epoch"))
+        except Exception as exc:                # noqa: BLE001 - optional engine
+            log.info("plate reader not available (%s); engine disabled", exc)
+
+    def available(self) -> bool:
+        return self._model is not None
+
+    def _matrices(self, images: Sequence[np.ndarray]) -> np.ndarray:
+        import torch
+        x = np.stack([self._rd.preprocess(im) for im in images])
+        with self._lock, torch.no_grad():
+            out = self._model(torch.from_numpy(x).to(self._device))
+        return out.float().cpu().numpy()
+
+    def read_batch(self, images: Sequence[np.ndarray],
+                   allow_fallback: bool = True) -> list[list[Reading]]:
+        if not self.available() or not images:
+            return [[] for _ in images]
+        try:
+            mats = self._matrices(images)
+        except Exception as exc:                # noqa: BLE001
+            log.debug("reader batch failed: %s", exc)
+            return [[] for _ in images]
+        out: list[list[Reading]] = []
+        for m in mats:
+            text, conf = self._rd.greedy_decode(m)
+            out.append([(text, conf)] if text else [])
+        return out
+
+    def read_track_fused(self, images: Sequence[np.ndarray]) -> Reading | None:
+        """One decode over a track: aligned frames, summed log-probabilities."""
+        if not self.available() or len(images) < 2:
+            return None
+        try:
+            aligned = _align_track([np.ascontiguousarray(i) for i in images])
+            if aligned is None or len(aligned) < 2:
+                return None
+            fused = self._rd.fuse_log_probs(list(self._matrices(aligned)))
+            if fused is None:
+                return None
+            text, conf = self._rd.greedy_decode(fused)
+            return (text, conf) if text else None
+        except Exception as exc:                # noqa: BLE001
+            log.debug("reader fusion failed: %s", exc)
+            return None
+
+
+# --------------------------------------------------------------------------
 # Ensemble
 # --------------------------------------------------------------------------
 
@@ -619,6 +703,7 @@ class RemoteEngine:
 
 
 ENGINE_TYPES = {
+    "reader": ReaderEngine,
     "paddle": PaddleEngine,
     "paddle-gpu": RemoteEngine,
     "tesseract": TesseractEngine,

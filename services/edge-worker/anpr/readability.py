@@ -145,6 +145,10 @@ class ReadabilityLedger:
     bands: dict[str, int] = field(default_factory=lambda: {t: 0 for t in TIERS})
     #: Crops declined by the floor. Not a loss - see the module docstring.
     below_floor: int = 0
+    #: The floor this ledger applies. HARD_FLOOR_PX was measured with a
+    #: general-purpose recogniser; a reader trained on this footage's own
+    #: degradation (anpr/reader.py) earns a lower one, set from OcrConfig.
+    floor_px: float = HARD_FLOOR_PX
 
     def observe(self, track_id: int, width_px: float) -> bool:
         """Record one plate crop. Returns whether it is worth reading."""
@@ -154,7 +158,7 @@ class ReadabilityLedger:
         st.crops += 1
         st.best_width = max(st.best_width, float(width_px))
         self.bands[tier_of(width_px)] += 1
-        ok = worth_reading(width_px)
+        ok = float(width_px) >= self.floor_px
         if not ok:
             self.below_floor += 1
         return ok

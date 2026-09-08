@@ -92,13 +92,18 @@ def lighting_of(bgr) -> str:
 
 
 def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
-            conf: float | None, device: str) -> dict:
+            conf: float | None, device: str, engines: tuple[str, ...] | None = None,
+            min_plate_width: float | None = None) -> dict:
     """Run the full pipeline over the sampled frames with one set of weights."""
     from anpr import config as anpr_config
     from anpr.pipeline import AnprPipeline
 
     cfg = anpr_config.load(str(WORKER_ROOT / "config.yaml"))
     cfg.detect.plate_model = weights
+    if engines:
+        cfg.ocr.engines = tuple(engines)
+    if min_plate_width is not None:
+        cfg.ocr.min_plate_width = min_plate_width
     if imgsz:
         cfg.detect.plate_imgsz = imgsz
         cfg.detect.roi_imgsz = imgsz
@@ -198,6 +203,8 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
     return {
         "peak_vram_mb": peak_vram_mb,
         "weights": weights,
+        "ocr_engines": list(pipeline.ocr.engine_names),
+        "min_plate_width": cfg.ocr.min_plate_width,
         "totals": dict(totals),
         "plate_width_px": percentiles(widths),
         "reads": all_reads,
@@ -221,6 +228,11 @@ def main() -> int:
     ap.add_argument("--conf", type=float, default=None)
     ap.add_argument("--device", default=None,
                     help="None lets the pipeline pick (GPU if present).")
+    ap.add_argument("--engines", nargs="*", default=None, metavar="A,B",
+                    help="OCR engines per --weights entry, comma-separated "
+                         "(e.g. paddle reader,paddle). Default: config.yaml's.")
+    ap.add_argument("--min-plate-width", nargs="*", type=float, default=None,
+                    help="OCR floor in px per --weights entry (default: config.yaml's).")
     ap.add_argument("--out", default="reports/footage_comparison.json")
     args = ap.parse_args()
 
@@ -239,11 +251,18 @@ def main() -> int:
     if len(set(labels)) != len(labels):
         raise SystemExit(f"labels collide: {labels} - pass distinct --labels")
 
+    engines = [tuple(e.split(",")) if e else None for e in (args.engines or [])]
+    floors = list(args.min_plate_width or [])
+    for name, seq in (("--engines", engines), ("--min-plate-width", floors)):
+        if seq and len(seq) != len(args.weights):
+            raise SystemExit(f"{name} must have one entry per --weights")
     results = {}
-    for label, weights in zip(labels, args.weights):
+    for i, (label, weights) in enumerate(zip(labels, args.weights)):
         log.info("\n=== %s (%s) ===", label, weights)
         results[label] = run_one(weights, feeds, args.per_camera, args.imgsz,
-                                 args.conf, args.device)
+                                 args.conf, args.device,
+                                 engines[i] if engines else None,
+                                 floors[i] if floors else None)
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -276,6 +295,10 @@ def main() -> int:
         f"{results[label]['fps']:>18}" for label in labels))
     print(f"{'peak VRAM (MB)':<24}" + "".join(
         f"{str(results[label].get('peak_vram_mb')):>18}" for label in labels))
+    print(f"{'ocr engines':<24}" + "".join(
+        f"{'+'.join(results[label].get('ocr_engines', [])):>18}" for label in labels))
+    print(f"{'ocr floor px':<24}" + "".join(
+        f"{str(results[label].get('min_plate_width')):>18}" for label in labels))
     print(f"\nWritten: {args.out}")
     return 0
 

@@ -115,7 +115,7 @@ class AnprPipeline:
         self.osd = OsdSuppressor()
         # What the plates on this feed physically looked like, so the
         # camera can say "unreadable" instead of saying nothing.
-        self.readability = ReadabilityLedger()
+        self.readability = ReadabilityLedger(floor_px=float(self.cfg.ocr.min_plate_width))
         # Per-stage timings as percentiles - see anpr/metrics.py for why
         # an average is the wrong summary here.
         self.metrics = Metrics()
@@ -382,7 +382,7 @@ class AnprPipeline:
         if reading is None:
             return None
         text, confidence = reading
-        return pr.normalise(text, confidence, engine="paddle-fused", variant="track")
+        return pr.normalise(text, confidence, engine=f"{engine.name}-fused", variant="track")
 
     def best_crop(self, track_id: int) -> np.ndarray | None:
         entry = self._best_crop.get(track_id)

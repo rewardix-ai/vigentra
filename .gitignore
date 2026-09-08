@@ -73,3 +73,8 @@ services/edge-worker/dataset/*/stage*.txt
 services/edge-worker/dataset/*/stage*.yaml
 services/edge-worker/reports/synth_smoke_sheet.jpg
 services/edge-worker/reports/hard_first_stdout.log
+
+# Uniform dataset build products (rebuilt by tools/build_uniform_dataset.py)
+services/edge-worker/dataset/*/plates/
+services/edge-worker/dataset/*/plates.csv
+services/edge-worker/reports/build_*.log

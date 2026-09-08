@@ -131,6 +131,19 @@ class OcrConfig:
     #: Engines to consult, in priority order.  Missing engines are skipped
     #: with a warning rather than crashing the pipeline.
     engines: tuple[str, ...] = ("paddle",)
+    #: The plate reader (anpr/reader.py): a CRNN trained on Indian plates
+    #: through this footage's degradation. Engine name "reader". Weights live
+    #: in models/; a missing file disables the engine with one log line.
+    reader_model: str = "plate_reader.pt"
+    #: "cpu" keeps the card for detection; the network is small enough that
+    #: a batch of variants reads in a few ms either way.
+    reader_device: str = "cpu"
+    #: Plate crops narrower than this are not sent to OCR at all. 40 px is
+    #: where the general-purpose recogniser stopped returning anything but
+    #: inventions (anpr/readability.py); the trained reader is evaluated per
+    #: width band, and this floor should sit where its exact-match rate on
+    #: the synthetic hard tiers stops being usable, not at a round number.
+    min_plate_width: float = 40.0
     paddle_lang: str = "en"
     #: PaddleOCR on CPU keeps the 4 GB of VRAM free for detection + SR.
     paddle_device: str = "cpu"

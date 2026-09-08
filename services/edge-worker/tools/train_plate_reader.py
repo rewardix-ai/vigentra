@@ -311,7 +311,8 @@ def predict_rows(model, root: Path, rows: list[dict], device, batch: int = 256) 
 def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: int,
           lr: float, device_arg: str | None, workers: int, limit: int | None,
           sr_weights: Path | None = None, init: Path | None = None, use_cache: bool = False,
-          stage_widths: list[float] | None = None, stage_epochs: list[int] | None = None) -> dict:
+          stage_widths: list[float] | None = None, stage_epochs: list[int] | None = None,
+          balance_widths: bool = False) -> dict:
     import torch
     from torch.utils.data import DataLoader
 
@@ -373,7 +374,14 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
 
     def cached_batches(rows_subset, rng_np):
         idx = np.array([index_of[id(r)] for r in rows_subset])
-        rng_np.shuffle(idx)
+        if balance_widths:
+            bands = np.array([band_of(float(r["plate_px"])) for r in rows_subset])
+            names, counts = np.unique(bands, return_counts=True)
+            per_band = {n: 1.0 / c for n, c in zip(names, counts)}
+            wts = np.array([per_band[b] for b in bands]); wts /= wts.sum()
+            idx = rng_np.choice(idx, size=len(idx), replace=True, p=wts)
+        else:
+            rng_np.shuffle(idx)
         for start in range(0, len(idx) - batch + 1, batch):
             sel = idx[start:start + batch]
             x = torch.from_numpy(cache[sel]).to(device, non_blocking=True).float().div_(255.0).unsqueeze(1)
@@ -433,7 +441,7 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
         "experiment": name, "dataset": str(dataset), "device": str(device),
         "params_m": round(n_params / 1e6, 2), "batch": batch, "lr": lr,
         "epochs_hard": epochs_hard, "epochs_all": epochs_all,
-        "stage_widths": stage_widths, "stage_epochs": stage_epochs,
+        "stage_widths": stage_widths, "stage_epochs": stage_epochs, "balance_widths": balance_widths,
         "train_crops": len(train_rows), "hard_train_crops": len(hard_rows), "val_crops": len(val_rows),
         "enhanced_with": str(sr_weights) if sr_weights else None,
         "cached": use_cache,
@@ -472,6 +480,47 @@ def real_rows(real_dir: Path) -> list[dict]:
     return rows
 
 
+def tighten_rows(rows: list[dict], root: Path, det_weights: Path, cache: Path) -> None:
+    """Re-crop each real image to the plate box the detector finds in it.
+
+    The real crops in dataset/real_plates are the old project's loose cuts -
+    plate plus a band of bumper - so the plate fills a third of the reader's
+    input. The pipeline never hands the reader such a crop: it reads the
+    detector's box. Running the detector here gives the evaluation the same
+    input the pipeline would. Falls back to the original when nothing is
+    found. Cached beside the images.
+    """
+    from ultralytics import YOLO
+    det = YOLO(str(det_weights))
+    cache.mkdir(parents=True, exist_ok=True)
+    found = 0
+    for r in rows:
+        src = _resolve(root, r["plate_image"])
+        dst = cache / src.name
+        if not dst.exists():
+            img = cv2.imread(str(src))
+            if img is None:
+                continue
+            h, w = img.shape[:2]
+            k = max(1.0, 640 / max(h, w))
+            big = cv2.resize(img, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC) if k > 1 else img
+            res = det.predict(big, imgsz=640, conf=0.1, verbose=False)[0]
+            if len(res.boxes):
+                bb = max(res.boxes, key=lambda b: float(b.conf[0]))
+                x1, y1, x2, y2 = [v / k for v in bb.xyxy[0].tolist()]
+                mx, my = (x2 - x1) * 0.05, (y2 - y1) * 0.12
+                x1, y1 = int(max(0, x1 - mx)), int(max(0, y1 - my))
+                x2, y2 = int(min(w, x2 + mx)), int(min(h, y2 + my))
+                if x2 - x1 >= 8 and y2 - y1 >= 4:
+                    img = img[y1:y2, x1:x2]
+                    found += 1
+            cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        r["plate_image_raw"] = r.get("plate_image_raw", r["plate_image"])
+        r["plate_image"] = str(dst)
+        r["plate_px"] = float(cv2.imread(str(dst)).shape[1])
+    log.info("tightened %d/%d real crops with %s", found, len(rows), det_weights)
+
+
 def paddle_predict(root: Path, rows: list[dict]) -> list[tuple[str, str, float, dict]]:
     from anpr.config import OcrConfig
     from anpr.ocr import PaddleEngine
@@ -499,7 +548,8 @@ def paddle_predict(root: Path, rows: list[dict]) -> list[tuple[str, str, float, 
 
 
 def evaluate(weights: Path, dataset: Path, real_dir: Path | None, device_arg: str | None,
-             compare_paddle: bool, tag: str, sr_weights: Path | None = None) -> dict:
+             compare_paddle: bool, tag: str, sr_weights: Path | None = None,
+             tight_weights: Path | None = None) -> dict:
     import torch
     device = torch.device(device_arg or ("cuda" if torch.cuda.is_available() else "cpu"))
     model = load_reader(weights, device)
@@ -511,6 +561,9 @@ def evaluate(weights: Path, dataset: Path, real_dir: Path | None, device_arg: st
     report["synthetic_val"] = summarise(predict_rows(model, dataset, val, device))
     if real_dir and (real_dir / "labels.csv").exists():
         rr = real_rows(real_dir)
+        if tight_weights is not None:
+            tighten_rows(rr, real_dir, tight_weights, real_dir / "tight" / tight_weights.parent.parent.name)
+            report["tightened_with"] = str(tight_weights)
         if sr_weights is not None:
             enhance_rows(rr, real_dir, sr_weights, real_dir / "plates_sr" / sr_weights.parent.name)
         preds = predict_rows(model, real_dir, rr, device)
@@ -568,6 +621,9 @@ def main() -> int:
     ap.add_argument("--sr", default=None, metavar="SR_WEIGHTS",
                     help="Pass every crop through this plate upscaler first "
                          "(detection -> enhancement -> OCR), for training and evaluation.")
+    ap.add_argument("--tight", default=None, metavar="DETECTOR_WEIGHTS",
+                    help="Evaluation: re-crop the real images to the plate box this detector "
+                         "finds, the way the pipeline feeds the reader.")
     ap.add_argument("--init", default=None, metavar="READER_WEIGHTS",
                     help="Start training from these reader weights instead of scratch.")
     ap.add_argument("--stage-widths", default=None, metavar="W,W,...",
@@ -575,6 +631,9 @@ def main() -> int:
                          "then all. Every crop is trained on; only the order changes.")
     ap.add_argument("--stage-epochs", default=None, metavar="N,N,...",
                     help="Epochs per stage for --stage-widths.")
+    ap.add_argument("--balance-widths", action="store_true",
+                    help="With --cache: draw each width band equally often per epoch. Every crop "
+                         "stays in training; only the sampling frequency changes.")
     ap.add_argument("--cache", action="store_true",
                     help="Preprocess all training crops into RAM once (~470 MB for 78k) and "
                          "augment on the device; ~10x faster epochs.")
@@ -585,7 +644,7 @@ def main() -> int:
         weights = Path(args.eval)
         tag = args.tag or weights.parent.name
         rep = evaluate(weights, Path(args.dataset), Path(args.real), args.device, args.compare_paddle, tag,
-                       Path(args.sr) if args.sr else None)
+                       Path(args.sr) if args.sr else None, Path(args.tight) if args.tight else None)
         print_report(rep)
         print(f"Written: reports/reader/{tag}.json")
         return 0
@@ -595,7 +654,8 @@ def main() -> int:
                 Path(args.sr) if args.sr else None, Path(args.init) if args.init else None,
                 args.cache,
                 [float(x) for x in args.stage_widths.split(",")] if args.stage_widths else None,
-                [int(x) for x in args.stage_epochs.split(",")] if args.stage_epochs else None)
+                [int(x) for x in args.stage_epochs.split(",")] if args.stage_epochs else None,
+                args.balance_widths)
     print("READER TRAINING COMPLETE")
     print(f"best epoch {rec['best_epoch']}  exact (all sizes) {rec['best']['overall']['exact'] if rec['best'] else None}")
     print(f"best: {rec['best_checkpoint']}")

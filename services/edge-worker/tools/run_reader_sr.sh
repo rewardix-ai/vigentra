@@ -15,7 +15,8 @@ DATASET=dataset/v4_uniform
 SR=${SR:-S1_hard_first}
 R2=${R2:-R2_all_crops}
 R3=${R3:-R3_enhanced}
-READER_EPOCHS=${READER_EPOCHS:---epochs-hard 4 --epochs-all 10}
+READER_EPOCHS=${READER_EPOCHS:---epochs-hard 2 --epochs-all 5}
+R3_EPOCHS=${R3_EPOCHS:---epochs-hard 1 --epochs-all 3}
 LOG=reports/reader_sr.log
 step() { echo "=== $(date '+%H:%M:%S') $*" | tee -a "$LOG"; }
 
@@ -24,14 +25,18 @@ until grep -q "REPLAY_EXIT=" reports/build_v4_uniform_replay.log 2>/dev/null; do
 grep -q "REPLAY_EXIT=0" reports/build_v4_uniform_replay.log || { step "replay failed"; exit 1; }
 step "replay done: $(grep -c '' "$DATASET/plates.csv") reader rows, $(ls "$DATASET/sr/train" | grep -c _lr.png) SR pairs"
 
-step "SR: training $SR"
-$PY -u tools/train_plate_sr.py --dataset "$DATASET" --name "$SR" --epochs 12 --batch 64 \
-  >> "reports/training_${SR}.log" 2>&1
-echo "SR_TRAIN_EXIT=$?" | tee -a "$LOG"
 SW="runs/sr/$SR/best.pt"
-[ -f "$SW" ] || { step "no SR weights"; exit 1; }
-step "SR: evaluating + sheet"
-$PY -u tools/train_plate_sr.py --dataset "$DATASET" --eval "$SW" --sheet "reports/sr_sheet_${SR}.jpg" --count 24 >> "$LOG" 2>&1
+if [ -f "$SW" ]; then
+  step "SR: $SW exists - keeping it"
+else
+  step "SR: training $SR"
+  $PY -u tools/train_plate_sr.py --dataset "$DATASET" --name "$SR" --epochs 12 --batch 64 \
+    >> "reports/training_${SR}.log" 2>&1
+  echo "SR_TRAIN_EXIT=$?" | tee -a "$LOG"
+  [ -f "$SW" ] || { step "no SR weights"; exit 1; }
+  step "SR: evaluating + sheet"
+  $PY -u tools/train_plate_sr.py --dataset "$DATASET" --eval "$SW" --sheet "reports/sr_sheet_${SR}.jpg" --count 24 >> "$LOG" 2>&1
+fi
 
 step "reader R2: complete crops, raw ($READER_EPOCHS)"
 $PY -u tools/train_plate_reader.py --dataset "$DATASET" --name "$R2" $READER_EPOCHS --batch 128 --device cuda \
@@ -39,7 +44,7 @@ $PY -u tools/train_plate_reader.py --dataset "$DATASET" --name "$R2" $READER_EPO
 echo "R2_TRAIN_EXIT=$?" | tee -a "$LOG"
 
 step "reader R3: complete crops through the upscaler, initialised from R2"
-$PY -u tools/train_plate_reader.py --dataset "$DATASET" --name "$R3" --epochs-hard 2 --epochs-all 6 \
+$PY -u tools/train_plate_reader.py --dataset "$DATASET" --name "$R3" $R3_EPOCHS \
   --batch 128 --device cuda --sr "$SW" --init "runs/reader/$R2/best.pt" \
   >> "reports/training_${R3}.log" 2>&1
 echo "R3_TRAIN_EXIT=$?" | tee -a "$LOG"

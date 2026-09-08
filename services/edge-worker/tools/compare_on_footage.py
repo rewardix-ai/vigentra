@@ -118,6 +118,15 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
     # Compile the CUDA kernels before the clock starts, or the first weight
     # set pays a multi-second one-off that the second inherits for free.
     pipeline.warmup()
+    # Peak VRAM over the run, measured after warmup so the one-off kernel
+    # compilation is not charged to the weights. None on a CPU host.
+    try:
+        import torch
+        cuda = torch.cuda.is_available() and str(cfg.detect.device) != "cpu"
+        if cuda:
+            torch.cuda.reset_peak_memory_stats()
+    except Exception:                                   # noqa: BLE001
+        cuda = False
     per_camera_out = []
     widths, all_reads = [], []
     totals = Counter()
@@ -183,7 +192,11 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
 
     elapsed = time.time() - started
     frames_done = totals["frames"] or 1
+    peak_vram_mb = None
+    if cuda:
+        peak_vram_mb = round(torch.cuda.max_memory_allocated() / 2**20)
     return {
+        "peak_vram_mb": peak_vram_mb,
         "weights": weights,
         "totals": dict(totals),
         "plate_width_px": percentiles(widths),
@@ -261,6 +274,8 @@ def main() -> int:
         f"{results[label]['seconds_per_frame']:>18}" for label in labels))
     print(f"{'pipeline fps':<24}" + "".join(
         f"{results[label]['fps']:>18}" for label in labels))
+    print(f"{'peak VRAM (MB)':<24}" + "".join(
+        f"{str(results[label].get('peak_vram_mb')):>18}" for label in labels))
     print(f"\nWritten: {args.out}")
     return 0
 

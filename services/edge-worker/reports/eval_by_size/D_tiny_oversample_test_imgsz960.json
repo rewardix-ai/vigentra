@@ -1,0 +1,235 @@
+{
+  "generated_at": "2026-09-08T04:31:16.121058+00:00",
+  "tag": "D_tiny_oversample",
+  "weights": "runs/plate/D_tiny_oversample/weights/best.pt",
+  "dataset": "dataset\\v2",
+  "split": "test",
+  "settings": {
+    "imgsz": 960,
+    "conf_floor": 0.001,
+    "nms_iou": 0.7,
+    "match_iou": 0.3
+  },
+  "images": 223,
+  "overall": {
+    "gt": 158,
+    "detected": 137,
+    "predictions": 3254,
+    "precision": 0.0421,
+    "recall": 0.8671,
+    "AP": 0.5204
+  },
+  "by_size": {
+    "EXTREMELY_TINY": {
+      "gt": 21,
+      "detected": 14,
+      "predictions": 3131,
+      "precision": 0.0045,
+      "recall": 0.6667,
+      "AP": 0.0577
+    },
+    "VERY_SMALL": {
+      "gt": 28,
+      "detected": 22,
+      "predictions": 3139,
+      "precision": 0.007,
+      "recall": 0.7857,
+      "AP": 0.2848
+    },
+    "SMALL": {
+      "gt": 63,
+      "detected": 56,
+      "predictions": 3173,
+      "precision": 0.0176,
+      "recall": 0.8889,
+      "AP": 0.3516
+    },
+    "MEDIUM": {
+      "gt": 35,
+      "detected": 34,
+      "predictions": 3151,
+      "precision": 0.0108,
+      "recall": 0.9714,
+      "AP": 0.6335
+    },
+    "LARGE": {
+      "gt": 11,
+      "detected": 11,
+      "predictions": 3128,
+      "precision": 0.0035,
+      "recall": 1.0,
+      "AP": 0.3777
+    }
+  },
+  "by_difficulty": {
+    "tiny": {
+      "gt": 49,
+      "detected": 36,
+      "predictions": 3153,
+      "precision": 0.0114,
+      "recall": 0.7347,
+      "AP": 0.2267
+    },
+    "unreadable": {
+      "gt": 156,
+      "detected": 135,
+      "predictions": 3252,
+      "precision": 0.0415,
+      "recall": 0.8654,
+      "AP": 0.5123
+    },
+    "blur": {
+      "gt": 4,
+      "detected": 2,
+      "predictions": 3119,
+      "precision": 0.0006,
+      "recall": 0.5,
+      "AP": 0.0885
+    },
+    "low_light": {
+      "gt": 24,
+      "detected": 12,
+      "predictions": 3129,
+      "precision": 0.0038,
+      "recall": 0.5,
+      "AP": 0.0086
+    },
+    "overexposed": {
+      "gt": 3,
+      "detected": 3,
+      "predictions": 3120,
+      "precision": 0.001,
+      "recall": 1.0,
+      "AP": 0.0149
+    },
+    "glare": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "angled": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "partial": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "low_contrast": {
+      "gt": 85,
+      "detected": 65,
+      "predictions": 3182,
+      "precision": 0.0204,
+      "recall": 0.7647,
+      "AP": 0.2219
+    },
+    "multi_vehicle": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "low_confidence": {
+      "gt": 45,
+      "detected": 36,
+      "predictions": 3153,
+      "precision": 0.0114,
+      "recall": 0.8,
+      "AP": 0.1593
+    },
+    "vehicle_without_visible_plate": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "occluded": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "dirty_or_damaged": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "non_standard": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "false_positive": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    }
+  },
+  "by_readability": {
+    "READABLE": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "UNREADABLE_QUALITY": {
+      "gt": 0,
+      "detected": 0,
+      "predictions": 3117,
+      "precision": 0.0,
+      "recall": 0.0,
+      "AP": null
+    },
+    "UNREADABLE_TOO_SMALL": {
+      "gt": 156,
+      "detected": 135,
+      "predictions": 3252,
+      "precision": 0.0415,
+      "recall": 0.8654,
+      "AP": 0.5123
+    },
+    "NOT_ATTEMPTED": {
+      "gt": 2,
+      "detected": 2,
+      "predictions": 3119,
+      "precision": 0.0006,
+      "recall": 1.0,
+      "AP": 0.35
+    }
+  },
+  "false_positives_on_plate_free_images": {
+    "images": 75,
+    "predictions": 553,
+    "per_image": 7.373
+  },
+  "total_predictions": 3254,
+  "CAVEAT": "Recall is an upper bound: the labels contain only plates some proposer proposed, so a plate no model ever saw is invisible here. The residual biases against small plates."
+}

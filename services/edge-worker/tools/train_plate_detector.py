@@ -152,7 +152,8 @@ CURRICULUM_STAGES = (
 
 def run_curriculum(name: str, dataset: Path, epochs_per_stage: int, device: str,
                    batch_override: int | None, base_model: str = "yolo11s.pt",
-                   stages: tuple[str, ...] = CURRICULUM_STAGES) -> dict:
+                   stages: tuple[str, ...] = CURRICULUM_STAGES,
+                   overrides: dict | None = None) -> dict:
     """Train stage by stage, each from the previous stage's best weights.
 
     Same augmentation, imgsz and batch as C_smallobj_aug so the curriculum
@@ -167,6 +168,11 @@ def run_curriculum(name: str, dataset: Path, epochs_per_stage: int, device: str,
     spec.pop("_note", None); spec.pop("_oversample", None); spec.pop("model", None)
     if batch_override:
         spec["batch"] = batch_override
+    # Fine-tuning a trained checkpoint at the from-scratch lr0 of 0.01 walks it
+    # off the real distribution before the synthetic set can teach it anything
+    # (F_hard_first: val mAP50 0.47 -> 0.30 across warmup). Callers pass a
+    # smaller lr0 / shorter warmup here for that case.
+    spec.update({k: v for k, v in (overrides or {}).items() if v is not None})
 
     weights = base_model
     stages_out = []
@@ -202,6 +208,7 @@ def run_curriculum(name: str, dataset: Path, epochs_per_stage: int, device: str,
         "elapsed_h": round((time.time() - started) / 3600, 2),
         "model": base_model, "dataset": str(dataset), "device": device,
         "epochs_per_stage": epochs_per_stage,
+        "overrides": {k: v for k, v in (overrides or {}).items() if v is not None},
         "stages": stages_out,
         "val_metrics": stages_out[-1]["val_metrics"] if stages_out else {},
         "best_checkpoint": weights,
@@ -389,6 +396,11 @@ def main() -> int:
                         help="Weights to start the first stage from - a trained "
                              "best.pt to fine-tune, or a pretrained yolo11*.pt.")
     parser.add_argument("--name", default="E_curriculum_synth")
+    parser.add_argument("--lr0", type=float, default=None,
+                        help="Initial learning rate (curriculum only). Use ~0.002 "
+                             "when --base-model is an already-trained best.pt.")
+    parser.add_argument("--warmup-epochs", type=float, default=None,
+                        help="Warmup epochs (curriculum only); 1 for fine-tuning.")
     parser.add_argument("--curriculum", default=None, metavar="SYNTH_DATASET",
                         help="Run the curriculum experiment over this synthetic "
                              "dataset (from synthesize_hard_cases.py) instead of "
@@ -415,7 +427,9 @@ def main() -> int:
         stages = tuple(x.strip() for x in args.stages.split(",")) if args.stages             else CURRICULUM_STAGES
         record = run_curriculum(args.name, Path(args.curriculum), args.epochs,
                                 args.device, args.batch, base_model=args.base_model,
-                                stages=stages)
+                                stages=stages,
+                                overrides={"lr0": args.lr0,
+                                           "warmup_epochs": args.warmup_epochs})
         records = [r for r in records if r.get("experiment") != record["experiment"]]
         records.append(record)
         write_json(summary_path, {"updated_at": datetime.now(timezone.utc).isoformat(),

@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-07T13:53:11.979631+00:00",
+  "updated_at": "2026-09-08T04:29:58.175994+00:00",
   "seed": 0,
   "runs": [
     {
@@ -164,6 +164,59 @@
       "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\C_smallobj_aug",
       "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\C_smallobj_aug\\weights\\best.pt",
       "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\C_smallobj_aug\\weights\\last.pt"
+    },
+    {
+      "experiment": "D_tiny_oversample",
+      "note": "C plus 3x exposure to tiny-plate images, at an EQUAL step budget.",
+      "finished_at": "2026-09-08T04:29:58.167659+00:00",
+      "elapsed_s": 52605.6,
+      "elapsed_h": 14.61,
+      "model": "yolo11s.pt",
+      "dataset": "dataset\\v2",
+      "data_yaml": "dataset\\v2\\data_oversampled_x3.yaml",
+      "oversample_factor": 3,
+      "epochs_requested": 41,
+      "device": "0",
+      "peak_vram_allocated_gb": 2.45,
+      "args": {
+        "seed": 0,
+        "deterministic": true,
+        "patience": 0,
+        "optimizer": "auto",
+        "amp": true,
+        "fliplr": 0.0,
+        "flipud": 0.0,
+        "val": true,
+        "plots": true,
+        "save_period": -1,
+        "workers": 0,
+        "project": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate",
+        "exist_ok": false,
+        "imgsz": 960,
+        "batch": 4,
+        "scale": 0.9,
+        "mosaic": 1.0,
+        "close_mosaic": 10,
+        "degrees": 7.0,
+        "perspective": 0.0005,
+        "translate": 0.15,
+        "hsv_h": 0.015,
+        "hsv_s": 0.6,
+        "hsv_v": 0.5,
+        "data": "dataset\\v2\\data_oversampled_x3.yaml",
+        "epochs": 41,
+        "name": "D_tiny_oversample",
+        "device": "0"
+      },
+      "val_metrics": {
+        "mAP50": 0.6006,
+        "mAP50_95": 0.3628,
+        "precision": 0.7619,
+        "recall": 0.5111
+      },
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\D_tiny_oversample",
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\D_tiny_oversample\\weights\\best.pt",
+      "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\D_tiny_oversample\\weights\\last.pt"
     }
   ]
 }

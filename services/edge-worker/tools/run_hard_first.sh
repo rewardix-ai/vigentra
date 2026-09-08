@@ -23,9 +23,12 @@ for e in C_smallobj_aug D_tiny_oversample; do
 done
 
 step "hard-first training: fine-tune B_highres_960 on stage4_all (all tiers, 60% severe+extreme)"
+# 12 epochs, not 25: measured 2.9 it/s at 960/batch 4 puts one epoch over 10,604
+# images at ~15 min; fine-tuning from an already-trained checkpoint converges
+# well inside that budget, and 6.5 h would cost a day of the seven left.
 $PY -u tools/train_plate_detector.py --curriculum dataset/v3_synth \
   --stages stage4_all --base-model runs/plate/B_highres_960/weights/best.pt \
-  --name F_hard_first --epochs 25 --device 0 >> reports/training_F.log 2>&1
+  --name F_hard_first --epochs 12 --device 0 >> reports/training_F.log 2>&1
 echo "F_TRAIN_EXIT=$?" | tee -a "$LOG"
 
 W=$(ls -d runs/plate/F_hard_first_stage4_all*/weights/best.pt 2>/dev/null | tail -1)

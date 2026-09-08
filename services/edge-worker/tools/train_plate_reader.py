@@ -129,6 +129,54 @@ def augment(gray: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     return gray
 
 
+def build_cache(root: Path, rows: list[dict], workers: int = 8) -> "np.ndarray":
+    """Preprocess every crop once into one uint8 array [N, INPUT_H, INPUT_W].
+
+    Reading and resizing 78k JPEGs per epoch on one core is what made an
+    epoch take ten minutes while the card idled. Done once here, threaded,
+    the array is ~470 MB and an epoch becomes a GPU-bound pass.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    out = np.empty((len(rows), INPUT_H, INPUT_W), np.uint8)
+
+    def one(i: int) -> None:
+        img = cv2.imread(str(_resolve(root, rows[i]["plate_image"])), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            img = np.full((INPUT_H, INPUT_W), 128, np.uint8)
+        out[i] = (preprocess(img)[0] * 255.0 + 0.5).astype(np.uint8)
+
+    t0 = time.time()
+    with ThreadPoolExecutor(workers) as ex:
+        list(ex.map(one, range(len(rows))))
+    log.info("cached %d crops (%.0f MB) in %.0fs", len(rows), out.nbytes / 2**20, time.time() - t0)
+    return out
+
+
+def gpu_augment(x, gen):
+    """Label-preserving jitter on a [B,1,H,W] float batch, on the device."""
+    import torch
+    B = x.shape[0]
+    dev = x.device
+    # exposure
+    a = torch.empty(B, 1, 1, 1, device=dev).uniform_(0.7, 1.3, generator=gen)
+    b = torch.empty(B, 1, 1, 1, device=dev).uniform_(-0.12, 0.12, generator=gen)
+    x = x * a + b
+    # polarity for a few (dark plates)
+    flip = (torch.rand(B, 1, 1, 1, device=dev, generator=gen) < 0.15).float()
+    x = x * (1 - flip) + (1 - x) * flip
+    # noise
+    x = x + torch.randn(x.shape, device=dev, generator=gen) * torch.empty(B, 1, 1, 1, device=dev).uniform_(0.0, 0.04, generator=gen)
+    # horizontal shift by up to 6 px, per batch (cheap), edges replicated
+    dx = int(torch.randint(-6, 7, (1,), generator=gen, device=dev).item())
+    if dx:
+        x = torch.roll(x, shifts=dx, dims=3)
+        if dx > 0:
+            x[..., :dx] = x[..., dx:dx + 1]
+        else:
+            x[..., dx:] = x[..., dx - 1:dx]
+    return x.clamp_(0.0, 1.0)
+
+
 def make_dataset_class():
     import torch
     from torch.utils.data import Dataset
@@ -262,7 +310,7 @@ def predict_rows(model, root: Path, rows: list[dict], device, batch: int = 256) 
 
 def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: int,
           lr: float, device_arg: str | None, workers: int, limit: int | None,
-          sr_weights: Path | None = None, init: Path | None = None) -> dict:
+          sr_weights: Path | None = None, init: Path | None = None, use_cache: bool = False) -> dict:
     import torch
     from torch.utils.data import DataLoader
 
@@ -304,16 +352,38 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
     history, best = [], {"hard_exact": -1.0}
     started = time.time()
     epoch_no = 0
+    cache = None
+    if use_cache:
+        cache = build_cache(dataset, train_rows)
+        index_of = {id(r): i for i, r in enumerate(train_rows)}
+        targets = [encode(r["text"]) for r in train_rows]
+        gen = torch.Generator(device=device.type)
+        gen.manual_seed(SEED)
+
+    def cached_batches(rows_subset, rng_np):
+        idx = np.array([index_of[id(r)] for r in rows_subset])
+        rng_np.shuffle(idx)
+        for start in range(0, len(idx) - batch + 1, batch):
+            sel = idx[start:start + batch]
+            x = torch.from_numpy(cache[sel]).to(device, non_blocking=True).float().div_(255.0).unsqueeze(1)
+            x = gpu_augment(x, gen)
+            ys = [targets[i] for i in sel]
+            lengths = torch.tensor([len(y) for y in ys], dtype=torch.long)
+            y = torch.tensor([c for y_ in ys for c in y_], dtype=torch.long)
+            yield x, y, lengths, None
+
+    rng_np = np.random.default_rng(SEED)
     for stage, rows, ep in stages:
-        loader = DataLoader(PlateDataset(dataset, rows, True, SEED), batch_size=batch, shuffle=True,
-                            num_workers=workers, collate_fn=collate, drop_last=True,
-                            persistent_workers=workers > 0)
+        loader = None if use_cache else DataLoader(
+            PlateDataset(dataset, rows, True, SEED), batch_size=batch, shuffle=True,
+            num_workers=workers, collate_fn=collate, drop_last=True,
+            persistent_workers=workers > 0)
         for _ in range(ep):
             epoch_no += 1
             model.train()
             losses = []
             t0 = time.time()
-            for x, y, lengths, _ in loader:
+            for x, y, lengths, _ in (cached_batches(rows, rng_np) if use_cache else loader):
                 x = x.to(device, non_blocking=True)
                 with torch.autocast(device.type, enabled=device.type == "cuda"):
                     lp = model(x)                                  # [B, T, C]
@@ -354,6 +424,7 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
         "epochs_hard": epochs_hard, "epochs_all": epochs_all,
         "train_crops": len(train_rows), "hard_train_crops": len(hard_rows), "val_crops": len(val_rows),
         "enhanced_with": str(sr_weights) if sr_weights else None,
+        "cached": use_cache,
         "initialised_from": str(init) if init else None,
         "selected_on": "exact match on all synthetic val crops, every size",
         "best_epoch": best.get("epoch"), "best": best.get("metrics"),
@@ -487,6 +558,9 @@ def main() -> int:
                          "(detection -> enhancement -> OCR), for training and evaluation.")
     ap.add_argument("--init", default=None, metavar="READER_WEIGHTS",
                     help="Start training from these reader weights instead of scratch.")
+    ap.add_argument("--cache", action="store_true",
+                    help="Preprocess all training crops into RAM once (~470 MB for 78k) and "
+                         "augment on the device; ~10x faster epochs.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -501,7 +575,8 @@ def main() -> int:
 
     rec = train(Path(args.dataset), args.name, args.epochs_hard, args.epochs_all, args.batch,
                 args.lr, args.device, args.workers, args.limit,
-                Path(args.sr) if args.sr else None, Path(args.init) if args.init else None)
+                Path(args.sr) if args.sr else None, Path(args.init) if args.init else None,
+                args.cache)
     print("READER TRAINING COMPLETE")
     print(f"best epoch {rec['best_epoch']}  exact (all sizes) {rec['best']['overall']['exact'] if rec['best'] else None}")
     print(f"best: {rec['best_checkpoint']}")

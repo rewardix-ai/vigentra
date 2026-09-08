@@ -72,6 +72,47 @@ def load_rows(dataset: Path, splits: tuple[str, ...]) -> list[dict]:
     return rows
 
 
+#: Crops at or above this width skip the upscaler: they are already past the
+#: recogniser's input height and SR would only be resampled straight back.
+SR_MAX_INPUT_W = 160
+
+
+def enhance_rows(rows: list[dict], root: Path, sr_weights: Path, cache: Path) -> None:
+    """Run the plate upscaler over every crop once; point the rows at the cache.
+
+    Mirrors what enhance.py does in the pipeline: small crops are upscaled
+    x4 before any variant is made. Cached on disk keyed by the weights file,
+    so a second run (or the evaluation) does not pay for it again.
+    """
+    from anpr.sr import PlateUpscaler
+    up = PlateUpscaler(str(sr_weights), "cuda" if _cuda() else "cpu")
+    cache.mkdir(parents=True, exist_ok=True)
+    done = 0
+    t0 = time.time()
+    for r in rows:
+        src = root / r["plate_image"]
+        dst = cache / (r["plate_image"].replace("/", "__"))
+        if not dst.exists():
+            img = cv2.imread(str(src))
+            if img is None:
+                continue
+            if img.shape[1] < SR_MAX_INPUT_W:
+                img = up.upscale(img)
+            cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            done += 1
+        r["plate_image_raw"] = r["plate_image"]
+        r["plate_image"] = str(dst.relative_to(root)) if dst.is_relative_to(root) else str(dst)
+    log.info("enhanced %d crops into %s (%.0fs)", done, cache, time.time() - t0)
+
+
+def _cuda() -> bool:
+    try:
+        import torch
+        return torch.cuda.is_available()
+    except Exception:                                    # noqa: BLE001
+        return False
+
+
 def encode(text: str) -> list[int]:
     return [CHARSET.index(c) + 1 for c in text if c in CHARSET]
 
@@ -107,7 +148,7 @@ def make_dataset_class():
 
         def __getitem__(self, i: int):
             r = self.rows[i]
-            img = cv2.imread(str(self.root / r["plate_image"]), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(str(_resolve(self.root, r["plate_image"])), cv2.IMREAD_GRAYSCALE)
             if img is None:
                 img = np.full((INPUT_H, INPUT_W), 128, np.uint8)
             if self.train:
@@ -117,6 +158,11 @@ def make_dataset_class():
             return x, y, i
 
     return PlateDataset
+
+
+def _resolve(root: Path, rel: str) -> Path:
+    p = Path(rel)
+    return p if p.is_absolute() else root / p
 
 
 def collate(batch):
@@ -209,7 +255,7 @@ def predict_rows(model, root: Path, rows: list[dict], device, batch: int = 256) 
             part = rows[start:start + batch]
             xs = []
             for r in part:
-                img = cv2.imread(str(root / r["plate_image"]), cv2.IMREAD_GRAYSCALE)
+                img = cv2.imread(str(_resolve(root, r["plate_image"])), cv2.IMREAD_GRAYSCALE)
                 if img is None:
                     img = np.full((INPUT_H, INPUT_W), 128, np.uint8)
                 xs.append(preprocess(img))
@@ -222,7 +268,8 @@ def predict_rows(model, root: Path, rows: list[dict], device, batch: int = 256) 
 
 
 def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: int,
-          lr: float, device_arg: str | None, workers: int, limit: int | None) -> dict:
+          lr: float, device_arg: str | None, workers: int, limit: int | None,
+          sr_weights: Path | None = None, init: Path | None = None) -> dict:
     import torch
     from torch.utils.data import DataLoader
 
@@ -240,9 +287,16 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
         val_rows = val_rows[: max(200, limit // 10)]
     hard_rows = [r for r in train_rows if r["tier"] in HARD_TIERS]
     log.info("train %d (hard %d)  val %d  device %s", len(train_rows), len(hard_rows), len(val_rows), device)
+    if sr_weights is not None:
+        cache = dataset / "plates_sr" / sr_weights.parent.name
+        enhance_rows(train_rows + val_rows, dataset, sr_weights, cache)
 
     PlateDataset = make_dataset_class()
     model = build_model(ReaderSpec()).to(device)
+    if init is not None:
+        ck = torch.load(init, map_location="cpu", weights_only=False)
+        model.load_state_dict(ck["model"])
+        log.info("initialised from %s (epoch %s)", init, ck.get("epoch"))
     n_params = sum(p.numel() for p in model.parameters())
     log.info("reader params: %.2fM", n_params / 1e6)
     ctc = torch.nn.CTCLoss(blank=BLANK, zero_infinity=True)
@@ -304,6 +358,8 @@ def train(dataset: Path, name: str, epochs_hard: int, epochs_all: int, batch: in
         "params_m": round(n_params / 1e6, 2), "batch": batch, "lr": lr,
         "epochs_hard": epochs_hard, "epochs_all": epochs_all,
         "train_crops": len(train_rows), "hard_train_crops": len(hard_rows), "val_crops": len(val_rows),
+        "enhanced_with": str(sr_weights) if sr_weights else None,
+        "initialised_from": str(init) if init else None,
         "selected_on": f"exact match on synthetic val crops {SELECT_BAND[0]:.0f}-{SELECT_BAND[1]:.0f} px wide",
         "best_epoch": best.get("epoch"), "best": best.get("metrics"),
         "elapsed_min": round((time.time() - started) / 60, 1),
@@ -348,7 +404,7 @@ def paddle_predict(root: Path, rows: list[dict]) -> list[tuple[str, str, float, 
         raise SystemExit("PaddleOCR is not available in this interpreter")
     out = []
     for r in rows:
-        img = cv2.imread(str(root / r["plate_image"]))
+        img = cv2.imread(str(_resolve(root, r["plate_image"])))
         # The pipeline never hands Paddle a raw crop: it gets the enhanced
         # variants. Give it the same treatment here.
         variants = enhance.variants(img, EnhanceConfig()) if hasattr(enhance, "variants") else [("base", img)]
@@ -365,18 +421,23 @@ def paddle_predict(root: Path, rows: list[dict]) -> list[tuple[str, str, float, 
 
 
 def evaluate(weights: Path, dataset: Path, real_dir: Path | None, device_arg: str | None,
-             compare_paddle: bool, tag: str) -> dict:
+             compare_paddle: bool, tag: str, sr_weights: Path | None = None) -> dict:
     import torch
     device = torch.device(device_arg or ("cuda" if torch.cuda.is_available() else "cpu"))
     model = load_reader(weights, device)
-    report = {"weights": str(weights), "evaluated_at": datetime.now(timezone.utc).isoformat()}
+    report = {"weights": str(weights), "evaluated_at": datetime.now(timezone.utc).isoformat(),
+              "enhanced_with": str(sr_weights) if sr_weights else None}
     val = load_rows(dataset, ("val_synth", "val_boost"))
+    if sr_weights is not None:
+        enhance_rows(val, dataset, sr_weights, dataset / "plates_sr" / sr_weights.parent.name)
     report["synthetic_val"] = summarise(predict_rows(model, dataset, val, device))
     if real_dir and (real_dir / "labels.csv").exists():
         rr = real_rows(real_dir)
+        if sr_weights is not None:
+            enhance_rows(rr, real_dir, sr_weights, real_dir / "plates_sr" / sr_weights.parent.name)
         preds = predict_rows(model, real_dir, rr, device)
         report["real"] = summarise(preds)
-        report["real_reads"] = [{"image": p[3]["image"], "truth": p[1], "reader": p[0],
+        report["real_reads"] = [{"image": p[3].get("plate_image_raw", p[3]["image"]), "truth": p[1], "reader": p[0],
                                  "reader_repaired": repaired(p[0]), "conf": round(p[2], 3)} for p in preds]
         if compare_paddle:
             pp = paddle_predict(real_dir, rr)
@@ -427,19 +488,26 @@ def main() -> int:
     ap.add_argument("--real", default="dataset/real_plates")
     ap.add_argument("--compare-paddle", action="store_true")
     ap.add_argument("--tag", default=None)
+    ap.add_argument("--sr", default=None, metavar="SR_WEIGHTS",
+                    help="Pass every crop through this plate upscaler first "
+                         "(detection -> enhancement -> OCR), for training and evaluation.")
+    ap.add_argument("--init", default=None, metavar="READER_WEIGHTS",
+                    help="Start training from these reader weights instead of scratch.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     if args.eval:
         weights = Path(args.eval)
         tag = args.tag or weights.parent.name
-        rep = evaluate(weights, Path(args.dataset), Path(args.real), args.device, args.compare_paddle, tag)
+        rep = evaluate(weights, Path(args.dataset), Path(args.real), args.device, args.compare_paddle, tag,
+                       Path(args.sr) if args.sr else None)
         print_report(rep)
         print(f"Written: reports/reader/{tag}.json")
         return 0
 
     rec = train(Path(args.dataset), args.name, args.epochs_hard, args.epochs_all, args.batch,
-                args.lr, args.device, args.workers, args.limit)
+                args.lr, args.device, args.workers, args.limit,
+                Path(args.sr) if args.sr else None, Path(args.init) if args.init else None)
     print("READER TRAINING COMPLETE")
     print(f"best epoch {rec['best_epoch']}  24-60px exact {rec['best']['select_band']['exact'] if rec['best'] else None}")
     print(f"best: {rec['best_checkpoint']}")

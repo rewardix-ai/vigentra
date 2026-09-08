@@ -287,8 +287,17 @@ def train_mf(dataset: Path, name: str, epochs: int, batch: int, lr: float, devic
                 gx_o, gy_o = _grad(out); gx_t, gy_t = _grad(y)
                 edge = (gx_o - gx_t).abs().mean() + (gy_o - gy_t).abs().mean()
                 loss = l1 + 0.5 * edge
+            if not torch.isfinite(loss):
+                # A non-finite step must never reach the weights: skip it and
+                # move the schedule on, the way the scaler already skips
+                # overflowed fp16 steps.
+                opt.zero_grad(set_to_none=True)
+                sched.step()
+                continue
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(opt); scaler.update(); sched.step()
             losses.append(loss.item())
         m = evaluate_mf(model, val_pairs[:500], device)
@@ -405,8 +414,17 @@ def train(dataset: Path, name: str, epochs: int, batch: int, lr: float, device_a
                 gx_o, gy_o = _grad(out); gx_t, gy_t = _grad(y)
                 edge = (gx_o - gx_t).abs().mean() + (gy_o - gy_t).abs().mean()
                 loss = l1 + 0.5 * edge
+            if not torch.isfinite(loss):
+                # A non-finite step must never reach the weights: skip it and
+                # move the schedule on, the way the scaler already skips
+                # overflowed fp16 steps.
+                opt.zero_grad(set_to_none=True)
+                sched.step()
+                continue
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(opt); scaler.update(); sched.step()
             losses.append(loss.item())
         m = evaluate_pairs(model, val_pairs[:600], device)

@@ -27,6 +27,8 @@ mkdir -p models
 cp "$DW" models/plate_detector.pt
 cp "$READER" models/plate_reader.pt
 cp "$SR" models/plate_sr.pt
+MFSR=${MFSR:-runs/mfsr/M1_hard_first/best.pt}
+[ -f "$MFSR" ] && cp "$MFSR" models/plate_mfsr.pt && step "multi-frame upscaler installed from $MFSR"
 [ -f models/ESPCN_x4.pb ] || cp "D:/ANPR/models/ESPCN_x4.pb" models/ESPCN_x4.pb
 $PY - "$DW" "$READER" "$SR" <<'EOF' >> "$LOG" 2>&1
 import hashlib, json, pathlib, sys

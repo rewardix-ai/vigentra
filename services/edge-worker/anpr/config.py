@@ -123,6 +123,10 @@ class EnhanceConfig:
     #: "auto" prefers models/plate_sr.pt (anpr/sr.py, trained on this
     #: footage), then the OpenCV dnn_superres weights, then Lanczos.
     sr_backend: str = "auto"      # "auto" | "plate" | "espcn" | "lanczos" | "off"
+    #: Multi-frame upscaler (anpr/sr.py PlateMFSR) applied to a track's kept
+    #: crops before a second read of the fused plate. Empty string disables;
+    #: a missing file logs one line and disables.
+    mfsr_model: str = "plate_mfsr.pt"
     sr_scale: int = 4
     clahe_clip: float = 2.5
     clahe_grid: int = 8

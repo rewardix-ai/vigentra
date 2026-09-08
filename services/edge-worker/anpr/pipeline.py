@@ -16,6 +16,8 @@ still gets read, just over more frames.
 """
 from __future__ import annotations
 
+import os
+
 import logging
 import time
 from collections import deque
@@ -109,6 +111,21 @@ class AnprPipeline:
         self.detector = Detector(cfg.detect)
         self.ocr = OcrEnsemble(cfg.ocr)
         self.sr = enhance.SuperResolver(cfg.enhance.sr_backend, cfg.enhance.sr_scale)
+        # Multi-frame upscaler: fuses the best few crops of a track into one
+        # sharper plate before a second read. Optional; None when absent.
+        self.mfsr = None
+        if cfg.enhance.mfsr_model and cfg.enhance.sr_backend != "off":
+            try:
+                from .config import resolve_model
+                from .sr import MultiFrameUpscaler
+                path = resolve_model(cfg.enhance.mfsr_model)
+                if os.path.exists(path):
+                    self.mfsr = MultiFrameUpscaler(path, "cpu")
+                    log.info("multi-frame super-resolution: %s", self.mfsr.name)
+                else:
+                    log.info("no %s in models/; multi-frame SR off", cfg.enhance.mfsr_model)
+            except Exception as exc:                        # noqa: BLE001 - optional
+                log.warning("multi-frame SR unavailable: %s", exc)
         self.tracks = ConsensusStore(cfg.consensus)
         # Learns each camera's burned-in overlays (clocks, captions) live and
         # keeps them out of the plate vote - see anpr/osd.py.
@@ -272,6 +289,7 @@ class AnprPipeline:
             fused = self._fused_reading(det.track_id)
             if fused is not None:
                 candidates.append(fused)
+            candidates.extend(self._multiframe_readings(det.track_id))
             # Classified here rather than inside the OCR layer so the track
             # gets the verdict even when every reading was rejected: a crop
             # that produced no legal plate still told us the plate's shape,
@@ -383,6 +401,42 @@ class AnprPipeline:
             return None
         text, confidence = reading
         return pr.normalise(text, confidence, engine=f"{engine.name}-fused", variant="track")
+
+    def _multiframe_readings(self, track_id: int) -> "list[pr.PlateCandidate]":
+        """Fuse the track's kept crops into one upscaled plate and read it.
+
+        The single-frame path reads each crop as it comes; this path waits
+        until the track has a few looks, registers them, and lets the
+        multi-frame upscaler combine them - noise and blocking average out,
+        sub-pixel shifts between frames add detail no single frame has. The
+        result goes through the same variants, engines and grammar as any
+        crop, tagged so the consensus can tell where it came from, and it
+        wins nothing by construction: it is one more vote.
+        """
+        if self.mfsr is None:
+            return []
+        pool = self._fuse_crops.get(track_id) or []
+        if len(pool) < self.cfg.ocr.fuse_min_frames:
+            return []
+        crops = [crop for _q, crop in sorted(pool, key=lambda e: e[0], reverse=True)]
+        try:
+            fused = self.mfsr.upscale(crops[: self.cfg.ocr.fuse_frames])
+        except Exception as exc:                            # noqa: BLE001
+            log.debug("multi-frame SR failed: %s", exc)
+            return []
+        if fused is None or fused.size == 0:
+            return []
+        # Already upscaled: build the variants without a second SR pass.
+        variants = enhance.build_variants(fused, self.cfg.enhance, sr=None)
+        if not variants:
+            return []
+        result = self.ocr.read(variants, allow_fallback=False)
+        out = []
+        for cand in result.candidates:
+            cand.engine = f"{cand.engine}-mfsr"
+            cand.variant = f"track-{cand.variant}"
+            out.append(cand)
+        return out
 
     def best_crop(self, track_id: int) -> np.ndarray | None:
         entry = self._best_crop.get(track_id)

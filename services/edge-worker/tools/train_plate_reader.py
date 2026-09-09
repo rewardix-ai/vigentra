@@ -502,12 +502,17 @@ def tighten_rows(rows: list[dict], root: Path, det_weights: Path, cache: Path) -
             if img is None:
                 continue
             h, w = img.shape[:2]
-            k = max(1.0, 640 / max(h, w))
-            big = cv2.resize(img, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC) if k > 1 else img
+            # A plate filling the whole image is not what the detector was
+            # trained on; give it a vehicle-sized margin of neutral grey.
+            px, py = int(w * 0.6), int(h * 1.2)
+            padded = cv2.copyMakeBorder(img, py, py, px, px, cv2.BORDER_CONSTANT, value=(110, 110, 110))
+            k = max(1.0, 640 / max(padded.shape[:2]))
+            big = cv2.resize(padded, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC) if k > 1 else padded
             res = det.predict(big, imgsz=640, conf=0.1, verbose=False)[0]
             if len(res.boxes):
                 bb = max(res.boxes, key=lambda b: float(b.conf[0]))
                 x1, y1, x2, y2 = [v / k for v in bb.xyxy[0].tolist()]
+                x1, x2, y1, y2 = x1 - px, x2 - px, y1 - py, y2 - py
                 mx, my = (x2 - x1) * 0.05, (y2 - y1) * 0.12
                 x1, y1 = int(max(0, x1 - mx)), int(max(0, y1 - my))
                 x2, y2 = int(min(w, x2 + mx)), int(min(h, y2 + my))
@@ -516,8 +521,8 @@ def tighten_rows(rows: list[dict], root: Path, det_weights: Path, cache: Path) -
                     found += 1
             cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
         r["plate_image_raw"] = r.get("plate_image_raw", r["plate_image"])
-        r["plate_image"] = str(dst)
-        r["plate_px"] = float(cv2.imread(str(dst)).shape[1])
+        r["plate_image"] = str(dst.relative_to(root)) if dst.is_relative_to(root) else str(dst.resolve())
+        r["plate_px"] = float(cv2.imread(str(_resolve(root, r["plate_image"]))).shape[1])
     log.info("tightened %d/%d real crops with %s", found, len(rows), det_weights)
 
 

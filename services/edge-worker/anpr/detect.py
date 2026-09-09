@@ -281,6 +281,15 @@ class Detector:
         except Exception as exc:                # noqa: BLE001
             log.error("could not load plate detector %s: %s - run "
                       "scripts/get_models.py", ppath, exc)
+        self.plate_model_frame = None
+        if self.cfg.plate_model_frame:
+            fpath = resolve_model(self.cfg.plate_model_frame)
+            try:
+                self.plate_model_frame = YOLO(fpath)
+                log.info("plate detector (full-frame pass): %s on %s", fpath, self.device)
+            except Exception as exc:            # noqa: BLE001
+                log.error("could not load full-frame plate detector %s: %s; "
+                          "using %s for both passes", fpath, exc, ppath)
 
     @property
     def ready(self) -> bool:
@@ -328,11 +337,11 @@ class Detector:
 
     # -- plates ----------------------------------------------------------
     def _detect_plates(self, image: np.ndarray) -> list[Box]:
-        batched = self._detect_plates_batch([image])
+        batched = self._detect_plates_batch([image], model=self.plate_model_frame)
         return batched[0] if batched else []
 
     def _detect_plates_batch(self, images: list[np.ndarray],
-                             imgsz: int | None = None) -> list[list[Box]]:
+                             imgsz: int | None = None, model=None) -> list[list[Box]]:
         """Detect plates in several images with a single inference call.
 
         Ultralytics accepts a list and runs it as one batch.  Calling it once
@@ -352,11 +361,12 @@ class Detector:
             if biggest > 0:
                 by_pixels = int(self.ROI_PIXEL_BUDGET / biggest)
                 chunk = max(1, min(chunk, by_pixels))
+        model = model or self.plate_model
         results = []
         for start in range(0, len(images), chunk):
             part = images[start:start + chunk]
             try:
-                results.extend(self.plate_model.predict(
+                results.extend(model.predict(
                     part, verbose=False, conf=self.cfg.plate_conf,
                     imgsz=imgsz or self.cfg.plate_imgsz, device=self.device,
                     **self._precision,

@@ -93,13 +93,15 @@ def lighting_of(bgr) -> str:
 
 def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
             conf: float | None, device: str, engines: tuple[str, ...] | None = None,
-            min_plate_width: float | None = None) -> dict:
+            min_plate_width: float | None = None, frame_weights: str | None = None) -> dict:
     """Run the full pipeline over the sampled frames with one set of weights."""
     from anpr import config as anpr_config
     from anpr.pipeline import AnprPipeline
 
     cfg = anpr_config.load(str(WORKER_ROOT / "config.yaml"))
     cfg.detect.plate_model = weights
+    if frame_weights:
+        cfg.detect.plate_model_frame = frame_weights
     if engines:
         cfg.ocr.engines = tuple(engines)
     if min_plate_width is not None:
@@ -204,6 +206,7 @@ def run_one(weights: str, feeds, per_camera: int, imgsz: int | None,
         "peak_vram_mb": peak_vram_mb,
         "weights": weights,
         "ocr_engines": list(pipeline.ocr.engine_names),
+        "frame_weights": frame_weights,
         "min_plate_width": cfg.ocr.min_plate_width,
         "totals": dict(totals),
         "plate_width_px": percentiles(widths),
@@ -231,6 +234,9 @@ def main() -> int:
     ap.add_argument("--engines", nargs="*", default=None, metavar="A,B",
                     help="OCR engines per --weights entry, comma-separated "
                          "(e.g. paddle reader,paddle). Default: config.yaml's.")
+    ap.add_argument("--frame-weights", nargs="*", default=None, metavar="W|-",
+                    help="Per --weights entry: a separate detector for the full-frame pass "
+                         "('-' = same model for both passes).")
     ap.add_argument("--min-plate-width", nargs="*", type=float, default=None,
                     help="OCR floor in px per --weights entry (default: config.yaml's).")
     ap.add_argument("--out", default="reports/footage_comparison.json")
@@ -253,7 +259,8 @@ def main() -> int:
 
     engines = [tuple(e.split(",")) if e else None for e in (args.engines or [])]
     floors = list(args.min_plate_width or [])
-    for name, seq in (("--engines", engines), ("--min-plate-width", floors)):
+    frames_w = [None if f in ("-", "") else f for f in (args.frame_weights or [])]
+    for name, seq in (("--engines", engines), ("--min-plate-width", floors), ("--frame-weights", frames_w)):
         if seq and len(seq) != len(args.weights):
             raise SystemExit(f"{name} must have one entry per --weights")
     results = {}
@@ -262,7 +269,8 @@ def main() -> int:
         results[label] = run_one(weights, feeds, args.per_camera, args.imgsz,
                                  args.conf, args.device,
                                  engines[i] if engines else None,
-                                 floors[i] if floors else None)
+                                 floors[i] if floors else None,
+                                 frames_w[i] if frames_w else None)
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

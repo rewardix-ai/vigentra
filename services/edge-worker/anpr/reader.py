@@ -52,7 +52,9 @@ def preprocess(bgr_or_gray: np.ndarray) -> np.ndarray:
     last digit is a different plate.
     """
     img = bgr_or_gray
-    if img.ndim == 3:
+    if img.ndim == 3 and img.shape[2] == 1:
+        img = img[:, :, 0]
+    elif img.ndim == 3:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     h, w = img.shape[:2]
     if h == 0 or w == 0:

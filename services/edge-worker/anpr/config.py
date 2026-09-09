@@ -33,6 +33,12 @@ class DetectConfig:
     #: Plate detector.  Drop your own fine-tuned weights in models/ and point
     #: this at them; that is the single biggest accuracy lever available.
     plate_model: str = "plate_detector.pt"
+    #: Optional second plate detector for the FULL-FRAME pass only. Measured
+    #: on cameras 6 and 7: a model trained on vehicle crops at 960 finds more
+    #: plates inside vehicle boxes but fewer on the whole 1920-wide frame,
+    #: while the original full-frame model does the reverse. Empty = use
+    #: plate_model for both passes.
+    plate_model_frame: str = ""
     #: Frames wider than this are downscaled before the detection passes.
     #: The detectors resize to `imgsz` internally anyway, so running them on a
     #: 4K frame only pays for a bigger CPU-side resize - twice per frame.

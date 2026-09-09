@@ -85,18 +85,22 @@ def enhance_rows(rows: list[dict], root: Path, sr_weights: Path, cache: Path) ->
     done = 0
     t0 = time.time()
     for r in rows:
-        src = root / r["plate_image"]
-        dst = cache / (r["plate_image"].replace("/", "__"))
+        src = _resolve(root, r["plate_image"])
+        # One flat name per source path; both separators, or a Windows path
+        # nests the cache file into a directory that does not exist.
+        dst = cache / Path(r["plate_image"]).as_posix().replace("/", "__")
         if not dst.exists():
             img = cv2.imread(str(src))
             if img is None:
                 continue
             if img.shape[1] < SR_MAX_INPUT_W:
                 img = up.upscale(img)
-            cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            if not cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, 95]):
+                log.warning("could not write %s", dst)
+                continue
             done += 1
         r["plate_image_raw"] = r["plate_image"]
-        r["plate_image"] = str(dst.relative_to(root)) if dst.is_relative_to(root) else str(dst)
+        r["plate_image"] = dst.relative_to(root).as_posix() if dst.is_relative_to(root) else dst.resolve().as_posix()
     log.info("enhanced %d crops into %s (%.0fs)", done, cache, time.time() - t0)
 
 
@@ -521,7 +525,7 @@ def tighten_rows(rows: list[dict], root: Path, det_weights: Path, cache: Path) -
                     found += 1
             cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
         r["plate_image_raw"] = r.get("plate_image_raw", r["plate_image"])
-        r["plate_image"] = str(dst.relative_to(root)) if dst.is_relative_to(root) else str(dst.resolve())
+        r["plate_image"] = dst.relative_to(root).as_posix() if dst.is_relative_to(root) else dst.resolve().as_posix()
         r["plate_px"] = float(cv2.imread(str(_resolve(root, r["plate_image"]))).shape[1])
     log.info("tightened %d/%d real crops with %s", found, len(rows), det_weights)
 

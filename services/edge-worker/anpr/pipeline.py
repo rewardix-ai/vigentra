@@ -104,6 +104,20 @@ class FrameResult:
     crops: dict[int, np.ndarray] = field(default_factory=dict)
 
 
+def plate_geometry_ok(bw: float, bh: float, frame_w: int, cfg) -> bool:
+    """Could a box this shape be a plate on this frame?
+
+    False for signboards, banners and captions: wider than
+    plate_max_width_frac of the frame, wider than plate_max_aspect plates,
+    or not wider than tall. Degenerate boxes are rejected too.
+    """
+    if bw < 1.0 or bh < 1.0:
+        return False
+    aspect = bw / bh
+    return (bw <= cfg.plate_max_width_frac * frame_w
+            and cfg.plate_min_aspect <= aspect <= cfg.plate_max_aspect)
+
+
 class AnprPipeline:
     """Stateful, single-stream ANPR.  One instance per video or camera."""
 
@@ -240,10 +254,7 @@ class AnprPipeline:
             # Plate geometry. A box a fifth of the frame wide, or wider than
             # eight plates, or taller than wide, is a sign or a caption, not
             # a plate - drop it before it costs an OCR call and a vote.
-            bw, bh = max(1.0, box.w), max(1.0, box.h)
-            if (bw > self.cfg.detect.plate_max_width_frac * width
-                    or bw / bh > self.cfg.detect.plate_max_aspect
-                    or bw / bh < self.cfg.detect.plate_min_aspect):
+            if not plate_geometry_ok(det.box.w, det.box.h, width, self.cfg.detect):
                 self._skipped += 1
                 continue
             # Is there enough resolution here for a reading to mean

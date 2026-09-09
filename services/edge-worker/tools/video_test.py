@@ -38,6 +38,9 @@ def main() -> int:
     ap.add_argument("--max-frames", type=int, default=None)
     ap.add_argument("--out", default=None)
     ap.add_argument("--sheet", default=None)
+    ap.add_argument("--annotate", default=None, metavar="OUT.mp4",
+                    help="Write every processed frame with vehicle boxes, plate boxes and the "
+                         "track's current read (green once confirmed) to this video.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -61,6 +64,11 @@ def main() -> int:
     frames_dir = out.parent / f"video_{stem}_frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
+    writer = None
+    if args.annotate:
+        Path(args.annotate).parent.mkdir(parents=True, exist_ok=True)
+        writer = cv2.VideoWriter(args.annotate, cv2.VideoWriter_fourcc(*"mp4v"),
+                                 max(1.0, fps / args.stride), (width, height))
     idx = processed = 0
     counts = Counter()
     widths: list[float] = []
@@ -93,6 +101,25 @@ def main() -> int:
             if ev.text:
                 events.append({"t": round(pts, 2), "track": ev.track_id, "text": ev.text,
                                "score": round(float(ev.score), 3), "confirmed": bool(ev.confirmed)})
+        if writer is not None:
+            ann = frame.copy()
+            for v in result.vehicles:
+                cv2.rectangle(ann, (int(v.x1), int(v.y1)), (int(v.x2), int(v.y2)), (0, 200, 0), 1)
+            for det in result.plates:
+                b = det.box
+                cv2.rectangle(ann, (int(b.x1), int(b.y1)), (int(b.x2), int(b.y2)), (0, 0, 255), 2)
+                tc = pipeline.tracks.tracks.get(det.track_id) if hasattr(pipeline.tracks, "tracks") else None
+                verdict = tc.verdict if tc is not None else None
+                if verdict is not None and verdict.text:
+                    colour = (0, 255, 0) if verdict.confirmed else (0, 200, 255)
+                    label = verdict.pretty or verdict.text
+                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                    x, y = int(b.x1), max(th + 6, int(b.y1) - 6)
+                    cv2.rectangle(ann, (x - 2, y - th - 6), (x + tw + 4, y + 4), (0, 0, 0), -1)
+                    cv2.putText(ann, label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, colour, 2)
+            cv2.putText(ann, f"t={pts:5.1f}s  confirmed {sum(1 for t in pipeline.tracks.all_tracks() if t.verdict.confirmed)}",
+                        (10, height - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            writer.write(ann)
         if pts - last_saved >= 3.0:
             ann = frame.copy()
             for v in result.vehicles:
@@ -108,6 +135,8 @@ def main() -> int:
             cv2.imwrite(str(frames_dir / f"t{pts:06.1f}.jpg"), ann, [cv2.IMWRITE_JPEG_QUALITY, 85])
             last_saved = pts
     cap.release()
+    if writer is not None:
+        writer.release()
     elapsed = time.time() - t0
 
     tracks = []

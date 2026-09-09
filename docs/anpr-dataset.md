@@ -1,5 +1,9 @@
 # Plate dataset and the small-plate problem
 
+Finding the plate is this document; reading it - the uniform dataset, the
+enhancers, the OCR measurements and the per-camera verdicts - is
+[anpr-reading.md](anpr-reading.md).
+
 How to measure what the cameras deliver, mine the cases the detector fails on,
 and build a training set from them without poisoning it.
 

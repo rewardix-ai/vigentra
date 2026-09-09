@@ -333,8 +333,8 @@ class SuperResolver:
                 log.info("no %s in %s; using Lanczos upscaling", self.PLATE_SR, MODELS_DIR)
             return
         try:
-            from .sr import PlateUpscaler
-            up = PlateUpscaler(str(path), "cpu")
+            from .sr import PlateUpscaler, best_device
+            up = PlateUpscaler(str(path), best_device())
             if up.scale != self.scale:
                 log.warning("%s is x%d, configured scale is x%d; ignoring it",
                             self.PLATE_SR, up.scale, self.scale)
@@ -408,8 +408,14 @@ def _fit_height(bgr: np.ndarray, height: int) -> np.ndarray:
     return cv2.resize(bgr, (new_w, height), interpolation=interp)
 
 
-def _pad(bgr: np.ndarray, px: int = 6) -> np.ndarray:
-    """Recognisers do badly when glyphs touch the border."""
+def _pad(bgr: np.ndarray, px: int = 0) -> np.ndarray:
+    """No border by default. The replicate border this used to add was
+    measured on 49 real plates cut to the detector's box: PaddleOCR reads 37%
+    of them exactly unpadded and 2% with the 6 px border - the smeared edge
+    reads as an extra glyph. Kept as a function so a recogniser that does
+    want a border can ask for one."""
+    if px <= 0:
+        return bgr
     return cv2.copyMakeBorder(bgr, px, px, px, px, cv2.BORDER_REPLICATE)
 
 
@@ -448,32 +454,29 @@ def build_variants(crop: np.ndarray, cfg: EnhanceConfig,
         if img is not None and img.size:
             variants.append((name, _pad(_fit_height(img, cfg.ocr_height))))
 
-    # Ordered by expected payoff for the defects we actually measured, so the
-    # max_variants truncation keeps the ones that matter.
-    add("clahe", _unsharp(_clahe(base, cfg.clahe_clip, cfg.clahe_grid)))
+    # Ordered by measured payoff on real plates cut to the detector's box
+    # (49 crops, PaddleOCR exact reads): the upscaled base 35%, the untouched
+    # crop 37%, CLAHE 14% - so the plain renderings come first and CLAHE only
+    # when the crop is dark or flat, where it has something to fix. The
+    # max_variants truncation keeps the ones that read.
+    add("base", base)
     if q.is_dark:
         add("lowlight", brighten_lowlight(base))
     if q.is_glared:
         add("glare", suppress_glare(base))
-    add("base", base)
     if q.is_blurred:
         add("sharp", _unsharp(base, amount=1.8, radius=2.0))
+    if q.is_dark or q.contrast < 45.0:
+        add("clahe", _unsharp(_clahe(base, cfg.clahe_clip, cfg.clahe_grid)))
     if q.contrast < 45.0:
         add("binary", binarise(base))
 
-    # The crop exactly as it left the frame, at its own resolution.
-    #
-    # Every other variant is fitted to `ocr_height`, which for a plate already
-    # 80-100px wide is a 4x upscale, so the recogniser partly reads the
-    # interpolation. The untouched pixels sometimes disagree with the fitted
-    # ones, and that disagreement is useful: it is what the cross-variant vote
-    # in the OCR ensemble resolves. Only padded, because a glyph touching the
-    # border reads badly and padding does not resample.
-    #
-    # LAST on purpose. It is another opinion, not a better one - measured on
-    # this estate it reads nothing on some crops and misreads others, so it must
-    # never win a tie against a variant that actually read the plate.
+    # The crop exactly as it left the frame, untouched: no resample, no
+    # border. Second, not last - on the tight real crops it is the single
+    # best rendering for a plate the camera delivered at readable size (37%
+    # exact against 35% for the base) and it costs nothing. It still has to
+    # win the cross-variant vote like any other.
     if crop is not None and crop.size:
-        variants.append(("native", _pad(crop)))
+        variants.insert(min(1, len(variants)), ("native", crop))
 
     return variants[: max(1, cfg.max_variants)]

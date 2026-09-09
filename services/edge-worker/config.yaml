@@ -17,7 +17,15 @@ detect:
   roi_imgsz: 960
   # Vehicle crops are upscaled to at least this before the ROI plate pass. At
   # 320 a distant car's plate was still sub-20 px going in.
-  roi_min_size: 640
+  roi_min_size: 480
+  # Vehicle crops per plate-detector call.
+  roi_batch: 6
+  # The prior band (a plate-sized strip cut from the vehicle box when no
+  # detector found a plate) is OFF: measured on the Delhi clip it produced
+  # 53 crops per 24 frames of the vehicle's whole lower half, each through
+  # full enhancement and OCR at up to 2 s, and read nothing. With two
+  # detectors that find the plate, the band only costs the frame budget.
+  prior_pass: false
   # A 17 px plate scores low even when found. Recovering it and letting the
   # consensus stage reject it beats never seeing it.
   plate_conf: 0.15
@@ -43,7 +51,10 @@ detect:
 enhance:
   # Plates arrive far below this, so upscaling does real work here.
   ocr_height: 96
-  max_variants: 6
+  # Three variants, not six: CLAHE, the enhanced base and the sharpened
+  # one carry the reads; the others cost a PaddleOCR call each and were
+  # measured to change nothing on this footage. Real time needs the budget.
+  max_variants: 3
 
 ocr:
   # PaddleOCR only, for now. Measured on 49 real plates cut to the detector's
@@ -73,3 +84,9 @@ consensus:
   min_observations: 2
   min_score: 0.50
   min_margin: 0.15
+
+scheduler:
+  # At most this many plates go to OCR per frame; the rest wait a frame.
+  # A vehicle is in view for seconds, so spreading reads across frames costs
+  # nothing the consensus notices and keeps the frame under budget.
+  max_ocr_per_frame: 3

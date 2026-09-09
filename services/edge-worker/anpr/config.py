@@ -219,6 +219,10 @@ class OcrConfig:
     #: Below this many frames a track is not fused - one or two looks do not
     #: carry enough independent evidence to beat the per-frame reads.
     fuse_min_frames: int = 2
+    #: Seconds between multi-frame (fused-crop) reads of one track. The fused
+    #: read costs an upscale plus a full OCR pass; once per track every
+    #: couple of seconds is where it pays, not on every frame.
+    mfsr_interval_s: float = 2.0
     #: Crops narrower than this are not worth escalating: if the recogniser
     #: could not read them, a text detector will not rescue them either.
     fallback_min_width: int = 60

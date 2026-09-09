@@ -143,12 +143,17 @@ def align_frames(frames: list[np.ndarray], size: tuple[int, int] | None = None) 
     if not frames:
         return []
     if size is None:
-        # The sharpest frame (highest Laplacian variance) sets the grid.
+        # The sharpest frame (highest Laplacian variance) sets the grid,
+        # capped at MF_MAX_WIDTH: wider crops carry nothing fusion adds.
         def sharp(f):
             g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) if f.ndim == 3 else f
             return cv2.Laplacian(g, cv2.CV_32F).var()
         ref = max(frames, key=sharp)
-        size = (ref.shape[1], ref.shape[0])
+        w, h = ref.shape[1], ref.shape[0]
+        if w > MF_MAX_WIDTH:
+            h = max(4, int(round(h * MF_MAX_WIDTH / w)))
+            w = MF_MAX_WIDTH
+        size = (w, h)
     W, H = size
     out = []
     ref_gray = None
@@ -210,6 +215,23 @@ class MultiFrameUpscaler:
         with torch.no_grad():
             out = self.model(stack_frames(aligned, self.frames).to(self.device))
         return to_image(out)
+
+
+#: Widest plate crop the multi-frame fusion works on. Crops are plates, and
+#: a plate wider than this is already readable; fusing five 600 px crops
+#: through the network costs seconds on CPU for nothing.
+MF_MAX_WIDTH = 192
+
+
+def best_device() -> str:
+    """"cuda" when a card is present, else "cpu". The upscalers are small,
+    but on CPU a 4x pass over a 140 px crop is hundreds of milliseconds and
+    the multi-frame pass seconds; on the card both are milliseconds."""
+    try:
+        import torch
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:                                    # noqa: BLE001
+        return "cpu"
 
 
 def to_tensor(bgr: np.ndarray):

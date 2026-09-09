@@ -267,6 +267,15 @@ class Detector:
     def _load(self) -> None:
         from ultralytics import YOLO
 
+        # Every plate crop is a different shape. With cudnn.benchmark on,
+        # each new shape triggers a kernel search that costs seconds; off,
+        # the default kernels run at once. Measured on the Delhi clip: the
+        # detect stage fell from a 3 s p95 to a steady few hundred ms.
+        try:
+            import torch
+            torch.backends.cudnn.benchmark = False
+        except Exception:                       # noqa: BLE001
+            pass
         vpath = resolve_model(self.cfg.vehicle_model)
         try:
             self.vehicle_model = YOLO(vpath)

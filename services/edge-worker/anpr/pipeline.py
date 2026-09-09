@@ -132,10 +132,10 @@ class AnprPipeline:
         if cfg.enhance.mfsr_model and cfg.enhance.sr_backend != "off":
             try:
                 from .config import resolve_model
-                from .sr import MultiFrameUpscaler
+                from .sr import MultiFrameUpscaler, best_device
                 path = resolve_model(cfg.enhance.mfsr_model)
                 if os.path.exists(path):
-                    self.mfsr = MultiFrameUpscaler(path, "cpu")
+                    self.mfsr = MultiFrameUpscaler(path, best_device())
                     log.info("multi-frame super-resolution: %s", self.mfsr.name)
                 else:
                     log.info("no %s in models/; multi-frame SR off", cfg.enhance.mfsr_model)
@@ -157,6 +157,7 @@ class AnprPipeline:
         self._announced: dict[int, tuple[str, bool]] = {}
         self._best_crop: dict[int, tuple[float, np.ndarray]] = {}
         self._fuse_crops: dict[int, list[tuple[float, np.ndarray]]] = {}
+        self._mf_last: dict[int, float] = {}
         self._times: deque[float] = deque(maxlen=60)
         self._ocr_calls = 0
         self._skipped = 0
@@ -176,6 +177,7 @@ class AnprPipeline:
         self._announced.clear()
         self._best_crop.clear()
         self._fuse_crops.clear()
+        self._mf_last.clear()
         self._times.clear()
         self._ocr_calls = self._skipped = 0
 
@@ -196,6 +198,7 @@ class AnprPipeline:
         self._announced.clear()
         self._best_crop.clear()
         self._fuse_crops.clear()
+        self._mf_last.clear()
 
     def warmup(self, size: tuple[int, int] = (720, 1280)) -> None:
         """Run one throwaway frame so CUDA kernels are compiled up front.
@@ -312,7 +315,8 @@ class AnprPipeline:
             fused = self._fused_reading(det.track_id)
             if fused is not None:
                 candidates.append(fused)
-            candidates.extend(self._multiframe_readings(det.track_id))
+            with self.metrics.time("multiframe"):
+                candidates.extend(self._multiframe_readings(det.track_id, captured))
             if not candidates:
                 continue
             # Classified here rather than inside the OCR layer so the track
@@ -427,7 +431,7 @@ class AnprPipeline:
         text, confidence = reading
         return pr.normalise(text, confidence, engine=f"{engine.name}-fused", variant="track")
 
-    def _multiframe_readings(self, track_id: int) -> "list[pr.PlateCandidate]":
+    def _multiframe_readings(self, track_id: int, now: float) -> "list[pr.PlateCandidate]":
         """Fuse the track's kept crops into one upscaled plate and read it.
 
         The single-frame path reads each crop as it comes; this path waits
@@ -443,6 +447,12 @@ class AnprPipeline:
         pool = self._fuse_crops.get(track_id) or []
         if len(pool) < self.cfg.ocr.fuse_min_frames:
             return []
+        # Scheduled, not per frame: the pool changes slowly and the read is
+        # the most expensive thing a track can ask for.
+        last = self._mf_last.get(track_id)
+        if last is not None and now - last < self.cfg.ocr.mfsr_interval_s:
+            return []
+        self._mf_last[track_id] = now
         crops = [crop for _q, crop in sorted(pool, key=lambda e: e[0], reverse=True)]
         try:
             fused = self.mfsr.upscale(crops[: self.cfg.ocr.fuse_frames])

@@ -232,9 +232,18 @@ class _GridGate:
                 detail=type(exc).__name__,
             ) from exc
 
+        if response.status_code >= 500:
+            # A gateway error is the grid being down, not a credential
+            # problem; say so, or an operator goes looking for a wrong
+            # password that is not wrong.
+            raise UpstreamProtocolError(
+                f"The grid's sign-in endpoint is down (HTTP {response.status_code})",
+                source_system=source_system,
+                detail=str(response.status_code),
+            )
         if response.status_code >= 400:
             raise UpstreamProtocolError(
-                "The grid rejected Vigentra's sign-in",
+                f"The grid rejected Vigentra's sign-in (HTTP {response.status_code})",
                 source_system=source_system,
                 detail=str(response.status_code),
             )

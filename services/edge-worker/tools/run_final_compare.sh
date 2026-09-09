@@ -26,6 +26,8 @@ LABEL=$(basename "$(dirname "$(dirname "$DW")")")
 step "installing: detector=$DW reader=$READER sr=$SR"
 mkdir -p models
 cp "$DW" models/plate_detector.pt
+[ -f models/plate_detector_frame.pt ] || cp "D:/ANPR/models/plate_detector.pt" models/plate_detector_frame.pt
+ENGINES=${ENGINES:-reader,paddle}
 cp "$READER" models/plate_reader.pt
 cp "$SR" models/plate_sr.pt
 MFSR=${MFSR:-runs/mfsr/M1_hard_first/best.pt}
@@ -45,8 +47,9 @@ EOF
 step "real footage no floor: baseline+paddle@40 vs new detector+reader+SR, every plate read (cam06, cam07)"
 $PY -u tools/compare_on_footage.py \
   --weights "D:/ANPR/models/plate_detector.pt" "$DW" \
-  --labels baseline_paddle_40px "${LABEL}_reader_sr_nofloor" --cameras cam06 cam07 --per-camera 30 \
-  --engines paddle reader,paddle --min-plate-width 40 0 \
+  --labels baseline_paddle_40px "${LABEL}_${ENGINES//,/+}_sr_nofloor" --cameras cam06 cam07 --per-camera 30 \
+  --frame-weights - "D:/ANPR/models/plate_detector.pt" \
+  --engines paddle "$ENGINES" --min-plate-width 40 0 \
   --out "reports/footage_comparison_final.json" >> "$LOG" 2>&1
 
 step "DONE"

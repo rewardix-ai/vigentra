@@ -1,0 +1,22 @@
+{
+  "plate_detector.pt": {
+    "from": "runs/plate/B_highres_960/weights/best.pt",
+    "sha256": "c3f82966bbb3b4e6e0b7081258680f9c2de41c06fc7952938f427297cc6c05e0",
+    "bytes": 19202778
+  },
+  "plate_reader.pt": {
+    "from": "runs/reader/R5_staged/best.pt",
+    "sha256": "f991c5b5499c6185380b92b2f3513440d26482790ce74f57ef1d873fbdeab351",
+    "bytes": 17485379
+  },
+  "plate_sr.pt": {
+    "from": "runs/sr/S3_wide_cont/best.pt",
+    "sha256": "69ab75a048c35979f44bdde1face2b17f6096d6578ac952cdcd7ec057a7b58ff",
+    "bytes": 2509187
+  },
+  "plate_detector_frame.pt": {
+    "from": "D:/ANPR/models/plate_detector.pt (original yolo11m full-frame model)",
+    "sha256": "d691f8d5e7709d2065b18a0e2bd75deaf08f6115cc0295cc3de7d0fd2eabcdae",
+    "bytes": 40507749
+  }
+}

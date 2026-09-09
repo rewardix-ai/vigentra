@@ -34,6 +34,11 @@ detect:
   # a host too tight on memory to load this one, where a worker that runs at
   # slightly lower recall beats a worker that will not start.
   plate_model: plate_detector.pt
+  # Full-frame pass: the original model. Measured on 382 frames of cameras 6
+  # and 7, it boxes 35-38 plates on the whole frame where the crop-trained
+  # model boxes 10; inside vehicle boxes the crop-trained model is the
+  # cleaner of the two. One model per pass.
+  plate_model_frame: plate_detector_frame.pt
 
 enhance:
   # Plates arrive far below this, so upscaling does real work here.
@@ -41,9 +46,12 @@ enhance:
   max_variants: 6
 
 ocr:
-  # The plate reader first (anpr/reader.py, models/plate_reader.pt), PaddleOCR
-  # as the second opinion. A missing reader file logs one line and falls back.
-  engines: [reader, paddle]
+  # PaddleOCR only, for now. Measured on 49 real plates cut to the detector's
+  # box: PaddleOCR reads 37% exactly (68% of characters) and the trained
+  # reader (anpr/reader.py, runs/reader/R5_staged) reads 0% (31% of
+  # characters). The reader stays in the code and in training; it is added
+  # back here ([reader, paddle]) only when it beats PaddleOCR on that test.
+  engines: [paddle]
   # Sum the reader's per-column log-probabilities across the frames of a track
   # and decode once. Off for PaddleOCR (its columns shift with the crop); the
   # reader's 48-column grid is fixed, which is what makes this valid.

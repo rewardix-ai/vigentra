@@ -1,0 +1,201 @@
+{
+  "generated_at": "2026-09-09T06:01:05.325135+00:00",
+  "video": "D:/ANPR/data/uploads/delhi_small.mp4",
+  "size": [
+    640,
+    360
+  ],
+  "fps": 29.75,
+  "frames": 797,
+  "processed": 160,
+  "stride": 5,
+  "processing_fps": 0.93,
+  "config": {
+    "engines": [
+      "paddle"
+    ],
+    "min_plate_width": 0,
+    "plate_model": "plate_detector.pt",
+    "plate_model_frame": "plate_detector_frame.pt"
+  },
+  "totals": {
+    "vehicles": 1486,
+    "plate_boxes": 335,
+    "attached": 329,
+    "orphaned": 6
+  },
+  "plate_width_px": {
+    "p50": 15.7,
+    "p90": 29.0,
+    "max": 59.2,
+    "n": 335
+  },
+  "tracks_total": 9,
+  "tracks_with_plate_box": 8,
+  "tracks_read": 2,
+  "tracks_confirmed": 0,
+  "confirmed_plates": [],
+  "tracks": [
+    {
+      "track": 520,
+      "observations": 1,
+      "best_plate_width_px": 37.8,
+      "crops": 6,
+      "text": "8",
+      "score": 0.248,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 493,
+      "observations": 0,
+      "best_plate_width_px": 26.0,
+      "crops": 8,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 499,
+      "observations": 0,
+      "best_plate_width_px": 25.4,
+      "crops": 6,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 1000005,
+      "observations": 0,
+      "best_plate_width_px": 19.0,
+      "crops": 1,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 439,
+      "observations": 0,
+      "best_plate_width_px": 18.3,
+      "crops": 23,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 533,
+      "observations": 0,
+      "best_plate_width_px": 18.3,
+      "crops": 3,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 496,
+      "observations": 0,
+      "best_plate_width_px": 17.0,
+      "crops": 2,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 478,
+      "observations": 0,
+      "best_plate_width_px": 13.0,
+      "crops": 2,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 1,
+      "observations": 9,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "0L1465",
+      "score": 0.229,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.359,
+      "runners_up": [
+        "115",
+        "L14587",
+        "FOL140E5987"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.03,
+      "track": 1,
+      "text": "115",
+      "score": 0.209,
+      "confirmed": false
+    },
+    {
+      "t": 1.01,
+      "track": 1,
+      "text": "L14587",
+      "score": 0.273,
+      "confirmed": false
+    },
+    {
+      "t": 1.34,
+      "track": 1,
+      "text": "0L1465",
+      "score": 0.229,
+      "confirmed": false
+    },
+    {
+      "t": 26.22,
+      "track": 520,
+      "text": "8",
+      "score": 0.248,
+      "confirmed": false
+    }
+  ],
+  "readability": {
+    "tracks_settled": 43,
+    "confirmed": 0,
+    "uncertain": 0,
+    "unreadable": 43,
+    "crops_measured": 298,
+    "crops_at_readable_size": 0,
+    "crops_below_floor": 0,
+    "size_bands": {
+      "COMFORTABLE": 0,
+      "READABLE": 0,
+      "MARGINAL": 0,
+      "SUB_MARGINAL": 6,
+      "UNREADABLE": 292
+    },
+    "verdict": "ANPR_INFEASIBLE_HERE"
+  },
+  "sheet": "reports\\video_delhi_small_sheet.jpg",
+  "frames_dir": "reports\\video_delhi_small_frames"
+}

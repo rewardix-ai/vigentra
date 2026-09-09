@@ -1,0 +1,1122 @@
+{
+  "generated_at": "2026-09-09T06:11:59.995431+00:00",
+  "video": "D:/ANPR/data/uploads/real_1080p.mp4",
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 29.75,
+  "frames": 797,
+  "processed": 160,
+  "stride": 5,
+  "processing_fps": 0.71,
+  "config": {
+    "engines": [
+      "paddle"
+    ],
+    "min_plate_width": 0,
+    "plate_model": "plate_detector.pt",
+    "plate_model_frame": "plate_detector_frame.pt"
+  },
+  "totals": {
+    "vehicles": 1480,
+    "plate_boxes": 463,
+    "attached": 449,
+    "orphaned": 14
+  },
+  "plate_width_px": {
+    "p50": 44.8,
+    "p90": 81.8,
+    "max": 310.5,
+    "n": 463
+  },
+  "tracks_total": 42,
+  "tracks_with_plate_box": 11,
+  "tracks_read": 39,
+  "tracks_confirmed": 11,
+  "confirmed_plates": [
+    "HR26CC2083",
+    "DL8CAP4175",
+    "TR745056",
+    "DL14CE5987",
+    "DL6SBE6415",
+    "DL1CO5334",
+    "DL13CA2927",
+    "DL13CA2927",
+    "UP140700",
+    "UP14DK7400",
+    "UP78FH9291"
+  ],
+  "tracks": [
+    {
+      "track": 503,
+      "observations": 7,
+      "best_plate_width_px": 113.2,
+      "crops": 28,
+      "text": "HR26CC2083",
+      "score": 0.98,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.886,
+      "runners_up": [
+        "HR25CC2083",
+        "HR26CC2083",
+        "HR26OC2083"
+      ]
+    },
+    {
+      "track": 539,
+      "observations": 7,
+      "best_plate_width_px": 70.1,
+      "crops": 4,
+      "text": "DL8CAP4175",
+      "score": 1.0,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.933,
+      "runners_up": [
+        "O8CAP1175",
+        "V778FA9231",
+        "CC0A7475"
+      ]
+    },
+    {
+      "track": 511,
+      "observations": 20,
+      "best_plate_width_px": 69.0,
+      "crops": 5,
+      "text": "TR745056",
+      "score": 0.651,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.702,
+      "runners_up": [
+        "HR25OC2092",
+        "DL214506",
+        "TR25O0203"
+      ]
+    },
+    {
+      "track": 2,
+      "observations": 9,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL14CE5987",
+      "score": 1.0,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.837,
+      "runners_up": [
+        "DL14CES9877",
+        "UL14CE5987",
+        "FDL14CE5987"
+      ]
+    },
+    {
+      "track": 69,
+      "observations": 4,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL6SBE6415",
+      "score": 0.929,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.536,
+      "runners_up": [
+        "DL6SBE6115",
+        "A10191"
+      ]
+    },
+    {
+      "track": 1,
+      "observations": 22,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL1CO5334",
+      "score": 0.667,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.308,
+      "runners_up": [
+        "OD11O3244",
+        "OL1C05334",
+        "L"
+      ]
+    },
+    {
+      "track": 345,
+      "observations": 9,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL13CA2927",
+      "score": 0.8,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.58,
+      "runners_up": [
+        "DL1CAZ9227",
+        "DL13A2927",
+        "DL130927"
+      ]
+    },
+    {
+      "track": 263,
+      "observations": 24,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL13CA2927",
+      "score": 0.836,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.729,
+      "runners_up": [
+        "DL130429",
+        "DL13CA2227",
+        "DL13CA2327"
+      ]
+    },
+    {
+      "track": 422,
+      "observations": 12,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "UP140700",
+      "score": 0.918,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.884,
+      "runners_up": [
+        "UP140700",
+        "UP14DN740",
+        "UP102400"
+      ]
+    },
+    {
+      "track": 468,
+      "observations": 7,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "UP14DK7400",
+      "score": 0.765,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.532,
+      "runners_up": [
+        "UP14DN7400",
+        "UP14DM700",
+        "UP14OMT4000"
+      ]
+    },
+    {
+      "track": 547,
+      "observations": 7,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "UP78FH9291",
+      "score": 0.791,
+      "confirmed": true,
+      "valid": true,
+      "margin": 0.459,
+      "runners_up": [
+        "LD78F8921",
+        "078783231",
+        "078321"
+      ]
+    },
+    {
+      "track": 250,
+      "observations": 24,
+      "best_plate_width_px": 310.5,
+      "crops": 63,
+      "text": "OL11T1087",
+      "score": 0.256,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.849,
+      "runners_up": [
+        "DL11I1087",
+        "LD35CN5722",
+        "DL117099"
+      ]
+    },
+    {
+      "track": 555,
+      "observations": 3,
+      "best_plate_width_px": 76.3,
+      "crops": 3,
+      "text": "DL8CAP4175",
+      "score": 0.996,
+      "confirmed": false,
+      "valid": true,
+      "margin": 0.886,
+      "runners_up": [
+        "DLEPA75",
+        "1"
+      ]
+    },
+    {
+      "track": 516,
+      "observations": 5,
+      "best_plate_width_px": 58.5,
+      "crops": 3,
+      "text": "L1R1A505S",
+      "score": 0.235,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.708,
+      "runners_up": [
+        "L1R1A505S",
+        "L1RTIS556",
+        "L18315055"
+      ]
+    },
+    {
+      "track": 464,
+      "observations": 3,
+      "best_plate_width_px": 55.8,
+      "crops": 23,
+      "text": "M1N0942",
+      "score": 0.196,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.047,
+      "runners_up": [
+        "M100342",
+        "L180947"
+      ]
+    },
+    {
+      "track": 1000011,
+      "observations": 0,
+      "best_plate_width_px": 54.0,
+      "crops": 1,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 475,
+      "observations": 6,
+      "best_plate_width_px": 51.0,
+      "crops": 2,
+      "text": "G0C208E",
+      "score": 0.171,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.024,
+      "runners_up": [
+        "GCC208E",
+        "GCC208",
+        "R20E"
+      ]
+    },
+    {
+      "track": 565,
+      "observations": 0,
+      "best_plate_width_px": 49.3,
+      "crops": 14,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 584,
+      "observations": 0,
+      "best_plate_width_px": 13.9,
+      "crops": 1,
+      "text": "",
+      "score": 0.0,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.0,
+      "runners_up": []
+    },
+    {
+      "track": 8,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "LP1G1513E",
+      "score": 0.167,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 1000000,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "UP10AY3893",
+      "score": 0.837,
+      "confirmed": false,
+      "valid": true,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 1000001,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "A1737N",
+      "score": 0.176,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.093,
+      "runners_up": [
+        "N017327"
+      ]
+    },
+    {
+      "track": 124,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "F0331S",
+      "score": 0.154,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.384,
+      "runners_up": [
+        "5F0331S"
+      ]
+    },
+    {
+      "track": 106,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "L",
+      "score": 0.122,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 7,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "UP51AY303",
+      "score": 0.509,
+      "confirmed": false,
+      "valid": true,
+      "margin": 0.078,
+      "runners_up": [
+        "UP30A1393"
+      ]
+    },
+    {
+      "track": 71,
+      "observations": 3,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL7CR3761",
+      "score": 0.848,
+      "confirmed": false,
+      "valid": true,
+      "margin": 0.149,
+      "runners_up": [
+        "DL70R3751",
+        "8"
+      ]
+    },
+    {
+      "track": 25,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "3",
+      "score": 0.169,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 202,
+      "observations": 9,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL55AS052",
+      "score": 0.364,
+      "confirmed": false,
+      "valid": true,
+      "margin": 0.111,
+      "runners_up": [
+        "DL051557",
+        "SS",
+        "SAS052"
+      ]
+    },
+    {
+      "track": 152,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "L651521",
+      "score": 0.136,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.075,
+      "runners_up": [
+        "106S1S1"
+      ]
+    },
+    {
+      "track": 252,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "LA150155",
+      "score": 0.462,
+      "confirmed": false,
+      "valid": true,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 1000005,
+      "observations": 3,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL13CA2927",
+      "score": 0.88,
+      "confirmed": false,
+      "valid": true,
+      "margin": 0.362,
+      "runners_up": [
+        "DL130427",
+        "PDL13CA272"
+      ]
+    },
+    {
+      "track": 119,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "OLI3CA2S",
+      "score": 0.223,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.203,
+      "runners_up": [
+        "OLI3CAZ3"
+      ]
+    },
+    {
+      "track": 331,
+      "observations": 4,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "IVF",
+      "score": 0.177,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.025,
+      "runners_up": [
+        "F",
+        "1732BL",
+        "D1732BL"
+      ]
+    },
+    {
+      "track": 398,
+      "observations": 7,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "L13CA2927",
+      "score": 0.34,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.872,
+      "runners_up": [
+        "136A2927"
+      ]
+    },
+    {
+      "track": 378,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "0",
+      "score": 0.105,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 412,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "3L1LT107",
+      "score": 0.229,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.501,
+      "runners_up": [
+        "BL1Y08"
+      ]
+    },
+    {
+      "track": 1000007,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL5A509",
+      "score": 0.155,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.029,
+      "runners_up": [
+        "DL5A09"
+      ]
+    },
+    {
+      "track": 362,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL304227",
+      "score": 0.758,
+      "confirmed": false,
+      "valid": true,
+      "margin": 0.674,
+      "runners_up": [
+        "OL13CA2927"
+      ]
+    },
+    {
+      "track": 488,
+      "observations": 11,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "OL1LT1087",
+      "score": 0.31,
+      "confirmed": false,
+      "valid": false,
+      "margin": 0.796,
+      "runners_up": [
+        "OL1LT1087",
+        "4DN740",
+        "UEUL11087"
+      ]
+    },
+    {
+      "track": 1000008,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL3CCN5712",
+      "score": 1.0,
+      "confirmed": false,
+      "valid": true,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 1000009,
+      "observations": 1,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "DL8CAPZ",
+      "score": 0.261,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    },
+    {
+      "track": 311,
+      "observations": 2,
+      "best_plate_width_px": null,
+      "crops": 0,
+      "text": "1",
+      "score": 0.071,
+      "confirmed": false,
+      "valid": false,
+      "margin": 1.0,
+      "runners_up": []
+    }
+  ],
+  "events": [
+    {
+      "t": 0.03,
+      "track": 2,
+      "text": "DL14CE5987",
+      "score": 1.0,
+      "confirmed": false
+    },
+    {
+      "t": 0.03,
+      "track": 1,
+      "text": "OD11O3244",
+      "score": 0.682,
+      "confirmed": false
+    },
+    {
+      "t": 0.34,
+      "track": 1,
+      "text": "OD11O3244",
+      "score": 0.579,
+      "confirmed": true
+    },
+    {
+      "t": 0.34,
+      "track": 2,
+      "text": "DL14CE5987",
+      "score": 1.0,
+      "confirmed": true
+    },
+    {
+      "t": 0.5,
+      "track": 8,
+      "text": "LP1G1513E",
+      "score": 0.167,
+      "confirmed": false
+    },
+    {
+      "t": 1.01,
+      "track": 1,
+      "text": "DL1CO5334",
+      "score": 0.709,
+      "confirmed": true
+    },
+    {
+      "t": 2.35,
+      "track": 69,
+      "text": "DL6SBE6415",
+      "score": 0.992,
+      "confirmed": false
+    },
+    {
+      "t": 2.69,
+      "track": 69,
+      "text": "DL6SBE6415",
+      "score": 0.945,
+      "confirmed": true
+    },
+    {
+      "t": 3.19,
+      "track": 71,
+      "text": "8",
+      "score": 0.194,
+      "confirmed": false
+    },
+    {
+      "t": 3.36,
+      "track": 106,
+      "text": "L",
+      "score": 0.122,
+      "confirmed": false
+    },
+    {
+      "t": 3.53,
+      "track": 71,
+      "text": "DL7CR3761",
+      "score": 0.848,
+      "confirmed": false
+    },
+    {
+      "t": 3.7,
+      "track": 1000000,
+      "text": "UP10AY3893",
+      "score": 0.837,
+      "confirmed": false
+    },
+    {
+      "t": 3.87,
+      "track": 25,
+      "text": "3",
+      "score": 0.169,
+      "confirmed": false
+    },
+    {
+      "t": 3.87,
+      "track": 7,
+      "text": "UP51AY303",
+      "score": 0.509,
+      "confirmed": false
+    },
+    {
+      "t": 4.54,
+      "track": 1000001,
+      "text": "A1737N",
+      "score": 0.176,
+      "confirmed": false
+    },
+    {
+      "t": 4.87,
+      "track": 119,
+      "text": "OLI3CA2S",
+      "score": 0.223,
+      "confirmed": false
+    },
+    {
+      "t": 5.55,
+      "track": 124,
+      "text": "F0331S",
+      "score": 0.154,
+      "confirmed": false
+    },
+    {
+      "t": 8.74,
+      "track": 202,
+      "text": "DL051557",
+      "score": 0.464,
+      "confirmed": false
+    },
+    {
+      "t": 9.08,
+      "track": 202,
+      "text": "DL55AS052",
+      "score": 0.364,
+      "confirmed": false
+    },
+    {
+      "t": 9.24,
+      "track": 152,
+      "text": "L651521",
+      "score": 0.136,
+      "confirmed": false
+    },
+    {
+      "t": 10.59,
+      "track": 263,
+      "text": "DL13CA2927",
+      "score": 0.946,
+      "confirmed": false
+    },
+    {
+      "t": 10.59,
+      "track": 252,
+      "text": "LA150155",
+      "score": 0.462,
+      "confirmed": false
+    },
+    {
+      "t": 10.93,
+      "track": 263,
+      "text": "DL13CA2927",
+      "score": 0.787,
+      "confirmed": true
+    },
+    {
+      "t": 14.29,
+      "track": 1000005,
+      "text": "DL13CA2927",
+      "score": 0.88,
+      "confirmed": false
+    },
+    {
+      "t": 14.62,
+      "track": 331,
+      "text": "1732BL",
+      "score": 0.134,
+      "confirmed": false
+    },
+    {
+      "t": 14.96,
+      "track": 378,
+      "text": "0",
+      "score": 0.105,
+      "confirmed": false
+    },
+    {
+      "t": 15.97,
+      "track": 250,
+      "text": "SUIL10AR",
+      "score": 0.123,
+      "confirmed": false
+    },
+    {
+      "t": 16.14,
+      "track": 398,
+      "text": "L13CA2927",
+      "score": 0.34,
+      "confirmed": false
+    },
+    {
+      "t": 16.14,
+      "track": 331,
+      "text": "F",
+      "score": 0.192,
+      "confirmed": false
+    },
+    {
+      "t": 16.3,
+      "track": 250,
+      "text": "0",
+      "score": 0.215,
+      "confirmed": false
+    },
+    {
+      "t": 16.64,
+      "track": 331,
+      "text": "IVF",
+      "score": 0.177,
+      "confirmed": false
+    },
+    {
+      "t": 16.98,
+      "track": 345,
+      "text": "SL11SX2268",
+      "score": 0.199,
+      "confirmed": false
+    },
+    {
+      "t": 17.65,
+      "track": 422,
+      "text": "00",
+      "score": 0.233,
+      "confirmed": false
+    },
+    {
+      "t": 17.82,
+      "track": 345,
+      "text": "DL13CA2927",
+      "score": 0.777,
+      "confirmed": true
+    },
+    {
+      "t": 17.99,
+      "track": 250,
+      "text": "JL1111087",
+      "score": 0.279,
+      "confirmed": false
+    },
+    {
+      "t": 18.15,
+      "track": 422,
+      "text": "UP14DN7400",
+      "score": 0.873,
+      "confirmed": true
+    },
+    {
+      "t": 18.32,
+      "track": 250,
+      "text": "JL1LT1087",
+      "score": 0.236,
+      "confirmed": false
+    },
+    {
+      "t": 18.49,
+      "track": 362,
+      "text": "DL304227",
+      "score": 0.758,
+      "confirmed": false
+    },
+    {
+      "t": 18.83,
+      "track": 468,
+      "text": "UP14DN7400",
+      "score": 0.831,
+      "confirmed": false
+    },
+    {
+      "t": 19.16,
+      "track": 412,
+      "text": "3L1LT107",
+      "score": 0.229,
+      "confirmed": false
+    },
+    {
+      "t": 19.16,
+      "track": 468,
+      "text": "UP14DK7400",
+      "score": 0.765,
+      "confirmed": true
+    },
+    {
+      "t": 19.33,
+      "track": 1000007,
+      "text": "DL5A509",
+      "score": 0.155,
+      "confirmed": false
+    },
+    {
+      "t": 19.33,
+      "track": 422,
+      "text": "UP140700",
+      "score": 0.918,
+      "confirmed": true
+    },
+    {
+      "t": 20.17,
+      "track": 488,
+      "text": "4DM7400",
+      "score": 0.309,
+      "confirmed": false
+    },
+    {
+      "t": 20.34,
+      "track": 250,
+      "text": "JL11T1087",
+      "score": 0.259,
+      "confirmed": false
+    },
+    {
+      "t": 20.51,
+      "track": 488,
+      "text": "OL1LT1087",
+      "score": 0.31,
+      "confirmed": false
+    },
+    {
+      "t": 21.18,
+      "track": 511,
+      "text": "HR25OC2092",
+      "score": 0.61,
+      "confirmed": false
+    },
+    {
+      "t": 21.52,
+      "track": 511,
+      "text": "TR25C2203",
+      "score": 0.654,
+      "confirmed": true
+    },
+    {
+      "t": 21.68,
+      "track": 503,
+      "text": "HR25CC2083",
+      "score": 0.773,
+      "confirmed": false
+    },
+    {
+      "t": 22.19,
+      "track": 503,
+      "text": "HR26CC2083",
+      "score": 0.98,
+      "confirmed": true
+    },
+    {
+      "t": 22.52,
+      "track": 1000008,
+      "text": "DL3CCN5712",
+      "score": 1.0,
+      "confirmed": false
+    },
+    {
+      "t": 22.69,
+      "track": 1000009,
+      "text": "DL8CAPZ",
+      "score": 0.261,
+      "confirmed": false
+    },
+    {
+      "t": 22.69,
+      "track": 250,
+      "text": "OL11T1087",
+      "score": 0.256,
+      "confirmed": false
+    },
+    {
+      "t": 23.53,
+      "track": 539,
+      "text": "V778FA9231",
+      "score": 0.161,
+      "confirmed": false
+    },
+    {
+      "t": 23.7,
+      "track": 547,
+      "text": "078F3231",
+      "score": 0.197,
+      "confirmed": false
+    },
+    {
+      "t": 23.7,
+      "track": 311,
+      "text": "1",
+      "score": 0.071,
+      "confirmed": false
+    },
+    {
+      "t": 23.87,
+      "track": 475,
+      "text": "GCC208",
+      "score": 0.215,
+      "confirmed": false
+    },
+    {
+      "t": 24.04,
+      "track": 547,
+      "text": "UP78FH9291",
+      "score": 0.813,
+      "confirmed": true
+    },
+    {
+      "t": 24.2,
+      "track": 475,
+      "text": "G0C208E",
+      "score": 0.171,
+      "confirmed": false
+    },
+    {
+      "t": 24.88,
+      "track": 555,
+      "text": "DL8CAP4175",
+      "score": 0.996,
+      "confirmed": false
+    },
+    {
+      "t": 25.05,
+      "track": 539,
+      "text": "DL8CAP4175",
+      "score": 1.0,
+      "confirmed": true
+    },
+    {
+      "t": 25.72,
+      "track": 511,
+      "text": "TR745056",
+      "score": 0.709,
+      "confirmed": true
+    },
+    {
+      "t": 25.89,
+      "track": 516,
+      "text": "L1R1A505S",
+      "score": 0.235,
+      "confirmed": false
+    },
+    {
+      "t": 26.56,
+      "track": 464,
+      "text": "M1N0942",
+      "score": 0.196,
+      "confirmed": false
+    }
+  ],
+  "readability": {
+    "tracks_settled": 68,
+    "confirmed": 9,
+    "uncertain": 10,
+    "unreadable": 49,
+    "crops_measured": 418,
+    "crops_at_readable_size": 44,
+    "crops_below_floor": 0,
+    "size_bands": {
+      "COMFORTABLE": 2,
+      "READABLE": 7,
+      "MARGINAL": 35,
+      "SUB_MARGINAL": 219,
+      "UNREADABLE": 155
+    },
+    "verdict": "ANPR_MARGINAL"
+  },
+  "sheet": "reports\\video_real_1080p_v2_sheet.jpg",
+  "frames_dir": "reports\\video_real_1080p_frames"
+}

@@ -1,0 +1,521 @@
+{
+  "generated_at": "2026-09-09T00:04:29.428954+00:00",
+  "feeds": [
+    "cam06.459fe3",
+    "cam07",
+    "cam06.d32924"
+  ],
+  "per_camera_frames": 150,
+  "settings": {
+    "imgsz": null,
+    "conf": null
+  },
+  "runs": {
+    "baseline_paddle_40px": {
+      "peak_vram_mb": 525,
+      "weights": "D:/ANPR/models/plate_detector.pt",
+      "ocr_engines": [
+        "paddle"
+      ],
+      "min_plate_width": 40.0,
+      "totals": {
+        "frames": 382,
+        "vehicles": 216,
+        "prior_bands": 152,
+        "plate_boxes": 91,
+        "pass_roi": 56,
+        "attached_to_vehicle": 68,
+        "reads": 10,
+        "pass_frame": 35,
+        "orphaned": 23,
+        "reads_confirmed": 1,
+        "banner_like": 4
+      },
+      "plate_width_px": {
+        "p5": 18.06,
+        "p25": 38.19,
+        "p50": 58.68,
+        "p75": 73.2,
+        "p90": 120.0,
+        "p95": 943.5,
+        "p99": 943.8,
+        "min": 8.89,
+        "max": 946.5,
+        "n": 91
+      },
+      "reads": [
+        {
+          "text": "GJ10TY1194",
+          "score": 0.9239017658459433,
+          "confirmed": false
+        },
+        {
+          "text": "GJ10TB1495",
+          "score": 0.6901561647433107,
+          "confirmed": false
+        },
+        {
+          "text": "GJ00BO4354",
+          "score": 0.7757173442840576,
+          "confirmed": false
+        },
+        {
+          "text": "GJ00BO4354",
+          "score": 0.7757173442840576,
+          "confirmed": false
+        },
+        {
+          "text": "GJ00BO4354",
+          "score": 0.7757173442840576,
+          "confirmed": true
+        },
+        {
+          "text": "G6JMUYAN",
+          "score": 0.08952289294900773,
+          "confirmed": false
+        },
+        {
+          "text": "RAYM03133",
+          "score": 0.16981771141290664,
+          "confirmed": false
+        },
+        {
+          "text": "ETUYUU3131",
+          "score": 0.16709816902875899,
+          "confirmed": false
+        },
+        {
+          "text": "CF13134",
+          "score": 0.10513615496456623,
+          "confirmed": false
+        },
+        {
+          "text": "L2182113",
+          "score": 0.13768297360627743,
+          "confirmed": false
+        }
+      ],
+      "seconds": 355.8,
+      "seconds_per_frame": 0.93,
+      "fps": 1.07,
+      "per_camera": [
+        {
+          "feed_id": "cam06.459fe3",
+          "frames": 119,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "NIGHT": 9,
+            "DAY": 22,
+            "DIM": 88
+          }
+        },
+        {
+          "feed_id": "cam07",
+          "frames": 113,
+          "vehicles": 147,
+          "plate_boxes": 18,
+          "attached_to_vehicle": 12,
+          "orphaned": 6,
+          "banner_like": 0,
+          "reads": 2,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 13.33,
+            "p25": 19.26,
+            "p50": 36.75,
+            "p75": 45.1,
+            "p90": 62.94,
+            "p95": 74.91,
+            "p99": 88.08,
+            "min": 10.46,
+            "max": 91.38,
+            "n": 18
+          },
+          "lighting": {
+            "DIM": 113
+          }
+        },
+        {
+          "feed_id": "cam06.d32924",
+          "frames": 150,
+          "vehicles": 69,
+          "plate_boxes": 73,
+          "attached_to_vehicle": 56,
+          "orphaned": 17,
+          "banner_like": 4,
+          "reads": 8,
+          "reads_confirmed": 1,
+          "plate_width_px": {
+            "p5": 21.0,
+            "p25": 42.0,
+            "p50": 62.32,
+            "p75": 75.0,
+            "p90": 130.89,
+            "p95": 943.5,
+            "p99": 944.34,
+            "min": 8.89,
+            "max": 946.5,
+            "n": 73
+          },
+          "lighting": {
+            "DAY": 127,
+            "DIM": 23
+          }
+        }
+      ]
+    },
+    "B_reader_sr_nofloor": {
+      "peak_vram_mb": 292,
+      "weights": "runs/plate/B_highres_960/weights/best.pt",
+      "ocr_engines": [
+        "reader",
+        "paddle"
+      ],
+      "min_plate_width": 0.0,
+      "totals": {
+        "frames": 382,
+        "vehicles": 216,
+        "plate_boxes": 47,
+        "pass_frame": 10,
+        "orphaned": 10,
+        "reads": 45,
+        "prior_bands": 169,
+        "pass_roi": 37,
+        "attached_to_vehicle": 37,
+        "reads_confirmed": 2
+      },
+      "plate_width_px": {
+        "p5": 9.19,
+        "p25": 25.22,
+        "p50": 49.44,
+        "p75": 72.53,
+        "p90": 90.55,
+        "p95": 166.8,
+        "p99": 298.11,
+        "min": 7.91,
+        "max": 388.5,
+        "n": 47
+      },
+      "reads": [
+        {
+          "text": "KH2L22330",
+          "score": 0.17061448134891863,
+          "confirmed": false
+        },
+        {
+          "text": "GJ78BC0304",
+          "score": 0.4209749893182436,
+          "confirmed": false
+        },
+        {
+          "text": "G81B8822",
+          "score": 0.08374716867346021,
+          "confirmed": false
+        },
+        {
+          "text": "LU7050",
+          "score": 0.07939978415046543,
+          "confirmed": false
+        },
+        {
+          "text": "MN67777",
+          "score": 0.09041133221153821,
+          "confirmed": false
+        },
+        {
+          "text": "GJ637777",
+          "score": 0.30951824785526405,
+          "confirmed": false
+        },
+        {
+          "text": "GJ10TY1194",
+          "score": 0.794287377497828,
+          "confirmed": true
+        },
+        {
+          "text": "LD21O3104",
+          "score": 0.4143118510986768,
+          "confirmed": false
+        },
+        {
+          "text": "DL1EX9142",
+          "score": 0.4736361324650413,
+          "confirmed": false
+        },
+        {
+          "text": "GJ527776",
+          "score": 0.2681863281060927,
+          "confirmed": false
+        },
+        {
+          "text": "8774GJ35",
+          "score": 0.09169239369851966,
+          "confirmed": false
+        },
+        {
+          "text": "GJ1171",
+          "score": 0.09276761070294057,
+          "confirmed": false
+        },
+        {
+          "text": "278CGJ73",
+          "score": 0.09672232002714201,
+          "confirmed": false
+        },
+        {
+          "text": "L122725",
+          "score": 0.0905829121587723,
+          "confirmed": false
+        },
+        {
+          "text": "GJ211114",
+          "score": 0.40179607992049365,
+          "confirmed": false
+        },
+        {
+          "text": "GJ26L1120",
+          "score": 0.405418843635475,
+          "confirmed": false
+        },
+        {
+          "text": "GJ278115",
+          "score": 0.4096774643853229,
+          "confirmed": false
+        },
+        {
+          "text": "GJ269779",
+          "score": 0.34295709749108305,
+          "confirmed": false
+        },
+        {
+          "text": "GJ222114",
+          "score": 0.40545598889744394,
+          "confirmed": false
+        },
+        {
+          "text": "GJ10II1495",
+          "score": 0.6327396966642185,
+          "confirmed": false
+        },
+        {
+          "text": "GJ23887",
+          "score": 0.09015350099003269,
+          "confirmed": false
+        },
+        {
+          "text": "GJ00BO4354",
+          "score": 0.7555227883594309,
+          "confirmed": false
+        },
+        {
+          "text": "GJ00BO4354",
+          "score": 0.7555227883594309,
+          "confirmed": false
+        },
+        {
+          "text": "GJ00BO4354",
+          "score": 0.7147530226062041,
+          "confirmed": true
+        },
+        {
+          "text": "OR40D3341",
+          "score": 0.37164542471215345,
+          "confirmed": false
+        },
+        {
+          "text": "OR40D3341",
+          "score": 0.37164542471215345,
+          "confirmed": false
+        },
+        {
+          "text": "HP5555",
+          "score": 0.1143687627010297,
+          "confirmed": false
+        },
+        {
+          "text": "CT7261",
+          "score": 0.07691370724133369,
+          "confirmed": false
+        },
+        {
+          "text": "GJ977777",
+          "score": 0.38921413590960785,
+          "confirmed": false
+        },
+        {
+          "text": "GJ977777",
+          "score": 0.38921413590960785,
+          "confirmed": false
+        },
+        {
+          "text": "GJ077771",
+          "score": 0.4905092442482866,
+          "confirmed": false
+        },
+        {
+          "text": "GJ22PBT4009",
+          "score": 0.45094780246951366,
+          "confirmed": false
+        },
+        {
+          "text": "UP7771",
+          "score": 0.09302158475406033,
+          "confirmed": false
+        },
+        {
+          "text": "GJ07B7226",
+          "score": 0.3891812641368364,
+          "confirmed": false
+        },
+        {
+          "text": "GJ77TTD1221",
+          "score": 0.2782154583043047,
+          "confirmed": false
+        },
+        {
+          "text": "CG14IUO3131",
+          "score": 0.6717739813357593,
+          "confirmed": false
+        },
+        {
+          "text": "CF7557",
+          "score": 0.12390316521133701,
+          "confirmed": false
+        },
+        {
+          "text": "OD02D2771",
+          "score": 0.2693709195779975,
+          "confirmed": false
+        },
+        {
+          "text": "C4457GJ71",
+          "score": 0.14672095399343277,
+          "confirmed": false
+        },
+        {
+          "text": "MN61AA4411",
+          "score": 0.51319576378251,
+          "confirmed": false
+        },
+        {
+          "text": "GJ27BH877",
+          "score": 0.2578595609240669,
+          "confirmed": false
+        },
+        {
+          "text": "GJ077889",
+          "score": 0.41023325056717513,
+          "confirmed": false
+        },
+        {
+          "text": "26BH4444C",
+          "score": 0.3876796112818228,
+          "confirmed": false
+        },
+        {
+          "text": "GJ027777",
+          "score": 0.28733911932448064,
+          "confirmed": false
+        },
+        {
+          "text": "ES1579",
+          "score": 0.14437290659695926,
+          "confirmed": false
+        }
+      ],
+      "seconds": 755.0,
+      "seconds_per_frame": 1.98,
+      "fps": 0.51,
+      "per_camera": [
+        {
+          "feed_id": "cam06.459fe3",
+          "frames": 119,
+          "vehicles": 0,
+          "plate_boxes": 3,
+          "attached_to_vehicle": 0,
+          "orphaned": 3,
+          "banner_like": 0,
+          "reads": 2,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 192.0,
+            "p25": 192.0,
+            "p50": 192.0,
+            "p75": 290.25,
+            "p90": 349.2,
+            "p95": 368.85,
+            "p99": 384.57,
+            "min": 192.0,
+            "max": 388.5,
+            "n": 3
+          },
+          "lighting": {
+            "NIGHT": 9,
+            "DAY": 22,
+            "DIM": 88
+          }
+        },
+        {
+          "feed_id": "cam07",
+          "frames": 113,
+          "vehicles": 147,
+          "plate_boxes": 9,
+          "attached_to_vehicle": 8,
+          "orphaned": 1,
+          "banner_like": 0,
+          "reads": 19,
+          "reads_confirmed": 1,
+          "plate_width_px": {
+            "p5": 9.85,
+            "p25": 13.89,
+            "p50": 58.52,
+            "p75": 72.0,
+            "p90": 87.33,
+            "p95": 89.35,
+            "p99": 90.97,
+            "min": 9.42,
+            "max": 91.38,
+            "n": 9
+          },
+          "lighting": {
+            "DIM": 113
+          }
+        },
+        {
+          "feed_id": "cam06.d32924",
+          "frames": 150,
+          "vehicles": 69,
+          "plate_boxes": 35,
+          "attached_to_vehicle": 29,
+          "orphaned": 6,
+          "banner_like": 0,
+          "reads": 24,
+          "reads_confirmed": 1,
+          "plate_width_px": {
+            "p5": 8.96,
+            "p25": 25.22,
+            "p50": 40.57,
+            "p75": 64.72,
+            "p90": 75.81,
+            "p95": 85.8,
+            "p99": 101.88,
+            "min": 7.91,
+            "max": 108.0,
+            "n": 35
+          },
+          "lighting": {
+            "DAY": 127,
+            "DIM": 23
+          }
+        }
+      ]
+    }
+  }
+}

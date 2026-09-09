@@ -1,0 +1,1054 @@
+{
+  "generated_at": "2026-09-09T01:16:43.446883+00:00",
+  "feeds": [
+    "cam01.459fe3",
+    "cam02",
+    "cam03",
+    "cam04.459fe3",
+    "cam05",
+    "cam06.459fe3",
+    "cam07",
+    "cam08",
+    "cam09.459fe3",
+    "cam10",
+    "cam11",
+    "cam12.459fe3",
+    "cam13.459fe3",
+    "cam14.459fe3",
+    "cam15",
+    "cam16",
+    "cam17.459fe3",
+    "cam18.459fe3",
+    "cam19",
+    "cam20",
+    "cam21",
+    "cam23",
+    "cam24",
+    "cam25",
+    "cam26",
+    "cam27",
+    "cam28",
+    "cam29",
+    "cam01.d32924",
+    "cam04.d32924",
+    "cam06.d32924",
+    "cam09.d32924",
+    "cam12.d32924",
+    "cam13.d32924",
+    "cam14.d32924",
+    "cam17.d32924",
+    "cam18.d32924"
+  ],
+  "per_camera_frames": 100,
+  "settings": {
+    "imgsz": null,
+    "conf": null
+  },
+  "runs": {
+    "estate_hybrid_paddle_sr_nofloor": {
+      "peak_vram_mb": 478,
+      "weights": "runs/plate/B_highres_960/weights/best.pt",
+      "ocr_engines": [
+        "paddle"
+      ],
+      "frame_weights": "D:/ANPR/models/plate_detector.pt",
+      "min_plate_width": 0.0,
+      "totals": {
+        "frames": 3244,
+        "vehicles": 3795,
+        "plate_boxes": 1961,
+        "pass_roi": 1113,
+        "attached_to_vehicle": 1283,
+        "pass_frame": 848,
+        "orphaned": 678,
+        "prior_bands": 1892,
+        "reads": 21,
+        "banner_like": 2
+      },
+      "plate_width_px": {
+        "p5": 5.32,
+        "p25": 8.78,
+        "p50": 21.6,
+        "p75": 52.22,
+        "p90": 943.5,
+        "p95": 948.0,
+        "p99": 950.25,
+        "min": 2.07,
+        "max": 958.5,
+        "n": 1961
+      },
+      "reads": [
+        {
+          "text": "JANPATHTCSIMS10PTZ2",
+          "score": 0.20779904840090807,
+          "confirmed": false
+        },
+        {
+          "text": "GJ10TY1194",
+          "score": 0.979746271715653,
+          "confirmed": false
+        },
+        {
+          "text": "C110111000",
+          "score": 0.1308172255754471,
+          "confirmed": false
+        },
+        {
+          "text": "CO9000",
+          "score": 0.0991997055709362,
+          "confirmed": false
+        },
+        {
+          "text": "GJ06OO2415",
+          "score": 0.8814316743808094,
+          "confirmed": false
+        },
+        {
+          "text": "GI03HR4879",
+          "score": 0.10122292834408415,
+          "confirmed": false
+        },
+        {
+          "text": "G07000",
+          "score": 0.18357631862163543,
+          "confirmed": false
+        },
+        {
+          "text": "1623879",
+          "score": 0.19916960933433123,
+          "confirmed": false
+        },
+        {
+          "text": "GD035R1879",
+          "score": 0.22345417141914367,
+          "confirmed": false
+        },
+        {
+          "text": "623879",
+          "score": 0.2312382792802377,
+          "confirmed": false
+        },
+        {
+          "text": "ST10PESTOP",
+          "score": 0.201178503036499,
+          "confirmed": false
+        },
+        {
+          "text": "STOPSTOP",
+          "score": 0.26838525374289485,
+          "confirmed": false
+        },
+        {
+          "text": "P2RLVD",
+          "score": 0.33719225525856017,
+          "confirmed": false
+        },
+        {
+          "text": "TS71ONR2217",
+          "score": 0.4203352242972087,
+          "confirmed": false
+        },
+        {
+          "text": "TATIO2R2T",
+          "score": 0.16209631423243615,
+          "confirmed": false
+        },
+        {
+          "text": "PLV823",
+          "score": 0.12754322551190853,
+          "confirmed": false
+        },
+        {
+          "text": "PLV823",
+          "score": 0.12754322551190853,
+          "confirmed": false
+        },
+        {
+          "text": "G6JMUYAN",
+          "score": 0.08952289294900773,
+          "confirmed": false
+        },
+        {
+          "text": "TGIYIU03133",
+          "score": 0.23284662812948226,
+          "confirmed": false
+        },
+        {
+          "text": "EYUEU33",
+          "score": 0.14737669378519058,
+          "confirmed": false
+        },
+        {
+          "text": "CF13134",
+          "score": 0.10513615496456623,
+          "confirmed": false
+        }
+      ],
+      "seconds": 2128.5,
+      "seconds_per_frame": 0.66,
+      "fps": 1.52,
+      "per_camera": [
+        {
+          "feed_id": "cam01.459fe3",
+          "frames": 100,
+          "vehicles": 439,
+          "plate_boxes": 414,
+          "attached_to_vehicle": 308,
+          "orphaned": 106,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 6.59,
+            "p25": 8.38,
+            "p50": 10.86,
+            "p75": 24.0,
+            "p90": 36.0,
+            "p95": 47.02,
+            "p99": 87.0,
+            "min": 2.07,
+            "max": 90.0,
+            "n": 414
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam02",
+          "frames": 100,
+          "vehicles": 274,
+          "plate_boxes": 202,
+          "attached_to_vehicle": 88,
+          "orphaned": 114,
+          "banner_like": 0,
+          "reads": 1,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 6.45,
+            "p25": 11.55,
+            "p50": 31.88,
+            "p75": 948.0,
+            "p90": 949.5,
+            "p95": 949.5,
+            "p99": 949.5,
+            "min": 2.8,
+            "max": 950.25,
+            "n": 202
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam03",
+          "frames": 100,
+          "vehicles": 32,
+          "plate_boxes": 19,
+          "attached_to_vehicle": 10,
+          "orphaned": 9,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 15.04,
+            "p25": 20.0,
+            "p50": 27.83,
+            "p75": 32.43,
+            "p90": 36.4,
+            "p95": 38.2,
+            "p99": 39.64,
+            "min": 6.4,
+            "max": 40.0,
+            "n": 19
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam04.459fe3",
+          "frames": 100,
+          "vehicles": 115,
+          "plate_boxes": 70,
+          "attached_to_vehicle": 55,
+          "orphaned": 15,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 5.1,
+            "p25": 6.62,
+            "p50": 8.51,
+            "p75": 18.24,
+            "p90": 27.0,
+            "p95": 32.53,
+            "p99": 67.54,
+            "min": 3.84,
+            "max": 96.0,
+            "n": 70
+          },
+          "lighting": {
+            "DAY": 81,
+            "DIM": 19
+          }
+        },
+        {
+          "feed_id": "cam05",
+          "frames": 100,
+          "vehicles": 190,
+          "plate_boxes": 133,
+          "attached_to_vehicle": 70,
+          "orphaned": 63,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 6.65,
+            "p25": 12.56,
+            "p50": 26.25,
+            "p75": 34.5,
+            "p90": 42.75,
+            "p95": 48.3,
+            "p99": 53.57,
+            "min": 3.55,
+            "max": 66.0,
+            "n": 133
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam06.459fe3",
+          "frames": 100,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DIM": 79,
+            "DAY": 17,
+            "NIGHT": 4
+          }
+        },
+        {
+          "feed_id": "cam07",
+          "frames": 100,
+          "vehicles": 136,
+          "plate_boxes": 10,
+          "attached_to_vehicle": 9,
+          "orphaned": 1,
+          "banner_like": 0,
+          "reads": 2,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 9.9,
+            "p25": 19.04,
+            "p50": 39.52,
+            "p75": 58.52,
+            "p90": 86.82,
+            "p95": 89.1,
+            "p99": 90.92,
+            "min": 9.42,
+            "max": 91.38,
+            "n": 10
+          },
+          "lighting": {
+            "DIM": 100
+          }
+        },
+        {
+          "feed_id": "cam08",
+          "frames": 11,
+          "vehicles": 2,
+          "plate_boxes": 4,
+          "attached_to_vehicle": 0,
+          "orphaned": 4,
+          "banner_like": 0,
+          "reads": 1,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 31.5,
+            "p25": 31.5,
+            "p50": 31.5,
+            "p75": 36.0,
+            "p90": 44.1,
+            "p95": 46.8,
+            "p99": 48.96,
+            "min": 31.5,
+            "max": 49.5,
+            "n": 4
+          },
+          "lighting": {
+            "DAY": 11
+          }
+        },
+        {
+          "feed_id": "cam09.459fe3",
+          "frames": 100,
+          "vehicles": 37,
+          "plate_boxes": 4,
+          "attached_to_vehicle": 3,
+          "orphaned": 1,
+          "banner_like": 0,
+          "reads": 1,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 43.61,
+            "p25": 56.05,
+            "p50": 70.7,
+            "p75": 90.35,
+            "p90": 108.69,
+            "p95": 114.81,
+            "p99": 119.7,
+            "min": 40.5,
+            "max": 120.92,
+            "n": 4
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam10",
+          "frames": 56,
+          "vehicles": 210,
+          "plate_boxes": 132,
+          "attached_to_vehicle": 130,
+          "orphaned": 2,
+          "banner_like": 0,
+          "reads": 5,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 9.5,
+            "p25": 16.64,
+            "p50": 42.93,
+            "p75": 52.43,
+            "p90": 52.66,
+            "p95": 53.52,
+            "p99": 65.91,
+            "min": 5.4,
+            "max": 66.0,
+            "n": 132
+          },
+          "lighting": {
+            "DAY": 56
+          }
+        },
+        {
+          "feed_id": "cam11",
+          "frames": 46,
+          "vehicles": 5,
+          "plate_boxes": 8,
+          "attached_to_vehicle": 3,
+          "orphaned": 5,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 30.0,
+            "p25": 37.88,
+            "p50": 41.25,
+            "p75": 48.75,
+            "p90": 60.0,
+            "p95": 60.0,
+            "p99": 60.0,
+            "min": 30.0,
+            "max": 60.0,
+            "n": 8
+          },
+          "lighting": {
+            "DAY": 46
+          }
+        },
+        {
+          "feed_id": "cam12.459fe3",
+          "frames": 100,
+          "vehicles": 12,
+          "plate_boxes": 14,
+          "attached_to_vehicle": 2,
+          "orphaned": 12,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 10.38,
+            "p25": 13.88,
+            "p50": 16.5,
+            "p75": 23.75,
+            "p90": 25.57,
+            "p95": 25.7,
+            "p99": 25.7,
+            "min": 10.38,
+            "max": 25.7,
+            "n": 14
+          },
+          "lighting": {
+            "DAY": 92,
+            "DIM": 8
+          }
+        },
+        {
+          "feed_id": "cam13.459fe3",
+          "frames": 100,
+          "vehicles": 210,
+          "plate_boxes": 250,
+          "attached_to_vehicle": 234,
+          "orphaned": 16,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 4.33,
+            "p25": 5.57,
+            "p50": 8.15,
+            "p75": 14.34,
+            "p90": 30.09,
+            "p95": 51.92,
+            "p99": 72.5,
+            "min": 3.58,
+            "max": 100.96,
+            "n": 250
+          },
+          "lighting": {
+            "DAY": 95,
+            "DIM": 5
+          }
+        },
+        {
+          "feed_id": "cam14.459fe3",
+          "frames": 100,
+          "vehicles": 307,
+          "plate_boxes": 115,
+          "attached_to_vehicle": 54,
+          "orphaned": 61,
+          "banner_like": 0,
+          "reads": 2,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 9.4,
+            "p25": 20.07,
+            "p50": 42.0,
+            "p75": 939.38,
+            "p90": 957.45,
+            "p95": 958.5,
+            "p99": 958.5,
+            "min": 4.89,
+            "max": 958.5,
+            "n": 115
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam15",
+          "frames": 100,
+          "vehicles": 7,
+          "plate_boxes": 81,
+          "attached_to_vehicle": 1,
+          "orphaned": 80,
+          "banner_like": 2,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 939.0,
+            "p25": 947.25,
+            "p50": 948.0,
+            "p75": 948.75,
+            "p90": 949.5,
+            "p95": 950.25,
+            "p99": 950.7,
+            "min": 49.93,
+            "max": 952.5,
+            "n": 81
+          },
+          "lighting": {
+            "NIGHT": 52,
+            "DIM": 41,
+            "DAY": 7
+          }
+        },
+        {
+          "feed_id": "cam16",
+          "frames": 100,
+          "vehicles": 159,
+          "plate_boxes": 89,
+          "attached_to_vehicle": 40,
+          "orphaned": 49,
+          "banner_like": 0,
+          "reads": 3,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 6.13,
+            "p25": 15.21,
+            "p50": 51.0,
+            "p75": 52.5,
+            "p90": 52.5,
+            "p95": 52.5,
+            "p99": 54.0,
+            "min": 2.23,
+            "max": 54.0,
+            "n": 89
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam17.459fe3",
+          "frames": 100,
+          "vehicles": 170,
+          "plate_boxes": 2,
+          "attached_to_vehicle": 2,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 13.78,
+            "p25": 13.78,
+            "p50": 13.79,
+            "p75": 13.79,
+            "p90": 13.8,
+            "p95": 13.8,
+            "p99": 13.8,
+            "min": 13.78,
+            "max": 13.8,
+            "n": 2
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam18.459fe3",
+          "frames": 100,
+          "vehicles": 715,
+          "plate_boxes": 120,
+          "attached_to_vehicle": 120,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 8.27,
+            "p25": 12.44,
+            "p50": 30.0,
+            "p75": 225.0,
+            "p90": 234.0,
+            "p95": 234.0,
+            "p99": 234.0,
+            "min": 8.27,
+            "max": 234.0,
+            "n": 120
+          },
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam19",
+          "frames": 100,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "NIGHT": 73,
+            "DIM": 27
+          }
+        },
+        {
+          "feed_id": "cam20",
+          "frames": 100,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DIM": 24,
+            "DAY": 76
+          }
+        },
+        {
+          "feed_id": "cam21",
+          "frames": 100,
+          "vehicles": 22,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam23",
+          "frames": 100,
+          "vehicles": 28,
+          "plate_boxes": 4,
+          "attached_to_vehicle": 0,
+          "orphaned": 4,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 28.0,
+            "p25": 28.0,
+            "p50": 28.0,
+            "p75": 28.0,
+            "p90": 28.0,
+            "p95": 28.0,
+            "p99": 28.0,
+            "min": 28.0,
+            "max": 28.0,
+            "n": 4
+          },
+          "lighting": {
+            "DIM": 21,
+            "DAY": 79
+          }
+        },
+        {
+          "feed_id": "cam24",
+          "frames": 100,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DIM": 100
+          }
+        },
+        {
+          "feed_id": "cam25",
+          "frames": 100,
+          "vehicles": 13,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DIM": 10,
+            "DAY": 90
+          }
+        },
+        {
+          "feed_id": "cam26",
+          "frames": 100,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DIM": 24,
+            "DAY": 76
+          }
+        },
+        {
+          "feed_id": "cam27",
+          "frames": 100,
+          "vehicles": 3,
+          "plate_boxes": 28,
+          "attached_to_vehicle": 6,
+          "orphaned": 22,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 3.29,
+            "p25": 36.69,
+            "p50": 56.75,
+            "p75": 58.25,
+            "p90": 59.0,
+            "p95": 59.33,
+            "p99": 59.5,
+            "min": 3.21,
+            "max": 59.5,
+            "n": 28
+          },
+          "lighting": {
+            "DIM": 100
+          }
+        },
+        {
+          "feed_id": "cam28",
+          "frames": 100,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DAY": 100
+          }
+        },
+        {
+          "feed_id": "cam29",
+          "frames": 100,
+          "vehicles": 26,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DAY": 95,
+            "DIM": 5
+          }
+        },
+        {
+          "feed_id": "cam01.d32924",
+          "frames": 100,
+          "vehicles": 338,
+          "plate_boxes": 91,
+          "attached_to_vehicle": 87,
+          "orphaned": 4,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 5.5,
+            "p25": 9.93,
+            "p50": 16.01,
+            "p75": 18.3,
+            "p90": 21.77,
+            "p95": 24.79,
+            "p99": 62.11,
+            "min": 2.32,
+            "max": 162.09,
+            "n": 91
+          },
+          "lighting": {
+            "DIM": 100
+          }
+        },
+        {
+          "feed_id": "cam04.d32924",
+          "frames": 43,
+          "vehicles": 10,
+          "plate_boxes": 6,
+          "attached_to_vehicle": 2,
+          "orphaned": 4,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 4.98,
+            "p25": 8.99,
+            "p50": 21.0,
+            "p75": 21.0,
+            "p90": 21.0,
+            "p95": 21.0,
+            "p99": 21.0,
+            "min": 4.98,
+            "max": 21.0,
+            "n": 6
+          },
+          "lighting": {
+            "DIM": 40,
+            "NIGHT": 3
+          }
+        },
+        {
+          "feed_id": "cam06.d32924",
+          "frames": 100,
+          "vehicles": 49,
+          "plate_boxes": 36,
+          "attached_to_vehicle": 26,
+          "orphaned": 10,
+          "banner_like": 0,
+          "reads": 6,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 16.61,
+            "p25": 35.17,
+            "p50": 38.7,
+            "p75": 61.13,
+            "p90": 69.0,
+            "p95": 72.75,
+            "p99": 107.4,
+            "min": 7.91,
+            "max": 120.0,
+            "n": 36
+          },
+          "lighting": {
+            "DAY": 81,
+            "DIM": 19
+          }
+        },
+        {
+          "feed_id": "cam09.d32924",
+          "frames": 80,
+          "vehicles": 0,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "NIGHT": 80
+          }
+        },
+        {
+          "feed_id": "cam12.d32924",
+          "frames": 50,
+          "vehicles": 6,
+          "plate_boxes": 14,
+          "attached_to_vehicle": 1,
+          "orphaned": 13,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 18.17,
+            "p25": 20.64,
+            "p50": 24.81,
+            "p75": 36.64,
+            "p90": 460.83,
+            "p95": 641.0,
+            "p99": 641.0,
+            "min": 16.62,
+            "max": 641.0,
+            "n": 14
+          },
+          "lighting": {
+            "DAY": 46,
+            "NIGHT": 4
+          }
+        },
+        {
+          "feed_id": "cam13.d32924",
+          "frames": 98,
+          "vehicles": 74,
+          "plate_boxes": 28,
+          "attached_to_vehicle": 24,
+          "orphaned": 4,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 9.86,
+            "p25": 16.77,
+            "p50": 33.01,
+            "p75": 86.34,
+            "p90": 228.15,
+            "p95": 250.12,
+            "p99": 273.33,
+            "min": 8.25,
+            "max": 279.0,
+            "n": 28
+          },
+          "lighting": {
+            "DIM": 93,
+            "DAY": 5
+          }
+        },
+        {
+          "feed_id": "cam14.d32924",
+          "frames": 90,
+          "vehicles": 72,
+          "plate_boxes": 86,
+          "attached_to_vehicle": 8,
+          "orphaned": 78,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 13.38,
+            "p25": 941.44,
+            "p50": 943.88,
+            "p75": 946.5,
+            "p90": 948.0,
+            "p95": 948.56,
+            "p99": 949.73,
+            "min": 6.63,
+            "max": 951.0,
+            "n": 86
+          },
+          "lighting": {
+            "DIM": 57,
+            "DAY": 33
+          }
+        },
+        {
+          "feed_id": "cam17.d32924",
+          "frames": 64,
+          "vehicles": 117,
+          "plate_boxes": 1,
+          "attached_to_vehicle": 0,
+          "orphaned": 1,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {
+            "p5": 72.84,
+            "p25": 72.84,
+            "p50": 72.84,
+            "p75": 72.84,
+            "p90": 72.84,
+            "p95": 72.84,
+            "p99": 72.84,
+            "min": 72.84,
+            "max": 72.84,
+            "n": 1
+          },
+          "lighting": {
+            "DAY": 33,
+            "DIM": 31
+          }
+        },
+        {
+          "feed_id": "cam18.d32924",
+          "frames": 6,
+          "vehicles": 17,
+          "plate_boxes": 0,
+          "attached_to_vehicle": 0,
+          "orphaned": 0,
+          "banner_like": 0,
+          "reads": 0,
+          "reads_confirmed": 0,
+          "plate_width_px": {},
+          "lighting": {
+            "DAY": 6
+          }
+        }
+      ]
+    }
+  }
+}

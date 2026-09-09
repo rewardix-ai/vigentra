@@ -237,6 +237,15 @@ class AnprPipeline:
             if self.osd.is_overlay(box):
                 self._skipped += 1
                 continue
+            # Plate geometry. A box a fifth of the frame wide, or wider than
+            # eight plates, or taller than wide, is a sign or a caption, not
+            # a plate - drop it before it costs an OCR call and a vote.
+            bw, bh = max(1.0, box.w), max(1.0, box.h)
+            if (bw > self.cfg.detect.plate_max_width_frac * width
+                    or bw / bh > self.cfg.detect.plate_max_aspect
+                    or bw / bh < self.cfg.detect.plate_min_aspect):
+                self._skipped += 1
+                continue
             # Is there enough resolution here for a reading to mean
             # anything? Below the floor the characters are fewer than four
             # pixels wide and every read measured on this estate came back
@@ -284,13 +293,17 @@ class AnprPipeline:
             if allow_fallback:
                 fallbacks_left -= 1
             self._ocr_calls += 1
-            if not result.candidates:
-                continue
+            # The track-level reads (logit fusion, multi-frame SR) run even
+            # when this frame's crop read nothing: a plate too small for any
+            # single frame is exactly the case they exist for, and skipping
+            # them on empty frames left them unreachable on short tracks.
             candidates = list(result.candidates)
             fused = self._fused_reading(det.track_id)
             if fused is not None:
                 candidates.append(fused)
             candidates.extend(self._multiframe_readings(det.track_id))
+            if not candidates:
+                continue
             # Classified here rather than inside the OCR layer so the track
             # gets the verdict even when every reading was rejected: a crop
             # that produced no legal plate still told us the plate's shape,

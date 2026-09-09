@@ -39,6 +39,15 @@ class DetectConfig:
     #: while the original full-frame model does the reverse. Empty = use
     #: plate_model for both passes.
     plate_model_frame: str = ""
+    #: Plate geometry gate, applied before OCR. A plate on a 1080p junction
+    #: frame is never a fifth of the frame wide, never eight times wider
+    #: than tall, and never taller than wide; boxes outside these limits are
+    #: shop signs, banners and camera captions. Measured on the estate run
+    #: of 2026-09-09: cameras 14 and 15 boxed 900 px "plates" that were
+    #: signboards, and every one of them cost an OCR call and a wrong read.
+    plate_max_width_frac: float = 0.20
+    plate_max_aspect: float = 8.0
+    plate_min_aspect: float = 1.2
     #: Frames wider than this are downscaled before the detection passes.
     #: The detectors resize to `imgsz` internally anyway, so running them on a
     #: 4K frame only pays for a bigger CPU-side resize - twice per frame.

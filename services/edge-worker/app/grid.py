@@ -408,8 +408,17 @@ class ReconnectingCapture:
     #: Join-time decoder noise on a mixed H.264/H.265 grid is normal.
     GRACE_FAILURES = 25
     #: A PTS that goes backwards by more than this is the documented scene
-    #: loop, not jitter.
-    LOOP_TOLERANCE_MS = 500.0
+    #: loop, not jitter. Measured on the grid (2026-09-10): cam10's H.264
+    #: feed steps its timestamps backwards by one to four seconds every few
+    #: seconds while the picture stays continuous (decoder errors, "co located
+    #: POCs unavailable"). With a 0.5 s tolerance every one of those steps was
+    #: a "loop" and the tracker was reset 26 times in four minutes, so the
+    #: camera never accumulated a plate. A real loop point goes back by the
+    #: length of the recording - minutes - and lands near zero.
+    LOOP_TOLERANCE_MS = 5000.0
+    #: A backwards step that lands this close to the start of the recording
+    #: is a loop even when the jump itself is short (a short clip).
+    LOOP_RESTART_MS = 1500.0
 
     def __init__(self, url: str, *, label: str = "") -> None:
         _force_tcp_transport()
@@ -422,6 +431,8 @@ class ReconnectingCapture:
         self._index = 0
         self._first_pts: float | None = None
         self._frames_seen = 0
+        #: Backwards PTS steps that were jitter, not a loop. Diagnostic.
+        self.jitter_steps = 0
 
     # -- lifecycle ---------------------------------------------------------
 
@@ -487,12 +498,19 @@ class ReconnectingCapture:
             dt_ms: float | None = None
             if self._last_pts is not None:
                 delta = pts_ms - self._last_pts
-                if delta < -self.LOOP_TOLERANCE_MS:
+                if delta < 0 and (-delta > self.LOOP_TOLERANCE_MS or pts_ms < self.LOOP_RESTART_MS):
                     # The feed is a continuous recording that loops; at the
                     # loop point the scene cuts like a camera reboot.
                     discontinuity = True
                     logger.info("[loop] %s scene discontinuity - reset track state", self.label)
                     self._first_pts = pts_ms
+                elif delta < 0:
+                    # Timestamp jitter: the picture is continuous, the clock
+                    # is not. A negative elapsed time is impossible, so the
+                    # frame carries no dt - but the scene did not cut, and
+                    # nothing downstream is reset.
+                    self.jitter_steps += 1
+                    logger.debug("[jitter] %s pts went back %.0f ms", self.label, -delta)
                 else:
                     dt_ms = delta
             else:

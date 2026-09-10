@@ -180,7 +180,7 @@ def main() -> int:
         print(f"           tracks {r['tracks_total']}  with plate {r['tracks_with_plate_box']}  read {r['tracks_read']}  "
               f"CONFIRMED {r['tracks_confirmed']}: {r['confirmed_plates']}")
         for t in [t for t in r["tracks"] if t["text"]][:12]:
-            print(f"             track {t['track']:<6} obs {t['observations']:<3} best {t['best_plate_width_px']:>6} px  "
+            print(f"             track {t['track']:<6} obs {t['observations']:<3} best {str(t['best_plate_width_px']):>6} px  "
                   f"{t['text']:<12} score {t['score']:.2f} margin {t['margin']:.2f} {'CONFIRMED' if t['confirmed'] else ''}")
     print(f"\nWritten: {out}")
     return 0

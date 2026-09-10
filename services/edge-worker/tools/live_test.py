@@ -46,6 +46,22 @@ def load_env(path: Path) -> None:
         os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+def _snapshot_tracks(pipeline) -> list[dict]:
+    """Every track the pipeline currently holds, as report rows."""
+    rows = []
+    for tc in pipeline.tracks.all_tracks():
+        v = tc.verdict
+        sizes = pipeline.readability.tracks.get(tc.track_id)
+        rows.append({
+            "track": tc.track_id, "observations": v.observations,
+            "best_plate_width_px": round(sizes.best_width, 1) if sizes else None,
+            "crops": sizes.crops if sizes else 0,
+            "text": v.text, "score": round(float(v.score), 3), "confirmed": bool(v.confirmed),
+            "valid": bool(v.valid), "margin": round(float(v.margin), 3),
+        })
+    return rows
+
+
 def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride: int) -> dict:
     import cv2  # noqa: F401  (transport option is set by app.grid before capture)
     from app import grid
@@ -64,7 +80,8 @@ def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride:
     log.info("camera %s via %s", camera_id, capture.label.split(" ")[0])
 
     deadline = time.time() + minutes * 60
-    frames = processed = 0
+    frames = processed = resets = 0
+    harvested: list[dict] = []   # tracks from before each loop-point reset
     widths: list[float] = []
     per_frame_plates = Counter()
     events = []
@@ -72,7 +89,11 @@ def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride:
     for frame in capture.frames():
         frames += 1
         if frame.discontinuity:
+            # The feed looped: the pipeline forgets everything, as it must
+            # (the scene cut). The report must not - keep what was read.
+            harvested.extend(_snapshot_tracks(pipeline))
             pipeline.reset()
+            resets += 1
         if frames % frame_stride:
             if time.time() > deadline:
                 break
@@ -100,17 +121,7 @@ def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride:
     except Exception:                                    # noqa: BLE001
         pass
 
-    tracks = []
-    for tc in pipeline.tracks.all_tracks():
-        v = tc.verdict
-        sizes = pipeline.readability.tracks.get(tc.track_id)
-        tracks.append({
-            "track": tc.track_id, "observations": v.observations,
-            "best_plate_width_px": round(sizes.best_width, 1) if sizes else None,
-            "crops": sizes.crops if sizes else 0,
-            "text": v.text, "score": round(float(v.score), 3), "confirmed": bool(v.confirmed),
-            "valid": bool(v.valid), "margin": round(float(v.margin), 3),
-        })
+    tracks = harvested + _snapshot_tracks(pipeline)
     tracks.sort(key=lambda t: (-int(t["confirmed"]), -(t["best_plate_width_px"] or 0)))
     elapsed = time.time() - (t_first or time.time())
     widths.sort()
@@ -119,6 +130,7 @@ def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride:
     return {
         "camera": camera_id, "transport": capture.label.split(" ")[0], "camera_list": source,
         "minutes": round(minutes, 1), "frames_received": frames, "frames_processed": processed,
+        "loop_resets": resets, "pts_jitter_steps": getattr(capture, "jitter_steps", 0),
         "processing_fps": round(processed / elapsed, 2) if elapsed > 0 else None,
         "totals": dict(per_frame_plates),
         "plate_width_px": {"p50": pct(0.5), "p90": pct(0.9), "max": pct(1.0), "n": len(widths)},
@@ -174,7 +186,8 @@ def main() -> int:
             print(f"{cam:<10} ERROR {r['error']}")
             continue
         print(f"{cam:<10} {r['transport']:<5} {r['minutes']}min  frames {r['frames_received']} "
-              f"(processed {r['frames_processed']}, {r['processing_fps']} fps)  vehicles/frame-sum {r['totals'].get('vehicles',0)}")
+              f"(processed {r['frames_processed']}, {r['processing_fps']} fps)  vehicles/frame-sum {r['totals'].get('vehicles',0)}  "
+              f"loop resets {r.get('loop_resets', 0)}  pts jitter {r.get('pts_jitter_steps', 0)}")
         print(f"           plate boxes {r['totals'].get('plate_boxes',0)} (attached {r['totals'].get('attached',0)})  "
               f"width p50 {r['plate_width_px']['p50']} p90 {r['plate_width_px']['p90']}")
         print(f"           tracks {r['tracks_total']}  with plate {r['tracks_with_plate_box']}  read {r['tracks_read']}  "

@@ -3,13 +3,17 @@ whether or not the grid is reachable.
 
 Pre-submission checklist (guide, section 4), one test per line:
   RTSP clients force TCP ................... test_rtsp_transport_is_pinned_to_tcp
-  nothing depends on CAP_PROP_FPS/arrival .. test_frame_timing_comes_from_pts_not_fps
+  nothing depends on CAP_PROP_FPS/arrival .. test_measured_fps_is_derived_from_pts_not_declared
+                                             test_frame_timing_comes_from_pts_deltas_not_a_fixed_cadence
                                              test_no_code_path_reads_cap_prop_fps
   inter-frame gaps do not stall ............ test_a_gap_is_not_treated_as_a_disconnect
   reconnect with backoff ................... test_a_real_drop_reconnects_with_backoff
   join-time decoder warnings not fatal ..... test_join_time_decode_failures_are_tolerated
-  scene discontinuity (loop point) ......... test_loop_point_raises_discontinuity
+  scene discontinuity (loop point) ......... test_backwards_pts_raises_discontinuity_and_resets_timing
                                              test_pts_jitter_is_not_a_loop
+  consume only, pace the load .............. test_nothing_is_written_to_disk
+                                             test_module_only_ever_reads
+                                             test_capture_is_released_on_exit
 """
 from __future__ import annotations
 
@@ -86,7 +90,7 @@ def test_rtsp_transport_is_pinned_to_tcp(monkeypatch):
     assert "rtsp_transport;tcp" in grid.os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"]
 
 
-def test_frame_timing_comes_from_pts_not_fps(fake):
+def test_measured_fps_is_derived_from_pts_not_declared(fake):
     FakeCapture.next_script = [0, 40, 100, 180]
     cap = grid.ReconnectingCapture("rtsp://h/stream/cam01")
     frames = _frames(cap, 4)
@@ -143,12 +147,14 @@ def test_a_real_drop_reconnects_with_backoff(fake):
     assert cap.MAX_BACKOFF == 30.0
 
 
-def test_loop_point_raises_discontinuity(fake):
+def test_backwards_pts_raises_discontinuity_and_resets_timing(fake):
     FakeCapture.next_script = [600_000, 600_040, 80, 120]
     cap = grid.ReconnectingCapture("rtsp://h/stream/cam01")
     frames = _frames(cap, 4)
     assert frames[2].discontinuity and frames[2].dt_ms is None
     assert not frames[3].discontinuity and frames[3].dt_ms == 40
+    # Timing restarts at the loop: the rate is measured over the new pass only.
+    assert cap.measured_fps == pytest.approx(1000 / 40)
 
 
 def test_pts_jitter_is_not_a_loop(fake):
@@ -165,3 +171,27 @@ def test_module_only_ever_reads():
     src = Path(grid.__file__).read_text(encoding="utf-8")
     assert not re.search(r'method\s*=\s*"(POST|PUT|DELETE|PATCH)"', src)
     assert "data=urllib.parse.urlencode(form)" in src  # the one POST: sign-in
+
+
+def test_frame_timing_comes_from_pts_deltas_not_a_fixed_cadence(fake):
+    # Irregular delivery: 40, 120, 20 ms. dt is what the stream said, never
+    # 1000/fps.
+    FakeCapture.next_script = [1000, 1040, 1160, 1180]
+    cap = grid.ReconnectingCapture("rtsp://h/stream/cam01")
+    frames = _frames(cap, 4)
+    assert [f.dt_ms for f in frames] == [None, 40.0, 120.0, 20.0]
+    assert [f.pts_ms for f in frames] == [1000, 1040, 1160, 1180]
+
+
+def test_nothing_is_written_to_disk(fake):
+    src = Path(grid.__file__).read_text(encoding="utf-8")
+    assert "imwrite" not in src and "VideoWriter" not in src
+    assert not re.search(r"open\([^)]*['\"]w", src), "the module opens nothing for writing"
+
+
+def test_capture_is_released_on_exit(fake):
+    FakeCapture, _ = fake
+    FakeCapture.next_script = [0, 40]
+    with grid.ReconnectingCapture("rtsp://h/stream/cam01") as cap:
+        next(cap.frames())
+    assert FakeCapture.constructed[-1].released

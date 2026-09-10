@@ -433,6 +433,9 @@ class ReconnectingCapture:
         self._frames_seen = 0
         #: Backwards PTS steps that were jitter, not a loop. Diagnostic.
         self.jitter_steps = 0
+        #: Frames since timing last restarted (connect or loop point); the
+        #: denominator of measured_fps, which must not span a loop.
+        self._frames_in_pass = 0
 
     # -- lifecycle ---------------------------------------------------------
 
@@ -502,8 +505,10 @@ class ReconnectingCapture:
                     # The feed is a continuous recording that loops; at the
                     # loop point the scene cuts like a camera reboot.
                     discontinuity = True
-                    logger.info("[loop] %s scene discontinuity - reset track state", self.label)
+                    logger.info("[loop] %s scene discontinuity (pts %.1fs -> %.1fs) - reset track state",
+                                self.label, self._last_pts / 1000.0, pts_ms / 1000.0)
                     self._first_pts = pts_ms
+                    self._frames_in_pass = 0
                 elif delta < 0:
                     # Timestamp jitter: the picture is continuous, the clock
                     # is not. A negative elapsed time is impossible, so the
@@ -519,6 +524,7 @@ class ReconnectingCapture:
             self._last_pts = pts_ms
             self._index += 1
             self._frames_seen += 1
+            self._frames_in_pass += 1
 
             yield Frame(
                 index=self._index,
@@ -539,12 +545,12 @@ class ReconnectingCapture:
         pixels-per-frame into speed or dwell time produces confidently wrong
         numbers. This is the only frame rate this module will report.
         """
-        if self._first_pts is None or self._last_pts is None or self._frames_seen < 2:
+        if self._first_pts is None or self._last_pts is None or self._frames_in_pass < 2:
             return None
         span_ms = self._last_pts - self._first_pts
         if span_ms <= 0:
             return None
-        return (self._frames_seen - 1) * 1000.0 / span_ms
+        return (self._frames_in_pass - 1) * 1000.0 / span_ms
 
 
 def open_capture(

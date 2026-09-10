@@ -39,15 +39,15 @@ Two consequences are enforced in code rather than left to convention:
 | **DO** reconnect with backoff | `ReconnectingCapture`, 2 s → 30 s cap, never a tight loop | `test_a_real_drop_reconnects_with_backoff` |
 | **DON'T** treat join-time decode warnings as fatal | `GRACE_FAILURES = 25` bad reads tolerated after a (re)connect | `test_join_time_decode_failures_are_tolerated` |
 | **DON'T** assume a uniform grid | Per-camera codec/resolution/fps from `/api/ingest`; the grid really is mixed (H.264 + H.265, 720p→1440p) | verified against the live catalogue |
-| **DO** expect a scene discontinuity | A backwards PTS jump sets `Frame.discontinuity` and withholds `dt_ms`, so a tracker is never fed an impossible delta | `test_backwards_pts_raises_discontinuity_and_resets_timing` |
+| **DO** expect a scene discontinuity | A backwards PTS jump of more than 5 s (or one landing near the start) sets `Frame.discontinuity` and withholds `dt_ms`; a smaller backwards step is timestamp jitter (cam10's H.264 feed does it every few seconds) and only withholds `dt_ms`, so a tracker is never fed an impossible delta and is never reset for jitter | `test_backwards_pts_raises_discontinuity_and_resets_timing`, `test_pts_jitter_is_not_a_loop` |
 | **DON'T** plan around obtaining copies | Frames are decoded from a live capture; nothing is written to disk | `test_nothing_is_written_to_disk` |
 | **DON'T** publish to the gateway | No write verb appears in a call anywhere in the module | `test_module_only_ever_reads` |
 | **DO** pace your load | Catalogue cached 30 s; one capture per camera, released on exit; dashboard tiles hold a session only while on screen | `test_capture_is_released_on_exit` |
 | **Credentials required** (access model, 2026-09-10) | RTSP and WHEP authenticate every connection with the registered email and access password in the URL, the email's `@` percent-encoded. `with_credentials` injects them from `SENTINEL_GRID_EMAIL`/`SENTINEL_GRID_PASSWORD`; `safe_url` redacts them from every label, log line and report | `tests/test_grid_urls.py` |
 | **Start from the catalogue** | `cameras.json` is read first; when the CDN gateway is unreachable (it has been down or 403 for hours while the RTSP gateway stayed up) `catalogue_or_fallback` composes the documented ids cam01..cam30 with the documented URLs so the worker keeps processing | `test_fallback_catalogue_when_gateway_unreachable` |
 
-Every row above is pinned by a test in `tests/test_grid_capture.py` that runs
-against a fake capture, so the rules hold whether or not the sandbox is
+Every row above is pinned by a test in `services/edge-worker/tests/test_grid_capture.py`
+(URL and credential handling in `tests/test_grid_urls.py`) that runs against a fake capture, so the rules hold whether or not the sandbox is
 reachable. That matters more than it sounds: the grid's media plane fails
 independently of its catalogue, and a rule only checked when the feed is up is
 not really checked at all.

@@ -197,8 +197,10 @@ actively processing" applied literally — thirty permanent sessions for a wall
 someone is scrolling past would be exactly the load abuse it warns about, and
 each one is an audited access besides.
 
-Sign in as `grid.operator` / `Grid@2026`. The role holds `video:live` and
-deliberately **not** `video:playback`.
+Sign in as `joint.control` / `Joint@2026` (statewide across both departments, so
+all thirty cameras) or `traffic.state` / `municipal.state` for one department's
+share. **Fit all on screen** puts every feed on one screen at once; Esc leaves.
+The grid cameras offer live only, **not** playback, whoever is watching.
 
 Regenerate the reference data after re-surveying:
 

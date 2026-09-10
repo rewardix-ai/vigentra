@@ -53,12 +53,19 @@ export function LiveTile({
   reason,
   password,
   onOpenFull,
+  compact = false,
 }: {
   camera: Camera;
   reason: string;
   /** Confirmed once for the wall; each tile still re-authenticates per session. */
   password: string;
   onOpenFull?: (cameraId: string) => void;
+  /**
+   * Wall mode: the tile is pure video that fills the grid cell it is given,
+   * with the camera's name as an overlay instead of a metadata block below.
+   * Used when every camera has to fit on one screen at once.
+   */
+  compact?: boolean;
 }) {
   const [session, setSession] = useState<VideoSession | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -286,14 +293,21 @@ export function LiveTile({
   const loc = camera.location;
 
   return (
-    <div ref={holderRef} className="overflow-hidden rounded border border-line bg-white">
-      <div className="relative aspect-video bg-black">
+    <div
+      ref={holderRef}
+      className={
+        compact
+          ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
+          : "overflow-hidden rounded border border-line bg-white"
+      }
+    >
+      <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
         {session ? (
           <>
             <video
               ref={videoRef}
               key={session.session_id}
-              className="h-full w-full object-cover"
+              className={compact ? "h-full w-full object-contain" : "h-full w-full object-cover"}
               muted
               autoPlay
               playsInline
@@ -315,6 +329,15 @@ export function LiveTile({
         )}
       </div>
 
+      {compact ? (
+        <button
+          className="absolute bottom-1 left-1 max-w-[70%] truncate rounded bg-black/60 px-1.5 py-0.5 text-left text-[11px] font-semibold text-white hover:underline"
+          title={camera.name}
+          onClick={() => onOpenFull?.(camera.camera_id)}
+        >
+          {camera.name}
+        </button>
+      ) : (
       <div className="space-y-1 p-2">
         <div className="flex items-start justify-between gap-2">
           <button
@@ -358,6 +381,7 @@ export function LiveTile({
           </div>
         </dl>
       </div>
+      )}
     </div>
   );
 }

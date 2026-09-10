@@ -730,6 +730,12 @@ class Settings(BaseSettings):
     #: rtsp | hls. Which transport the EDGE WORKER prefers. Browser preview is
     #: always HLS; RTSP is not a browser protocol.
     sentinel_grid_capture_protocol: str = "rtsp"
+    #: Where the edge worker serves live still frames for the wall.
+    #: The grid HLS CDN delivers a 6 s segment in 15-80 s and 403s under
+    #: concurrency, so a browser HLS wall blacks out; the edge worker
+    #: decodes over the fast RTSP gateway and serves JPEG snapshots, which
+    #: this API proxies behind the same permission gate. Empty disables it.
+    edge_snapshot_url: str = ""
     #: UDP is accepted upstream but fails across NAT and most corporate
     #: firewalls, and partial delivery produces corrupt frames that look like
     #: model bugs. Never change this without a very specific reason.

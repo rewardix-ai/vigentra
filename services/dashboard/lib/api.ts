@@ -306,6 +306,15 @@ export const api = {
    */
   streamUrl: (session: VideoSession) => `/api/vigentra${session.stream_url}`,
 
+  /**
+   * The URL of a camera's latest still frame, proxied by the API from the
+   * edge worker. Used by the live wall: the grid's HLS CDN is far too slow to
+   * feed a browser player, so the wall shows server-decoded frames instead.
+   * `t` is a cache-buster; the browser refreshes it on a timer.
+   */
+  snapshotUrl: (cameraId: string, t?: number) =>
+    `${BASE}/api/v1/cameras/${encodeURIComponent(cameraId)}/snapshot${t ? `?t=${t}` : ""}`,
+
   // -- video access requests ---------------------------------------------
   // Metadata federates on its own; footage is asked for. These four calls are
   // that conversation.

@@ -40,6 +40,12 @@ export default function LiveWallPage() {
   // mounted across the switch (same element, different classes), so the
   // sessions already open are kept rather than reopened.
   const [wall, setWall] = useState(false);
+  // Snapshot mode: the wall shows server-decoded still frames instead of HLS.
+  // The grid's HLS CDN is far too slow to feed a browser player (a 6 s segment
+  // takes 15-80 s and 403s under load), so an HLS wall of thirty tiles blacks
+  // out; snapshots come off the fast RTSP path and always render. On by
+  // default because it is the only path that works on this network.
+  const [snapshot, setSnapshot] = useState(true);
   const [viewport, setViewport] = useState({ w: 1920, h: 1080 });
 
   useEffect(() => {
@@ -130,10 +136,22 @@ export default function LiveWallPage() {
               Every tile opens its own watermarked session, audited under this reason. Feeds start
               a few at a time and only while a tile is on screen.
             </p>
+            <label className="flex items-center gap-2 text-2xs text-ink-600">
+              <input
+                type="checkbox"
+                checked={snapshot}
+                onChange={(event) => setSnapshot(event.target.checked)}
+              />
+              Snapshot wall (recommended) — live frames off the fast path, every
+              camera at once. Uncheck for full-motion HLS, which the grid CDN is
+              currently too slow to serve.
+            </label>
             <button
               className="btn btn-primary"
               disabled={
-                reason.trim().length < 5 || password.length === 0 || watchable.length === 0
+                reason.trim().length < 5 ||
+                (!snapshot && password.length === 0) ||
+                watchable.length === 0
               }
               onClick={() => setStarted(true)}
             >
@@ -225,6 +243,7 @@ export default function LiveWallPage() {
                 reason={reason.trim()}
                 password={password}
                 compact={wall}
+                snapshot={snapshot}
                 onOpenFull={(id) => router.push(`/registry/${encodeURIComponent(id)}`)}
               />
             ))}

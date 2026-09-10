@@ -54,12 +54,21 @@ export function LiveTile({
   password,
   onOpenFull,
   compact = false,
+  snapshot = false,
 }: {
   camera: Camera;
   reason: string;
   /** Confirmed once for the wall; each tile still re-authenticates per session. */
   password: string;
   onOpenFull?: (cameraId: string) => void;
+  /**
+   * Snapshot mode: show the camera's latest still frame (proxied from the edge
+   * worker over the fast RTSP path) instead of opening an HLS session. The
+   * grid's HLS CDN cannot feed a browser wall, so this is how the wall shows
+   * every camera at once. No session, no per-frame password: the API gates the
+   * snapshot on the same live permission.
+   */
+  snapshot?: boolean;
   /**
    * Wall mode: the tile is pure video that fills the grid cell it is given,
    * with the camera's name as an overlay instead of a metadata block below.
@@ -292,6 +301,12 @@ export function LiveTile({
 
   const loc = camera.location;
 
+  if (snapshot) {
+    return (
+      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} />
+    );
+  }
+
   return (
     <div
       ref={holderRef}
@@ -414,4 +429,99 @@ function describe(err: unknown): string {
     if (detail?.message) return detail.message;
   }
   return err instanceof Error ? err.message : String(err);
+}
+
+
+/**
+ * A live-wall tile backed by server-decoded still frames.
+ *
+ * It holds no session and plays no video: it points an <img> at the camera's
+ * snapshot endpoint and reloads it on a timer while the tile is on screen. The
+ * edge worker refreshes each camera's frame as its decoder pool comes round,
+ * so a tile shows the most recent frame at all times and never a black
+ * rectangle. Only visible tiles poll, so a scrolled wall does not hammer the
+ * API for cameras nobody is looking at.
+ */
+function SnapshotTile({
+  camera,
+  compact,
+  onOpenFull,
+}: {
+  camera: Camera;
+  compact: boolean;
+  onOpenFull?: (cameraId: string) => void;
+}) {
+  const holderRef = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [src, setSrc] = useState<string | null>(null);
+  const [everLoaded, setEverLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const node = holderRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin: "150px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+    let alive = true;
+    const refresh = () => {
+      if (alive) setSrc(api.snapshotUrl(camera.camera_id, Date.now()));
+    };
+    refresh();
+    const timer = setInterval(refresh, 2500);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [visible, camera.camera_id]);
+
+  return (
+    <div
+      ref={holderRef}
+      className={
+        compact
+          ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
+          : "overflow-hidden rounded border border-line bg-black"
+      }
+    >
+      <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
+        {src && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={camera.name}
+            className={compact ? "h-full w-full object-cover" : "h-full w-full object-cover"}
+            onLoad={() => {
+              setEverLoaded(true);
+              setFailed(false);
+            }}
+            onError={() => setFailed(true)}
+          />
+        )}
+        {!everLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center text-2xs text-ink-500">
+            {visible ? (failed ? "waiting for first frame…" : "connecting…") : "scroll into view"}
+          </div>
+        )}
+        <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-white">
+          <span className={`h-1.5 w-1.5 rounded-full ${everLoaded && !failed ? "animate-pulse bg-bad" : "bg-ink-500"}`} />
+          Live
+        </span>
+        <button
+          className="absolute bottom-1 left-1 max-w-[80%] truncate rounded bg-black/60 px-1.5 py-0.5 text-left text-[11px] font-semibold text-white hover:underline"
+          title={camera.name}
+          onClick={() => onOpenFull?.(camera.camera_id)}
+        >
+          {camera.name}
+        </button>
+      </div>
+    </div>
+  );
 }

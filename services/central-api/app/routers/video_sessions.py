@@ -452,3 +452,70 @@ async def read_stream(
                 "message": "The owning department's system did not deliver media.",
             },
         ) from exc
+
+
+# ---------------------------------------------------------------------------
+# Live wall snapshots
+# ---------------------------------------------------------------------------
+#
+# The grid's HLS CDN delivers a 6-second segment in 15-80 seconds and 403s the
+# moment two requests overlap, so a browser HLS wall of thirty tiles blacks out
+# completely - the network simply cannot feed a player. The edge worker decodes
+# the same cameras over the RTSP gateway, which is real-time and handles every
+# codec (HEVC included, which hls.js cannot play in MPEG-TS at all), and serves
+# each camera's latest frame as a small JPEG. This route proxies those frames
+# behind the very same authorisation the live session uses - role, department,
+# city, zone, camera state and the owner's policy - minus the per-frame
+# password step-up, because a wall refreshes every couple of seconds. The
+# upstream URL and the grid credentials never reach the browser.
+@router.get(
+    "/api/v1/cameras/{camera_id}/snapshot",
+    summary="Latest still frame for the live wall (proxied from the edge worker)",
+    responses={403: {"description": "VIDEO_ACCESS_DENIED"}, 503: {"description": "SNAPSHOT_UNAVAILABLE"}},
+)
+async def camera_snapshot(
+    camera_id: str,
+    settings: SettingsDep,
+    user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    from ..schemas import VideoMode
+    from ..services import video_grants
+
+    camera = await _load_camera(db, camera_id)
+    grant = await video_grants.active_grant_for(db, username=user.username, camera_id=camera.camera_id)
+    decision = video_permissions.evaluate(
+        user, camera, settings, grant=list(grant.allowed_modes) if grant else None
+    )
+    if not decision.permits(VideoMode.LIVE):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "VIDEO_ACCESS_DENIED", "message": decision.reason},
+        )
+
+    external = camera.external_camera_id or ""
+    if not settings.edge_snapshot_url or not external.startswith("GRID-"):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "SNAPSHOT_UNAVAILABLE", "message": "No live-frame source for this camera."},
+        )
+    grid_id = external[len("GRID-"):]
+    import httpx
+
+    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{grid_id}.jpg"
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            upstream = await client.get(url)
+    except Exception as exc:  # noqa: BLE001 - never echo the upstream URL
+        logger.warning("snapshot proxy failed for %s: %s", camera.camera_id, type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "SNAPSHOT_UNAVAILABLE", "message": "The live-frame source did not answer."},
+        ) from exc
+    if upstream.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "SNAPSHOT_UNAVAILABLE", "message": "This camera has no frame yet."},
+        )
+    return Response(content=upstream.content, media_type="image/jpeg",
+                    headers={"Cache-Control": "no-store"})

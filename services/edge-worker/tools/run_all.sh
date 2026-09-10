@@ -22,12 +22,28 @@ step() { echo "=== $(date '+%H:%M:%S') $*" | tee -a "$LOG"; }
 step "waiting for the reader-only replay before the detector starts"
 until grep -q "REPLAY_EXIT=" reports/build_v4_uniform_replay.log 2>/dev/null; do sleep 30; done
 
-step "detector: $DETECTOR from B_highres_960, stage_hard then stage_all, $DET_EPOCHS epochs each, lr0 0.002"
-$PY -u tools/train_plate_detector.py --curriculum "$DATASET" --stages stage_hard,stage_all \
-  --base-model runs/plate/B_highres_960/weights/best.pt --name "$DETECTOR" \
-  --epochs "$DET_EPOCHS" --lr0 0.002 --warmup-epochs 1 --device 0 \
-  >> "reports/training_${DETECTOR}.log" 2>&1
-echo "DETECTOR_TRAIN_EXIT=$?" | tee -a "$LOG"
+# Resume: a finished stage is not repeated. The hard stage leaves
+# runs/plate/<name>_stage_hard/weights/best.pt; the all-tier stage starts
+# from it. A stage that already has weights is skipped.
+HARD_W="runs/plate/${DETECTOR}_stage_hard/weights/best.pt"
+ALL_W=$(ls -d runs/plate/${DETECTOR}_stage_all*/weights/best.pt 2>/dev/null | tail -1)
+if [ -n "$ALL_W" ]; then
+  step "detector: $ALL_W exists - training skipped"
+elif [ -f "$HARD_W" ]; then
+  step "detector: resuming - stage_all from $HARD_W, $DET_EPOCHS epochs, lr0 0.002"
+  $PY -u tools/train_plate_detector.py --curriculum "$DATASET" --stages stage_all \
+    --base-model "$HARD_W" --name "$DETECTOR" \
+    --epochs "$DET_EPOCHS" --lr0 0.002 --warmup-epochs 1 --device 0 \
+    >> "reports/training_${DETECTOR}.log" 2>&1
+  echo "DETECTOR_TRAIN_EXIT=$?" | tee -a "$LOG"
+else
+  step "detector: $DETECTOR from B_highres_960, stage_hard then stage_all, $DET_EPOCHS epochs each, lr0 0.002"
+  $PY -u tools/train_plate_detector.py --curriculum "$DATASET" --stages stage_hard,stage_all \
+    --base-model runs/plate/B_highres_960/weights/best.pt --name "$DETECTOR" \
+    --epochs "$DET_EPOCHS" --lr0 0.002 --warmup-epochs 1 --device 0 \
+    >> "reports/training_${DETECTOR}.log" 2>&1
+  echo "DETECTOR_TRAIN_EXIT=$?" | tee -a "$LOG"
+fi
 RUN=$(ls -d runs/plate/${DETECTOR}_stage_all* 2>/dev/null | tail -1)
 [ -n "$RUN" ] || { step "no detector run dir - training failed"; exit 1; }
 

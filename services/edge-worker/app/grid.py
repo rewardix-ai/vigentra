@@ -49,6 +49,52 @@ CATALOGUE_PATH = "/cameras.json"
 #: worker was probing port 8554 on the CDN name, which never served it.
 RTSP_HOST = os.getenv("SENTINEL_GRID_RTSP_HOST", "103.250.160.189")
 RTSP_PORT = int(os.getenv("SENTINEL_GRID_RTSP_PORT", "8554"))
+#: WebRTC (WHEP) is served beside RTSP on the public IP; the browser preview
+#: path the guide documents. Recorded on the camera so a dashboard can offer
+#: it; the worker itself infers from RTSP.
+WHEP_PORT = int(os.getenv("SENTINEL_GRID_WHEP_PORT", "8889"))
+
+
+def _grid_userinfo() -> str:
+    """The `email:password@` prefix the grid now requires on every RTSP and
+    WHEP connection (Integrator's Guide, access model). The email's "@" must
+    travel percent-encoded, and so must anything else in either value that
+    would split a URL. Empty when no credentials are configured, so the URL
+    is still well-formed and the refusal is the grid's, with its own log."""
+    email = os.getenv("SENTINEL_GRID_EMAIL", "").strip()
+    password = os.getenv("SENTINEL_GRID_PASSWORD", "").strip()
+    if not email or not password:
+        return ""
+    quote = urllib.parse.quote
+    return f"{quote(email, safe='')}:{quote(password, safe='')}@"
+
+
+def with_credentials(url: str) -> str:
+    """Inject the grid credentials into an rtsp:// or http(s):// URL that
+    lacks a userinfo part; a URL that already carries one is returned as is."""
+    userinfo = _grid_userinfo()
+    if not userinfo or not url:
+        return url
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.username:
+        return url
+    netloc = userinfo + parsed.netloc
+    return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+
+
+def safe_url(url: str) -> str:
+    """The URL with any userinfo replaced by ***:***, for logs and reports.
+    Credentials are secrets; nothing that leaves the process may carry them."""
+    try:
+        parsed = urllib.parse.urlsplit(url)
+    except ValueError:
+        return "<unparseable url>"
+    if not parsed.username:
+        return url
+    host = parsed.hostname or ""
+    if parsed.port:
+        host = f"{host}:{parsed.port}"
+    return urllib.parse.urlunsplit((parsed.scheme, f"***:***@{host}", parsed.path, parsed.query, parsed.fragment))
 #: The gateway 302s to http:// without this, which breaks a TLS-only client.
 COOKIE_CHECK = "cookieCheck=1"
 
@@ -104,6 +150,8 @@ class GridCamera:
     declared_fps: float | None
     rtsp_url: str
     hls_url: str
+    #: WebRTC/WHEP endpoint on the public IP (browser low-latency preview).
+    whep_url: str = ""
 
     @property
     def described(self) -> str:
@@ -161,6 +209,47 @@ def _opener(base_url: str, timeout: float) -> urllib.request.OpenerDirector:
     return opener
 
 
+#: The documented camera ids, used only when the catalogue cannot be read.
+FALLBACK_IDS = tuple(
+    x.strip() for x in os.getenv("SENTINEL_GRID_FALLBACK_IDS", ",".join(f"cam{i:02d}" for i in range(1, 31))).split(",")
+    if x.strip()
+)
+
+
+def fallback_catalogue(base_url: str, ids: tuple[str, ...] = FALLBACK_IDS) -> dict[str, GridCamera]:
+    """The catalogue composed from the documented URL patterns alone.
+
+    The guide says to start from cameras.json, and the worker does. But the
+    CDN gateway in front of it has been down for hours at a time while the
+    RTSP gateway on the public IP stayed up (2026-09-09/10), and a worker
+    that cannot list cameras cannot process any. When the catalogue is
+    unreachable this gives it the documented ids (cam01..cam30, or
+    SENTINEL_GRID_FALLBACK_IDS) with the documented stream URLs; every
+    camera is assumed live, and the capture is the liveness test.
+    """
+    cameras: dict[str, GridCamera] = {}
+    for cid in ids:
+        cameras[cid] = GridCamera(
+            id=cid, name=f"Camera {cid}", location="", live=True,
+            codec=None, width=None, height=None, declared_fps=None,
+            rtsp_url=with_credentials(f"rtsp://{RTSP_HOST}:{RTSP_PORT}/stream/{cid}"),
+            hls_url=f"{base_url.rstrip('/')}/{cid}/index.m3u8",
+            whep_url=with_credentials(f"http://{RTSP_HOST}:{WHEP_PORT}/stream/{cid}/whep"),
+        )
+    return cameras
+
+
+def catalogue_or_fallback(base_url: str, timeout: float = 15.0) -> tuple[dict[str, GridCamera], str]:
+    """fetch_catalogue, or the documented ids when the gateway is unreachable.
+    Returns (cameras, source) with source "catalogue" or "fallback"."""
+    try:
+        return fetch_catalogue(base_url, timeout), "catalogue"
+    except Exception as exc:                            # noqa: BLE001 - any transport failure
+        logger.warning("catalogue unreachable (%s: %s); using the documented camera ids",
+                       type(exc).__name__, exc)
+        return fallback_catalogue(base_url), "fallback"
+
+
 def fetch_catalogue(base_url: str, timeout: float = 15.0) -> dict[str, GridCamera]:
     """Read the camera catalogue.
 
@@ -208,9 +297,18 @@ def fetch_catalogue(base_url: str, timeout: float = 15.0) -> dict[str, GridCamer
             hls = f"{base_url.rstrip('/')}/{cid}/index.m3u8"
         elif hls.startswith("/"):
             hls = base_url.rstrip("/") + hls
+        # RTSP and WHEP authenticate every connection with the registered
+        # email and access password in the URL (guide, access model). A
+        # catalogue-supplied URL without credentials gets them injected; one
+        # that already carries them is trusted as given.
         rtsp = str(entry.get("rtsp_url") or "")
         if not rtsp:
             rtsp = f"rtsp://{RTSP_HOST}:{RTSP_PORT}/stream/{cid}"
+        rtsp = with_credentials(rtsp)
+        whep = str(entry.get("whep_url") or "")
+        if not whep:
+            whep = f"http://{RTSP_HOST}:{WHEP_PORT}/stream/{cid}/whep"
+        whep = with_credentials(whep)
         cameras[cid] = GridCamera(
             id=cid,
             name=str(entry.get("name") or f"Camera {cid}"),
@@ -226,6 +324,7 @@ def fetch_catalogue(base_url: str, timeout: float = 15.0) -> dict[str, GridCamer
             declared_fps=(entry.get("fps") or None),
             rtsp_url=rtsp,
             hls_url=hls,
+            whep_url=whep,
         )
     return cameras
 
@@ -315,7 +414,7 @@ class ReconnectingCapture:
     def __init__(self, url: str, *, label: str = "") -> None:
         _force_tcp_transport()
         self.url = url
-        self.label = label or url
+        self.label = label or safe_url(url)
         self._capture: Any = None
         self._backoff = self.MIN_BACKOFF
         self._consecutive_failures = 0

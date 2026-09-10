@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-08T04:29:58.175994+00:00",
+  "updated_at": "2026-09-08T14:20:53.897278+00:00",
   "seed": 0,
   "runs": [
     {
@@ -217,6 +217,41 @@
       "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\D_tiny_oversample",
       "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\D_tiny_oversample\\weights\\best.pt",
       "last_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\D_tiny_oversample\\weights\\last.pt"
+    },
+    {
+      "experiment": "G_uniform_hard_first",
+      "note": "C_smallobj_aug settings, trained stage-by-stage over real + synthetic hard cases",
+      "finished_at": "2026-09-08T14:20:53.897278+00:00",
+      "elapsed_h": 2.7,
+      "model": "runs/plate/G_uniform_hard_first_stage_hard/weights/best.pt",
+      "dataset": "dataset\\v4_uniform",
+      "device": "0",
+      "epochs_per_stage": 4,
+      "overrides": {
+        "lr0": 0.002,
+        "warmup_epochs": 1.0
+      },
+      "stages": [
+        {
+          "stage": "stage_all",
+          "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\G_uniform_hard_first_stage_all",
+          "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\G_uniform_hard_first_stage_all\\weights\\best.pt",
+          "val_metrics": {
+            "mAP50": 0.5964,
+            "mAP50_95": 0.3731,
+            "precision": 0.8566,
+            "recall": 0.4889
+          }
+        }
+      ],
+      "val_metrics": {
+        "mAP50": 0.5964,
+        "mAP50_95": 0.3731,
+        "precision": 0.8566,
+        "recall": 0.4889
+      },
+      "best_checkpoint": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\G_uniform_hard_first_stage_all\\weights\\best.pt",
+      "run_dir": "D:\\CCTV Management\\CCTV_management\\services\\edge-worker\\runs\\plate\\G_uniform_hard_first_stage_all"
     }
   ]
 }

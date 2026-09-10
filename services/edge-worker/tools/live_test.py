@@ -51,7 +51,8 @@ def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride:
     from app import grid
     from anpr.pipeline import AnprPipeline
 
-    catalogue = grid.fetch_catalogue(base_url)
+    catalogue, source = grid.catalogue_or_fallback(base_url)
+    log.info("camera list from the %s (%d cameras)", source, len(catalogue))
     cam = catalogue.get(camera_id)
     if cam is None:
         raise SystemExit(f"{camera_id} is not in the grid catalogue ({len(catalogue)} cameras)")
@@ -116,7 +117,7 @@ def run_camera(camera_id: str, minutes: float, cfg, base_url: str, frame_stride:
     def pct(p):
         return round(widths[min(len(widths) - 1, int(p * len(widths)))], 1) if widths else None
     return {
-        "camera": camera_id, "transport": capture.label.split(" ")[0],
+        "camera": camera_id, "transport": capture.label.split(" ")[0], "camera_list": source,
         "minutes": round(minutes, 1), "frames_received": frames, "frames_processed": processed,
         "processing_fps": round(processed / elapsed, 2) if elapsed > 0 else None,
         "totals": dict(per_frame_plates),

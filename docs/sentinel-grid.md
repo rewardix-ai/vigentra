@@ -43,6 +43,8 @@ Two consequences are enforced in code rather than left to convention:
 | **DON'T** plan around obtaining copies | Frames are decoded from a live capture; nothing is written to disk | `test_nothing_is_written_to_disk` |
 | **DON'T** publish to the gateway | No write verb appears in a call anywhere in the module | `test_module_only_ever_reads` |
 | **DO** pace your load | Catalogue cached 30 s; one capture per camera, released on exit; dashboard tiles hold a session only while on screen | `test_capture_is_released_on_exit` |
+| **Credentials required** (access model, 2026-09-10) | RTSP and WHEP authenticate every connection with the registered email and access password in the URL, the email's `@` percent-encoded. `with_credentials` injects them from `SENTINEL_GRID_EMAIL`/`SENTINEL_GRID_PASSWORD`; `safe_url` redacts them from every label, log line and report | `tests/test_grid_urls.py` |
+| **Start from the catalogue** | `cameras.json` is read first; when the CDN gateway is unreachable (it has been down or 403 for hours while the RTSP gateway stayed up) `catalogue_or_fallback` composes the documented ids cam01..cam30 with the documented URLs so the worker keeps processing | `test_fallback_catalogue_when_gateway_unreachable` |
 
 Every row above is pinned by a test in `tests/test_grid_capture.py` that runs
 against a fake capture, so the rules hold whether or not the sandbox is
@@ -60,8 +62,8 @@ cameras change.
 
 | Protocol | Port | Used for |
 |---|---|---|
-| RTSP | 8554 | edge inference (preferred) |
-| WebRTC/WHEP | 8889 | not used |
+| RTSP | 8554 | edge inference (preferred); `rtsp://<email%40>:<password>@103.250.160.189:8554/stream/<id>` |
+| WebRTC/WHEP | 8889 | recorded per camera (`GridCamera.whep_url`) for a low-latency browser preview; not wired into the dashboard, which stays on HLS |
 | HLS | 443 | **browser preview — the only path that works everywhere** |
 
 Ports 8554 and 8889 are blocked on many networks (they are unreachable from

@@ -24,6 +24,10 @@ COPY services/edge-worker/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY services/edge-worker/app ./app
+# tools/ carries the operator entrypoints (snapshot_wall.py serves the live
+# wall's frames, run by the grid-snapshots service); app.grid is the shared
+# grid client they use.
+COPY services/edge-worker/tools ./tools
 
 RUN useradd --create-home --uid 10004 edge && chown -R edge:edge /app
 USER edge

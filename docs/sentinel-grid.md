@@ -187,9 +187,24 @@ mocks on when demonstrating it.
 
 ### Seeing every camera at once
 
-**Live wall** in the sidebar (`/live`) shows every camera the account may watch,
-with coordinates, view direction, resolution and codec on each tile. A reason is
-required before anything opens, exactly as on the single-camera player.
+**Live wall** in the sidebar (`/live`) shows every camera the account may watch.
+A reason is required before anything opens, exactly as on the single-camera
+player, and **Fit all on screen** puts all thirty on one screen at once.
+
+The wall shows **still frames, not HLS**, and does so deliberately. The grid's
+HLS CDN delivers a 6-second segment in 15-80 seconds and 403s the moment two
+requests overlap (measured 2026-09-10), so a browser HLS wall of thirty tiles
+blacks out completely - the network cannot feed a player, and five of the
+cameras are HEVC, which hls.js cannot decode in MPEG-TS at all. RTSP on the
+public gateway is real-time and decodes every codec, so the `grid-snapshots`
+service (`edge-worker/tools/snapshot_wall.py`) decodes the estate over RTSP
+with a bounded pool - the box holds about six concurrent captures, so it cycles
+- and keeps each camera's latest frame as a small JPEG. central-api proxies
+those at `GET /api/v1/cameras/{id}/snapshot`, behind the **same** live-video
+permission the HLS session uses (role, department, city, zone, camera state,
+owner policy) and never exposing the grid credentials or the upstream URL; the
+tile reloads the image every 2.5 s while it is on screen. A toggle keeps the
+full-motion HLS path for a network fast enough to serve it.
 
 Each tile opens its own session only while it is on screen and gives it back
 when it scrolls away. That is the guide's "open only the cameras you are

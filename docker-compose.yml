@@ -90,6 +90,10 @@ services:
       SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
       SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
       SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+      # The live wall shows still frames the grid-snapshots service decodes
+      # over the fast RTSP gateway; the HLS CDN is far too slow to feed a
+      # browser player. central-api proxies them behind the video permission.
+      EDGE_SNAPSHOT_URL: ${EDGE_SNAPSHOT_URL:-http://grid-snapshots:9100}
       # The gateway is reached over the public internet behind a sign-in, so
       # it does not share the LAN budget the department mocks are held to.
       # Warm it answers in under a second; cold, tens of seconds - and the
@@ -164,6 +168,29 @@ services:
       --cycle-seconds ${EDGE_CYCLE_SECONDS:-120}
     depends_on:
       central-api: { condition: service_healthy }
+
+  # ---------------------------------------------------------------------------
+  # Live-wall frames. The grid HLS CDN delivers a 6 s segment in 15-80 s and
+  # 403s under concurrency, so a browser HLS wall of thirty tiles blacks out.
+  # This decodes the same cameras over the real-time RTSP gateway (every codec,
+  # HEVC included) with a bounded pool and serves each camera's latest frame as
+  # a JPEG, which central-api proxies. On by default because it is the only
+  # path that shows the wall on a normal network; it needs no plate models, so
+  # it uses the light yolo image target and starts fast.
+  # ---------------------------------------------------------------------------
+  grid-snapshots:
+    build:
+      context: .
+      dockerfile: services/edge-worker/Dockerfile
+      target: yolo
+    image: vigentra/edge-worker-yolo:0.2.0
+    restart: unless-stopped
+    environment:
+      SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
+      SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
+      SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+    command: python tools/snapshot_wall.py --pool ${SNAPSHOT_POOL:-6} --port 9100
+    expose: ["9100"]
 
   dashboard:
     build:

@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { LoadingPanel } from "@/components/Shell";
-import { Card, EmptyState, FootageNotice, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
+import { Card, EmptyState, Notice, PageHeader, Pill, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
+import { CAMERA_TYPES, PURPOSES, SOURCE_TYPES } from "@/lib/constants";
 import { download, parseCSV, toCSV } from "@/lib/csv";
 import type {
   AttachmentTypeValue,
@@ -148,23 +149,6 @@ const TEMPLATE_ROWS = [
   ],
 ];
 
-const CAMERA_TYPES: CameraTypeValue[] = [
-  "fixed",
-  "PTZ",
-  "dome",
-  "bullet",
-  "ANPR-capable",
-  "thermal",
-  "other",
-];
-const PURPOSES: PurposeValue[] = [
-  "traffic monitoring",
-  "public safety",
-  "junction monitoring",
-  "highway monitoring",
-  "other",
-];
-const SOURCE_TYPES: SourceTypeValue[] = ["RTSP", "ONVIF", "VMS_API", "NVR", "other"];
 
 /**
  * Headings a camera may be recorded as facing.
@@ -580,7 +564,6 @@ export default function BulkOnboardingPage() {
           validation runs automatically — the batch upload is just a faster way to raise the forms, not a
           shortcut around validation.
         </Notice>
-        <FootageNotice compact custodian={operator?.department} />
 
         <Card title="Upload CSV">
           <div className="px-4 py-4">
@@ -592,6 +575,9 @@ export default function BulkOnboardingPage() {
                 className="text-[13px]"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
+                  // Cleared so re-selecting the same corrected file fires
+                  // `change` again; browsers skip it when the value is unchanged.
+                  event.target.value = "";
                   if (file) void onFile(file);
                 }}
               />

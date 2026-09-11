@@ -164,6 +164,32 @@ def _clean(value: Any) -> str | None:
     return text
 
 
+_OFFLINE_STATUSES = frozenset(
+    {"offline", "down", "dead", "error", "unavailable", "disabled", "stopped"}
+)
+
+
+def _external_id(grid_id: str) -> str:
+    """The registry's id for a grid camera: GRID-007 for 7, GRID-cam07 for cam07."""
+    return f"GRID-{int(grid_id):03d}" if grid_id.isdigit() else f"GRID-{grid_id}"
+
+
+def _is_live(record: dict[str, Any]) -> bool:
+    """Whether the catalogue claims this camera is live.
+
+    An absent flag means "assume live" (the current catalogue is {id, name}
+    and nothing else), but an explicit offline status must win. The old test
+    `status == "live" or record.get("live", True)` defaulted its second half
+    to True, so {"status": "offline"} was published as a live camera.
+    """
+    status = str(record.get("status") or "").lower()
+    if status in _OFFLINE_STATUSES:
+        return False
+    if status == "live":
+        return True
+    return bool(record.get("live", True))
+
+
 class _GridGate:
     """One sign-in, shared by everything that uses this client.
 
@@ -183,6 +209,28 @@ class _GridGate:
         #: generation N and finds the generation already past N knows someone
         #: else has re-authenticated and it need only retry, not log in again.
         self._generation = 0
+        #: The last refused sign-in, and when. While it is recent, callers get
+        #: that failure without another login. The health sweep reads the
+        #: catalogue once per camera, and each read re-signing in turned one
+        #: refusal into ~70 logins a minute - the pattern that keeps a
+        #: gateway's abuse block in place.
+        self._failed_at: float | None = None
+        self._failure: Exception | None = None
+
+    #: Minimum gap between sign-in attempts once the gateway has refused one.
+    RETRY_AFTER_S = 60.0
+
+    def _recent_failure(self) -> Exception | None:
+        if self._failure is not None and self._failed_at is not None:
+            if time.monotonic() - self._failed_at < self.RETRY_AFTER_S:
+                return self._failure
+        return None
+
+    def note_rejected(self, exc: Exception) -> None:
+        """A read was refused even straight after a fresh sign-in."""
+        self._authenticated = False
+        self._failed_at = time.monotonic()
+        self._failure = exc
 
     @property
     def generation(self) -> int:
@@ -196,6 +244,9 @@ class _GridGate:
         async with self._lock:
             if self._authenticated:
                 return
+            recent = self._recent_failure()
+            if recent is not None:
+                raise recent
             await self._login(source_system, credential, identity)
 
     async def reauthenticate(
@@ -211,9 +262,27 @@ class _GridGate:
             if self._generation != seen_generation:
                 return
             self._authenticated = False
+            recent = self._recent_failure()
+            if recent is not None:
+                raise recent
             await self._login(source_system, credential, identity)
 
     async def _login(self, source_system: str, credential: str, identity: str) -> None:
+        try:
+            await self._login_once(source_system, credential, identity)
+        except Exception as exc:
+            self._failed_at = time.monotonic()
+            self._failure = exc
+            raise
+        self._failed_at = None
+        self._failure = None
+
+    async def _login_once(self, source_system: str, credential: str, identity: str) -> None:
+        # Drop the old session first. The success check below looks for a
+        # cookie, and the previous session's cookie still sat in the jar - so a
+        # refused sign-in (200 + the login page, no Set-Cookie) passed as a
+        # success and the "credential was refused" error never surfaced.
+        self._client.cookies.clear()
         # The form grew a second field. It took a password alone and now takes
         # a registered address alongside it; the address is omitted when none
         # is configured, so a gateway still running the older form is unchanged.
@@ -274,7 +343,11 @@ class GridAdapter(SurveillanceAdapter):
     def __init__(self, config: SourceSettings, **kwargs: Any) -> None:
         super().__init__(config, **kwargs)
         self._reference = _load_reference()
-        self._authenticated = False
+        #: The last failed catalogue read. Within the fresh-cache window it is
+        #: answered from here, not the network: the health sweep asks once per
+        #: camera, and a gateway that is refusing us must not be asked 30 times.
+        self._failed_at = 0.0
+        self._failure: AdapterError | None = None
         self._cache: list[dict[str, Any]] | None = None
         self._cache_at = 0.0
         self._cache_ttl = 30.0
@@ -337,6 +410,11 @@ class GridAdapter(SurveillanceAdapter):
         now = time.monotonic()
         if self._cache is not None and (now - self._cache_at) < self._cache_ttl:
             return self._cache
+        if self._failure is not None and (now - self._failed_at) < self._cache_ttl:
+            if self._cache is not None and (now - self._cache_at) < self._stale_ttl:
+                self._stale = True
+                return self._cache
+            raise self._failure
 
         # Two catalogue shapes are accepted: a bare list of {id, name}, and
         # the older {"cameras": [...]} carrying codec, resolution and stream
@@ -362,8 +440,17 @@ class GridAdapter(SurveillanceAdapter):
                     identity=self.config.credential_identity,
                     seen_generation=seen,
                 )
-                payload = await self._request("GET", "/cameras.json", authenticated=True)
+                try:
+                    payload = await self._request("GET", "/cameras.json", authenticated=True)
+                except SourceAuthError as again:
+                    # Refused even straight after a fresh sign-in: the account
+                    # is blocked or the credential is dead. Say so to the gate
+                    # so nobody signs in again for a while.
+                    gate.note_rejected(again)
+                    raise
         except AdapterError as exc:
+            self._failed_at = now
+            self._failure = exc
             # Serve the last good catalogue rather than propagating a blip.
             #
             # The health monitor probes every 20s and the wall re-reads on
@@ -395,13 +482,14 @@ class GridAdapter(SurveillanceAdapter):
         cameras = [c for c in payload if isinstance(c, dict) and c.get("id")]
         self._cache = cameras
         self._cache_at = now
+        self._failure = None
         self._stale = False
         return cameras
 
     def _to_camera(self, record: dict[str, Any]) -> CameraMetadata:
         grid_id = str(record["id"])
         ref = self._reference.get(grid_id, {})
-        external_id = f"GRID-{int(grid_id):03d}" if grid_id.isdigit() else f"GRID-{grid_id}"
+        external_id = _external_id(grid_id)
 
         district = _clean(ref.get("district")) or self.config.default_district
         # The catalogue's own location string is operator shorthand and is
@@ -416,10 +504,7 @@ class GridAdapter(SurveillanceAdapter):
         # "the owner has not enabled video" and empties the live wall over a
         # field that is simply not sent. The capture attempt is the real
         # liveness test and reports its own failure.
-        live = (
-            str(record.get("status") or "").lower() == "live"
-            or bool(record.get("live", True))
-        )
+        live = _is_live(record)
         width, height = _as_int(record.get("width")), _as_int(record.get("height"))
         resolution = f"{width}x{height}" if width and height else None
         codec_raw = str(record.get("codec") or "").lower()
@@ -594,14 +679,9 @@ class GridAdapter(SurveillanceAdapter):
         wanted = external_camera_id.upper()
         for record in await self._catalogue():
             grid_id = str(record["id"])
-            candidate = f"GRID-{int(grid_id):03d}" if grid_id.isdigit() else f"GRID-{grid_id}"
+            candidate = _external_id(grid_id)
             if candidate.upper() == wanted:
-                # Accept either spelling the catalogue has used, so the
-                # adapter does not depend on which endpoint answered.
-                live = (
-                    str(record.get("status") or "").lower() == "live"
-                    or bool(record.get("live", True))
-                )
+                live = _is_live(record)
                 now = datetime.now(timezone.utc)
                 return {
                     "status": CameraStatus.ONLINE if live else CameraStatus.OFFLINE,

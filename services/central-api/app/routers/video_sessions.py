@@ -24,7 +24,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config import DemoUser, Permission, Settings
 from ..database import get_db
 from ..dependencies import (
     AdaptersDep,
@@ -33,7 +32,6 @@ from ..dependencies import (
     authenticate,
     client_ip,
     get_media_client,
-    require_permission,
 )
 from ..models import Camera as CameraRow
 from ..models import VideoSession as VideoSessionRow

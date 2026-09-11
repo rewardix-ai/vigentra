@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { api } from "@/lib/api";
+import { CLASS_COLOUR } from "@/lib/constants";
 import { footageTime } from "@/lib/format";
 import type { Detection } from "@/lib/types";
 
@@ -32,16 +33,6 @@ import type { Detection } from "@/lib/types";
  */
 
 /** Colour per class, so a glance separates people from vehicles. */
-const CLASS_COLOUR: Record<string, string> = {
-  person: "#f59e0b",
-  bicycle: "#a3e635",
-  motorcycle: "#22d3ee",
-  car: "#4ade80",
-  bus: "#c084fc",
-  truck: "#fb7185",
-  "auto-rickshaw": "#fbbf24",
-};
-
 function colourFor(className: string): string {
   return CLASS_COLOUR[className] ?? "#94a3b8";
 }

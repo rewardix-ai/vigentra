@@ -26,7 +26,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config import CENTRAL_OVERSIGHT_ROLES, DemoUser, Settings
+from ..config import CENTRAL_OVERSIGHT_ROLES, DemoUser, Permission, Settings
 from ..models import Camera as CameraRow
 from ..models import VideoAccessGrant
 from .normalization import to_utc
@@ -201,7 +201,10 @@ async def revoke(
     db: AsyncSession, *, grant: VideoAccessGrant, actor: DemoUser, note: str | None = None
 ) -> VideoAccessGrant:
     """Withdraw a live grant. The owning unit, or the requester themselves."""
-    owns = actor.may_access_department(grant.owning_department)
+    # The owning unit's side is the same test decide() applies - scope, not an
+    # oversight role, AND the grant permission. Scope alone let any statewide
+    # account (auditor, health monitor) revoke another unit's live grant.
+    owns = actor.can(Permission.VIDEO_GRANT_ACCESS) and _owns_camera(actor, grant.owning_department)
     if not owns and actor.username != grant.requested_by:
         raise GrantError("Only the owning unit or the requester may revoke this grant.")
     if grant.status not in (GRANTED, REQUESTED):
@@ -227,7 +230,10 @@ async def visible_grants(
     out = []
     for grant in rows:
         mine = grant.requested_by == user.username
-        ours = user.may_access_department(grant.owning_department)
+        # Requests against "our" unit are for the people who decide them;
+        # department scope alone showed every unit's requests and reasons to
+        # any statewide account.
+        ours = user.can(Permission.VIDEO_GRANT_ACCESS) and _owns_camera(user, grant.owning_department)
         if not (mine or ours):
             continue
         if status and grant.status != status:

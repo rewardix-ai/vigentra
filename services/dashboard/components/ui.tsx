@@ -402,54 +402,27 @@ export function FootageNotice({
 }) {
   const owner = custodian ?? "the owning department";
 
-  let headline = "Footage stays with the department that owns the camera";
-  let body: ReactNode = (
-    <>
-      Vigentra federates camera <strong>metadata</strong>. Video is never copied here: a
-      permitted session is brokered from {owner}&rsquo;s own CCTV/VMS environment, watermarked,
-      time-limited and recorded in the audit log.
-    </>
-  );
+  let headline = `Video is managed by ${owner}`;
+  let body: ReactNode = <>Viewing sessions are time-limited and recorded in the audit log.</>;
 
   switch (state) {
     case "live_and_playback":
     case "live_only":
     case "playback_only":
       headline = "You may view this camera";
-      body = (
-        <>
-          Sessions are short, watermarked with your username and the time, and written to the
-          audit log. {owner} can withdraw this at any point.
-        </>
-      );
+      body = <>Sessions are watermarked with your username and recorded in the audit log.</>;
       break;
     case "needs_unit_approval":
-      headline = `Ask ${owner} for footage`;
-      body = (
-        <>
-          You can see this camera&rsquo;s record because the registry is shared across
-          departments. Watching it is {owner}&rsquo;s decision, so raise a request saying which
-          case it is for. Grants name one officer, expire on their own, and can be revoked.
-        </>
-      );
+      headline = `Request access from ${owner}`;
+      body = <>Raise a request with the case it&rsquo;s for. Approved access is personal and time-limited.</>;
       break;
     case "not_enabled_by_owner":
-      headline = "This camera is metadata-only";
-      body = (
-        <>
-          {owner} has not enabled brokered video for this camera. No role in Vigentra can
-          override that, and there is nothing to request.
-        </>
-      );
+      headline = "Video isn't available for this camera";
+      body = <>{owner} hasn&rsquo;t enabled video for this camera.</>;
       break;
     case "camera_unavailable":
-      headline = "No footage while the camera is unavailable";
-      body = (
-        <>
-          The camera is suspended, decommissioned or offline. Its record stays in the registry so
-          the asset is not lost, but there is no feed to broker.
-        </>
-      );
+      headline = "Camera unavailable";
+      body = <>The camera is suspended, decommissioned or offline.</>;
       break;
     default:
       break;

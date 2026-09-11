@@ -390,10 +390,21 @@ def _resolve_hls_target(reference: str, sub_path: str | None) -> str:
         raise HTTPExceptionLike("Stream sub-path may not traverse upwards")
 
     target = urljoin(reference, sub_path)
-    ref_host = urlparse(reference).netloc
-    if urlparse(target).netloc != ref_host:
+    ref, dest = urlparse(reference), urlparse(target)
+    if dest.netloc != ref.netloc:
         raise HTTPExceptionLike("Stream sub-path may not leave the source host")
-    return target
+    # Same host is not enough. Every grid camera lives on one host
+    # (/cam01/index.m3u8, /cam07/index.m3u8), so a host check alone let a
+    # session opened for one camera read any other camera's playlist and
+    # segments through the signed-in client. Stay inside the manifest's own
+    # directory - with one exception, a host-root key file such as the grid's
+    # URI="/enc.key", which decryption needs.
+    manifest_dir = ref.path.rsplit("/", 1)[0] + "/"
+    if dest.path.startswith(manifest_dir):
+        return target
+    if dest.path.count("/") == 1 and dest.path.lower().endswith(".key"):
+        return target
+    raise HTTPExceptionLike("Stream sub-path may not leave this camera's stream")
 
 
 class HTTPExceptionLike(Exception):

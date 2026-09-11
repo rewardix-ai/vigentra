@@ -47,9 +47,18 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY services/edge-worker/requirements-yolo.txt ./requirements-yolo.txt
-# CPU-only torch first, so the default CUDA wheels are not pulled.
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+# CPU-only torch first, so the default CUDA wheels are not pulled - and
+# torchvision from the SAME index in the same step. Left to ultralytics it comes
+# from PyPI, built against a different torch, and its compiled ops fail to
+# register: every inference dies with "operator torchvision::nms does not exist".
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
  && pip install --no-cache-dir -r requirements-yolo.txt
+# ultralytics depends on the desktop opencv-python, which lands beside the
+# headless build and wins the import - and it needs X11 libraries (libxcb) this
+# slim image does not have, so `import cv2` fails and every capture dies. Keep
+# only the pinned headless build, as the anpr stage below does for contrib.
+RUN pip uninstall -y opencv-python \
+ && pip install --no-cache-dir --force-reinstall --no-deps "opencv-python-headless>=4.10,<5.0"
 
 # Weights are NOT baked in. Mount them at /app/weights, or set
 # YOLO_ALLOW_DOWNLOAD=true to let Ultralytics fetch them on first load.

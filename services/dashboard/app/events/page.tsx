@@ -88,7 +88,7 @@ export default function EventsPage() {
     <>
       <PageHeader
         title="Federated events"
-        subtitle="Generic device and motion events from every department, normalised into one stream."
+        subtitle="Device and motion events from every department."
         actions={
           <>
             <button className="btn" onClick={() => load({ refresh: true })} disabled={busy}>
@@ -100,12 +100,6 @@ export default function EventsPage() {
 
       <div className="space-y-3">
         {error && <Notice tone="bad">{error}</Notice>}
-
-        <Notice tone="info" title="What lives here">
-          Module 1 recognises motion, line-crossing, tamper and device-health events. There are no
-          ANPR, plate, vehicle or identity fields — future detection modules extend the same
-          record, they do not replace it. Every event carries provenance back to its source.
-        </Notice>
 
         {/* Filters */}
         <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">

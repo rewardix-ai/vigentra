@@ -17,16 +17,6 @@ const dateTime = new Intl.DateTimeFormat("en-IN", {
   hour12: false,
 });
 
-const dateTimeSeconds = new Intl.DateTimeFormat("en-IN", {
-  timeZone: DISPLAY_TIMEZONE,
-  day: "2-digit",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-});
-
 const dateOnly = new Intl.DateTimeFormat("en-IN", {
   timeZone: DISPLAY_TIMEZONE,
   day: "2-digit",
@@ -39,13 +29,6 @@ export function ist(value: string | null | undefined): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "—";
   return `${dateTime.format(parsed)} IST`;
-}
-
-export function istPrecise(value: string | null | undefined): string {
-  if (!value) return "—";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return dateTimeSeconds.format(parsed);
 }
 
 /** A plain calendar date (installation / commissioning), no timezone shift. */
@@ -94,13 +77,6 @@ export function titleise(value: string | null | undefined): string {
   const keep = new Set(["PTZ", "ANPR", "RTSP", "ONVIF", "NVR", "VMS_API"]);
   if (keep.has(value)) return value.replace("_", " ");
   return humanise(value);
-}
-
-export function departmentShort(department: string | null | undefined): string {
-  if (!department) return "—";
-  if (department === "Traffic Police") return "Traffic";
-  if (department === "Municipal Corporation") return "Municipal";
-  return department;
 }
 
 export function orDash(value: unknown): string {

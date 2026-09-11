@@ -15,6 +15,7 @@ import {
   Spinner,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { CATEGORY_TONE } from "@/lib/constants";
 import { ist, relative } from "@/lib/format";
 import type { Alert } from "@/lib/types";
 
@@ -32,14 +33,6 @@ import type { Alert } from "@/lib/types";
  * and is exactly how a vehicle whose plate was read one character wrong gets
  * missed, so the filter to suppress them exists and is off.
  */
-
-const CATEGORY_TONE: Record<string, "ok" | "warn" | "bad" | "idle" | "info"> = {
-  stolen: "bad",
-  wanted: "bad",
-  blacklist: "warn",
-  missing: "info",
-  suspect: "warn",
-};
 
 const REFRESH_MS = 30_000;
 

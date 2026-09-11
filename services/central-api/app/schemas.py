@@ -266,10 +266,6 @@ class InstallationRequestPatch(BaseModel):
     form: InstallationFormPatch
 
 
-class RejectionRequest(BaseModel):
-    reason: str = Field(min_length=5, max_length=500, description="Mandatory - a bare refusal is not auditable")
-
-
 class WithdrawalRequest(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 

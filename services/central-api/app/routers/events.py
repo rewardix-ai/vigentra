@@ -26,7 +26,7 @@ from ..dependencies import AdaptersDep, client_ip, require_permission
 from ..models import Camera as CameraRow, Event as EventRow
 from ..schemas import CorrelationPair, CorrelationResponse, EventOut
 from ..services import audit_service
-from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
+from ..services.audit_service import AuditAction, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
 
@@ -39,41 +39,44 @@ router = APIRouter(prefix="/api/v1/events", tags=["events"])
 # Refresh helpers
 # ---------------------------------------------------------------------------
 
-async def _pull_source(
-    db: AsyncSession, adapter: SurveillanceAdapter, cameras: list[CameraRow]
-) -> int:
-    """Pull the latest events for one department, upsert deterministically.
+async def _fetch_source(
+    adapter: SurveillanceAdapter, cameras: list[CameraRow]
+) -> list:
+    """Pull the latest events for one department. Network only - no DB.
 
     Adapter failures are logged and swallowed so one broken source cannot
     stall the read for the other one.
     """
-    ingested = 0
+    events: list = []
     for camera in cameras:
         if camera.source_system != adapter.source_system:
             continue
         try:
-            events = await adapter.fetch_events(camera.external_camera_id)
+            events.extend(await adapter.fetch_events(camera.external_camera_id))
         except AdapterError as exc:
-            logger.warning(
-                "event pull failed for %s: %s", camera.camera_id, exc
-            )
-            continue
-        for event in events:
-            row = (
-                await db.execute(select(EventRow).where(EventRow.event_id == event.event_id))
-            ).scalar_one_or_none()
-            if row is None:
-                row = EventRow(event_id=event.event_id)
-                db.add(row)
-                ingested += 1
-            row.source_system = event.source_system
-            row.external_event_id = event.external_event_id
-            row.camera_id = event.camera_id
-            row.event_type = event.event_type
-            row.severity = event.severity
-            row.timestamp_utc = to_utc(event.timestamp_utc)  # type: ignore[assignment]
-            row.payload = dict(event.payload)
-            row.provenance = dict(event.provenance)
+            logger.warning("event pull failed for %s: %s", camera.camera_id, exc)
+    return events
+
+
+async def _upsert_events(db: AsyncSession, events: list) -> int:
+    """Upsert deterministically; returns how many rows were new."""
+    ingested = 0
+    for event in events:
+        row = (
+            await db.execute(select(EventRow).where(EventRow.event_id == event.event_id))
+        ).scalar_one_or_none()
+        if row is None:
+            row = EventRow(event_id=event.event_id)
+            db.add(row)
+            ingested += 1
+        row.source_system = event.source_system
+        row.external_event_id = event.external_event_id
+        row.camera_id = event.camera_id
+        row.event_type = event.event_type
+        row.severity = event.severity
+        row.timestamp_utc = to_utc(event.timestamp_utc)  # type: ignore[assignment]
+        row.payload = dict(event.payload)
+        row.provenance = dict(event.provenance)
     return ingested
 
 
@@ -92,7 +95,15 @@ async def _refresh(
             if camera.source_system == source_system
         )
     ]
-    await asyncio.gather(*(_pull_source(db, adapter, list(cameras)) for adapter in permitted))
+    # Fetch concurrently - that is the slow, network-bound part - but write one
+    # source at a time. An AsyncSession is not safe for concurrent use, and two
+    # sources upserting on the request session at once raised
+    # IllegalStateChangeError (HTTP 500) whenever both departments had events.
+    batches = await asyncio.gather(
+        *(_fetch_source(adapter, list(cameras)) for adapter in permitted)
+    )
+    for events in batches:
+        await _upsert_events(db, events)
     await db.commit()
 
 

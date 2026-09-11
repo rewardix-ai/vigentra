@@ -429,6 +429,7 @@ async def acknowledge_alert(
     alert_id: str,
     payload: AlertAcknowledge,
     request: Request,
+    settings: SettingsDep,
     user: DemoUser = Depends(require_permission(Permission.ALERT_ACKNOWLEDGE)),
     db: AsyncSession = Depends(get_db),
 ) -> AlertOut:
@@ -492,7 +493,12 @@ async def acknowledge_alert(
     )
 
     camera = cameras.get(row.camera_id)
-    may_read_plate = user.can(Permission.PLATE_READ)
+    # The same retention horizon list_alerts applies. Without it, acknowledging
+    # an alert older than anpr_plate_retention_days handed back both plates the
+    # list had already withheld.
+    may_read_plate = user.can(Permission.PLATE_READ) and _within_retention(
+        row.timestamp_utc, _plate_horizon(settings)
+    )
     return AlertOut(
         alert_id=row.alert_id,
         watch_plate=row.watch_plate if may_read_plate else None,

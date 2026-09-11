@@ -157,9 +157,6 @@ def get_media_client(request: Request) -> httpx.AsyncClient:
     return client
 
 
-MediaClientDep = Annotated[httpx.AsyncClient, Depends(get_media_client)]
-
-
 def client_ip(request: Request) -> str | None:
     """Best-effort client address for the audit trail."""
     forwarded = request.headers.get("x-forwarded-for")

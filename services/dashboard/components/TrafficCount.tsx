@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { CLASS_COLOUR } from "@/lib/constants";
 import { ist } from "@/lib/format";
 import type { CameraTrafficSummary } from "@/lib/types";
 
@@ -34,16 +35,6 @@ const WINDOWS: { hours: number; label: string }[] = [
 
 /** Vehicles first, biggest first; people and bicycles after. */
 const VEHICLES = new Set(["car", "motorcycle", "bus", "truck", "auto-rickshaw"]);
-
-const CLASS_COLOUR: Record<string, string> = {
-  car: "#4ade80",
-  motorcycle: "#22d3ee",
-  bus: "#c084fc",
-  truck: "#fb7185",
-  "auto-rickshaw": "#fbbf24",
-  person: "#f59e0b",
-  bicycle: "#a3e635",
-};
 
 export function TrafficCount({ cameraId }: { cameraId: string }) {
   const [hours, setHours] = useState(24);

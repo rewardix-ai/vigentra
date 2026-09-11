@@ -13,7 +13,6 @@ import {
   EmptyState,
   FloatInput,
   FloatSelect,
-  FootageNotice,
   HealthPill,
   InstallationPill,
   Notice,
@@ -154,7 +153,7 @@ function Registry() {
     <>
       <PageHeader
         title="Camera registry"
-        subtitle="Every department's cameras in one place. Footage stays with the unit that owns it."
+        subtitle="Every department's cameras in one place."
         actions={
           <>
             <div
@@ -201,7 +200,6 @@ function Registry() {
       />
 
       <div className="space-y-3">
-        {!anyWatchable && <FootageNotice compact />}
         {error && <Notice tone="bad">{error}</Notice>}
 
         {/* Filters */}
@@ -326,14 +324,14 @@ function Registry() {
                       <td>
                         <HealthPill status={camera.health.status} />
                       </td>
-                      <td>
-                        <VideoStatePill state={camera.video_access} />
-                      </td>
                       <td
                         className="whitespace-nowrap text-ink-500"
                         title={ist(camera.vigentra_sync.synced_at_utc)}
                       >
                         {relative(camera.vigentra_sync.synced_at_utc)}
+                      </td>
+                      <td>
+                        <VideoStatePill state={camera.video_access} />
                       </td>
                       <td className="whitespace-nowrap">
                         <div className="flex gap-1.5">
@@ -375,14 +373,7 @@ function Registry() {
           </Card>
         )}
 
-        <p className="text-2xs leading-relaxed text-ink-400">
-          Every field in this table is asset metadata. The <strong>Video</strong> column is the
-          one thing computed for you personally: it says what you may do with that camera&rsquo;s
-          footage right now. <em>Request from owner</em> means the camera belongs to another unit
-          &mdash; open it and ask, with a reason. Every session you open is watermarked and
-          audited. Map tiles courtesy of OpenStreetMap contributors; coordinates are
-          clearly-labelled demonstration values.
-        </p>
+        <p className="text-2xs text-ink-400">Map tiles &copy; OpenStreetMap contributors.</p>
       </div>
     </>
   );

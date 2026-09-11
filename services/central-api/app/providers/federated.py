@@ -3,10 +3,6 @@
 This is the default demo mode. The provider does not open its own connections:
 it delegates to the live adapter registry so there is exactly one place that
 knows each department's dialect, auth scheme and error envelope.
-
-`TrafficVmsProvider` and `MunicipalVmsProvider` are thin single-department
-wrappers over the same machinery, useful when a deployment federates only one
-department or when testing one source in isolation.
 """
 from __future__ import annotations
 
@@ -248,17 +244,3 @@ class FederatedProvider(CameraResourceProvider):
             # Closing it would close the shared pool with it.
             if shared_client is None:
                 await video_adapter.aclose()
-
-
-class TrafficVmsProvider(FederatedProvider):
-    """Traffic Police department system only."""
-
-    name = "traffic_vms_provider"
-    only_sources = ("traffic_vms",)
-
-
-class MunicipalVmsProvider(FederatedProvider):
-    """Municipal Corporation department system only."""
-
-    name = "municipal_vms_provider"
-    only_sources = ("municipal_vms",)

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { api, ApiError } from "@/lib/api";
+import { api, errorMessage } from "@/lib/api";
 import { streamQueue, type Release } from "@/lib/streamQueue";
 import type { Camera, VideoSession } from "@/lib/types";
 
@@ -193,7 +193,7 @@ export function LiveTile({
         setSession(opened);
         setError(null);
       } catch (err) {
-        fail(describe(err));
+        fail(errorMessage(err));
       }
     })();
 
@@ -278,8 +278,11 @@ export function LiveTile({
           if (!data?.fatal || destroyed) return;
           // A fatal hls.js error means this session is finished. Drop it and
           // let the retry path open a fresh one rather than leaving a dead
-          // <video> on the wall.
+          // <video> on the wall. Closing it matters: the open effect returns
+          // early while a session id is still held, so without close() the
+          // retry never happened and the upstream session leaked until unmount.
           releaseSlot();
+          void close();
           setError("Feed stopped");
           setPhase("waiting");
           setTimeout(() => {
@@ -297,7 +300,7 @@ export function LiveTile({
       video.removeEventListener("loadeddata", onPlaying);
       hls?.destroy();
     };
-  }, [session, releaseSlot, clearWatchdog]);
+  }, [session, releaseSlot, clearWatchdog, close]);
 
   const loc = camera.location;
 
@@ -420,15 +423,6 @@ function statusText(
   }
   if (phase === "queued") return "Queued…";
   return error ?? "Opening…";
-}
-
-function describe(err: unknown): string {
-  if (err instanceof ApiError) {
-    const detail = err.detail as { message?: string } | string | undefined;
-    if (typeof detail === "string") return detail;
-    if (detail?.message) return detail.message;
-  }
-  return err instanceof Error ? err.message : String(err);
 }
 
 

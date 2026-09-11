@@ -573,7 +573,6 @@ async def test_playback_beyond_retention_is_refused_with_the_reason(
         json={
             "password": password_for_headers(headers),
             "camera_id": traffic_camera["camera_id"],
-            "password": password_for_headers(headers),
             **_window(hours_ago=(retention + 5) * 24),
         },
     )

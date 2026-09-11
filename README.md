@@ -183,7 +183,7 @@ for any of them.
 
 ## Running the demo
 
-Prerequisites: Docker 24+, Docker Compose v2, ~1.5 GiB of build cache.
+Prerequisites: Docker 24+, Docker Compose v2, ~5 GiB of build cache (the detection image carries CPU PyTorch).
 
 ```bash
 docker compose up --build
@@ -201,14 +201,22 @@ Environment variables you may want to override are documented in
 [`.env.example`](.env.example). Edge-worker and model setup:
 [`docs/yolo-setup.md`](docs/yolo-setup.md).
 
-To run object detection against the registry's cameras from this machine:
+Object detection runs around the clock as part of the stack: two services,
+`detector-traffic` and `detector-municipal`, run YOLO11n on every camera their
+department's AI account may watch, restart on their own, and keep the model
+weights in a Docker volume. Results appear under **Object detections** in the
+dashboard. The live grid tolerates about six concurrent streams per account,
+so the stack is sized to six (live-wall frames 4, detectors 1 each); see the
+header of `docker-compose.yml`. For true 24/7, set Docker Desktop to start at
+login and keep the host from sleeping.
+
+To run detection outside Docker from this machine instead:
 
 ```powershell
 .\scripts\edge-worker.ps1 --all-cameras --forever
 ```
 
-(`./scripts/edge-worker.sh` on macOS/Linux.) Results appear under
-**Object detections** in the dashboard.
+(`./scripts/edge-worker.sh` on macOS/Linux.)
 
 ---
 
@@ -312,6 +320,13 @@ pip install -r services/central-api/requirements.txt pytest pytest-asyncio
 pytest tests
 ```
 
+The edge worker has its own suite. Run it as a separate pytest process: both
+services ship an `app` package, and one interpreter can import only one of them.
+
+```bash
+pytest services/edge-worker/tests
+```
+
 183 tests cover installation onboarding and validation, ownership and
 permission, registration-gated sync, source-outage isolation, canonical
 normalisation, redaction depth, the full video permission matrix, cross-unit
@@ -324,7 +339,7 @@ consensus ANPR engine and frame-quality routing.
 Nine of those run **real YOLO inference** over the bundled CCTV clip. They skip
 automatically unless the analytics extras and weights are installed — see
 [`docs/yolo-setup.md`](docs/yolo-setup.md). Four video-streaming tests need the
-bundled `.mp4` fixtures, which are gitignored; they fail on a fresh clone until
+bundled `.mp4` fixtures, which are gitignored; they skip on a fresh clone until
 those are placed under `data/videos/`.
 
 ---

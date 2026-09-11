@@ -42,6 +42,13 @@ import cv2
 OPEN_TIMEOUT_MS = 25000
 READ_TIMEOUT_MS = 5000
 
+# A slot that decodes nothing - a dead feed, or the gateway refusing the
+# account - waits before opening again, doubling up to five minutes. Retrying
+# at once sent ~60 refused RTSP logins a minute while the account was blocked,
+# which is how a block stays in place.
+FAIL_BACKOFF_MIN_S = 5.0
+FAIL_BACKOFF_MAX_S = 300.0
+
 
 def _open(url: str):
     return cv2.VideoCapture(url, cv2.CAP_FFMPEG,
@@ -118,24 +125,32 @@ class Estate:
 
     def _slot(self, index: int) -> None:
         rot = index
+        backoff = 0.0
         while True:
             gen = self.generation
             if self.mode == "focus":
-                if index < len(self.focus):
-                    self._pump(self.focus[index], hold_s=1e12, gen=gen)
-                else:
+                if index >= len(self.focus):
                     while self.generation == gen:
                         time.sleep(0.2)  # spare slot idles in focus mode
+                    continue
+                cam, hold = self.focus[index], 1e12
             else:
-                cam = self.cameras[rot % len(self.cameras)]
+                cam, hold = self.cameras[rot % len(self.cameras)], self.hold_s
                 rot += self.pool
-                self._pump(cam, hold_s=self.hold_s, gen=gen)
+            if self._pump(cam, hold_s=hold, gen=gen):
+                backoff = 0.0
+                continue
+            backoff = min(max(backoff * 2, FAIL_BACKOFF_MIN_S), FAIL_BACKOFF_MAX_S)
+            deadline = time.time() + backoff
+            while time.time() < deadline and self.generation == gen:
+                time.sleep(0.5)
 
-    def _pump(self, cam: str, hold_s: float, gen: int) -> None:
+    def _pump(self, cam: str, hold_s: float, gen: int) -> bool:
         """Decode `cam` until hold_s elapses or the mode changes, publishing
         every frame. A read timeout means a dead feed returns quickly rather
-        than freezing the slot."""
+        than freezing the slot. Returns whether any frame was decoded."""
         cap = _open(self._url(cam))
+        got_any = False
         try:
             deadline = time.time() + hold_s
             got_at = time.time()
@@ -145,9 +160,11 @@ class Estate:
                 now = time.time()
                 if not ok:
                     if now - got_at > 6.0:
-                        return  # dead feed: free the slot
+                        return got_any  # dead feed: free the slot
+                    time.sleep(0.05)  # a refused open fails instantly; do not spin
                     continue
                 got_at = now
+                got_any = True
                 if self.min_dt and now - last_pub < self.min_dt:
                     continue
                 last_pub = now
@@ -161,6 +178,7 @@ class Estate:
                     with self.lock:
                         self.frames[cam] = data
                         self.updated[cam] = now
+            return got_any
         finally:
             cap.release()
 
@@ -363,6 +381,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pool", type=int, default=6, help="concurrent RTSP decoders (coverage rotation width)")
     ap.add_argument("--port", type=int, default=9100)
+    ap.add_argument("--host", default="127.0.0.1",
+                    help="bind address; 0.0.0.0 in a container, so central-api can reach it over the compose network")
     ap.add_argument("--width", type=int, default=512, help="coverage JPEG width")
     ap.add_argument("--motion-width", type=int, default=640, help="motion JPEG width")
     ap.add_argument("--hold", type=float, default=6.0, help="seconds a coverage slot holds a camera before rotating")
@@ -399,10 +419,10 @@ def main() -> int:
                     hold_s=args.hold, max_fps=args.max_fps)
     estate.start()
     print(f"snapshot wall: {len(cams)} cameras, pool {estate.pool}, motion grid {len(motion)}, "
-          f"on http://127.0.0.1:{args.port}  (coverage / and motion /motion)")
+          f"on http://{args.host}:{args.port}  (coverage / and motion /motion)")
 
     socketserver.ThreadingTCPServer.allow_reuse_address = True
-    srv = socketserver.ThreadingTCPServer(("127.0.0.1", args.port), build_handler(estate, motion, catalogue))
+    srv = socketserver.ThreadingTCPServer((args.host, args.port), build_handler(estate, motion, catalogue))
     srv.daemon_threads = True
     srv.serve_forever()
     return 0

@@ -59,3 +59,11 @@ def test_the_proxy_refuses_to_fetch_elsewhere(broker, hostile):
     """Allowing one leading slash must not have opened a forward proxy."""
     with pytest.raises(broker.HTTPExceptionLike):
         broker._resolve_hls_target(MANIFEST, hostile)
+
+
+@pytest.mark.parametrize("other_camera", ["/cam07/index.m3u8", "/cam07/seg00001.ts", "../cam07/index.m3u8"])
+def test_a_session_cannot_read_another_cameras_stream(broker, other_camera):
+    """Every grid camera shares one host; the host check alone let a cam01
+    session stream cam07 through the signed-in client."""
+    with pytest.raises(broker.HTTPExceptionLike):
+        broker._resolve_hls_target(MANIFEST, other_camera)

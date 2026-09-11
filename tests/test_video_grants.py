@@ -250,3 +250,29 @@ async def test_the_decision_is_audited(api, login, municipal_camera):
     }
     assert "video_access_requested" in actions
     assert "video_access_granted" in actions
+
+
+async def test_an_oversight_account_can_neither_see_nor_revoke_another_units_request(
+    api, login, traffic_camera
+):
+    """Department scope alone let a statewide auditor read every unit's requests
+    and revoke another unit's grant; ownership needs the grant permission."""
+    requester = await login("municipal.operator")
+    grant = await ask(api, requester, traffic_camera["camera_id"])
+
+    auditor = await login("auditor")
+    seen = (await api.get("/api/v1/video-access-requests", headers=auditor)).json()
+    assert grant["grant_id"] not in {g["grant_id"] for g in seen}
+    refused = await api.delete(
+        f"/api/v1/video-access-requests/{grant['grant_id']}", headers=auditor
+    )
+    assert refused.status_code == 403
+
+    # The owning unit still sees it, and the requester can still withdraw it.
+    owner = await login("traffic.state")
+    owners_view = (await api.get("/api/v1/video-access-requests", headers=owner)).json()
+    assert grant["grant_id"] in {g["grant_id"] for g in owners_view}
+    withdrawn = await api.delete(
+        f"/api/v1/video-access-requests/{grant['grant_id']}", headers=requester
+    )
+    assert withdrawn.status_code == 200, withdrawn.text

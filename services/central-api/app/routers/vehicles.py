@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import DemoUser, Permission
 from ..database import get_db
-from ..dependencies import SettingsDep, client_ip, require_permission
+from ..dependencies import client_ip, require_permission
 from ..models import Vehicle
 from ..schemas import VehicleFacets, VehicleOut, VehicleSearchResponse
 from ..services import audit_service, vehicle_service

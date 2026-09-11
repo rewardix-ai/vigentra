@@ -14,6 +14,7 @@ import {
   Spinner,
 } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
+import { CATEGORY_TONE } from "@/lib/constants";
 import { ist, relative } from "@/lib/format";
 import type { WatchCategory, WatchlistEntry } from "@/lib/types";
 
@@ -38,14 +39,6 @@ const CATEGORIES: { value: WatchCategory; label: string; hint: string }[] = [
   { value: "missing", label: "Missing", hint: "Linked to a missing-person case" },
   { value: "suspect", label: "Suspect", hint: "Under investigation — lowest confidence" },
 ];
-
-const CATEGORY_TONE: Record<string, "ok" | "warn" | "bad" | "idle" | "info"> = {
-  stolen: "bad",
-  wanted: "bad",
-  blacklist: "warn",
-  missing: "info",
-  suspect: "warn",
-};
 
 export default function WatchlistPage() {
   const [rows, setRows] = useState<WatchlistEntry[] | null>(null);

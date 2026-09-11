@@ -1,21 +1,59 @@
-# Vigentra Module 1 - metadata-only CCTV registry federation.
+# Vigentra - the whole stack, run with Docker Compose.
 #
-# Four services, each with its own health check so Compose can order start-up
-# correctly:
+#   postgres            registry storage
+#   traffic-vms         Traffic Police department system (mock)        :8001
+#   municipal-vms       Municipal Corporation department system (mock) :8002
+#   central-api         Vigentra middleware                            :8000
+#   grid-snapshots      live-wall frames, decoded over RTSP            (internal)
+#   detector-traffic    24/7 object detection, Traffic cameras
+#   detector-municipal  24/7 object detection, Municipal cameras
+#   dashboard           operator console                               :3000
+#   edge-worker         number-plate reading - only with --profile anpr
 #
-#   postgres        registry storage
-#   traffic-vms     Gujarat Traffic Police department system     :8001
-#   municipal-vms   Municipal Corporation department system      :8002
-#   central-api     Vigentra middleware (metadata-only)          :8000
-#   dashboard       operator console                             :3000
-#
-# Bring the whole stack up with:  docker compose up --build
+# Bring the whole stack up with:  docker compose up -d --build
 # Sign in from http://localhost:3000/login (accounts on that page).
+#
+# The live grid allows about six concurrent streams per account and blocks the
+# account under load. grid-snapshots (4) plus the two detectors (1 each) keeps
+# this stack at six; `--profile anpr` adds a seventh.
 #
 # Turn a department system off during the demo to prove failure isolation:
 #   docker compose stop municipal-vms
 # Turn it back on to see cameras recover:
 #   docker compose start municipal-vms   &&   click "Synchronise metadata"
+
+# Shared by detector-traffic and detector-municipal, which differ only in the
+# account they sign in as (an AI account may ingest only its own department's
+# cameras) and the volume that keeps their model weights.
+x-detector: &detector
+  build:
+    context: .
+    dockerfile: services/edge-worker/Dockerfile
+    target: yolo
+  image: vigentra/edge-worker-yolo:0.2.0
+  restart: unless-stopped
+  environment: &detector-env
+    CENTRAL_API_URL: http://central-api:8000
+    SENTINEL_GRID_BASE_URL: ${SENTINEL_GRID_BASE_URL:-https://cctv.corp8.cloud}
+    SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
+    SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
+    SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+    YOLO_ENABLE: "true"
+    YOLO_DEVICE: cpu
+    # Fetch yolo11n.pt once on first start, INTO the volume: Ultralytics
+    # downloads to the path it is given, and a bare name lands in the
+    # working directory, which a recreated container loses.
+    YOLO_ALLOW_DOWNLOAD: "true"
+    YOLO_WEIGHTS_DIR: /app/weights
+    YOLO_MODEL_NAME: /app/weights/yolo11n.pt
+  command: >
+    python -m app.worker --all-cameras --forever
+    --max-frames ${EDGE_MAX_FRAMES:-25}
+    --sample-interval ${EDGE_SAMPLE_INTERVAL:-20}
+    --cycle-seconds ${EDGE_CYCLE_SECONDS:-120}
+  depends_on:
+    central-api: { condition: service_healthy }
+
 services:
 
   postgres:
@@ -108,6 +146,8 @@ services:
       MUNICIPAL_VMS_TOKEN: ${MUNICIPAL_VMS_TOKEN:-municipal-demo-token}
       JWT_SECRET: ${JWT_SECRET:-vigentra-module1-demo-secret-change-me}
       ENVIRONMENT_LABEL: ${ENVIRONMENT_LABEL:-DEMO}
+      # The always-on detector services below run real YOLO inference.
+      YOLO_ENABLE: "true"
       # Vigentra never exposes footage; both flags remain absent by design.
     ports: ["8000:8000"]
     depends_on:
@@ -135,6 +175,10 @@ services:
   # being stopped and started again. Nothing about the count lives in the page.
   # ---------------------------------------------------------------------------
   edge-worker:
+    # Signs in as traffic.ai like detector-traffic, so with this profile on the
+    # Traffic cameras are processed twice (duplicates collapse on ingest) and a
+    # seventh stream is opened. Stop detector-traffic while it runs if the
+    # gateway starts refusing the account.
     profiles: ["anpr"]
     build:
       context: .
@@ -189,8 +233,43 @@ services:
       SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
       SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
       SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
-    command: python tools/snapshot_wall.py --pool ${SNAPSHOT_POOL:-6} --port 9100
+    # --host 0.0.0.0: the default 127.0.0.1 is the container's own loopback,
+    # which central-api cannot reach - every live-wall tile stays blank.
+    # Pool 4 + a 15 s hold: ~14 new RTSP sessions a minute instead of ~50, each
+    # camera's frame refreshed about every two minutes. --motion-size skips
+    # the start-up probe, which opened 6 then 4 streams at once on every
+    # restart to size a /motion grid central-api never proxies.
+    command: >
+      python tools/snapshot_wall.py --host 0.0.0.0 --port 9100
+      --pool ${SNAPSHOT_POOL:-4} --hold ${SNAPSHOT_HOLD:-15} --motion-size ${SNAPSHOT_MOTION_SIZE:-4}
     expose: ["9100"]
+
+  # ---------------------------------------------------------------------------
+  # Object detection, always on (24/7). Unlike `edge-worker` above this needs no
+  # profile and no plate models: the light yolo image, YOLO11n on CPU, every
+  # camera the account may watch, cycling forever. restart: unless-stopped
+  # brings a worker back after a crash, a Docker restart or a reboot (with
+  # Docker Desktop set to start at login).
+  #
+  # One worker per department, because an AI account may ingest detections only
+  # for cameras its own department owns: traffic.ai covers the Traffic share of
+  # the grid and municipal.ai the Municipal share - all thirty between them.
+  # ---------------------------------------------------------------------------
+  detector-traffic:
+    <<: *detector
+    environment:
+      <<: *detector-env
+      EDGE_USERNAME: traffic.ai
+      EDGE_PASSWORD: ${TRAFFIC_EDGE_PASSWORD:-AiOps@2026}
+    volumes: [yolo_weights_traffic:/app/weights]
+
+  detector-municipal:
+    <<: *detector
+    environment:
+      <<: *detector-env
+      EDGE_USERNAME: municipal.ai
+      EDGE_PASSWORD: ${MUNICIPAL_EDGE_PASSWORD:-MuniOps@2026}
+    volumes: [yolo_weights_municipal:/app/weights]
 
   dashboard:
     build:
@@ -209,3 +288,5 @@ services:
 
 volumes:
   sentinel_pg: {}
+  yolo_weights_traffic: {}
+  yolo_weights_municipal: {}

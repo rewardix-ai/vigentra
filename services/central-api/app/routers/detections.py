@@ -83,6 +83,23 @@ def _within_plate_retention(row: DetectionRow, horizon: datetime) -> bool:
     return read_at >= horizon
 
 
+async def _record_plate_view(
+    db: AsyncSession, request: Request, user: DemoUser, *, disclosed: int, camera_id: str | None
+) -> None:
+    """Reading registration numbers is a distinct, recorded act - not a
+    by-product of listing detections."""
+    await audit_service.record(
+        db,
+        username=user.username,
+        role=user.role,
+        action=AuditAction.PLATE_DATA_VIEWED,
+        resource_type=ResourceType.DETECTION,
+        department=user.department,
+        client_ip=client_ip(request),
+        details={"plates_disclosed": disclosed, "camera_id": camera_id},
+    )
+
+
 def _to_out(
     row: DetectionRow, camera: CameraRow | None, *, may_read_plate: bool = False
 ) -> DetectionOut:
@@ -513,18 +530,7 @@ async def list_detections(
         projected.append(_to_out(row, cameras.get(row.camera_id), may_read_plate=allow))
 
     if disclosed:
-        # Reading registration numbers is a distinct, recorded act - not a
-        # by-product of listing detections.
-        await audit_service.record(
-            db,
-            username=user.username,
-            role=user.role,
-            action=AuditAction.PLATE_DATA_VIEWED,
-            resource_type=ResourceType.DETECTION,
-            department=user.department,
-            client_ip=client_ip(request),
-            details={"plates_disclosed": disclosed, "camera_id": camera_id},
-        )
+        await _record_plate_view(db, request, user, disclosed=disclosed, camera_id=camera_id)
     return projected
 
 
@@ -535,6 +541,8 @@ async def list_detections(
 )
 async def get_detection(
     detection_id: str,
+    request: Request,
+    settings: SettingsDep,
     user: DemoUser = Depends(require_permission(Permission.DETECTION_READ)),
     db: AsyncSession = Depends(get_db),
 ) -> DetectionOut:
@@ -555,7 +563,13 @@ async def get_detection(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This detection belongs to a camera outside your scope.",
         )
-    return _to_out(row, camera, may_read_plate=may_read_plate)
+    # `may_read_plate` used to be referenced here without ever being defined,
+    # so every call was a NameError (HTTP 500).
+    may_read_plate, plate_horizon = _plate_access(user, settings)
+    allow = may_read_plate and _within_plate_retention(row, plate_horizon)
+    if allow and row.plate_text:
+        await _record_plate_view(db, request, user, disclosed=1, camera_id=row.camera_id)
+    return _to_out(row, camera, may_read_plate=allow)
 
 
 @router.get(
@@ -565,6 +579,8 @@ async def get_detection(
 )
 async def camera_detections(
     camera_id: str,
+    request: Request,
+    settings: SettingsDep,
     user: DemoUser = Depends(require_permission(Permission.DETECTION_READ)),
     db: AsyncSession = Depends(get_db),
     since_hours: int = Query(default=24, ge=1, le=720),
@@ -593,7 +609,15 @@ async def camera_detections(
             .limit(limit)
         )
     ).scalars().all()
-    return [_to_out(row, camera, may_read_plate=may_read_plate) for row in rows]
+    may_read_plate, plate_horizon = _plate_access(user, settings)
+    projected, disclosed = [], 0
+    for row in rows:
+        allow = may_read_plate and _within_plate_retention(row, plate_horizon)
+        disclosed += bool(allow and row.plate_text)
+        projected.append(_to_out(row, camera, may_read_plate=allow))
+    if disclosed:
+        await _record_plate_view(db, request, user, disclosed=disclosed, camera_id=camera_id)
+    return projected
 
 
 # ---------------------------------------------------------------------------

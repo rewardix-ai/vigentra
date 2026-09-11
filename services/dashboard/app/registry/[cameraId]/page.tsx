@@ -369,7 +369,7 @@ export default function CameraDetailPage() {
               {orDash(camera.location.landmark)}
             </Field>
             <Field label="View direction">{titleise(camera.location.view_direction)}</Field>
-            <Field label="Coordinates (demonstration)" mono>
+            <Field label="Coordinates" mono>
               {coordinates(camera.location.latitude, camera.location.longitude)}
             </Field>
             <Field label="Coverage" redacted={withheld.has("coverage_description")}>

@@ -5,8 +5,6 @@ problem of vendor dialect -> canonical schema.
 """
 from __future__ import annotations
 
-from typing import Any
-
 from .config import DemoUser, Settings
 from .models import AuditLog, Camera as CameraRow, CameraAccessPolicy, CameraHealth
 from .models import InstallationRequestAttachment, Source as SourceRow

@@ -863,10 +863,23 @@ def local_media(filename: str, request: Request, ticket: str = Query(...)) -> Re
     if range_header and range_header.startswith("bytes="):
         spec = range_header.split("=", 1)[1].split(",")[0].strip()
         start_raw, _, end_raw = spec.partition("-")
-        start = int(start_raw) if start_raw else max(0, size - int(end_raw or 0))
+        unsatisfiable = Response(
+            status_code=416, headers={**headers, "Content-Range": f"bytes */{size}"}
+        )
+        # Digits only, at least one side, and start <= end. "bytes=abc-" used
+        # to raise (500) and "bytes=100-50" answered 206 with a negative
+        # Content-Length - and central-api forwards the client's Range as is.
+        valid = (
+            bool(start_raw or end_raw)
+            and (not start_raw or start_raw.isdigit())
+            and (not end_raw or end_raw.isdigit())
+        )
+        if not valid:
+            return unsatisfiable
+        start = int(start_raw) if start_raw else max(0, size - int(end_raw))
         end = min(int(end_raw), size - 1) if end_raw and start_raw else size - 1
-        if start >= size:
-            return Response(status_code=416, headers={**headers, "Content-Range": f"bytes */{size}"})
+        if start >= size or end < start:
+            return unsatisfiable
         return StreamingResponse(
             _iter_file(path, start, end),
             status_code=206,

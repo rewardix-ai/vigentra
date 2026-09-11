@@ -103,7 +103,7 @@ export default function IncidentsPage() {
     <div className="space-y-3">
       <PageHeader
         title="Incident review"
-        subtitle="Traffic-event candidates raised from the live tracking — each one a pattern for a human to confirm, never a finding."
+        subtitle="Traffic events detected by the cameras, for review."
       />
 
       <Notice tone="info">

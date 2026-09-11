@@ -1,10 +1,14 @@
 """RTO -> district naming: name what is verified, never guess the rest."""
 import os
-
-os.environ.setdefault("PLATE_DISTRICT_MAP", "./data/reference/gj_rto_districts.json")
-
 import sys
 from pathlib import Path
+
+# Absolute, so the suite passes from any working directory (an IDE running
+# from tests/ resolved the old "./data/..." to nothing and every lookup failed).
+os.environ.setdefault(
+    "PLATE_DISTRICT_MAP",
+    str(Path(__file__).resolve().parent.parent / "data" / "reference" / "gj_rto_districts.json"),
+)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "services" / "central-api"))
 

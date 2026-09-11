@@ -209,8 +209,7 @@ def normalize_local_roles(raw: Any) -> list[str]:
 #: drawn 45 degrees off covers the wrong road.
 #:
 #: Anything not here is passed through rather than rejected, because this
-#: normalises a free-text field that predates the vocabulary - but the bulk
-#: upload validates against `DIRECTIONS` below, so new records stay inside it.
+#: normalises a free-text field that predates the vocabulary.
 DIRECTION_VOCABULARY = {
     "n": "northbound",
     "north": "northbound",
@@ -237,23 +236,6 @@ DIRECTION_VOCABULARY = {
     "north-west": "northwestbound",
     "north west": "northwestbound",
 }
-
-#: The canonical values, for validators and for the CSV template.
-DIRECTIONS = (
-    "northbound",
-    "northeastbound",
-    "eastbound",
-    "southeastbound",
-    "southbound",
-    "southwestbound",
-    "westbound",
-    "northwestbound",
-    #: A steerable camera points nowhere in particular, and saying so is a
-    #: real answer rather than a missing one.
-    "omnidirectional",
-    "unknown",
-)
-
 
 def normalize_direction(raw: Any) -> str:
     """`north`, `North-East` and `northbound` all describe one heading."""
@@ -323,6 +305,12 @@ def date_to_ist_string(value: date | None) -> str | None:
     return value.strftime("%d-%m-%Y") if value else None
 
 
+def utc_to_epoch_ms(value: datetime) -> int:
+    """Municipal VMS takes epoch milliseconds. The playback window in
+    video_adapters called this before it existed (AttributeError)."""
+    return int(to_utc(value).timestamp() * 1000)  # type: ignore[union-attr]
+
+
 def date_to_epoch_ms(value: date | None) -> int | None:
     if value is None:
         return None
@@ -338,19 +326,6 @@ def redact_endpoint(base_url: str) -> str:
     stripped = re.sub(r"^[a-z]+://", "", base_url or "")
     stripped = stripped.split("/")[0]
     return stripped.split("@")[-1] or "unknown"
-
-
-def mask_serial(value: Any) -> str | None:
-    """Serial numbers identify hardware for theft and warranty purposes.
-
-    They are shown partially so an operator can confirm a match, never in full.
-    """
-    if not value:
-        return None
-    text = str(value)
-    if len(text) <= 6:
-        return "***"
-    return f"{text[:3]}{'*' * (len(text) - 6)}{text[-3:]}"
 
 
 def split_zone(zone: str | None, fallback_district: str) -> tuple[str, str | None]:

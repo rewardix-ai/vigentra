@@ -7,30 +7,20 @@ import {
   FloatInput,
   FloatSelect,
   FloatTextarea,
-  FootageNotice,
   Notice,
   Pill,
   Spinner,
 } from "./ui";
+import { CAMERA_TYPES, PURPOSES, SOURCE_TYPES } from "@/lib/constants";
 import { titleise } from "@/lib/format";
 import type {
   AttachmentRef,
   AttachmentTypeValue,
-  CameraTypeValue,
   InstallationFormValues,
   LocalRoleValue,
   Operator,
-  PurposeValue,
-  SourceTypeValue,
 } from "@/lib/types";
 
-const CAMERA_TYPES: CameraTypeValue[] = [
-  "fixed", "PTZ", "dome", "bullet", "ANPR-capable", "thermal", "other",
-];
-const PURPOSES: PurposeValue[] = [
-  "traffic monitoring", "public safety", "junction monitoring", "highway monitoring", "other",
-];
-const SOURCE_TYPES: SourceTypeValue[] = ["RTSP", "ONVIF", "VMS_API", "NVR", "other"];
 const LOCAL_ROLES: { value: LocalRoleValue; help: string }[] = [
   { value: "department_operator", help: "Control-room operators in the owning department" },
   { value: "district_supervisor", help: "District-level supervisory officers" },
@@ -412,12 +402,6 @@ export function InstallationForm({
 
   return (
     <div className="space-y-3">
-      <Notice tone="info" title="Where this form goes">
-        This form is submitted to <strong>{values.owning_department || "your department"}</strong>
-        &rsquo;s own CCTV/VMS system and validated there. Once it passes, Vigentra receives that camera&rsquo;s{" "}
-        <strong>metadata only</strong> — raw CCTV footage remains within the owning
-        department&rsquo;s local environment.
-      </Notice>
 
       {/* Stepper */}
       <nav aria-label="Form steps" className="card flex flex-wrap gap-1 px-2 py-2">
@@ -500,7 +484,7 @@ export function InstallationForm({
               <Text label="Longitude" field="longitude" values={values} errors={errors} onChange={change} required placeholder="72.5714" hint="-180 to 180" />
               <Text label="View direction" field="view_direction" values={values} errors={errors} onChange={change} required placeholder="eastbound" />
               <Area label="Coverage description" field="coverage_description" values={values} onChange={change} />
-              <Area label="Entry / exit zone description" field="entry_exit_zone_description" values={values} onChange={change} hint="Optional. Recorded for future modules; unused in Module 1." />
+              <Area label="Entry / exit zone description" field="entry_exit_zone_description" values={values} onChange={change} hint="Optional." />
             </Section>
           </>
         )}
@@ -510,7 +494,7 @@ export function InstallationForm({
           <>
             <Section title="Technical metadata">
               <Choice label="Feed type" field="source_type" values={values} onChange={change} options={SOURCE_TYPES} required />
-              <Text label="VMS name" field="vms_name" values={values} errors={errors} onChange={change} placeholder="Traffic VMS Demo" />
+              <Text label="VMS name" field="vms_name" values={values} errors={errors} onChange={change} placeholder="e.g. Milestone XProtect" />
               <Text label="VMS vendor" field="vms_vendor" values={values} errors={errors} onChange={change} />
               <Text label="Resolution" field="resolution" values={values} errors={errors} onChange={change} placeholder="1920x1080" />
               <Text label="Frame rate (fps)" field="fps" values={values} errors={errors} onChange={change} type="number" />
@@ -555,7 +539,6 @@ export function InstallationForm({
         {step === 3 && (
           <>
             <div className="px-4 pt-4">
-              <FootageNotice custodian={values.owning_department || undefined} />
             </div>
             <div className="px-4 py-4">
               <h3 className="section-label">
@@ -714,7 +697,6 @@ export function InstallationForm({
             </div>
 
             <div className="mt-4">
-              <FootageNotice custodian={values.owning_department || undefined} />
             </div>
           </div>
         )}

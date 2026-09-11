@@ -195,3 +195,21 @@ def test_capture_is_released_on_exit(fake):
     with grid.ReconnectingCapture("rtsp://h/stream/cam01") as cap:
         next(cap.frames())
     assert FakeCapture.constructed[-1].released
+
+
+def test_a_feed_with_no_frames_gives_up_within_the_stall_budget(fake):
+    """A dead camera must not hold the worker for ever: with a stall budget,
+    frames() raises instead of reconnecting indefinitely."""
+    FakeCapture, _sleeps = fake
+    FakeCapture.next_script = [None] * 500
+    cap = grid.ReconnectingCapture("rtsp://h/stream/cam01")
+    with pytest.raises(grid.CaptureStalled):
+        next(cap.frames(stall_timeout_s=0.0))
+
+
+def test_a_healthy_feed_is_unaffected_by_the_stall_budget(fake):
+    FakeCapture, _sleeps = fake
+    FakeCapture.next_script = [0, 40, 80]
+    cap = grid.ReconnectingCapture("rtsp://h/stream/cam01")
+    got = [f.pts_ms for f in cap.frames(max_frames=3, stall_timeout_s=60.0)]
+    assert got == [0, 40, 80]

@@ -718,3 +718,30 @@ async def test_the_state_code_must_be_a_real_state():
     assert normalise("GJ01AB1234") is not None
     for fake in ("XX01AB1234", "0J01AB1234", "QZ01AB1234"):
         assert normalise(fake) is None, f"{fake} is not a registration"
+
+
+async def test_single_detection_and_per_camera_routes_answer(api, login, traffic_camera, detectors):
+    """Both routes referenced an undefined name and answered 500 on every call."""
+    edge = await login("traffic.ai")
+    detection = payload_for(detectors, traffic_camera["camera_id"])[0]
+    ingested = await api.post(
+        "/api/v1/detections/ingest", headers=edge, json={"detections": [detection]}
+    )
+    assert ingested.status_code in (200, 201), ingested.text
+
+    reader = await login("traffic.state")
+    listed = await api.get(
+        "/api/v1/detections", headers=reader, params={"camera_id": traffic_camera["camera_id"]}
+    )
+    assert listed.status_code == 200, listed.text
+    rows = listed.json()
+    assert rows, "the ingested detection should be listed"
+
+    one = await api.get(f"/api/v1/detections/{rows[0]['detection_id']}", headers=reader)
+    assert one.status_code == 200, one.text
+
+    per_camera = await api.get(
+        f"/api/v1/cameras/{traffic_camera['camera_id']}/detections", headers=reader
+    )
+    assert per_camera.status_code == 200, per_camera.text
+    assert per_camera.json()

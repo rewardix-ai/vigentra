@@ -4,69 +4,75 @@
  * The mark and the wordmark appear in the console chrome, on the sign-in
  * screen and anywhere else the product names itself. Defining them once means
  * they cannot drift apart - a header that says one thing and a login screen
- * that says another is the most common way a product looks unfinished, and it
- * happens because the two were drawn separately.
+ * that says another is the most common way a product looks unfinished.
  *
- * The name is vigilance and intelligence, and the mark is built from the same
- * two ideas: a shield for the first, an aperture for the second. It is drawn
- * on a 24-unit grid with a 1.5 stroke so it stays legible at the 16px the
- * navigation rail gives it, and inherits `currentColor` so one file serves
- * both the navy chrome and the light sign-in card.
+ * The artwork is the approved logo, cut from the master in docs/brand/ by
+ * scripts/brand_assets.py with its ground made transparent:
+ *   /brand/vigentra-logo.png        the full lockup, exactly as drawn (light surfaces)
+ *   /brand/vigentra-mark.png        the mark alone, in its own colours (light surfaces)
+ *   /brand/vigentra-mark-light.png  the mark reversed to white (the navy chrome)
+ * Re-run that script when the logo changes; nothing here needs editing.
  */
 
 export const PRODUCT_NAME = "Vigentra";
 
-/** The full positioning line. Long form: hero surfaces and page metadata. */
-export const TAGLINE = "Unified AI Video Intelligence for Safer Cities";
-
-/** Short form, for places that sit under the wordmark at 11px. */
-export const TAGLINE_SHORT = "Unified AI Video Intelligence";
+/** The logo's own line, set under the wordmark with red separators. */
+export const LOGO_TAGLINE = ["Vigilance", "Intelligence", "Safer Roads"] as const;
 
 /**
- * The mark alone.
- *
- * `title` rather than `aria-hidden` when it stands without the wordmark, so a
- * screen reader is not handed an unlabelled link to the dashboard.
+ * The mark alone. `tone` picks the cut: the reversed white one for the navy
+ * chrome, the original colours on light surfaces. `labelled` when it stands
+ * without the wordmark, so a screen reader is not handed an unlabelled link.
  */
 export function VigentraMark({
-  className = "h-4.5 w-4.5",
+  className = "h-6 w-auto",
+  tone = "onLight",
   labelled = false,
 }: {
   className?: string;
+  tone?: "onDark" | "onLight";
   labelled?: boolean;
 }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      role={labelled ? "img" : undefined}
-      aria-label={labelled ? PRODUCT_NAME : undefined}
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={tone === "onDark" ? "/brand/vigentra-mark-light.png" : "/brand/vigentra-mark.png"}
+      alt={labelled ? PRODUCT_NAME : ""}
       aria-hidden={labelled ? undefined : true}
-    >
-      {/* Vigilance: a shield, drawn as a custodian's badge rather than a
-          padlock - this platform holds a duty of care over other people's
-          cameras, it does not lock things away. */}
-      <path
-        d="M12 2.6 4.3 5.7v5.8c0 4.7 3.2 8.6 7.7 9.6 4.5-1 7.7-4.9 7.7-9.6V5.7L12 2.6Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      {/* Intelligence: an aperture. A ring and a pupil read as a lens that is
-          looking rather than an eye that is watching you - the distinction the
-          whole access model is built on. */}
-      <circle cx="12" cy="11.1" r="3.15" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="12" cy="11.1" r="1.15" fill="currentColor" />
-      {/* Two short arcs: the signal being read off the lens. Dropped below
-          16px, where they would close into a smudge. */}
-      <path
-        d="M7.4 15.6c1.2 1 2.8 1.6 4.6 1.6s3.4-.6 4.6-1.6"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        opacity="0.55"
-      />
+      className={className}
+      draggable={false}
+    />
+  );
+}
+
+/** The wordmark as cut from the artwork (955 x 107). */
+const WORDMARK_ASPECT = 955 / 107;
+
+/**
+ * "VIGILANCE | INTELLIGENCE | SAFER ROADS", stretched to exactly the
+ * wordmark's width as it is in the logo. Set in SVG because `textLength` is
+ * the only reliable way to justify one line to a measured width.
+ */
+function LogoTagline({ width, dark }: { width: number; dark: boolean }) {
+  const red = "#e0443a";
+  const gap = "\u00a0\u00a0";
+  return (
+    <svg viewBox={`0 0 ${width} 9`} width={width} height={9} aria-hidden className="block">
+      <text
+        x="0"
+        y="7.4"
+        textLength={width}
+        lengthAdjust="spacing"
+        fontSize="7.2"
+        fontWeight={500}
+        fill={dark ? "rgba(255,255,255,0.62)" : "#5b6472"}
+      >
+        {`VIGILANCE${gap}`}
+        <tspan fill={red}>|</tspan>
+        {`${gap}INTELLIGENCE${gap}`}
+        <tspan fill={red}>|</tspan>
+        {`${gap}SAFER ROADS`}
+      </text>
     </svg>
   );
 }
@@ -75,14 +81,15 @@ export function VigentraMark({
  * Mark plus wordmark plus the line under it.
  *
  * `tone` picks the two places this appears: `onDark` in the navy header,
- * `onLight` on the sign-in card. Passing the surface rather than reading a
- * theme keeps it a pure component and keeps the two call sites honest about
- * what they are placing it on.
+ * `onLight` on light surfaces. `size="lg"` on a light surface is the full
+ * approved lockup image, exactly as drawn. Otherwise it is the mark beside the
+ * wordmark cut from the same artwork, with the tagline justified under it;
+ * pass `subtitle` as a string to replace the tagline, or null to drop it.
  */
 export function BrandLockup({
   tone = "onLight",
   size = "sm",
-  subtitle = TAGLINE_SHORT,
+  subtitle,
 }: {
   tone?: "onDark" | "onLight";
   size?: "sm" | "lg";
@@ -91,38 +98,48 @@ export function BrandLockup({
   const dark = tone === "onDark";
   const large = size === "lg";
 
+  if (large && !dark) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/brand/vigentra-logo.png"
+        alt="Vigentra - Vigilance, Intelligence, Safer Roads"
+        className="h-auto w-72 max-w-full"
+        draggable={false}
+      />
+    );
+  }
+
+  const wordHeight = large ? 28 : 22;
+  const wordWidth = Math.round(wordHeight * WORDMARK_ASPECT);
+
   return (
-    <span className="flex items-center gap-2.5">
-      <span
-        className={
-          "flex items-center justify-center rounded " +
-          (large ? "h-11 w-11 " : "h-8 w-8 ") +
-          (dark
-            ? "border border-white/25 bg-white/10 text-white"
-            : "border border-navy-700 bg-navy-800 text-white")
-        }
-      >
-        <VigentraMark className={large ? "h-6 w-6" : "h-4.5 w-4.5"} />
-      </span>
-      <span className="leading-tight">
-        <span
-          className={
-            "block font-semibold tracking-wide " +
-            (large ? "text-xl " : "text-[15px] ") +
-            (dark ? "text-white" : "text-ink-900")
-          }
-        >
-          VIGENTRA
-        </span>
-        {subtitle && (
-          <span
-            className={
-              "block text-2xs uppercase tracking-wider " +
-              (dark ? "text-white/60" : "text-ink-500")
-            }
-          >
-            {subtitle}
-          </span>
+    <span
+      className="flex items-center gap-3"
+      role="img"
+      aria-label="Vigentra - Vigilance, Intelligence, Safer Roads"
+    >
+      <VigentraMark tone={tone} className={(large ? "h-12" : "h-9") + " w-auto shrink-0"} />
+      <span className="flex flex-col gap-[5px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={dark ? "/brand/vigentra-wordmark-light.png" : "/brand/vigentra-wordmark.png"}
+          alt=""
+          style={{ height: wordHeight, width: wordWidth }}
+          draggable={false}
+        />
+        {subtitle === undefined ? (
+          <LogoTagline width={wordWidth} dark={dark} />
+        ) : (
+          subtitle && (
+            <span
+              className={
+                "block text-2xs uppercase tracking-wider " + (dark ? "text-white/60" : "text-ink-500")
+              }
+            >
+              {subtitle}
+            </span>
+          )
         )}
       </span>
     </span>

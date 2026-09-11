@@ -151,13 +151,9 @@ async def test_source_errors_become_useful_central_errors(api, admin_headers):
 
 async def test_denied_operator_form_creation_records_permission_denial(api):
     """A read-only account may not create an installation form."""
-    from app.config import get_settings
-
-    settings = get_settings()
     # Health monitor is read-only.
     hm = await token_for(api, "health.monitor", "Health@2026")
     response = await api.post(
         "/api/v1/installation-requests", headers=hm, json={"form": demo_form()}
     )
     assert response.status_code == 403
-    _ = settings

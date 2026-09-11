@@ -95,8 +95,6 @@ def safe_url(url: str) -> str:
     if parsed.port:
         host = f"{host}:{parsed.port}"
     return urllib.parse.urlunsplit((parsed.scheme, f"***:***@{host}", parsed.path, parsed.query, parsed.fragment))
-#: The gateway 302s to http:// without this, which breaks a TLS-only client.
-COOKIE_CHECK = "cookieCheck=1"
 
 
 #: Microseconds FFmpeg will wait for the socket before giving up. OpenCV
@@ -393,6 +391,10 @@ class Frame:
     discontinuity: bool
 
 
+class CaptureStalled(RuntimeError):
+    """No frame arrived within the caller's stall budget."""
+
+
 class ReconnectingCapture:
     """A live capture that survives the things the guide says will happen.
 
@@ -472,23 +474,35 @@ class ReconnectingCapture:
 
     # -- reading -----------------------------------------------------------
 
-    def frames(self, max_frames: int | None = None) -> Iterator[Frame]:
+    def frames(
+        self, max_frames: int | None = None, stall_timeout_s: float | None = None
+    ) -> Iterator[Frame]:
         """Yield decoded frames until `max_frames`, or for ever.
 
         Benign gaps yield nothing and do not raise; the loop simply continues.
+        With `stall_timeout_s`, a feed that delivers no frame for that long
+        raises CaptureStalled instead of reconnecting for ever - otherwise one
+        dead camera (or an account the gateway refuses) held a worker on that
+        camera indefinitely, never reaching the rest.
         """
         if self._capture is None:
             self._connect()
 
+        last_good = time.monotonic()
         while max_frames is None or self._frames_seen < max_frames:
             ok, image = self._capture.read()
 
             if not ok:
                 self._consecutive_failures += 1
+                if stall_timeout_s is not None and time.monotonic() - last_good > stall_timeout_s:
+                    raise CaptureStalled(
+                        f"{self.label}: no frame for {stall_timeout_s:.0f}s; giving up this pass"
+                    )
                 if self._consecutive_failures > self.GRACE_FAILURES:
                     self._reconnect()
                 continue
 
+            last_good = time.monotonic()
             # A good read means the stream is healthy again.
             self._backoff = self.MIN_BACKOFF
             self._consecutive_failures = 0

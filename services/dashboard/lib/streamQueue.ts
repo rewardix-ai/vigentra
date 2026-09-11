@@ -55,12 +55,6 @@ class StreamQueue {
   private lastStart = 0;
   private timer: ReturnType<typeof setTimeout> | null = null;
 
-  configure(options: { limit?: number; gapMs?: number }): void {
-    if (options.limit != null) this.limit = Math.max(1, options.limit);
-    if (options.gapMs != null) this.gapMs = Math.max(0, options.gapMs);
-    this.pump();
-  }
-
   /**
    * Wait for permission to start a feed.
    *

@@ -70,6 +70,8 @@ CENTRAL_API_URL = os.getenv("CENTRAL_API_URL", "http://central-api:8000")
 EDGE_USERNAME = os.getenv("EDGE_USERNAME", "traffic.ai")
 EDGE_PASSWORD = os.getenv("EDGE_PASSWORD", "AiOps@2026")
 FRAME_SAMPLE_INTERVAL = int(os.getenv("YOLO_FRAME_SAMPLE_INTERVAL", "5"))
+#: How long a grid camera may go without a frame before the worker moves on.
+GRID_STALL_SECONDS = float(os.getenv("EDGE_GRID_STALL_SECONDS", "90"))
 BATCH_SIZE = int(os.getenv("EDGE_BATCH_SIZE", "50"))
 
 #: The sandbox camera grid. Frames are pulled from it DIRECTLY rather than
@@ -162,7 +164,7 @@ def iter_grid_frames(
     """
     with grid.open_capture(camera) as capture:
         emitted = 0
-        for frame in capture.frames():
+        for frame in capture.frames(stall_timeout_s=GRID_STALL_SECONDS):
             if frame.index % max(1, sample_interval) != 0 and not frame.discontinuity:
                 continue
             # PTS is milliseconds from the start of the stream; the pipeline
@@ -990,12 +992,25 @@ def supervise(
                 except Exception as exc:
                     if not forever:
                         raise
-                    logger.warning(
-                        "camera list unavailable this cycle (%s); reusing the "
-                        "previous %d camera(s)",
-                        exc,
-                        len(targets),
-                    )
+                    error: Exception | None = exc
+                    if getattr(getattr(exc, "response", None), "status_code", None) == 401:
+                        # The discovery token expires (720 min) and was never
+                        # renewed, so after half a day every cycle reused a
+                        # stale camera list for ever. Sign in again and retry.
+                        logger.info("discovery session expired; signing in again")
+                        _sign_in_patiently(discovery_client, forever=forever)
+                        try:
+                            targets = resolve_cameras(None, True, discovery_client)
+                            error = None
+                        except Exception as retry_exc:  # noqa: BLE001
+                            error = retry_exc
+                    if error is not None:
+                        logger.warning(
+                            "camera list unavailable this cycle (%s); reusing the "
+                            "previous %d camera(s)",
+                            error,
+                            len(targets),
+                        )
 
             if not targets:
                 logger.warning("no cameras to process")

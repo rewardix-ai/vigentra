@@ -203,7 +203,7 @@ export default function AccessRequestsPage() {
     <>
       <PageHeader
         title="Video access requests"
-        subtitle="Camera records federate automatically. Footage does not — another unit has to ask, and your unit answers."
+        subtitle="Requests to view another unit's cameras, and requests for yours."
       />
 
       <div className="space-y-3">

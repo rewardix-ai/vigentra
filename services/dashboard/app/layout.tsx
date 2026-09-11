@@ -6,10 +6,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Vigentra — Unified AI Video Intelligence for Safer Cities",
   description:
-    "A federated CCTV registry with GIS, brokered live video, edge ANPR and cross-camera "
-    + "vehicle tracing across independently owned Traffic Police and Municipal Corporation "
-    + "estates. Footage stays with the owning department and is brokered per audited session. "
-    + "Synthetic demonstration data.",
+    "One CCTV registry across Traffic Police and Municipal Corporation cameras, with a GIS "
+    + "map, live video, object detection, number-plate reading and cross-camera vehicle tracing.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

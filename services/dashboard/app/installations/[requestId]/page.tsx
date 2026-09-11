@@ -9,7 +9,6 @@ import {
   Card,
   DepartmentTag,
   FloatTextarea,
-  FootageNotice,
   Notice,
   PageHeader,
   Pill,
@@ -199,8 +198,8 @@ export default function InstallationRequestPage() {
           setNotice({
             tone: "warn",
             text:
-              "Editing existing drafts from the console is not implemented in this demo build. " +
-              "Raise a new form from the department system or through “New CCTV installation”.",
+              "Editing a submitted form isn't available yet. " +
+              "Raise a new one from “New CCTV installation” instead.",
           });
         }}
       >
@@ -226,7 +225,6 @@ export default function InstallationRequestPage() {
       />
 
       <div className="space-y-3">
-        <FootageNotice compact custodian={record.owning_department} />
         {error && <Notice tone="bad">{error}</Notice>}
         {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}
 
@@ -255,15 +253,6 @@ export default function InstallationRequestPage() {
         {record.withdrawal_reason && (
           <Notice tone="warn" title="Withdrawn">
             {record.withdrawal_reason}
-          </Notice>
-        )}
-        {record.validation_errors.length > 0 && (
-          <Notice tone="bad" title="Validation issues raised by the department system">
-            <ul className="ml-4 mt-1 list-disc space-y-0.5">
-              {record.validation_errors.map((issue) => (
-                <li key={issue}>{issue}</li>
-              ))}
-            </ul>
           </Notice>
         )}
 
@@ -416,7 +405,6 @@ export default function InstallationRequestPage() {
               </div>
             </Show>
             <div className="mt-3 border-t border-line pt-3">
-              <FootageNotice compact custodian={record.owning_department} />
             </div>
           </div>
         </Card>

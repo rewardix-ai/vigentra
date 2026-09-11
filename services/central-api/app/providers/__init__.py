@@ -18,7 +18,7 @@ from .base import (
     ProviderNotConfigured,
     ProviderUnavailable,
 )
-from .federated import FederatedProvider, MunicipalVmsProvider, TrafficVmsProvider
+from .federated import FederatedProvider
 from .mock import MockCameraResourceProvider
 from .official import OfficialVigentraProvider
 
@@ -50,12 +50,10 @@ __all__ = [
     "CameraResourceProvider",
     "FederatedProvider",
     "MockCameraResourceProvider",
-    "MunicipalVmsProvider",
     "OfficialVigentraProvider",
     "PROVIDER_MODES",
     "ProviderError",
     "ProviderNotConfigured",
     "ProviderUnavailable",
-    "TrafficVmsProvider",
     "build_provider",
 ]

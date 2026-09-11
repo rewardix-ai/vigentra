@@ -8,7 +8,6 @@ import { LoadingPanel } from "@/components/Shell";
 import {
   Card,
   DepartmentTag,
-  FootageNotice,
   Notice,
   PageHeader,
   Pill,
@@ -129,11 +128,6 @@ export default function OverviewPage() {
     <>
       <PageHeader
         title="Operations overview"
-        subtitle={
-          operator
-            ? `Signed in as ${operator.display_name} · ${operator.role.replace(/_/g, " ")} · ${operator.department}`
-            : undefined
-        }
         actions={
           canSync && (
             <button className="btn btn-primary" onClick={runSync} disabled={syncing}>
@@ -145,10 +139,6 @@ export default function OverviewPage() {
       />
 
       <div className="space-y-4">
-        {/* Only for accounts that hold no footage rights at all. Telling a
-            viewing account that video lives elsewhere is just wrong. */}
-        {operator && !operator.vigentra_video_access && <FootageNotice />}
-
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
 
         {/* Registry counts */}
@@ -316,12 +306,6 @@ export default function OverviewPage() {
                 ))}
             </div>
           )}
-          <p className="border-t border-line px-4 py-2 text-2xs leading-relaxed text-ink-500">
-            Each department runs its own CCTV/VMS system and its own installation register.
-            Vigentra reads camera <strong>metadata</strong> from each as soon as that department&rsquo;s
-            own validation passes, and never holds stream URLs or VMS credentials. Footage is
-            brokered per session, only for the units the owning department has said yes to.
-          </p>
         </Card>
       </div>
     </>

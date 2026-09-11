@@ -101,12 +101,6 @@ export default function AccessPolicyPage() {
             description={`Your account reads: ${policy.vigentra_metadata_access}. Registry, health and policy records only.`}
           />
           <AccessRow
-            label="Vigentra video access"
-            state="Disabled"
-            tone="bad"
-            description="Not available in Module 1 for any camera, any role or any request. There is no video endpoint in this system to enable."
-          />
-          <AccessRow
             label="Local VMS video access"
             state={policy.local_video_access_enabled ? "Enabled" : "Disabled"}
             tone={policy.local_video_access_enabled ? "ok" : "idle"}

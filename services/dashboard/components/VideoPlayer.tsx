@@ -8,7 +8,7 @@ import {
   useDetectionMoments,
 } from "@/components/DetectionOverlay";
 
-import { api, ApiError } from "@/lib/api";
+import { api, errorMessage } from "@/lib/api";
 import type { VideoMode, VideoSession } from "@/lib/types";
 import {
   FloatInput,
@@ -226,7 +226,7 @@ export function VideoPlayer({
       setRemaining(opened.expires_in_seconds);
       setSession(opened);
     } catch (err) {
-      setError(describe(err));
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -465,16 +465,4 @@ function formatCountdown(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-function describe(err: unknown): string {
-  if (err instanceof ApiError) {
-    const detail = err.detail as
-      | { message?: string; state?: string; owning_department?: string }
-      | string
-      | undefined;
-    if (typeof detail === "string") return detail;
-    if (detail?.message) return detail.message;
-  }
-  return err instanceof Error ? err.message : String(err);
 }

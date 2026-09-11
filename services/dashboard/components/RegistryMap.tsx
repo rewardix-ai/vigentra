@@ -318,4 +318,3 @@ function Ring({ color }: { color: string }) {
   );
 }
 
-export default RegistryMap;

@@ -87,14 +87,7 @@ function RequestList() {
     <>
       <PageHeader
         title="Installation requests"
-        subtitle="CCTV onboarding records held by each department, mirrored here for oversight."
-        actions={
-          canCreate && (
-            <Link className="btn btn-primary" href="/installations/new">
-              New CCTV installation
-            </Link>
-          )
-        }
+        subtitle="CCTV installation records from each department."
       />
 
       <div className="space-y-3">
@@ -224,7 +217,7 @@ function RequestList() {
           {visible.length === 0 && (
             <EmptyState
               message="No installation records match the current filters."
-              hint={canCreate ? "Use “New CCTV installation” to raise one." : undefined}
+              hint={canCreate ? "Raise one from “New CCTV installation” in the sidebar." : undefined}
             />
           )}
         </Card>

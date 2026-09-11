@@ -52,23 +52,36 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, { ...init, cache: "no-store" });
 
-  if (response.status === 401 && typeof window !== "undefined") {
-    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
-    throw new ApiError("Session expired", 401);
-  }
-
   if (!response.ok) {
-    let detail: unknown;
+    // Read the body once. json() consumes it, so the old text() fallback after
+    // a failed parse always threw and plain-text errors lost their message.
+    const text = await response.text().catch(() => "");
+    let detail: unknown = text || undefined;
     try {
-      detail = (await response.json())?.detail;
+      detail = (JSON.parse(text) as { detail?: unknown })?.detail ?? detail;
     } catch {
-      detail = await response.text().catch(() => undefined);
+      /* not JSON: keep the text */
+    }
+    // 401 means the session lapsed - except a refused step-up password, which
+    // the API also answers with 401. Treating that one as a lapsed session threw
+    // an operator who mistyped "Confirm your password" out to the sign-in page.
+    const code =
+      detail && typeof detail === "object" ? (detail as { code?: unknown }).code : undefined;
+    if (response.status === 401 && code !== "STEP_UP_FAILED" && typeof window !== "undefined") {
+      window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+      throw new ApiError("Session expired", 401);
     }
     throw new ApiError(describe(detail, response.status), response.status, detail);
   }
 
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+/** The one-line message for any error an API call can throw. ApiError already
+ * carries the operator-facing text built by describe() below. */
+export function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 /** Turn a central API error body into one line an operator can act on. */
@@ -160,16 +173,6 @@ export const api = {
 
   createInstallationRequest: (form: Record<string, unknown>) =>
     post<InstallationRequest>("/api/v1/installation-requests", { form }),
-
-  updateInstallationRequest: (requestId: string, form: Record<string, unknown>) =>
-    request<InstallationRequest>(
-      `/api/v1/installation-requests/${encodeURIComponent(requestId)}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ form }),
-      },
-    ),
 
   submitRequest: (requestId: string) =>
     post<InstallationRequest>(
@@ -288,11 +291,6 @@ export const api = {
     start_time_utc?: string;
     end_time_utc?: string;
   }) => post<VideoSession>("/api/v1/video-sessions", body),
-
-  videoSessionStatus: (sessionId: string) =>
-    request<VideoSession>(
-      `/api/v1/video-sessions/${encodeURIComponent(sessionId)}/status`,
-    ),
 
   closeVideoSession: (sessionId: string) =>
     request<void>(`/api/v1/video-sessions/${encodeURIComponent(sessionId)}`, {

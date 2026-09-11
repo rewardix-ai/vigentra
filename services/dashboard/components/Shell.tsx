@@ -12,7 +12,6 @@ import {
   KeyRound,
   LayoutDashboard,
   ListChecks,
-  Lock,
   MapPinned,
   Menu,
   MonitorPlay,
@@ -27,8 +26,7 @@ import {
 } from "lucide-react";
 
 import { api, signOut } from "@/lib/api";
-import { BrandLockup, TAGLINE } from "./Brand";
-import { ist } from "@/lib/format";
+import { BrandLockup } from "./Brand";
 import type { Operator, PlatformHealth } from "@/lib/types";
 import { Spinner } from "./ui";
 
@@ -60,6 +58,9 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "Onboarding",
     items: [
+      // First, and the only way in: raising a camera is an installer's main
+      // job, so it leads the section rather than hiding on the list page.
+      { href: "/installations/new", label: "New CCTV installation", icon: FilePlus2, permission: "installation:create" },
       {
         href: "/installations",
         label: "Installation requests",
@@ -67,7 +68,6 @@ const NAV: { group: string; items: NavItem[] }[] = [
         permission: "installation:read",
         badge: "installations",
       },
-      { href: "/installations/new", label: "New CCTV installation", icon: FilePlus2, permission: "installation:create" },
       { href: "/installations/bulk", label: "Bulk upload (CSV)", icon: Upload, permission: "installation:create" },
     ],
   },
@@ -173,7 +173,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
     !permission || (operator?.permissions ?? []).includes(permission);
 
   /** Whether this account may be handed footage at all, live or recorded. */
-  const canWatch = can("video:live") || can("video:playback");
 
   const statusTone =
     health?.status === "ok"
@@ -200,13 +199,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-2.5">
             <BrandLockup tone="onDark" />
           </Link>
-
-          <span className="hidden rounded-sm border border-white/25 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-white/80 sm:inline">
-            {health?.environment ?? "DEMO"}
-          </span>
-          <span className="hidden rounded-sm border border-white/25 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-white/80 md:inline">
-            Footage brokered
-          </span>
 
           <div className="ml-auto flex items-center gap-4">
             <div className="hidden items-center gap-2 md:flex" title={
@@ -299,28 +291,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </div>
               ))}
 
-            {/* What footage THIS account may reach.
-              *
-              * Stated per account rather than as a fixed notice. The panel
-              * used to read "No video access" for everyone, including the
-              * accounts that hold `video:live` and have a live wall in the
-              * rail above it - a console contradicting itself about the one
-              * thing an operator most needs to be sure of. */}
-            <div className="mx-4 mt-6 rounded border border-white/12 bg-navy-800/70 p-2.5">
-              <div className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-white/70">
-                {canWatch ? (
-                  <Video className="h-3 w-3" strokeWidth={1.6} aria-hidden />
-                ) : (
-                  <Lock className="h-3 w-3" strokeWidth={1.6} aria-hidden />
-                )}
-                {canWatch ? "Footage brokered" : "No video access"}
-              </div>
-              <p className="mt-1 text-2xs leading-relaxed text-white/55">
-                {canWatch
-                  ? "Only cameras the owning department has enabled, and only through short-lived watermarked sessions that are written to the audit log."
-                  : "Footage stays with the owning department. This account reads metadata, health and policy records only."}
-              </p>
-            </div>
           </div>
         </nav>
 
@@ -328,8 +298,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <main className="min-w-0 flex-1">
           <div className="mx-auto max-w-[1500px] px-4 py-5">{children}</div>
           <footer className="border-t border-line px-4 py-3 text-2xs text-ink-400">
-            Vigentra · {TAGLINE} · synthetic demonstration data · timestamps in Asia/Kolkata
-            {health?.time_utc && <> · registry time {ist(health.time_utc)}</>}
+            Vigentra · All times are shown in IST
           </footer>
         </main>
       </div>

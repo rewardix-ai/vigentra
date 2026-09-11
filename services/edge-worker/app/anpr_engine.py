@@ -52,8 +52,8 @@ _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 if str(_PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(_PACKAGE_ROOT))
 
-#: Vehicle classes the engine reads plates from. A person is never cropped.
-PLATE_BEARING_CLASSES = frozenset({"car", "motorcycle", "bus", "truck", "auto-rickshaw"})
+#: Vehicle classes the engine reads plates from - the one definition, in plates.py.
+from .plates import PLATE_BEARING_CLASSES  # noqa: E402
 
 #: Below this, a voted reading is not sent at all.
 #:

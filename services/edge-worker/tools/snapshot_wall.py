@@ -49,6 +49,11 @@ READ_TIMEOUT_MS = 5000
 FAIL_BACKOFF_MIN_S = 5.0
 FAIL_BACKOFF_MAX_S = 300.0
 
+#: A camera is decoded while it has been asked for within this window. The
+#: dashboard tile re-requests every ~2.5s while on screen, so a viewer keeps
+#: it live; a few seconds after they scroll away the slot drops it.
+DEMAND_TTL = 20.0
+
 
 def _open(url: str):
     return cv2.VideoCapture(url, cv2.CAP_FFMPEG,
@@ -96,14 +101,23 @@ class Estate:
     """
 
     def __init__(self, cameras: list[str], pool: int, focus: list[str], width: int,
-                 hold_s: float, max_fps: float):
+                 hold_s: float, max_fps: float, urls: dict[str, str] | None = None):
         self.cameras = cameras
+        #: cam -> the stream URL the CATALOGUE gave us. The guide is explicit:
+        #: "start from the catalogue rather than hard-coding - the camera set
+        #: can change". Composing the URL pattern here would survive exactly
+        #: until the gateway renames it, as it already has once.
+        self.urls = dict(urls or {})
         self.focus = focus
         self.width = width
         self.hold_s = hold_s
         self.min_dt = 1.0 / max_fps if max_fps > 0 else 0.0
         self.frames: dict[str, bytes] = {}
         self.updated: dict[str, float] = {}
+        #: cam -> when it was last asked for. A camera is decoded only while it
+        #: is being watched (the guide's "open only the cameras you are
+        #: processing"); when nobody is watching, no stream is open at all.
+        self.demand: dict[str, float] = {}
         self.lock = threading.Lock()
         self.pool = max(1, min(pool, len(cameras)))
         self.mode = "coverage"
@@ -119,24 +133,49 @@ class Estate:
             threading.Thread(target=self._slot, args=(i,), daemon=True).start()
 
     def _url(self, cam: str) -> str:
+        url = self.urls.get(cam)
+        if url:
+            return url
+        # Only when the catalogue itself was unreachable AND had no entry for
+        # this camera: grid.fallback_catalogue composes the documented pattern
+        # in the one place that is allowed to.
         from app import grid
 
-        return grid.with_credentials(f"rtsp://{grid.RTSP_HOST}:{grid.RTSP_PORT}/stream/{cam}")
+        return grid.fallback_catalogue(
+            os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud"), (cam,)
+        )[cam].rtsp_url
+
+    def note_demand(self, cam: str) -> None:
+        """Record that `cam` was just asked for, so a slot will decode it."""
+        self.demand[cam] = time.monotonic()
+
+    def is_demanded(self, cam: str) -> bool:
+        return time.monotonic() - self.demand.get(cam, 0.0) < DEMAND_TTL
+
+    def _active_targets(self) -> list[str]:
+        """The cameras currently being watched, in this mode's order."""
+        pool_cams = self.focus if self.mode == "focus" else self.cameras
+        return [c for c in pool_cams if self.is_demanded(c)]
 
     def _slot(self, index: int) -> None:
         rot = index
         backoff = 0.0
         while True:
             gen = self.generation
-            if self.mode == "focus":
-                if index >= len(self.focus):
-                    while self.generation == gen:
-                        time.sleep(0.2)  # spare slot idles in focus mode
-                    continue
-                cam, hold = self.focus[index], 1e12
-            else:
-                cam, hold = self.cameras[rot % len(self.cameras)], self.hold_s
-                rot += self.pool
+            targets = self._active_targets()
+            # Nobody watching this slot's share: no capture is opened at all.
+            if not targets or index >= len(targets):
+                for _ in range(6):  # ~1.2s, then re-check demand and generation
+                    if self.generation != gen:
+                        break
+                    time.sleep(0.2)
+                rot = index
+                continue
+            cam = targets[rot % len(targets)]
+            rot += self.pool
+            # Few enough to pin one per slot: hold it continuously. More than
+            # the pool: rotate on the hold interval so all get refreshed.
+            hold = 1e12 if len(targets) <= self.pool else self.hold_s
             if self._pump(cam, hold_s=hold, gen=gen):
                 backoff = 0.0
                 continue
@@ -155,7 +194,7 @@ class Estate:
             deadline = time.time() + hold_s
             got_at = time.time()
             last_pub = 0.0
-            while time.time() < deadline and self.generation == gen:
+            while time.time() < deadline and self.generation == gen and self.is_demanded(cam):
                 ok, frame = cap.read()
                 now = time.time()
                 if not ok:
@@ -183,6 +222,7 @@ class Estate:
             cap.release()
 
     def snapshot(self, cam: str) -> bytes | None:
+        self.note_demand(cam)
         with self.lock:
             return self.frames.get(cam)
 
@@ -193,7 +233,7 @@ class Estate:
 
 
 def probe_capacity(cameras: list[str], candidates=(6, 4), secs: float = 6.0,
-                   target_fps: float = 6.0) -> int:
+                   target_fps: float = 6.0, urls: dict[str, str] | None = None) -> int:
     """The largest camera count the box decodes concurrently at a healthy rate.
 
     Opens that many known feeds at once, reads for a few seconds and measures
@@ -203,7 +243,9 @@ def probe_capacity(cameras: list[str], candidates=(6, 4), secs: float = 6.0,
     from app import grid
 
     def one(cam: str, out: dict) -> None:
-        url = grid.with_credentials(f"rtsp://{grid.RTSP_HOST}:{grid.RTSP_PORT}/stream/{cam}")
+        url = (urls or {}).get(cam) or grid.fallback_catalogue(
+            os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud"), (cam,)
+        )[cam].rtsp_url
         cap = _open(url)
         n = 0
         t0 = time.time()
@@ -396,7 +438,14 @@ def main() -> int:
     if not os.getenv("SENTINEL_GRID_PASSWORD"):
         raise SystemExit("SENTINEL_GRID_PASSWORD is not set (repo .env)")
 
-    cams = args.cameras or [f"cam{i:02d}" for i in range(1, 31)]
+    from app import grid
+
+    base = os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud")
+    grid_cams, source = grid.catalogue_or_fallback(base)
+    print(f"catalogue: {len(grid_cams)} camera(s) (source: {source})")
+    # The catalogue is the contract: its ids AND its stream URLs.
+    urls = {cid: cam.rtsp_url for cid, cam in grid_cams.items() if cam.rtsp_url}
+    cams = args.cameras or list(grid_cams)
     catalogue = _catalogue()
 
     # Motion grid: the few cameras the box decodes at once, chosen by probe.
@@ -409,14 +458,14 @@ def main() -> int:
     # actually sustain, which the probe measures.
     if args.motion_size == "auto":
         print("probing decode capacity for the motion grid...")
-        n = probe_capacity(ordered, candidates=(args.pool, max(2, args.pool - 2)))
+        n = probe_capacity(ordered, candidates=(args.pool, max(2, args.pool - 2)), urls=urls)
     else:
         n = max(1, int(args.motion_size))
     motion = ordered[:min(n, args.pool, len(ordered))]
     print(f"motion grid size: {len(motion)} ({', '.join(motion)})")
 
     estate = Estate(cams, pool=args.pool, focus=motion, width=args.width,
-                    hold_s=args.hold, max_fps=args.max_fps)
+                    hold_s=args.hold, max_fps=args.max_fps, urls=urls)
     estate.start()
     print(f"snapshot wall: {len(cams)} cameras, pool {estate.pool}, motion grid {len(motion)}, "
           f"on http://{args.host}:{args.port}  (coverage / and motion /motion)")

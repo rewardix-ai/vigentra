@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { api, errorMessage } from "@/lib/api";
+import { api, ApiError, errorMessage } from "@/lib/api";
 import { streamQueue, type Release } from "@/lib/streamQueue";
 import type { Camera, VideoSession } from "@/lib/types";
 
@@ -193,6 +193,19 @@ export function LiveTile({
         setSession(opened);
         setError(null);
       } catch (err) {
+        // A refused step-up password is refused again on every retry, and each
+        // refusal writes a denied-access audit record - a wall of tiles did
+        // that every few seconds for as long as it stayed open. Stop and show
+        // the message instead; the password is a dependency of this effect, so
+        // re-entering it starts the tile again.
+        const detail = err instanceof ApiError ? (err.detail as { code?: unknown } | undefined) : undefined;
+        if (err instanceof ApiError && err.status === 401 && detail?.code === "STEP_UP_FAILED") {
+          clearWatchdog();
+          releaseSlot();
+          setError(errorMessage(err));
+          setPhase("idle");
+          return;
+        }
         fail(errorMessage(err));
       }
     })();
@@ -285,9 +298,10 @@ export function LiveTile({
           void close();
           setError("Feed stopped");
           setPhase("waiting");
-          setTimeout(() => {
-            if (!destroyed) setAttempt((n) => n + 1);
-          }, backoffMs(1));
+          // Deliberately not gated on `destroyed`: close() clears the session,
+          // which tears this effect down and sets `destroyed` before the timer
+          // fires - the retry was being cancelled by the call meant to enable it.
+          setTimeout(() => setAttempt((n) => n + 1), backoffMs(1));
         });
         instance.loadSource(src);
         instance.attachMedia(video);

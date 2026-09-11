@@ -12,16 +12,29 @@ import {
 } from "@/components/ui";
 import { BrandLockup } from "@/components/Brand";
 
+/**
+ * Where to go after signing in: `next`, but only ever a path on this site.
+ *
+ * A prefix check is not enough. Browsers strip tab, CR and LF from anywhere in
+ * a URL, so "/\t/evil.com" passed a starts-with-"/" test and resolved to
+ * evil.com. Reject control characters and backslashes outright, then resolve
+ * against this origin and require it to stay here. Called at submit time, in
+ * the browser, where `window` exists.
+ */
+function sameOriginPath(requested: string | null): string {
+  if (!requested || /[\u0000-\u001f\u007f\\]/.test(requested)) return "/";
+  try {
+    const url = new URL(requested, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
+}
+
 function SignInForm() {
   const router = useRouter();
   const params = useSearchParams();
-  // Only ever a same-origin path. An absolute or protocol-relative `next`
-  // turned the sign-in page into an open redirect to any site.
   const requested = params.get("next");
-  const next =
-    requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.startsWith("/\\")
-      ? requested
-      : "/";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +47,7 @@ function SignInForm() {
     setError(null);
     try {
       await signIn(username.trim(), password);
-      router.push(next);
+      router.push(sameOriginPath(requested));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

@@ -226,26 +226,13 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
         return None
 
     if not _GRID_CATALOGUE:
-        try:
-            _GRID_CATALOGUE = grid.fetch_catalogue(GRID_BASE_URL)
-            logger.info("grid catalogue: %d camera(s)", len(_GRID_CATALOGUE))
-        except Exception as exc:
-            # A grid that is unreachable is a normal condition, not a crash:
-            # the worker still has whatever local and departmental cameras it
-            # was given.
-            #
-            # The failure is NOT cached. Caching an empty catalogue meant one
-            # slow response - on a gateway that takes tens of seconds on a cold
-            # connection - disabled grid capture for the entire life of a
-            # process meant to run for ever, sending every camera down the
-            # broker path instead, where a live-only source has nothing to
-            # serve and answers 404. Retrying on the next camera costs one
-            # request; the alternative costs the whole run.
-            logger.warning(
-                "grid catalogue unavailable (%s); skipping grid cameras this pass", exc
-            )
-            _GRID_CATALOGUE = {}
-            return None
+        # catalogue_or_fallback never raises: if cameras.json is unreachable it
+        # returns the documented ids (cam01..cam30) with their direct-RTSP URLs.
+        # So a grid camera ALWAYS resolves to a direct capture and is never sent
+        # down the broker path, which would download a live-only feed to a file.
+        catalogue, source = grid.catalogue_or_fallback(GRID_BASE_URL)
+        _GRID_CATALOGUE = catalogue
+        logger.info("grid catalogue: %d camera(s) (source: %s)", len(catalogue), source)
 
     raw = reference[len(GRID_EXTERNAL_PREFIX):]
     # Try the id as given first, then the old numeric form with its padding
@@ -563,6 +550,15 @@ def run(
     # above is still opened and still audited - the authorisation decision is
     # unchanged, only the transport differs.
     grid_camera = None if (synthetic or clip) else grid_camera_for(camera_id, external_camera_id)
+    is_grid = bool(external_camera_id and external_camera_id.upper().startswith("GRID-"))
+    if is_grid and grid_camera is None and not (synthetic or clip):
+        # A live-only grid camera has no archive to download. If it cannot be
+        # resolved to a direct capture, skip it this cycle rather than falling
+        # to the broker path, which would fetch footage to a temp file.
+        raise DetectorError(
+            f"{camera_id}: live grid camera could not be resolved from the "
+            f"catalogue; skipped (never downloaded)."
+        )
 
     # Adaptive sampling on every real video source - live grid and local clip
     # alike. A fixed stride spends its frames evenly and so spends most of them

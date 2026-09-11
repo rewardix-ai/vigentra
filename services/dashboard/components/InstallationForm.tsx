@@ -538,8 +538,6 @@ export function InstallationForm({
         {/* Step 4 --------------------------------------------------------- */}
         {step === 3 && (
           <>
-            <div className="px-4 pt-4">
-            </div>
             <div className="px-4 py-4">
               <h3 className="section-label">
                 Roles permitted to view this camera&rsquo;s footage in your department&rsquo;s VMS{" "}
@@ -694,9 +692,6 @@ export function InstallationForm({
                       .map((item) => `${titleise(item.document_type)}: ${item.reference || "(no reference)"}`)
                       .join(" · ")}
               </div>
-            </div>
-
-            <div className="mt-4">
             </div>
           </div>
         )}

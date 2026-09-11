@@ -230,6 +230,10 @@ services:
     image: vigentra/edge-worker-yolo:0.2.0
     restart: unless-stopped
     environment:
+      # Explicit, not left to the code default: this gateway has moved host
+      # once already, and a deployment pinned to a stale host reports an
+      # outage that is really a migration.
+      SENTINEL_GRID_BASE_URL: ${SENTINEL_GRID_BASE_URL:-https://cctv.corp8.cloud}
       SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
       SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
       SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}

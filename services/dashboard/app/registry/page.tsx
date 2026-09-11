@@ -98,10 +98,6 @@ function Registry() {
 
   // If this account can watch even one camera in the list, the custody
   // notice is answering a question it did not ask.
-  const anyWatchable = useMemo(
-    () => cameras.some((camera) => WATCHABLE_STATES.has(camera.video_access)),
-    [cameras],
-  );
 
   const options = useMemo(() => {
     const unique = (values: (string | null | undefined)[]) =>

@@ -404,8 +404,6 @@ export default function InstallationRequestPage() {
                   : "—"}
               </div>
             </Show>
-            <div className="mt-3 border-t border-line pt-3">
-            </div>
           </div>
         </Card>
 

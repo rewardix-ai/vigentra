@@ -386,7 +386,15 @@ def _resolve_hls_target(reference: str, sub_path: str | None) -> str:
     # refused; a single slash does not.
     if "://" in sub_path or sub_path.startswith("//"):
         raise HTTPExceptionLike("Stream sub-path may not name its own host")
-    if ".." in sub_path.split("?")[0].split("/"):
+    path_part = sub_path.split("?", 1)[0]
+    # No percent-encoding in the path. The checks below read the literal path,
+    # but urljoin passes "%2e%2e" through unchanged and the gateway decodes it
+    # to ".." after our checks have run - so "%2e%2e/cam07/index.m3u8" reached
+    # another camera. Real HLS URIs from this grid are plain ASCII paths, so a
+    # "%" in the path is an escape attempt, not a segment name.
+    if "%" in path_part:
+        raise HTTPExceptionLike("Stream sub-path may not be percent-encoded")
+    if ".." in path_part.split("/"):
         raise HTTPExceptionLike("Stream sub-path may not traverse upwards")
 
     target = urljoin(reference, sub_path)

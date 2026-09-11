@@ -365,15 +365,6 @@ def _port_open(host: str, port: int, timeout: float) -> bool:
     return True
 
 
-def _with_cookie_check(url: str) -> str:
-    parsed = urllib.parse.urlparse(url)
-    query = urllib.parse.parse_qs(parsed.query)
-    query["cookieCheck"] = ["1"]
-    return urllib.parse.urlunparse(
-        parsed._replace(query=urllib.parse.urlencode(query, doseq=True))
-    )
-
-
 @dataclass(frozen=True)
 class Frame:
     """A decoded frame and the timing that belongs to it."""
@@ -572,31 +563,28 @@ def open_capture(
     *,
     prefer: str = "rtsp",
     probe_seconds: float = 5.0,
-    allow_hls_fallback: bool = True,
 ) -> ReconnectingCapture:
-    """Open the best transport actually available for this camera.
+    """Open a direct RTSP capture for this camera.
 
-    RTSP is what the guide recommends for inference. Where port 8554 is
-    filtered - which is common, and true on some of the networks this runs on -
-    the guide sanctions HLS instead, so falling back is following the guidance
-    rather than working around it.
+    RTSP is what the guide recommends for inference. The CDN HLS endpoint is
+    not a usable fallback from here (it needs a sign-in cookie this capture
+    cannot carry), so an unreachable RTSP port raises rather than silently
+    decoding the gateway's login page.
     """
     if prefer == "rtsp" and camera.rtsp_url:
         parsed = urllib.parse.urlparse(camera.rtsp_url)
         host, port = parsed.hostname, parsed.port or 554
         if host and _port_open(host, port, probe_seconds):
             return ReconnectingCapture(camera.rtsp_url, label=f"rtsp {camera.described}")
-        logger.warning(
-            "RTSP port %s:%s is not reachable; %s",
-            host, port,
-            "falling back to HLS as the guide allows" if allow_hls_fallback
-            else "no fallback permitted",
-        )
-        if not allow_hls_fallback:
-            raise RuntimeError(f"RTSP unreachable for camera {camera.id} and HLS fallback is off")
+        logger.warning("RTSP port %s:%s is not reachable for camera %s", host, port, camera.id)
 
-    if not camera.hls_url:
-        raise RuntimeError(f"camera {camera.id} advertises no usable transport")
-    return ReconnectingCapture(
-        _with_cookie_check(camera.hls_url), label=f"hls {camera.described}"
+    # No usable RTSP. The CDN HLS endpoint is NOT a fallback the worker can
+    # take: it serves HLS behind a sign-in cookie (a bare /<id>/index.m3u8
+    # answers 302 to /auth/login) that OpenCV/FFmpeg cannot carry, so opening
+    # it would decode the login page rather than video. Fail loudly instead of
+    # ingesting garbage. This deployment reaches RTSP, so this does not fire.
+    raise RuntimeError(
+        f"camera {camera.id}: RTSP (8554) is unreachable and the CDN HLS "
+        f"endpoint needs a session cookie this capture cannot supply. Open the "
+        f"RTSP gateway, or point SENTINEL_GRID_RTSP_HOST at a reachable one."
     )

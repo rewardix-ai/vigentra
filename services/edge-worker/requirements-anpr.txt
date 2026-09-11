@@ -25,12 +25,12 @@
 # Then fetch the weights - plate_detector.pt and ESPCN_x4.pb - into
 # services/edge-worker/models/ (or wherever ANPR_MODELS_DIR points).
 
-# opencv-contrib, NOT plain opencv-python: the restoration stack uses
-# dnn_superres for plate super-resolution, which ships only in contrib.
-# ultralytics depends on opencv-python, so after any reinstall of it:
-#   pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python
-#   pip install opencv-contrib-python==4.11.0.86
-opencv-contrib-python==4.11.0.86
+# opencv-contrib (for dnn_superres, used by the plate super-resolution stack;
+# it ships only in contrib), and the HEADLESS build: the slim base image has no
+# X11 libraries, so the desktop build's `import cv2` dies on libxcb - the same
+# failure the yolo stage hit. ultralytics pulls plain opencv-python, so the
+# Dockerfile uninstalls every variant and force-reinstalls this one last.
+opencv-contrib-python-headless==4.11.0.86
 
 # OCR. Pinned: a stored plate records the build that produced it, so the
 # version must not drift underneath a result already in the registry.

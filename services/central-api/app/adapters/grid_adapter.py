@@ -270,19 +270,21 @@ class _GridGate:
     async def _login(self, source_system: str, credential: str, identity: str) -> None:
         try:
             await self._login_once(source_system, credential, identity)
-        except Exception as exc:
+        except SourceAuthError as exc:
+            # A genuine refusal (no session cookie): hold off for RETRY_AFTER_S
+            # so one bad credential does not become a login storm.
             self._failed_at = time.monotonic()
             self._failure = exc
+            raise
+        except Exception:
+            # A transport error or a 5xx is the gateway being unwell, not a
+            # refusal. Do not cache a backoff - the old session (still in the
+            # jar) keeps working, and the next pass may well succeed.
             raise
         self._failed_at = None
         self._failure = None
 
     async def _login_once(self, source_system: str, credential: str, identity: str) -> None:
-        # Drop the old session first. The success check below looks for a
-        # cookie, and the previous session's cookie still sat in the jar - so a
-        # refused sign-in (200 + the login page, no Set-Cookie) passed as a
-        # success and the "credential was refused" error never surfaced.
-        self._client.cookies.clear()
         # The form grew a second field. It took a password alone and now takes
         # a registered address alongside it; the address is omitted when none
         # is configured, so a gateway still running the older form is unchanged.
@@ -317,11 +319,14 @@ class _GridGate:
                 detail=str(response.status_code),
             )
 
-        # A cookie is the only proof it worked. A REJECTED sign-in comes back
-        # HTTP 200 with the sign-in page again, so status alone marked the
-        # adapter authenticated over a session that did not exist.
-        if not any(cookie for cookie in self._client.cookies.jar):
-            raise UpstreamProtocolError(
+        # A NEW cookie on THIS response is the only proof it worked - not any
+        # cookie in the jar, which still holds the previous session's. A
+        # rejected sign-in comes back HTTP 200 with the login page and no
+        # Set-Cookie, so judging by the whole jar marked a refusal a success.
+        # Checking the response alone means we never clear the jar, so a
+        # transient sign-in failure cannot wipe a session that still works.
+        if not any(True for _ in response.cookies.jar):
+            raise SourceAuthError(
                 "The grid accepted the sign-in request but issued no session "
                 "cookie, which means the credential was refused. Check "
                 "SENTINEL_GRID_EMAIL and SENTINEL_GRID_PASSWORD.",
@@ -449,7 +454,11 @@ class GridAdapter(SurveillanceAdapter):
                     gate.note_rejected(again)
                     raise
         except AdapterError as exc:
-            self._failed_at = now
+            # Stamp when it FAILED, not `now` (captured before the request):
+            # a real timeout takes ~80s with retries, so `now` was already
+            # older than the cache window and the negative cache never fired,
+            # sending the health sweep back to the network for every camera.
+            self._failed_at = time.monotonic()
             self._failure = exc
             # Serve the last good catalogue rather than propagating a blip.
             #

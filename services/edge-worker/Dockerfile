@@ -91,9 +91,10 @@ FROM yolo AS anpr
 USER root
 
 COPY services/edge-worker/requirements-anpr.txt ./requirements-anpr.txt
-# opencv-contrib replaces the headless build pulled in by requirements-yolo:
-# the restoration stack needs dnn_superres, which only ships in contrib.
-RUN pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python || true \
+# The restoration stack needs dnn_superres, which ships only in opencv-contrib.
+# Use the HEADLESS contrib build: the desktop one needs X11 libs this slim image
+# lacks. Drop every other cv2 variant first so none shadows it on import.
+RUN pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless || true \
  && pip install --no-cache-dir -r requirements-anpr.txt
 
 COPY services/edge-worker/anpr ./anpr

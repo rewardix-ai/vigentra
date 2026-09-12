@@ -417,6 +417,51 @@ def _incident_track_id(raw: object) -> int:
         return int(tail) if tail else abs(hash(text)) % 1_000_000
 
 
+def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenance) -> int:
+    """Settle the pass: drain the engine's plates, then flush everything once.
+
+    Order is the whole point, which is why this is one function rather than two
+    statements in run(). A track's verdict exists only once its bank closes, so
+    the plates arrive from finish() after the last frame - and flushing before
+    that drain shipped the detections and dropped every plate on the floor. The
+    worker logged "4 plates" while the registry recorded none, with no error
+    anywhere, because a dropped list is silent.
+
+    Returns how many plates were drained.
+    """
+    plates = 0
+    if anpr is not None:
+        try:
+            settled = anpr.finish()
+        except Exception as exc:  # pragma: no cover - engine fault
+            logger.warning("ANPR could not settle this pass: %s", exc)
+            settled = []
+        settled_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for sighting in settled:
+            plates += 1
+            pending.append(
+                _sighting_payload(
+                    sighting,
+                    camera_id=camera_id,
+                    timestamp_iso=settled_at,
+                    source_mode=source_mode,
+                    reader_version=f"{anpr.name}/{anpr.version}",
+                    provenance=base_provenance,
+                )
+            )
+            logger.info(
+                "plate %s (score %.2f, %d frames%s) on track %d",
+                sighting.text, sighting.score, sighting.observations,
+                "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
+            )
+
+    if client and pending:
+        result = client.ingest(pending)
+        logger.info("ingested final batch: %s", result)
+        pending.clear()
+    return plates
+
+
 def _incident_views(detections) -> list:
     """This frame's tracked vehicles, as the incident detector sees them.
 
@@ -796,38 +841,14 @@ def run(
                 logger.info("ingested batch: %s", result)
                 pending.clear()
 
-        if client and pending:
-            result = client.ingest(pending)
-            logger.info("ingested final batch: %s", result)
-
-        # End of the pass. The engine votes per track, and a track's verdict
-        # only exists once its bank is closed - process() above returns the
-        # vehicles it saw and never a settled plate. Draining here is what
-        # makes a pass produce plates at all.
-        if anpr is not None:
-            try:
-                settled = anpr.finish()
-            except Exception as exc:  # pragma: no cover - engine fault
-                logger.warning("ANPR could not settle this pass: %s", exc)
-                settled = []
-            settled_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            for sighting in settled:
-                plates_read += 1
-                pending.append(
-                    _sighting_payload(
-                        sighting,
-                        camera_id=camera_id,
-                        timestamp_iso=settled_at,
-                        source_mode=source_mode,
-                        reader_version=f"{anpr.name}/{anpr.version}",
-                        provenance=base_provenance,
-                    )
-                )
-                logger.info(
-                    "plate %s (score %.2f, %d frames%s) on track %d",
-                    sighting.text, sighting.score, sighting.observations,
-                    "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
-                )
+        plates_read += _finish_pass(
+            client,
+            pending,
+            anpr,
+            camera_id=camera_id,
+            source_mode=source_mode,
+            base_provenance=base_provenance,
+        )
 
         if client and incident_batch:
             try:

@@ -314,9 +314,12 @@ class AnprEngine:
             # would put an invented registration on an operator's screen.
             prior = rec.get("grammar_prior")
             if prior is not None and float(prior) < MIN_GRAMMAR_PRIOR:
-                logger.debug(
-                    "dropped %s: grammar prior %.3f below %.2f",
-                    text, float(prior), MIN_GRAMMAR_PRIOR,
+                # INFO, not DEBUG: a pass that read four plates and emitted
+                # none must not look identical to a pass that read nothing.
+                # That silence is what made "0 plates" impossible to diagnose.
+                logger.info(
+                    "dropped %s: grammar prior %.3f below %.2f (impossible "
+                    "state or district)", text, float(prior), MIN_GRAMMAR_PRIOR,
                 )
                 continue
 

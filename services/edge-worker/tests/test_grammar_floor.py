@@ -83,3 +83,20 @@ def test_a_record_without_a_prior_is_not_dropped():
 def test_the_floor_applies_to_confirmed_readings_too():
     """A confirm cannot launder an impossible registration."""
     assert drain([record("SS77D45", 0.004, status="CONFIRMED", conf=0.99)]) == []
+
+
+def test_a_dropped_reading_says_so_in_the_log(caplog):
+    """Silence is the failure mode this floor could otherwise introduce.
+
+    A pass that reads four plates and emits none must not look identical in the
+    log to a pass that read nothing - that ambiguity is what made "0 plates"
+    take hours to diagnose.
+    """
+    import logging
+
+    with caplog.at_level(logging.INFO):
+        assert drain([record("SS77D45", 0.004)]) == []
+
+    assert any("SS77D45" in r.getMessage() for r in caplog.records), (
+        "a discarded reading left no trace in the log"
+    )

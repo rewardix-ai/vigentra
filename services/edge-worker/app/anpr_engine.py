@@ -58,6 +58,15 @@ EMIT_UNCONFIRMED = os.getenv("ANPR_EMIT_UNCONFIRMED", "false").lower() == "true"
 #: time, so the reading is dropped rather than stored.
 REVIEW_SCORE = float(os.getenv("ANPR_REVIEW_SCORE", "0.35"))
 
+#: The engine scores every settled reading against the Indian plate grammar and
+#: records the result as `grammar_prior` (anpr/pipeline.py). A low prior means
+#: the string parses as *some* format but names a district or state that does
+#: not exist - DL20, DL22 and the state "SS" all scored under 0.01, against
+#: 1.000 for GJ11CK1044. Those are the readings that look like registrations
+#: and are not, which is the one output this system must never produce, so they
+#: are dropped even when EMIT_UNCONFIRMED is on. Set to 0 to keep everything.
+MIN_GRAMMAR_PRIOR = float(os.getenv("ANPR_MIN_GRAMMAR_PRIOR", "0.12"))
+
 #: How many per-camera engines to keep loaded at once. A memory dial, not a
 #: speed dial: each engine owns a vehicle detector, a plate detector and a
 #: reader.
@@ -299,6 +308,16 @@ class AnprEngine:
             # still worth surfacing - flagged, not acted on. Below the floor
             # there is not enough agreement to be worth a human's time.
             if score < REVIEW_SCORE:
+                continue
+            # A reading whose grammar prior is negligible is not a plate we
+            # failed to confirm - it is a string shaped like one. Emitting it
+            # would put an invented registration on an operator's screen.
+            prior = rec.get("grammar_prior")
+            if prior is not None and float(prior) < MIN_GRAMMAR_PRIOR:
+                logger.debug(
+                    "dropped %s: grammar prior %.3f below %.2f",
+                    text, float(prior), MIN_GRAMMAR_PRIOR,
+                )
                 continue
 
             self._emitted.add(key)

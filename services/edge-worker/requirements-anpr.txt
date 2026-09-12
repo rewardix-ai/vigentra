@@ -31,3 +31,11 @@ editdistance>=0.8
 # does not fail the import sweep - it surfaces as a reader that silently
 # reads nothing. It must be a declared dependency, not an implicit one.
 onnxruntime>=1.20
+
+# ByteTrack. The ANPR engine tracks vehicles through ultralytics'
+# model.track(), which imports its tracker - and that tracker's lap and
+# scipy - lazily, only on the first tracked frame. The plain YOLO detector
+# only ever calls predict(), so nothing else here pulls them in and their
+# absence surfaces as a crash on frame 1 rather than at import.
+lap>=0.5.12
+scipy>=1.11

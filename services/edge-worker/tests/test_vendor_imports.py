@@ -118,3 +118,38 @@ def test_onnxruntime_is_declared_because_every_import_of_it_is_lazy():
 def test_core_modules_parse(module):
     """A guard against a bad edit to the two modules most often patched here."""
     ast.parse((ANPR / f"{module}.py").read_text())
+
+
+def test_the_trackers_own_dependencies_are_declared():
+    """ultralytics pulls lap and scipy in only when tracking starts.
+
+    The scan above reads *our* source, so it cannot see a dependency a library
+    imports on our behalf. `anpr/detect/vehicle.py` calls `model.track()`,
+    which imports ultralytics.trackers -> byte_tracker -> utils.matching, and
+    that module imports lap and scipy at its own import time. Nothing else in
+    this repository tracks - the plain YOLO detector only calls predict() - so
+    neither package arrives any other way.
+
+    Found by running the engine on real footage: the engine built cleanly, the
+    reader loaded, and then frame 1 died with ModuleNotFoundError: 'lap'.
+    """
+    declared = _declared_requirements()
+    missing = [pkg for pkg in ("lap", "scipy") if pkg not in declared]
+    assert not missing, (
+        f"{missing} needed by ultralytics' ByteTrack but not declared in "
+        "requirements-anpr.txt; the engine builds fine and dies on the first "
+        "tracked frame"
+    )
+
+
+def test_the_engine_actually_tracks_rather_than_predicts():
+    """The guard above is only meaningful while this call is a track().
+
+    If vehicle.py is ever changed to predict(), lap and scipy stop being
+    required and this pair of tests should be revisited together.
+    """
+    source = (ANPR / "detect" / "vehicle.py").read_text()
+    assert ".track(" in source, (
+        "vehicle.py no longer calls model.track(); revisit "
+        "test_the_trackers_own_dependencies_are_declared"
+    )

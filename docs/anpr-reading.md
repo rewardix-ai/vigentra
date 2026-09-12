@@ -127,3 +127,16 @@ docker compose --profile anpr build edge-worker
 
 The stage adds `requirements-anpr.txt` and the `config/` directory on top of
 the YOLO stage. `ANPR_ENABLE=true` switches the engine on in a worker.
+
+Three of that file's entries are not obvious from reading our own source, and
+all three were found the hard way - by running the engine on real footage
+rather than by any import check:
+
+| Package | Why it is needed |
+|---|---|
+| `onnxruntime` | the CRNN reader and the denoise/deblur stages load ONNX models; every import of it is inside a function, so its absence is silent - the reader simply reads nothing |
+| `lap`, `scipy` | ultralytics imports its ByteTrack tracker, and that tracker's own dependencies, on the first tracked frame. The engine tracks vehicles (`anpr/detect/vehicle.py` calls `model.track()`); the plain YOLO detector only calls `predict()`, so nothing else here pulls them in |
+
+`tests/test_vendor_imports.py` guards all three. Do not trim that file by
+checking which imports appear at the top of a module - in this tree almost none
+of them do.

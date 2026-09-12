@@ -98,6 +98,10 @@ RUN pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python 
  && pip install --no-cache-dir -r requirements-anpr.txt
 
 COPY services/edge-worker/anpr ./anpr
+# The engine reads its thresholds, ROI and tracker settings from config/ at
+# construction (ANPRPipeline(thresholds=..., roi_cfg=...)), so the YAML has to
+# be in the image beside the package, not just on a developer's machine.
+COPY services/edge-worker/config ./config
 
 # Weights are NOT baked in - plate_detector.pt and ESPCN_x4.pb are mounted.
 # Missing weights are not fatal: build_engine() logs one actionable line and

@@ -1,0 +1,98 @@
+# Indian vehicle registration codes. Source of truth for anpr/plate_grammar.py.
+# state_codes: all states + union territories (RTO prefix). Verified against
+# MoRTH / VAHAN state list as of 2025.
+state_codes:
+  AN: Andaman & Nicobar
+  AP: Andhra Pradesh
+  AR: Arunachal Pradesh
+  AS: Assam
+  BR: Bihar
+  CG: Chhattisgarh
+  CH: Chandigarh
+  DD: Daman & Diu / Dadra & Nagar Haveli
+  DL: Delhi
+  DN: Dadra & Nagar Haveli (legacy)
+  GA: Goa
+  GJ: Gujarat
+  HP: Himachal Pradesh
+  HR: Haryana
+  JH: Jharkhand
+  JK: Jammu & Kashmir
+  KA: Karnataka
+  KL: Kerala
+  LA: Ladakh
+  LD: Lakshadweep
+  MH: Maharashtra
+  ML: Meghalaya
+  MN: Manipur
+  MP: Madhya Pradesh
+  MZ: Mizoram
+  NL: Nagaland
+  OD: Odisha
+  OR: Odisha (legacy)
+  PB: Punjab
+  PY: Puducherry
+  RJ: Rajasthan
+  SK: Sikkim
+  TN: Tamil Nadu
+  TR: Tripura
+  TS: Telangana
+  TG: Telangana (new)
+  UK: Uttarakhand
+  UA: Uttarakhand (legacy)
+  UP: Uttar Pradesh
+  WB: West Bengal
+
+# Gujarat RTO district codes GJ-01 .. GJ-39
+gujarat_rto:
+  "01": Ahmedabad
+  "02": Mehsana
+  "03": Rajkot
+  "04": Bhavnagar
+  "05": Surat
+  "06": Vadodara
+  "07": Kheda (Nadiad)
+  "08": Banaskantha (Palanpur)
+  "09": Sabarkantha (Himmatnagar)
+  "10": Jamnagar
+  "11": Junagadh
+  "12": Kutch (Bhuj)
+  "13": Surendranagar
+  "14": Amreli
+  "15": Valsad
+  "16": Bharuch
+  "17": Panchmahal (Godhra)
+  "18": Gandhinagar
+  "19": Surat (Bardoli)
+  "20": Dahod
+  "21": Navsari
+  "22": Narmada (Rajpipla)
+  "23": Anand
+  "24": Patan
+  "25": Porbandar
+  "26": Vyara (Tapi)
+  "27": Ahmedabad East
+  "28": Surat West
+  "29": Vadodara Rural
+  "30": Ahmedabad Rural (Bavla)
+  "31": Arvalli (Modasa)
+  "32": Veraval (Gir Somnath)
+  "33": Botad
+  "34": Chhota Udaipur
+  "35": Mahisagar (Lunawada)
+  "36": Morbi
+  "37": Khambhat
+  "38": Bavla
+  "39": Devbhumi Dwarka (Khambhalia)
+
+# Per-state max district number for the soft prior (other states are only
+# checked for 01..99 plausibility). Extend as needed.
+district_ranges:
+  GJ: [1, 39]
+  DL: [1, 16]
+  MH: [1, 51]
+  RJ: [1, 60]
+  MP: [1, 71]
+  KA: [1, 71]
+  TN: [1, 99]
+  UP: [1, 96]

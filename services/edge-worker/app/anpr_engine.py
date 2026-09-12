@@ -1,99 +1,86 @@
-"""The consensus ANPR engine, wired into the edge worker.
+"""Vigentra's adapter over the vendored `anpr` engine: detect -> enhance -> read.
 
-The worker's original plate path read OCR off one crop from one frame and kept
-the answer if it parsed. On wide street footage that yielded roughly one plate
-per sixty-seven vehicles, and the plates it did produce were single-frame
-guesses — a format-valid misread is indistinguishable from a correct read when
-you have only seen the vehicle once.
+The engine tracks each vehicle, reads its plate across every frame the vehicle
+appears in, repairs each reading against the Indian plate grammar and fuses the
+hypotheses per track (ROVER). That is what turns a one-in-sixty-seven yield on
+wide street footage into a usable one.
 
-This module replaces that path with the `anpr` package vendored alongside it,
-which is stateful per camera and answers a different question. Instead of "what
-does this crop say?", it asks "what does this *vehicle* say, across every frame
-it appeared in?" — tracking each vehicle, reading its plate many times through
-several restoration variants, repairing each reading against the Indian plate
-grammar, and taking a per-track vote.
+Three things about this boundary are worth knowing, because they are what the
+integration has to get right:
 
-The two layers doing the work are the grammar engine and the consensus vote,
-not the OCR model. That matters for what this module emits: a plate arrives
-here already voted on, with the number of frames that agreed, so the central
-API can be told how strong the reading is instead of being handed a bare string.
+**Frames are pushed in, never pulled.** The engine can open its own RTSP or HLS
+source, and deliberately is not allowed to here: the worker already decodes the
+camera once for object detection, and a second capture would be a second client
+on the gateway for the same picture - exactly the load the integrator's guide
+asks callers not to generate. `process()` hands it the frame we already have.
 
-Three consequences for the caller:
+**A plate belongs to a track, not to a frame.** A vehicle read forty times is
+one sighting, and the verdict only exists once the track's bank is closed. So
+`process()` returns the vehicles it saw and *no* plates; `finish()` closes the
+open tracks at the end of a pass and returns the ones that settled. A caller
+that never calls `finish()` reads no plates at all.
 
-**Frames must arrive in order, from one camera, into one engine.** Consensus is
-per track and a track is per stream. Sharing an engine between cameras would
-merge two junctions into one vehicle history.
-
-**Timestamps must be PTS, not arrival time.** The engine takes the capture
-instant as an argument and threads it onto every event. Route reconstruction
-across cameras is only as good as that number, and the grid's integrator guide
-is explicit that arrival time is not a substitute.
-
-**Plates are emitted once per track, not once per frame.** A vehicle read forty
-times is one sighting the network can act on, not forty.
+**Nothing is written to disk.** `evidence_dir=None` turns off the engine's crop
+store: the grid is consumed live, and keeping cropped plates on the worker
+would be a copy of footage as well as a pile of personal data.
 """
 from __future__ import annotations
 
 import logging
 import os
-import sys
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from .detectors import COCO_TO_CANONICAL, Detection, DetectorError
 
 logger = logging.getLogger("vigentra.edge.anpr")
 
-#: The vendored engine sits beside `app/`, not inside it.
+#: The vendored engine sits beside `app/`, and so do its weights and config.
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
-if str(_PACKAGE_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PACKAGE_ROOT))
 
-#: Vehicle classes the engine reads plates from - the one definition, in plates.py.
-from .plates import PLATE_BEARING_CLASSES  # noqa: E402
+#: The engine reports a class *name*; the registry stores COCO's id alongside
+#: it. Anything outside the canonical vocabulary is dropped rather than guessed
+#: at - a "traffic light" must never arrive as a vehicle just because it was in
+#: frame.
+_CANONICAL_TO_COCO: dict[str, int] = {name: cid for cid, name in COCO_TO_CANONICAL.items()}
 
-#: Below this, a voted reading is not sent at all.
-#:
-#: Higher than the single-frame reader's floor on purpose. A consensus score is
-#: not the same quantity as an OCR score - it already accounts for agreement
-#: across frames, so a low one means the frames genuinely disagreed, which is
-#: the case most likely to be a wrong plate that happens to parse.
+#: Below this a reading is not acted on automatically.
 DEFAULT_MIN_SCORE = float(os.getenv("ANPR_MIN_SCORE", "0.55"))
 
-#: Whether to emit readings the consensus layer has not yet confirmed.
-#:
 #: Off by default. An unconfirmed reading is one the track has seen too few
-#: times to vote on, and shipping those is how the old single-frame behaviour
-#: comes back in through the side door.
+#: agreeing frames of; surfacing it as a sighting invites acting on it.
 EMIT_UNCONFIRMED = os.getenv("ANPR_EMIT_UNCONFIRMED", "false").lower() == "true"
 
-#: Below this consensus score a reading is emitted for a human to check rather
-#: than acted on.
-#:
-#: A single threshold throws away everything under it, which for an estate this
-#: size is the wrong trade twice over: an automatic action on a wrong plate is
-#: expensive, and silently discarding a nearly-right one loses the vehicle.
-#: Two thresholds give a third outcome - "probably this, please confirm" - and
-#: that is what a forensic queue actually wants.
-#:
-#: The ICPR 2026 LRLPR organisers made the same point with their tiebreaker:
-#: the 3rd-placed system recognised 80.17% with a 2.38% confidence gap, while
-#: systems scoring slightly LOWER had gaps of 14.86% and 20.47%. A model whose
-#: confidence separates its right answers from its wrong ones is worth more
-#: operationally than one that scores higher and cannot tell you which is
-#: which, because only the first can triage its own output.
+#: Below the review floor there is not enough agreement to be worth a human's
+#: time, so the reading is dropped rather than stored.
 REVIEW_SCORE = float(os.getenv("ANPR_REVIEW_SCORE", "0.35"))
+
+#: How many per-camera engines to keep loaded at once. A memory dial, not a
+#: speed dial: each engine owns a vehicle detector, a plate detector and a
+#: reader.
+ENGINE_CACHE_SIZE = int(os.getenv("ANPR_ENGINE_CACHE", "4"))
+
+MODELS_DIR = Path(os.getenv("ANPR_MODELS_DIR", str(_PACKAGE_ROOT / "models")))
+CONFIG_DIR = Path(os.getenv("ANPR_CONFIG_DIR", str(_PACKAGE_ROOT / "config")))
+
+VEHICLE_WEIGHTS = os.getenv("ANPR_VEHICLE_WEIGHTS", "yolo11s.pt")
+PLATE_WEIGHTS = os.getenv("ANPR_PLATE_WEIGHTS", "plate_det_mix_n.pt")
+READER_WEIGHTS = os.getenv("ANPR_READER_WEIGHTS", "reader_crnn.onnx")
+
+#: Records accumulate on the pipeline across passes, and this worker runs for
+#: ever. Keep the recent tail so the engine can still merge fragments of one
+#: vehicle seen either side of a pass boundary, and drop the rest.
+_RECORD_TAIL = int(os.getenv("ANPR_RECORD_TAIL", "500"))
 
 
 class AnprUnavailable(DetectorError):
     """The engine could not be built.
 
-    Raised with actionable text rather than a stack trace: the weights and the
-    OCR wheels are a documented setup step (docs/anpr.md), never something that
-    happens silently on first frame.
+    Raised for a missing package, a missing weight or a missing config file -
+    anything where reading plates is impossible but counting vehicles is not.
     """
 
 
@@ -123,219 +110,256 @@ class PlateSighting:
     quality: dict = field(default_factory=dict)
 
 
-class AnprEngine:
-    """One camera's ANPR pipeline.
+def _track_number(raw: Any) -> int:
+    """The tracker's own id out of the engine's "<camera>_<n>" track key."""
+    text = str(raw)
+    tail = text.rsplit("_", 1)[-1]
+    try:
+        return int(tail)
+    except ValueError:
+        return abs(hash(text)) % 1_000_000
 
-    Owns a vendored `AnprPipeline`, which owns the vehicle tracker, the plate
-    detector, the restoration stack, the OCR ensemble and the per-track vote.
-    Build one per camera and feed it that camera's frames in order.
+
+class AnprEngine:
+    """One camera's engine: the pipeline, plus the mapping to Vigentra's types.
+
+    One engine per camera, because a vote is per track and a track is per
+    stream. Sharing an engine between cameras would let one camera's vehicles
+    vote on another's plates.
     """
 
-    name = "vigentra-anpr-consensus"
+    name = "vigentra-anpr"
 
-    def __init__(self, *, min_score: float = DEFAULT_MIN_SCORE) -> None:
-        try:
-            from anpr import config as anpr_config
-            from anpr.pipeline import AnprPipeline
-        except ImportError as exc:  # pragma: no cover - depends on extras
-            raise AnprUnavailable(
-                "The ANPR engine needs the analytics extras. Install "
-                "services/edge-worker/requirements-anpr.txt, then fetch the "
-                "weights (see docs/anpr.md). Detections will continue without "
-                "plates until then."
-            ) from exc
-
+    def __init__(self, *, camera_id: str = "camera", min_score: float = DEFAULT_MIN_SCORE) -> None:
+        self.camera_id = camera_id
         self.min_score = min_score
-        self.cfg = anpr_config.load()
-        try:
-            self._pipeline = AnprPipeline(self.cfg)
-        except Exception as exc:  # pragma: no cover - weights/driver faults
-            raise AnprUnavailable(
-                f"ANPR engine could not start: {exc}. Check the model weights "
-                f"under {anpr_config.MODELS_DIR} (see docs/anpr.md)."
-            ) from exc
-
-        # Emitted once per track. A vehicle read forty times is one sighting.
-        self._emitted: dict[int, str] = {}
         self._frames = 0
         self._started = time.perf_counter()
+        #: Track keys already emitted, so a settled plate is sent once even
+        #: though its record stays on the pipeline.
+        self._emitted: set[str] = set()
+        #: Plates that settled before the caller asked for them - a scene cut
+        #: mid-pass closes tracks, and those readings must survive to the next
+        #: finish() rather than being dropped on the floor.
+        self._pending: list[PlateSighting] = []
+
+        try:
+            from anpr.pipeline import ANPRPipeline
+            from anpr.sources.frame_source import Frame
+        except ImportError as exc:  # pragma: no cover - depends on the image
+            raise AnprUnavailable(
+                "The ANPR engine needs the analytics extras:\n"
+                "    pip install -r services/edge-worker/requirements-anpr.txt\n"
+                f"({exc})"
+            ) from exc
+
+        self._Frame = Frame
+        thresholds = CONFIG_DIR / "thresholds.yaml"
+        roi_cfg = CONFIG_DIR / "roi.yaml"
+        vehicle = MODELS_DIR / VEHICLE_WEIGHTS
+        plate = MODELS_DIR / PLATE_WEIGHTS
+        reader = MODELS_DIR / READER_WEIGHTS
+
+        missing = [str(p) for p in (thresholds, roi_cfg, vehicle, plate, reader) if not p.exists()]
+        if missing:
+            raise AnprUnavailable(
+                "The ANPR engine is missing files it cannot run without:\n  "
+                + "\n  ".join(missing)
+                + "\nPut the weights in ANPR_MODELS_DIR and the YAML in "
+                "ANPR_CONFIG_DIR, or set ANPR_ENABLE=false to run without plates."
+            )
+
+        try:
+            self._pipeline = ANPRPipeline(
+                camera_id=camera_id,
+                thresholds=thresholds,
+                roi_cfg=roi_cfg,
+                vehicle_weights=str(vehicle),
+                plate_weights=str(plate),
+                reader_weights=[str(reader)],
+                # Live-only: no crop store on disk. See the module docstring.
+                evidence_dir=None,
+                keep_frames=False,
+                # The worker already samples; the engine must look at every
+                # frame it is given, not thin them again.
+                frame_stride=1,
+            )
+        except Exception as exc:  # pragma: no cover - depends on the weights
+            raise AnprUnavailable(f"The ANPR engine failed to load: {exc}") from exc
 
     # -- lifecycle ---------------------------------------------------------
 
     def reset(self) -> None:
-        """Drop all per-track state.
+        """Drop per-track state after a scene cut.
 
-        Called on a stream discontinuity — the sandbox feeds loop, and at the
-        loop point the scene cuts. Carrying track ids across that cut would
-        splice two different vehicles into one plate history, which is exactly
-        the error a route must never contain.
+        The grid's feeds loop; at the loop point the scene cuts. Carrying track
+        ids across that cut would splice two different vehicles into one plate
+        history, which is exactly the error a route must never contain.
         """
-        self._pipeline.reset()
-        self._emitted.clear()
-        logger.info("ANPR state reset on stream discontinuity")
+        # Settle first: the tracks being torn down here may have voted, and a
+        # reading is not discarded just because the scene cut after it.
+        self._settle()
+        vehicles = getattr(self._pipeline, "vehicles", None)
+        if vehicles is not None and hasattr(vehicles, "reset"):
+            vehicles.reset()
 
     def new_stream(self) -> None:
-        """A fresh capture of the same camera is starting.
+        """A new capture of the same camera.
 
-        Not the same as `reset`. Between two cycles the vehicles are gone and
-        the track ids mean nothing, so the votes and the tracker must go - but
-        the camera has not moved, so where its burned-in clock sits, the plate
-        sizes it delivers and its measured timings are all still true. Keeping
-        those is the entire reason an engine is cached per camera rather than
-        rebuilt: a 25-frame pass is too short to learn them twice.
+        The track ids mean nothing across a reconnect, so the tracker goes -
+        but the camera has not moved, so what it has learned about where its
+        burned-in clock sits is kept.
         """
-        self._pipeline.on_discontinuity()
-        self._emitted.clear()
+        self.reset()
 
-    def describe(self) -> dict[str, Any]:
-        return {
-            "detector": self.name,
-            "model_version": self.version,
-            "plate_model": self.cfg.detect.plate_model,
-            "vehicle_model": self.cfg.detect.vehicle_model,
-            "ocr_engines": list(self.cfg.ocr.engines),
-            "min_score": self.min_score,
-            "review_score": REVIEW_SCORE,
-            "emit_unconfirmed": EMIT_UNCONFIRMED,
-            "preferred_states": list(self.cfg.region.preferred_states),
-        }
-
-    @property
-    def version(self) -> str:
-        plate_model = Path(str(self.cfg.detect.plate_model)).stem
-        engines = "+".join(self.cfg.ocr.engines) or "none"
-        return f"{plate_model}/{engines}"
-
-    # -- inference ---------------------------------------------------------
+    # -- per frame ---------------------------------------------------------
 
     def process(
         self, frame, *, captured_at: float, discontinuity: bool = False
     ) -> tuple[list[Detection], list[PlateSighting]]:
         """Run one frame.
 
-        Returns the vehicle detections seen in this frame, and any plates that
-        settled on it. The two lists are independent: most frames produce
-        vehicles and no plates, which is correct — a plate is only reported
-        once its track has voted.
+        Returns the vehicles seen in this frame. The plate list is always empty:
+        a plate settles per track, and tracks are closed by `finish()`.
         """
         if discontinuity:
             self.reset()
 
-        self._frames += 1
         started = time.perf_counter()
-        result = self._pipeline.process_frame(frame, timestamp=captured_at)
+        self._pipeline.process_frame(
+            self._Frame(
+                image=frame,
+                pts_ms=float(captured_at) * 1000.0,
+                frame_idx=self._frames,
+                camera_id=self.camera_id,
+                discontinuity=discontinuity,
+            )
+        )
+        self._frames += 1
         latency_ms = (time.perf_counter() - started) * 1000.0
 
-        detections = []
-        for box in result.vehicles:
-            # The vehicle detector is COCO-pretrained, so its class ids are
-            # COCO's. Anything outside the canonical vocabulary is dropped
-            # rather than guessed at - a "traffic light" must never arrive as
-            # a vehicle just because it was in frame.
-            canonical = COCO_TO_CANONICAL.get(int(box.cls))
-            if canonical is None:
+        detections: list[Detection] = []
+        for track_id, box, cls_name, conf in getattr(self._pipeline, "last_vehicles", []):
+            canonical = str(cls_name).strip().lower()
+            class_id = _CANONICAL_TO_COCO.get(canonical)
+            if class_id is None:
                 continue
             detections.append(
                 Detection(
                     class_name=canonical,
-                    class_id=int(box.cls),
-                    confidence=round(float(box.conf), 4),
-                    bbox_xyxy=_xyxy(box),
+                    class_id=class_id,
+                    confidence=round(float(conf), 4),
+                    bbox_xyxy=[round(float(v), 1) for v in box],
                     model_name=self.name,
                     model_version=self.version,
                     inference_latency_ms=round(latency_ms, 2),
-                    extra={"track_id": box.track_id},
+                    extra={"track_id": track_id},
+                )
+            )
+        return detections, []
+
+    # -- end of pass -------------------------------------------------------
+
+    def finish(self) -> list[PlateSighting]:
+        """Close the open tracks and return every plate that settled this pass."""
+        self._settle()
+        out, self._pending = self._pending, []
+        return out
+
+    def _settle(self) -> None:
+        """Close open tracks and move newly settled readings into `_pending`."""
+        try:
+            self._pipeline.flush()
+        except Exception as exc:  # pragma: no cover - engine fault
+            logger.warning("ANPR flush failed for %s: %s", self.camera_id, exc)
+            return
+
+        out = self._pending
+        for rec in list(getattr(self._pipeline, "records", [])):
+            key = str(rec.get("track_id"))
+            if key in self._emitted:
+                continue
+            text = rec.get("plate")
+            if not text:
+                continue
+            confirmed = rec.get("status") == "CONFIRMED"
+            score = float(rec.get("confidence") or 0.0)
+            if not confirmed and not EMIT_UNCONFIRMED:
+                continue
+            # Between the review floor and the acting threshold a reading is
+            # still worth surfacing - flagged, not acted on. Below the floor
+            # there is not enough agreement to be worth a human's time.
+            if score < REVIEW_SCORE:
+                continue
+
+            self._emitted.add(key)
+            out.append(
+                PlateSighting(
+                    track_id=_track_number(key),
+                    text=str(text),
+                    score=score,
+                    confidence=score,
+                    observations=int(rec.get("frames_fused") or rec.get("n_plate_hits") or 1),
+                    confirmed=confirmed,
+                    needs_review=score < self.min_score,
+                    # The engine fuses under a grammar rather than reporting a
+                    # state of its own; leaving this None beats inferring one
+                    # from the first two characters of a fused reading.
+                    state=None,
+                    plate_format=rec.get("plate_class") or None,
+                    plate_bbox=[float(v) for v in (rec.get("bbox") or [])],
+                    vehicle_bbox=[float(v) for v in (rec.get("vehicle_box") or [])],
+                    captured_at=float(rec.get("last_seen_pts_ms") or 0.0) / 1000.0,
+                    frame_index=int(rec.get("best_frame") or rec.get("last_frame") or 0),
+                    method=str(rec.get("reason") or ""),
+                    quality=dict(rec.get("quality") or {}),
                 )
             )
 
-        return detections, list(self._settled(result))
+        self._trim_records()
 
-    def _settled(self, result) -> Iterator[PlateSighting]:
-        """Plates that reached a verdict on this frame and have not been sent.
+    def _trim_records(self) -> None:
+        records = getattr(self._pipeline, "records", None)
+        if records is None or len(records) <= _RECORD_TAIL:
+            return
+        keep = records[-_RECORD_TAIL:]
+        kept = {str(r.get("track_id")) for r in keep}
+        self._emitted &= kept
+        records[:] = keep
 
-        A track is re-emitted when its voted text *changes* — consensus can
-        revise a reading as more frames arrive, and the later answer is the
-        better one. The central API is idempotent on detection id, so a revised
-        reading lands as a new sighting rather than silently overwriting the
-        first; both are visible to an operator reviewing a route, which is the
-        honest presentation of a reading that moved.
-        """
-        for event in result.events:
-            if not event.text:
-                continue
-            if not event.confirmed and not EMIT_UNCONFIRMED:
-                continue
-            # Between the review floor and the acting threshold a reading is
-            # still worth surfacing - flagged, not acted on. Below the review
-            # floor there is not enough agreement to be worth a human's time.
-            needs_review = event.score < self.min_score
-            if event.score < REVIEW_SCORE:
-                continue
-            if self._emitted.get(event.track_id) == event.text:
-                continue
+    # -- reporting ---------------------------------------------------------
 
-            self._emitted[event.track_id] = event.text
-            box = event.box or {}
-            # The event carries the plate box; the vehicle carrying it is
-            # matched back by track id, so a sighting can point at the whole
-            # vehicle as well as the plate.
-            vehicle = next(
-                (v for v in result.vehicles if v.track_id == event.track_id), None
-            )
-            yield PlateSighting(
-                track_id=event.track_id,
-                text=event.text,
-                score=float(event.score),
-                confidence=float(event.confidence),
-                observations=int(event.observations or 1),
-                confirmed=bool(event.confirmed),
-                needs_review=needs_review,
-                state=event.state,
-                plate_format=event.fmt,
-                plate_bbox=_box_to_xyxy(box),
-                vehicle_bbox=_xyxy(vehicle) if vehicle is not None else [],
-                captured_at=float(event.timestamp),
-                frame_index=int(event.frame),
-                method=event.method or "",
-                quality=dict(event.quality or {}),
-            )
+    @property
+    def version(self) -> str:
+        return f"{Path(PLATE_WEIGHTS).stem}/{Path(READER_WEIGHTS).stem}"
+
+    def describe(self) -> dict[str, Any]:
+        return {
+            "detector": self.name,
+            "version": self.version,
+            "camera": self.camera_id,
+            "vehicle_model": VEHICLE_WEIGHTS,
+            "plate_model": PLATE_WEIGHTS,
+            "reader_model": READER_WEIGHTS,
+            "min_score": self.min_score,
+            "emit_unconfirmed": EMIT_UNCONFIRMED,
+        }
 
     def stats(self) -> dict:
         elapsed = time.perf_counter() - self._started
-        engine = self._pipeline.report()
+        records = list(getattr(self._pipeline, "records", []))
         return {
             "frames": self._frames,
             "fps": round(self._frames / elapsed, 2) if elapsed else 0.0,
-            "plates_emitted": len(self._emitted),
-            **engine,
+            "tracks": len(records),
+            "confirmed": sum(1 for r in records if r.get("status") == "CONFIRMED"),
+            "emitted": len(self._emitted),
         }
 
 
-def _xyxy(box) -> list[float]:
-    return [
-        round(float(box.x1), 2),
-        round(float(box.y1), 2),
-        round(float(box.x2), 2),
-        round(float(box.y2), 2),
-    ]
-
-
-def _box_to_xyxy(box: dict) -> list[float]:
-    """The engine reports boxes as dicts; the ingest API wants xyxy."""
-    if not box:
-        return []
-    try:
-        return [
-            round(float(box["x1"]), 2),
-            round(float(box["y1"]), 2),
-            round(float(box["x2"]), 2),
-            round(float(box["y2"]), 2),
-        ]
-    except (KeyError, TypeError, ValueError):
-        return []
-
-
-def build_engine(*, min_score: float = DEFAULT_MIN_SCORE) -> AnprEngine | None:
+def build_engine(
+    *, camera_id: str = "camera", min_score: float = DEFAULT_MIN_SCORE
+) -> AnprEngine | None:
     """Build the engine, or return None when ANPR is off or unavailable.
 
     Returns None rather than raising when the extras are missing, because ANPR
@@ -346,7 +370,7 @@ def build_engine(*, min_score: float = DEFAULT_MIN_SCORE) -> AnprEngine | None:
         logger.info("ANPR disabled (set ANPR_ENABLE=true to turn it on)")
         return None
     try:
-        engine = AnprEngine(min_score=min_score)
+        engine = AnprEngine(camera_id=camera_id, min_score=min_score)
     except AnprUnavailable as exc:
         logger.error("%s", exc)
         return None
@@ -354,38 +378,17 @@ def build_engine(*, min_score: float = DEFAULT_MIN_SCORE) -> AnprEngine | None:
     return engine
 
 
-#: How many per-camera engines to keep loaded at once.
-#:
-#: Each engine owns a vehicle detector, a plate detector and an OCR ensemble,
-#: so this is a memory dial, not a speed dial. Four suits the documented
-#: deployment - one worker per site, a handful of cameras - and the default is
-#: deliberately not raised for the 30-camera sandbox: past the capacity every
-#: lookup misses and the cache degrades to exactly the old behaviour, which is
-#: correct but pointless, whereas an oversized cache would exhaust the box.
-ENGINE_CACHE_SIZE = int(os.getenv("ANPR_ENGINE_CACHE", "4"))
-
-
 class EngineCache:
     """One ANPR engine per camera, kept between cycles, bounded.
 
     A worker cycling its cameras used to build a fresh engine for every camera
-    on every pass. That threw away two things:
-
-    **The weights.** Loading them costs seconds and hundreds of megabytes, and
-    on a short cycle that load was a large fraction of the whole pass.
-
-    **Everything the camera had learned about itself.** The overlay suppressor
-    needs several frames to work out where a burned-in clock sits; the plate
-    vote accumulates across frames; the incident detector learns the junction's
-    prevailing direction before it can call anything wrong-way. A 25-frame pass
-    barely reaches those thresholds, and discarding the state at the end of it
-    meant every pass started from nothing and the second pass was no wiser than
-    the first.
+    on every pass. That threw away the weights - seconds and hundreds of
+    megabytes to load - and everything the camera had learned about itself:
+    where its burned-in clock sits, which scene text is not a plate.
 
     Bounded because engines are heavy. Eviction is least-recently-used, which
     on a round-robin over more cameras than the capacity means every lookup
-    misses - the old behaviour, no worse. On a site with fewer cameras than the
-    capacity, nothing is ever evicted and every camera keeps its history.
+    misses: the old behaviour, no worse.
     """
 
     def __init__(self, capacity: int = ENGINE_CACHE_SIZE) -> None:
@@ -415,7 +418,7 @@ class EngineCache:
             return engine
 
         self.misses += 1
-        engine = build_engine()
+        engine = build_engine(camera_id=camera_id)
         if engine is None:
             self._unavailable = True
             return None

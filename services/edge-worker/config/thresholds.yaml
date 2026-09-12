@@ -1,0 +1,92 @@
+legibility_gate:
+  w_min_px: 22
+  h_min_px: 8
+  sharpness_min: 8.0
+  contrast_min: 25.0
+detector:
+  vehicle_conf: 0.15
+  vehicle_classes:
+  - 2
+  - 3
+  - 5
+  - 7
+  vehicle_imgsz: 1920
+  plate_conf: 0.2
+  plate_imgsz: 640
+  vehicle_crop_upscale_min_px: 640
+  tile_size: 0
+  tile_overlap: 0.2
+  aspect_soft_band:
+  - 1.0
+  - 6.0
+  plate_h_frac_of_vehicle:
+  - 0.04
+  - 0.25
+  max_masked_frac: 0.15
+  retro_proposer: true
+  plates_per_vehicle: 1   # was 2: the second box was a bumper edge / neighbour's plate and diluted the bank
+tracker:
+  type: bytetrack
+  track_high_thresh: 0.4
+  track_low_thresh: 0.1
+  new_track_thresh: 0.5
+  track_buffer: 45
+  match_thresh: 0.8
+crop_bank:
+  top_k: 12
+  max_bank: 64
+fusion:
+  register: ecc
+  method: weighted_median
+  sr_scale: 3
+  min_frames_for_confirm: 3
+confidence:
+  confirm_threshold: 0.75
+  candidate_threshold: 0.35
+  temperature: 0.3
+  agreement_power: 1.0
+  confirm_min_char_vote: 0.5   # weakest character's vote share; an undecided 6/8 must never confirm
+  # Hard floors for CONFIRMED, from measurement (reports/lowres_curve.md): open reading is
+  # 0 % exact below 40 px even with 12-frame fusion, so no read from a narrower best crop
+  # may confirm; and a confirm needs several independent variants agreeing, not one.
+  # (Sandbox cam27 produced a 0.89 false confirm from a 29-px non-plate with 3 hypotheses.)
+  confirm_min_width_px: 40
+  confirm_min_hypotheses: 6
+# Reading / decision changes of 2026-09-11 (anpr/pipeline.py _read_layout / _decide). Chosen by
+# replaying the labelled Delhi clip (12 legible plates) and sandbox cam06 (checked by eye) through
+# every variant: Delhi 2 correct + 1 false confirm -> 5 correct, 0 false; cam06 1 correct + 1
+# doubtful -> 2 correct, 0 false. Deleting this section restores the 2026-09-10 behaviour.
+reading:
+  preferred_state: GJ              # grammar tie-break state; run_anpr.py --state DL / '' elsewhere
+  two_row_both_ways: true          # squat plate box: read as one row AND two rows, keep the stronger read
+  single_crops: 6                  # single crops read on their own (was 3; 12 let poor crops dilute the vote)
+  count_agreeing_frames: true      # single frames agreeing with the read count toward min_frames_for_confirm
+  confirm_max_alt_ratio: 0.5       # runner-up must be < 0.5 x the winner (blocked DL11T1087 vs true DL1LT1087)
+  confirm_min_agreeing_singles: 2  # >= 2 single frames must back the read themselves (blocked cam06 GJ11EJ7578)
+  # Optional second reader: add "awiros" to readers (Awiros-ANPR-OCR, models/awiros + third_party/PaddleOCR).
+  # Measured (reports/LOOP_LOG.md H10/H11): +1 confirm on Delhi and on cam06, none on the 4K clip, at
+  # 2x (cam06 451 s vs 232 s) to 3.7x (4K 959 s vs 257 s) the processing time; limiting it to 3 crops
+  # per track lost the cam06 gain. Off by default: not worth the load.
+  readers: [crnn]
+  reader_weight: {awiros: 2.0}
+  # H11 temporal aggregation (reports/LOOP_LOG.md H11). Every crop of a track is read on its own by
+  # the fast reader; crops that do not read as a registration (headlamps, mirrors, bumper panels)
+  # are dropped from the fusion, and the string most crops read wins when >= 2 crops agree. A vote
+  # read is CONFIRMED only with >= 4 crops reading it exactly, >= 40 % of the vote, the runner-up
+  # < 0.5 x the winner and a >= 40 px plate. Delhi 4K replay: 6 -> 9 distinct plates, all confirmed,
+  # 0 wrong; cam06: 3 confirmed, 0 wrong.
+  read_filter: true
+  string_vote: true
+  vote_confirm: {min_crops: 4, min_share: 0.4}
+  # H12 second reader as a fallback (reports/LOOP_LOG.md H12). The primary reader votes alone and
+  # decides every confirm; the second CRNN only supplies a shown, never-confirmed read on tracks the
+  # primary cannot decide. Pooling both readers in one vote had cut Delhi 4K confirms 9 -> 5.
+  # Replay: Delhi 4K 9 read / 9 confirmed -> 11 read / 9 confirmed; cam06 3/5 -> 5/5 read, 3
+  # confirmed; 0 wrong confirms on both. Delete these two keys for the H11 behaviour.
+  second_reader_mode: fallback
+  extra_crnn_weights: [models/reader_crnn_v6.onnx]
+  # a crop's string may not vote when its district does not exist for its state (DL81AP4175:
+  # Delhi issues DL1-DL16; GJ has RTOs 01-39 in config/india_codes.yaml). Delhi 4K replay: the true
+  # DL8CAP4175 now wins its vote (2 crops, 0.68); 11 read / 9 confirmed / 0 wrong either way;
+  # cam06 unchanged (5/5 read, 3 confirmed).
+  vote_reject: [district_out_of_range, bad_gj_rto, district_00]

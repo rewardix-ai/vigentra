@@ -47,9 +47,9 @@ Scaling to ~80,000 cameras: [`docs/scalability.md`](docs/scalability.md).
   edge, continuously and across many cameras, with results in the dashboard.
 - **ANPR** — number-plate reading at the edge, off by default, behind its own
   `plate:read` permission, with shorter retention and audited disclosure. The
-  reader is a consensus engine: it tracks each vehicle, reads its plate across
-  every frame the vehicle appears in, repairs each reading against the Indian
-  plate grammar, and votes.
+  reader works at track level: it follows each vehicle, banks a crop from every
+  frame the vehicle appears in, restores and reads them, repairs each reading
+  against the Indian plate grammar, and votes across the whole pass.
 - **Watchlist matching and real-time alerts** — an ingested plate is matched
   against the active watchlist as it arrives, tolerating OCR error, and a hit
   raises an alert. Four separate permissions; every act audited.

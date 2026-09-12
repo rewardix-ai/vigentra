@@ -207,27 +207,25 @@ outside that map are discarded rather than guessed at. A frame-quality router
 classifies each frame first and skips ones too degraded to mean anything,
 recording that it did so rather than producing noise.
 
-**ANPR — a consensus engine, not a per-frame OCR call.** This is the part that
+**ANPR — a track-level engine, not a per-frame OCR call.** This is the part that
 determines whether the graded test case works at all, so it is worth being
 precise about what it does:
 
 ```
 frame
-  ├─ vehicle detector (YOLOv8n + ByteTrack) ──► stable track id per vehicle
-  ├─ plate detector (YOLO11m, plate-finetuned)
-  │     ├─ full-frame pass
-  │     └─ ROI pass inside each vehicle box, upscaled   ← finds distant plates
-  ├─ quality assessment    resolution · sharpness · exposure · clipped glare
-  ├─ restoration           only the branches the defects call for
-  │     ├─ perspective rectification      (angled CCTV views)
-  │     ├─ CLAHE + unsharp                (always)
-  │     ├─ low-light branch               (gamma lift → denoise → CLAHE)
-  │     ├─ glare branch                   (inpaint clipped pixels → retinex)
-  │     ├─ super-resolution ESPCN ×4      (plates under ~140 px wide)
-  │     └─ adaptive binarisation          (flat, washed-out crops)
-  ├─ OCR ensemble          every variant read independently (PP-OCRv5)
+  ├─ overlay mask          OSD strips, static text and hoardings excluded
+  ├─ vehicle detector (YOLO11 + ByteTrack) ──► stable track id per vehicle
+  ├─ plate detector        inside each vehicle box: crop → upscale ≥640 px →
+  │                        CNN (+ retro-reflective proposer) → geometry prior
+  ├─ crop bank             every crop stamped with track, frame, PTS, quality
+  │                        (a verdict is produced when the track closes)
+  ├─ legibility gate       width · sharpness · contrast ──► UNREADABLE
+  ├─ restoration           rectify → ECC register → fuse (weighted median or
+  │                        shift-and-add SR) → glare → denoise → deblur →
+  │                        deskew → binarise
+  ├─ reader                CRNN-CTC over every variant, read independently
   ├─ grammar engine        Indian plate formats + confusion-aware repair
-  └─ consensus             per-track voting across frames ──► final plate
+  └─ ROVER vote            across the track's crops ──► CONFIRMED | CANDIDATE
 ```
 
 The two layers carrying the accuracy are the **grammar engine** and the
@@ -424,7 +422,7 @@ a deploying engineer can trust.
 - **ANPR yield on wide overview footage is low, and that is optical.** A camera
   positioned for ANPR reads plates well; a general-purpose overview camera does
   not. The measured 1-in-67 figure in `docs/anpr.md` is for the *fallback*
-  single-frame reader; the consensus engine has not yet been measured on the
+  single-frame reader; the track-level engine has not been measured on the
   government feed, and we are not quoting a number for it until it has been.
 - **Cross-camera tracking depends entirely on plate reads.** A vehicle whose
   plate is never read does not appear on its own route.

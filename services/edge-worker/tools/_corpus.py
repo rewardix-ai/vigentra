@@ -412,7 +412,7 @@ NEEDS_HUMAN = frozenset({
 
 #: Crop-level thresholds for the automatic tags.
 #:
-#: These match the runtime engine's own definitions (anpr/enhance.py) so that
+#: These match the runtime engine's own definitions (anpr/enhance/quality.py) so that
 #: "blurred" in the dataset means what "blurred" means in the pipeline. If they
 #: drift apart, the dataset stops describing the system it is meant to fix.
 BLUR_THRESHOLD = 90.0          # variance of Laplacian, per anpr.enhance

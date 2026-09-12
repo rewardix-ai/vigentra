@@ -54,94 +54,83 @@ def engine_module():
 # ---------------------------------------------------------------------------
 
 @dataclass
-class FakeBox:
-    x1: float = 10.0
-    y1: float = 20.0
-    x2: float = 110.0
-    y2: float = 140.0
-    conf: float = 0.9
-    cls: int = 2
-    track_id: int | None = 7
+class FakeFrame:
+    """Stands in for `anpr.sources.frame_source.Frame`."""
+
+    image: object = None
+    pts_ms: float = 0.0
+    frame_idx: int = 0
+    camera_id: str = "cam01"
+    discontinuity: bool = False
 
 
-@dataclass
-class FakeEvent:
-    track_id: int = 7
-    text: str = "GJ01AB1234"
-    score: float = 0.82
-    confidence: float = 0.79
-    valid: bool = True
-    fmt: str | None = "standard"
-    state: str | None = "GJ"
-    confirmed: bool = True
-    observations: int = 11
-    box: dict = field(
-        default_factory=lambda: {"x1": 40, "y1": 90, "x2": 96, "y2": 110, "conf": 0.8}
-    )
-    quality: dict = field(default_factory=dict)
-    frame: int = 12
-    timestamp: float = 1234.5
-    method: str = "clahe+sr"
+def record(**over) -> dict:
+    """One finalised track, shaped as `ANPRPipeline.records` holds them."""
+    rec = {
+        "track_id": "cam01_7",
+        "camera_id": "cam01",
+        "status": "CONFIRMED",
+        "plate": "GJ01AB1234",
+        "confidence": 0.82,
+        "frames_fused": 11,
+        "n_plate_hits": 14,
+        "plate_class": "standard",
+        "bbox": [40.0, 90.0, 96.0, 110.0],
+        "vehicle_box": [10.0, 20.0, 110.0, 140.0],
+        "first_seen_pts_ms": 1000.0,
+        "last_seen_pts_ms": 1234500.0,
+        "best_frame": 12,
+        "last_frame": 14,
+        "reason": "",
+        "quality": {},
+    }
+    rec.update(over)
+    return rec
 
 
-@dataclass
-class FakeResult:
-    frame_idx: int = 12
-    vehicles: list = field(default_factory=lambda: [FakeBox()])
-    plates: list = field(default_factory=list)
-    events: list = field(default_factory=list)
-    stats: dict = field(default_factory=dict)
+class FakeVehicles:
+    def __init__(self) -> None:
+        self.resets = 0
+
+    def reset(self) -> None:
+        self.resets += 1
 
 
 class FakePipeline:
-    """Stands in for `anpr.pipeline.AnprPipeline`."""
+    """Stands in for `anpr.pipeline.ANPRPipeline`.
 
-    def __init__(self, results):
-        self._results = list(results)
-        self.calls = []
-        self.resets = 0
+    The shape that matters: `process_frame` returns nothing, vehicles for the
+    frame just seen hang off `last_vehicles`, and a track's verdict only
+    reaches `records` when `flush()` closes its bank.
+    """
 
-    def process_frame(self, frame, timestamp=None):
-        self.calls.append(timestamp)
-        return self._results.pop(0) if self._results else FakeResult(events=[])
+    def __init__(self, records=(), vehicles=()):
+        self._on_flush = list(records)
+        self.records: list = []
+        self.last_vehicles = list(vehicles)
+        self.vehicles = FakeVehicles()
+        self.frames: list = []
+        self.flushes = 0
 
-    def reset(self):
-        self.resets += 1
+    def process_frame(self, frame):
+        self.frames.append(frame)
 
-    def stats(self):
-        return {"ocr_calls": 3}
-
-
-@dataclass
-class FakeDetectConfig:
-    plate_model: str = "plate_detector.pt"
-    vehicle_model: str = "yolov8n.pt"
-
-
-@dataclass
-class FakeOcrConfig:
-    engines: tuple = ("paddle",)
+    def flush(self):
+        self.flushes += 1
+        # Closing the banks is what publishes a verdict.
+        self.records.extend(self._on_flush)
+        self._on_flush = []
 
 
-@dataclass
-class FakeRegionConfig:
-    preferred_states: tuple = ("GJ",)
-
-
-@dataclass
-class FakeConfig:
-    detect: FakeDetectConfig = field(default_factory=FakeDetectConfig)
-    ocr: FakeOcrConfig = field(default_factory=FakeOcrConfig)
-    region: FakeRegionConfig = field(default_factory=FakeRegionConfig)
-
-
-def build(engine_module, results):
+def build(engine_module, records=(), vehicles=()):
     """An AnprEngine wrapping a fake pipeline, without touching real weights."""
     engine = engine_module.AnprEngine.__new__(engine_module.AnprEngine)
+    engine.camera_id = "cam01"
     engine.min_score = 0.55
-    engine.cfg = FakeConfig()
-    engine._pipeline = FakePipeline(results)
-    engine._emitted = {}
+    engine._pipeline = FakePipeline(records, vehicles)
+    engine._Frame = FakeFrame
+    engine._emitted = set()
+    engine._pending = []
     engine._frames = 0
     engine._started = 0.0
     return engine
@@ -153,102 +142,96 @@ def build(engine_module, results):
 
 def test_a_confirmed_plate_is_emitted_once_per_track(engine_module):
     """A vehicle read forty times is one sighting, not forty."""
-    results = [FakeResult(events=[FakeEvent()]) for _ in range(4)]
-    engine = build(engine_module, results)
+    engine = build(engine_module, records=[record()])
 
-    emitted = []
     for _ in range(4):
         _, plates = engine.process(None, captured_at=1.0)
-        emitted.extend(plates)
+        assert plates == [], "a plate settles per track, never per frame"
 
-    assert len(emitted) == 1
-    assert emitted[0].text == "GJ01AB1234"
-    assert emitted[0].observations == 11
+    settled = engine.finish()
+    assert [p.text for p in settled] == ["GJ01AB1234"]
+    assert settled[0].observations == 11
+    assert settled[0].track_id == 7, "the tracker's own id, out of 'cam01_7'"
+
+
+def test_a_settled_plate_is_not_re_emitted_on_the_next_pass(engine_module):
+    """Records stay on the pipeline between passes; the sighting must not repeat."""
+    engine = build(engine_module, records=[record()])
+    assert len(engine.finish()) == 1
+    assert engine.finish() == []
 
 
 def test_an_unconfirmed_reading_is_withheld(engine_module):
-    """Too few frames to vote on is not a reading, it is a guess."""
-    engine = build(engine_module, [FakeResult(events=[FakeEvent(confirmed=False)])])
-    _, plates = engine.process(None, captured_at=1.0)
-    assert plates == []
+    """Too few agreeing frames is not a reading, it is a guess."""
+    engine = build(engine_module, records=[record(status="CANDIDATE")])
+    assert engine.finish() == []
 
 
 def test_a_low_scoring_vote_is_withheld(engine_module):
-    """A low consensus score means the frames disagreed - the worst case."""
-    engine = build(engine_module, [FakeResult(events=[FakeEvent(score=0.3)])])
-    _, plates = engine.process(None, captured_at=1.0)
-    assert plates == []
+    """A low fused score means the frames disagreed - the worst case."""
+    engine = build(engine_module, records=[record(confidence=0.30)])
+    assert engine.finish() == []
 
 
-def test_a_revised_reading_is_emitted_again(engine_module):
-    """Consensus may revise a plate as more frames arrive; the later answer wins.
+def test_a_track_with_no_plate_is_not_a_sighting(engine_module):
+    engine = build(engine_module, records=[record(status="UNREADABLE", plate=None)])
+    assert engine.finish() == []
 
-    Re-emitted rather than suppressed, because the central API is idempotent on
-    detection id and both readings should be visible to whoever reviews the
-    route. Silently keeping the first answer would hide that the reading moved.
+
+def test_capture_time_is_threaded_through_as_pts_milliseconds(engine_module):
+    """PTS, never arrival time - route reconstruction depends on this number.
+
+    The worker counts in seconds and the engine's Frame carries milliseconds.
     """
-    engine = build(
-        engine_module,
-        [
-            FakeResult(events=[FakeEvent(text="GJ01AB1Z34")]),
-            FakeResult(events=[FakeEvent(text="GJ01AB1234")]),
-        ],
-    )
-    first = engine.process(None, captured_at=1.0)[1]
-    second = engine.process(None, captured_at=2.0)[1]
-
-    assert [p.text for p in first] == ["GJ01AB1Z34"]
-    assert [p.text for p in second] == ["GJ01AB1234"]
-
-
-def test_capture_time_is_threaded_through_to_the_pipeline(engine_module):
-    """PTS, never arrival time - route reconstruction depends on this number."""
-    engine = build(engine_module, [FakeResult(events=[])])
+    engine = build(engine_module)
     engine.process(None, captured_at=987.25)
-    assert engine._pipeline.calls == [987.25]
+    assert [f.pts_ms for f in engine._pipeline.frames] == [987250.0]
 
 
 def test_a_sighting_carries_the_pts_not_the_wall_clock(engine_module):
-    engine = build(engine_module, [FakeResult(events=[FakeEvent(timestamp=4242.0)])])
-    _, plates = engine.process(None, captured_at=4242.0)
-    assert plates[0].captured_at == 4242.0
+    engine = build(engine_module, records=[record(last_seen_pts_ms=4242000.0)])
+    assert engine.finish()[0].captured_at == 4242.0
 
 
-def test_a_discontinuity_resets_every_track(engine_module):
-    """The sandbox feeds loop. Carrying track ids over a hard cut splices two
-    different vehicles into one plate history."""
-    engine = build(
-        engine_module,
-        [FakeResult(events=[FakeEvent()]), FakeResult(events=[FakeEvent()])],
-    )
+def test_a_discontinuity_resets_the_tracker_and_keeps_the_reading(engine_module):
+    """The sandbox feeds loop, and at the loop point the scene cuts.
+
+    Track ids must not survive the cut - carrying them splices two different
+    vehicles into one plate history. The plate that had already settled must
+    survive it, though: the reading was good before the scene changed.
+    """
+    engine = build(engine_module, records=[record()])
     engine.process(None, captured_at=1.0)
-    assert engine._pipeline.resets == 0
+    assert engine._pipeline.vehicles.resets == 0
 
-    plates = engine.process(None, captured_at=0.5, discontinuity=True)[1]
-    assert engine._pipeline.resets == 1
-    # Same track id, same text - but the reset cleared what had been emitted,
-    # so the vehicle on the far side of the cut is reported as its own sighting.
-    assert [p.text for p in plates] == ["GJ01AB1234"]
+    engine.process(None, captured_at=0.5, discontinuity=True)
+    assert engine._pipeline.vehicles.resets == 1
+
+    settled = engine.finish()
+    assert [p.text for p in settled] == ["GJ01AB1234"], "a cut must not eat a reading"
 
 
 def test_vehicles_outside_the_canonical_vocabulary_are_dropped(engine_module):
     """A traffic light must never arrive as a vehicle because it was in frame."""
     engine = build(
         engine_module,
-        [FakeResult(vehicles=[FakeBox(cls=2), FakeBox(cls=9), FakeBox(cls=3)])],
+        vehicles=[
+            (7, [10.0, 20.0, 110.0, 140.0], "car", 0.9),
+            (8, [0.0, 0.0, 5.0, 5.0], "traffic light", 0.8),
+            (9, [1.0, 2.0, 3.0, 4.0], "motorcycle", 0.7),
+        ],
     )
     detections, _ = engine.process(None, captured_at=1.0)
     assert [d.class_name for d in detections] == ["car", "motorcycle"]
+    assert [d.class_id for d in detections] == [2, 3], "COCO ids, recovered from the name"
+    assert [d.extra["track_id"] for d in detections] == [7, 9]
 
 
-def test_the_vehicle_carrying_the_plate_is_matched_by_track(engine_module):
-    engine = build(
-        engine_module,
-        [FakeResult(vehicles=[FakeBox(track_id=7)], events=[FakeEvent(track_id=7)])],
-    )
-    _, plates = engine.process(None, captured_at=1.0)
-    assert plates[0].vehicle_bbox == [10.0, 20.0, 110.0, 140.0]
-    assert plates[0].plate_bbox == [40.0, 90.0, 96.0, 110.0]
+def test_the_vehicle_and_plate_boxes_come_from_the_track_record(engine_module):
+    engine = build(engine_module, records=[record()])
+    sighting = engine.finish()[0]
+    assert sighting.vehicle_bbox == [10.0, 20.0, 110.0, 140.0]
+    assert sighting.plate_bbox == [40.0, 90.0, 96.0, 110.0]
 
 
 def test_build_engine_returns_none_when_anpr_is_off(engine_module, monkeypatch):

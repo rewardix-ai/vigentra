@@ -25,7 +25,7 @@ Pass --iou 0.5 to see the stricter number too.
 
 Usage
 -----
-    python tools/eval_by_size.py --weights D:/ANPR/models/plate_detector.pt
+    python tools/eval_by_size.py --weights models/plate_det_mix_n.pt
     python tools/eval_by_size.py --weights runs/detect/runs/plate/C_smallobj_aug/weights/best.pt
 
 The tag defaults to the experiment name (the run directory), never to

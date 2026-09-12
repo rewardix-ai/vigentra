@@ -1,170 +1,129 @@
-# Reading the plate: enhancement, OCR, and what the footage allows
+# Reading the plate: the deployed chain
 
 Companion to [anpr-dataset.md](anpr-dataset.md), which covers finding the
-plate. This document covers everything after the box: the uniform dataset
-the reader and the enhancers were trained on, the models, what was measured
-on 2026-09-08/09, and the per-camera verdicts that follow from it.
+plate. This document covers everything after the box: the engine that turns a
+track's crops into a registration, the thresholds that decide whether it is
+allowed to leave the edge, and how the worker consumes it.
+
+The engine under `services/edge-worker/anpr/` was replaced wholesale on
+2026-09-12 with the vendored "Detect → Enhance → Read" core. The measurements
+that justified the *previous* engine's design — the single-frame and
+multi-frame super-resolution tables, the PaddleOCR-versus-trained-reader
+comparison, the R1–R7 reader runs — described modules that no longer exist and
+have been removed with them rather than left here to mislead. Nothing in this
+document is a performance claim; where a number appears it is a configured
+threshold, not a measured result.
 
 ## The chain, as deployed
 
 ```
-frame -> vehicle detector -> plate detector (two models, one per pass)
-      -> attach plate to vehicle -> enhancement (single-frame SR on every
-      crop, multi-frame SR once a track has 2+ crops, CLAHE / low-light /
-      glare / sharpen variants) -> OCR (PaddleOCR; the trained reader is
-      optional) -> grammar (Indian formats, confusion-aware repair)
-      -> track consensus -> confirmed plate
+frame (decoded once by the worker, handed to the engine)
+  -> overlay mask      OSD strips, static text, hoardings: never plate candidates
+  -> vehicle tracker   YOLO11 + ByteTrack, COCO car/motorcycle/bus/truck
+  -> plate detector    per vehicle box: crop -> upscale >=640 px -> CNN
+                       (+ retro-reflective proposer) -> geometry prior
+  -> crop bank         every crop stamped with track, frame, PTS and quality
+  (on track close)
+  -> legibility gate   width / sharpness / contrast -> UNREADABLE
+  -> enhance           rectify -> ECC register -> fuse (weighted median or
+                       shift-and-add SR) -> glare -> denoise -> deblur ->
+                       deskew -> binarise
+  -> read              CRNN-CTC over variants -> grammar beam search ->
+                       ROVER vote -> calibrated confidence
+  -> record            CONFIRMED | CANDIDATE | UNREADABLE
 ```
 
-Every value below was chosen by a measurement recorded under
-`services/edge-worker/reports/`. `models/PROVENANCE.json` says which file
-came from which run.
+A verdict exists only when a track closes. That is the single most important
+property for anyone changing this code: the engine does not emit a plate per
+frame, so the worker must ask for settled readings at the end of a pass. See
+"How the worker consumes it" below.
 
-## The uniform dataset (`dataset/v4_uniform`)
+## Where the knobs live
 
-Not one plate in the grid footage is readable by eye, so there is no real
-text to train a reader on. `tools/build_uniform_dataset.py` composites a
-rendered plate with known text (`tools/synthesize_plates.py`: grammar-legal
-formats, Gujarat prior, one or two rows, HSRP styling, five colour schemes,
-ten faces) onto the real plate position of a real vehicle crop, then
-degrades the whole crop the way the cameras do: blur, motion, noise, JPEG,
-an H.264 pass on a third, distance down to 6 px, 30% night, headlight glare
-(bloom, veil, clipping) on 55% of night crops. Every image carries a box for
-the detector and the text for the reader.
+`services/edge-worker/config/thresholds.yaml`, loaded per camera. The values
+that decide whether a reading is allowed out:
 
-| Item | Count |
+| Key | Meaning |
 |---|---|
-| Synthetic vehicle images (train) | 19,999 (+604 real) |
-| Tiers extreme / severe / moderate / mild | 5,028 / 6,966 / 4,956 / 3,049 |
-| Median plate width per tier (px) | 9 / 16 / 33 / 63 |
-| Night / glare images | 10,134 / 7,785 |
-| Reader crops (train), all labelled with text | 77,988 |
-| Single-frame SR pairs / multi-frame (5 frames) sets | 25,996 / 10,000 |
+| `confidence.confirm_threshold` | fused confidence needed for CONFIRMED |
+| `confidence.candidate_threshold` | below this the reading is not shown at all |
+| `fusion.min_frames_for_confirm` | independent frames that must agree |
+| `confidence.confirm_min_width_px` | narrowest best crop that may confirm |
+| `confidence.confirm_min_hypotheses` | independent variants that must agree |
+| `confidence.confirm_min_char_vote` | weakest character's share of its vote |
+| `reading.vote_confirm` | crops and vote share a string vote needs |
+| `reading.vote_reject` | grammar rules that bar a crop from voting |
+| `legibility_gate` | width, height, sharpness and contrast floors |
 
-`--reader-only` replays the same seeds against an existing build and
-rewrites only the reader crops and SR pairs; it was verified to reproduce
-identical labels. Every crop carries its text at every size by instruction;
-the per-width evaluation, not a floor, says where reading holds.
+The file carries its own provenance: each block records the replay that chose
+it. Read those comments before changing a number — several exist to block a
+specific false confirm that was observed, not to tune a score upward.
 
-## Enhancement
+## Never invent a plate
 
-`anpr/sr.py` holds two networks and the alignment they need.
+The design rule of the vendored engine, preserved here:
 
-**Single-frame** (`PlateSR`, 64 features, 8 residual blocks, pixel-shuffle
-x4, correction over bicubic; `models/plate_sr.pt` = `runs/sr/S3_wide_cont`).
-Iterated against the sharp truth until the gain fell under 0.1 dB:
+- every string must pass the plate grammar, and overlay tokens are rejected;
+- CONFIRMED needs fused confidence **and** several agreeing frames, not one
+  good look;
+- a super-resolved hypothesis can never confirm on its own;
+- confidence is temperature-calibrated, so the number is comparable between
+  cameras rather than being a raw softmax.
 
-| Validation pairs | Bicubic | S1 | S2 | S3 |
-|---|---|---|---|---|
-| All | 13.10 | 13.72 | 14.31 | 14.32 |
-| Under 24 px | 12.35 | 13.01 | 13.34 | 13.29 |
-| Night | 12.73 | 14.19 | 15.28 | 15.34 |
-| Headlight glare | 8.62 | 11.84 | 13.21 | 13.23 |
+A plate too small or too blurred to read is reported as UNREADABLE. That is a
+camera-placement finding, and the system reports it as one instead of guessing.
 
-**Multi-frame** (`PlateMFSR`: five aligned frames stacked on the channel
-axis, six residual blocks, correction over the bicubic of the frames'
-median; `models/plate_mfsr.pt` = `runs/mfsr/M2_cont`). Frames are
-registered to the sharpest by ECC translation (`align_frames`). Scored on
-the same 500 plates as the single-frame model:
+## Readers
 
-| Plates | Bicubic | S3 single | M2 multi |
-|---|---|---|---|
-| All | 12.21 | 13.25 | 13.55 |
-| Under 24 px | 11.71 | 12.74 | 13.33 |
-| 16 to 24 px | 12.08 | 13.10 | 13.54 |
-| 48 px and up | 13.50 | 14.80 | 14.29 |
+`reading.readers` selects them. `crnn` is the only reader enabled by default
+and the only one whose weights ship in `models/`; it runs on ONNX Runtime.
 
-Both run in the pipeline: `enhance.SuperResolver` prefers `plate_sr.pt`
-under `sr_backend: auto`; `pipeline._multiframe_readings` fuses a track's
-kept crops once it has `fuse_min_frames` of them and reads the result as one
-more vote. Below about 14 px the output of either is a cleaner blur: the
-characters were never captured. That is the physical floor, not a model
-limit.
+Two further readers exist in the tree and are imported lazily, so neither is a
+dependency of the image: `anpr/read/awiros.py` (PaddleOCR-based) and
+`anpr/read/claude_reader.py`. Enabling either means adding its own heavy
+dependencies to `requirements-anpr.txt` first; `thresholds.yaml` records the
+measured cost of the Awiros reader and why it is off.
 
-Sheets in the agreed layout (vehicle | snapshot | bicubic | single SR |
-multi SR | truth): `tools/result_sheet.py`, outputs under `reports/result_sheet_*.jpg`.
+`reading.extra_crnn_weights` and `reading.second_reader_mode` in the shipped
+config come from the vendor's own evaluation setup and name a weight file that
+is **not** part of this deployment. They are inert here: the adapter passes an
+explicit reader list (`app/anpr_engine.py`), which takes the branch in
+`anpr/pipeline.py` that ignores `extra_crnn_weights` entirely.
 
-## OCR: what was measured
+## How the worker consumes it
 
-`tools/train_plate_reader.py` trains `anpr/reader.py` (a 4.4M-parameter
-CRNN over the 36-symbol plate alphabet, 32x192 input, CTC, track fusion by
-summing per-column log-probabilities). Runs R1 to R7 are recorded in
-`reports/reader/` and `runs/reader/`.
+`services/edge-worker/app/anpr_engine.py` is the only adapter between the
+engine and Vigentra. It:
 
-The real test is `dataset/real_plates`: 49 crops of 9 plates from a Delhi
-video, labelled by reading the images, cut to the detector's box
-(`--tight`) because that is what the pipeline hands the OCR:
+- feeds pre-decoded frames, so ANPR costs no extra stream — the worker decodes
+  once for object detection and the same frame goes to the engine;
+- passes PTS, not arrival time, so a sighting's timestamp survives buffering;
+- resets the tracker on a discontinuity, because a scene cut must not splice
+  two vehicles into one plate history;
+- returns vehicle detections per frame and plates only from `finish()`, which
+  drains the readings that settled during the pass;
+- maps the engine's class names back to COCO ids, dropping anything outside
+  the canonical vehicle vocabulary.
 
-| Engine | Exact | Characters |
-|---|---|---|
-| PaddleOCR, detector-tight crops | 37% | 68% |
-| Trained reader R5 (readable-first curriculum), same crops | 0% | 31% |
-| PaddleOCR, the old loose crops | 4% | 48% |
+If the engine cannot be built — extras absent, weights missing, config absent
+— `build_engine()` returns `None` and the worker keeps counting vehicles.
+ANPR failing is never a reason to stop object detection.
 
-Findings that shaped the config:
+## Weights
 
-- Hard-first reader training (R1 to R4) collapsed to a constant output; a
-  readable-first order (`--stage-widths 40,24,0`, every crop still trained
-  on) learns, but plateaus near 20% exact on 60 to 100 px synthetic crops
-  and reads no real plate. The reader stays in the code and in training;
-  `ocr.engines` lists it only when it beats PaddleOCR on the tight test
-  (`tools/run_after_r7.sh` performs that check).
-- Loose crops halve PaddleOCR's accuracy. Evaluate on detector-cut crops.
-- Reader training must use `--cache` on this box (epochs 45 s instead of
-  10 min).
+`models/` holds `yolo11s.pt` (vehicles), `plate_det_mix_n.pt` (plates) and
+`reader_crnn.onnx` (reader), with `models/PROVENANCE.json` recording where each
+came from. Weights are **not** committed: `.gitignore` excludes `*.pt` and
+`*.onnx`, and the paths are overridable with `ANPR_MODELS_DIR`,
+`ANPR_VEHICLE_WEIGHTS`, `ANPR_PLATE_WEIGHTS` and `ANPR_READER_WEIGHTS`.
 
-## Detector: one model per pass
+## Running it
 
-On 382 real frames of cameras 6 and 7 (`reports/footage_comparison_hybrid.json`):
+ANPR ships as a separate image stage so the default edge worker stays small:
 
-| Configuration | Full-frame boxes | ROI boxes | Attached | Confirmed reads |
-|---|---|---|---|---|
-| Original model, PaddleOCR, 40 px floor | 35 | 56 | 68 | 1 |
-| B in both passes, reader + Paddle, no floor | 10 | 37 | 37 | 2 |
-| Original on full frame, B in vehicle boxes | 38 | 37 | 52 | 6 |
+```bash
+docker compose --profile anpr build edge-worker
+```
 
-`DetectConfig.plate_model_frame` names the full-frame model
-(`models/plate_detector_frame.pt`, the original); `plate_model` the ROI
-model (B). The detector G trained on the synthetic composites was rejected
-on measurement: worse on the tiniest band at every confidence, with two to
-three times the false boxes.
-
-## The estate, camera by camera
-
-`tools/compare_on_footage.py` over every feed on disk followed by
-`tools/estate_table.py` gives, per feed: vehicles, plates boxed, plates
-attached, plate width p50/p90, reads, confirmed reads, and a verdict:
-
-- **READABLE**: median boxed plate 30 px or wider; most vehicles pass
-  through the band the reader and enhancer work in.
-- **MARGINAL**: only the nearest vehicles reach 30 px; a zoom preset on the
-  stop line would make the camera readable.
-- **RE-AIM**: no vehicle comes close enough; software cannot yield reads
-  here. This is a camera-placement finding and the system reports it as
-  one instead of inventing plates.
-
-The report for the run of 2026-09-09 is `reports/footage_estate.json` and
-`reports/estate_table.md`.
-
-## Runners
-
-| Script | What it does |
-|---|---|
-| `tools/run_sr_iterations.sh` | S2, S3, M1 against the truth pairs, with sheets |
-| `tools/run_overnight.sh` | M2, readers R2/R3, install, footage comparison |
-| `tools/run_after_readers.sh`, `run_after_r6.sh`, `run_after_r7.sh` | reader evaluation and the reader-vs-PaddleOCR verdict |
-| `tools/run_final_compare.sh` | install B + frame model + S3 + M2 (+ reader) and compare on footage; `DETECTOR=none` keeps B |
-| `tools/uniform_sheet.py`, `tools/result_sheet.py` | dataset and result sheets |
-
-Shell scripts must stay LF: a CRLF checkout breaks them under Git Bash
-(`.gitattributes` enforces it; the Write tool and Python text writes produce
-CRLF on Windows).
-
-## Hardware notes
-
-8 GB of RAM and a 13 GB page file: two trainings plus a data builder, or a
-training plus a demo that loads YOLO and PaddleOCR, exhaust the commit
-limit (segfaults, "paging file too small", 6 MB allocation failures). Run
-one GPU job and one CPU job at a time. Stop Docker Desktop's WSL VM before
-training. `multiprocessing` spawn is refused in the Claude sandbox; the
-builders use thread pools.
+The stage adds `requirements-anpr.txt` and the `config/` directory on top of
+the YOLO stage. `ANPR_ENABLE=true` switches the engine on in a worker.

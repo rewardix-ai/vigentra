@@ -17,14 +17,14 @@ and cross-camera movement history, both set out in
 There are two implementations behind one switch. They are not interchangeable,
 and the difference is the whole point of this section.
 
-### The consensus engine (`services/edge-worker/anpr/`) — preferred
+### The track-level engine (`services/edge-worker/anpr/`) — preferred
 
 Stateful per camera. It tracks each vehicle, detects the plate on every frame
-that vehicle appears in, restores each crop through whichever branches the
-defects call for (perspective rectification, CLAHE, a low-light branch, a glare
-branch, ×4 super-resolution for small plates), reads each variant
-independently, repairs each reading against the Indian plate grammar, and then
-**votes across every frame of the pass**.
+that vehicle appears in, banks the crops with their quality, and produces a
+verdict **when the track closes** — restoring the banked crops (rectify,
+register, fuse, glare, denoise, deblur, deskew, binarise), reading every
+variant independently, repairing each reading against the Indian plate grammar,
+and voting across the whole pass.
 
 The two layers doing the real work are the grammar engine and the vote, not the
 OCR model:
@@ -41,15 +41,18 @@ OCR model:
 
 There is a soft **Gujarat prior**: readings landing on `GJ` win ties against an
 equally cheap repair onto another state. Plates from every other state still
-validate normally. Change it in the engine's `config.yaml` under
-`region.preferred_states`.
+validate normally. Change it in `config/thresholds.yaml` under
+`reading.preferred_state`.
+
+The chain and its thresholds are documented in
+[`anpr-reading.md`](anpr-reading.md).
 
 ### The single-frame reader (`app/plates.py`) — fallback
 
 Reads OCR off one crop from one frame and keeps the answer if it parses. It is
-used only when the consensus engine cannot be built — a missing wheel, an
+used only when the track-level engine cannot be built — a missing wheel, an
 unsupported interpreter, absent weights. It works, and it is measurably worse:
-see §7. A worker that reads no plates at all is worse still, which is why it
+see §8. A worker that reads no plates at all is worse still, which is why it
 stays.
 
 `build_engine()` returns `None` rather than raising when the extras are
@@ -78,42 +81,49 @@ scope, deliberately, and is governed by its own permissions — see
 
 ## 4. Turning it on
 
-Requires the analytics extras first ([`docs/yolo-setup.md`](yolo-setup.md)),
-then:
+ANPR ships as its own image stage, on top of the analytics stage
+([`docs/yolo-setup.md`](yolo-setup.md)):
 
 ```bash
-pip install -r services/edge-worker/requirements-anpr.txt
+docker compose --profile anpr build edge-worker
 ```
 
-Python **3.12** is required for the consensus path. PaddlePaddle publishes no
-3.13/3.14 wheels and the CUDA PyTorch builds lag new interpreter releases; on a
-newer interpreter the install falls back to the single-frame reader.
+The stage installs `services/edge-worker/requirements-anpr.txt` and adds
+`services/edge-worker/config/`. The default reader runs on ONNX Runtime; the
+optional PaddleOCR and Claude readers are imported lazily and are deliberately
+not dependencies of the image (see [`anpr-reading.md`](anpr-reading.md)).
 
 Place the weights under `services/edge-worker/models/` (or point
-`ANPR_MODELS_DIR` elsewhere):
+`ANPR_MODELS_DIR` elsewhere). They are not committed — `.gitignore` excludes
+`*.pt` and `*.onnx` — and `models/PROVENANCE.json` records where each came
+from:
 
 | File | What it is |
 |---|---|
-| `plate_detector.pt` | plate-finetuned YOLO11 |
-| `yolov8n.pt` | vehicle detector — ultralytics downloads this itself if absent |
-| `ESPCN_x4.pb` | ×4 super-resolution for plates under ~140 px wide |
+| `yolo11s.pt` | vehicle detector |
+| `plate_det_mix_n.pt` | plate detector |
+| `reader_crnn.onnx` | CRNN-CTC plate reader |
 
-Then run the worker with ANPR on:
-
-```powershell
-$env:ANPR_ENABLE='true'
-.\scripts\edge-worker.ps1 --camera VIGENTRA-TRAFFIC-AHM-0001 --max-frames 40
-```
+Then run a worker with ANPR on (`ANPR_ENABLE=true` in its environment).
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `ANPR_ENABLE` | `false` | Off unless set. |
-| `ANPR_MIN_SCORE` | `0.55` | Consensus score floor. See §7. |
+| `ANPR_MIN_SCORE` | `0.55` | Score floor for an emitted reading. See §8. |
 | `ANPR_EMIT_UNCONFIRMED` | `false` | Ship readings the vote has not settled. Turning this on reintroduces single-frame behaviour through the side door. |
+| `ANPR_REVIEW_SCORE` | `0.35` | Below the floor but worth a human look. |
 | `ANPR_MODELS_DIR` | `services/edge-worker/models` | Where the weights live. |
-| `ANPR_CONFIG` | `services/edge-worker/config.yaml` | Engine tuning overrides. |
+| `ANPR_CONFIG_DIR` | `services/edge-worker/config` | `thresholds.yaml` and `roi.yaml`. |
+| `ANPR_VEHICLE_WEIGHTS` | `yolo11s.pt` | Vehicle detector filename. |
+| `ANPR_PLATE_WEIGHTS` | `plate_det_mix_n.pt` | Plate detector filename. |
+| `ANPR_READER_WEIGHTS` | `reader_crnn.onnx` | Reader filename. |
+| `ANPR_ENGINE_CACHE` | `4` | Engines kept between camera cycles. See §11. |
+| `ANPR_RECORD_TAIL` | `500` | Settled track records retained per engine. |
 | `ANPR_MIN_CONFIDENCE` | `0.55` | Fallback reader only. |
 | `ANPR_PLATE_RETENTION_DAYS` | `30` | How long a plate is disclosed for. |
+
+Per-camera tuning lives in `config/thresholds.yaml`, not in environment
+variables; read the provenance comments in that file before changing a number.
 
 ## 5. Why the reads are strict
 
@@ -126,6 +136,7 @@ plate in this system is **either right or absent**, never a plausible guess:
 - The two-letter state code is checked against the real list of Indian state
   and UT codes. This is what stops OCR's `OJ` or `6J` being stored as though it
   were a registration.
+- A crop whose district does not exist for its state is barred from voting.
 - Anything that still fails the format is dropped at the edge and never
   transmitted.
 - The central API drops it a second time: a sighting is only created for a
@@ -183,7 +194,7 @@ frames, 67 vehicle crops examined:
 One plate from 67 vehicles is the honest yield **for a single-frame reader**
 on wide street footage where most vehicles are distant or side-on. Much of it
 is what the optics allow — but not all of it, which is exactly why the
-consensus engine exists: a vehicle that is unreadable in thirty frames and
+track-level engine exists: a vehicle that is unreadable in thirty frames and
 legible in three is lost entirely by a reader that only ever looks once.
 
 A camera positioned for ANPR — near-side approach, plate filling a meaningful
@@ -191,23 +202,22 @@ fraction of the frame — performs completely differently from a general-purpose
 overview camera. Several of the sandbox grid's cameras are red-light-violation
 units and are in the first category; most are in the second.
 
-### The consensus engine
+### The track-level engine
 
-Not yet measured on the government feed. The engine's own per-track voting and
-grammar repair are covered by `tests/test_anpr_engine.py` and by the upstream
-project's `tests/test_consensus.py` and `tests/test_plate_rules.py`, but the
-number that matters — yield per vehicle on the grid's own footage — needs a run
-against the live cameras with the weights installed, and that has not been done
-yet. **Do not quote a figure for it until it has.** The fallback's 1-in-67 is
-the only measured number here, and it measures the reader we are trying not to
-use.
+Not measured on the government feed. The engine's adapter is covered by
+`tests/test_anpr_engine.py`, and the engine carries its own thresholds'
+provenance in `config/thresholds.yaml`, but the number that matters — yield per
+vehicle on the grid's own footage — needs a run against the live cameras with
+the weights installed, and that has not been done. **Do not quote a figure for
+it until it has.** The fallback's 1-in-67 is the only measured number here, and
+it measures the reader we are trying not to use.
 
 ### Two findings worth keeping
 
 **OCR returns a plate in pieces.** The first real read came back as two boxes,
 `DL` and `1LCE5987`. Judged separately neither is a registration and the plate
-was lost entirely. Fragments on a shared text line are now joined left-to-right
-before parsing — see `assemble_lines`.
+was lost entirely. Fragments on a shared text line are joined left-to-right
+before parsing — see `assemble_lines` in the fallback reader.
 
 **Format validation cannot catch a confident misread.** The same car one second
 later read as `DL11CES9871` at confidence 0.49: eleven characters, valid state
@@ -234,64 +244,50 @@ traffic, or might have seen two hundred vehicles whose plates were forty pixels
 wide — opposite situations with opposite fixes, and the platform could not tell
 them apart.
 
-Every vehicle that leaves the frame now settles into one of three outcomes
-(`services/edge-worker/anpr/readability.py`):
+Every vehicle that leaves the frame now settles into one of three outcomes:
 
 | Verdict | Meaning | Whose problem |
 | --- | --- | --- |
 | `CONFIRMED` | the vote settled and the restorations agreed | — |
-| `UNCERTAIN` | the plate was big enough to read; the readings disagreed | this vehicle: blur, angle, glare |
+| `CANDIDATE` | the plate was big enough to read; the readings did not settle | this vehicle: blur, angle, glare |
 | `UNREADABLE` | the plate never reached a size any recogniser resolves | this camera's placement |
 
 Only `UNREADABLE` is a statement about the camera. It is the honest answer on a
 wide junction view, and it is a siting finding rather than a software defect.
+A `CANDIDATE` is never presented as a reading; `ANPR_EMIT_UNCONFIRMED` exists
+to make that behaviour explicit rather than accidental.
 
-The size bands are shared with `tools/diagnose_cameras.py` so the suitability
-survey and the running pipeline cannot drift apart:
+The legibility gate and the confirm floors live in `config/thresholds.yaml`
+(`legibility_gate`, `confidence.confirm_min_width_px`).
 
-| Band | Plate width | Behaviour |
-| --- | --- | --- |
-| `COMFORTABLE` | ≥160 px | reads off the unmodified crop |
-| `READABLE` | ≥120 px | restoration recovers the read |
-| `MARGINAL` | ≥80 px | reads only when several restorations agree |
-| `SUB_MARGINAL` | ≥40 px | attempted; agreement decides |
-| `UNREADABLE` | <40 px | not attempted |
+**The floor is a measurement, not a preference, and must not be raised
+casually.** Plates on this estate have been read correctly by eye at 53–90 px,
+and no single width separates the legible from the illegible: a 71 px
+motion-blurred plate is unreadable while a 53 px sharp one is not. Raising the
+floor discards real evidence. Agreement across restorations — not size — is
+what separates a real read from an invented one, and that is what the vote
+requires.
 
-**The gate sits at 40 px and must not be raised.** Plates on this estate have
-been read correctly by eye at 53–90 px, and no width separates the legible ones
-from the illegible: a 71 px motion-blurred plate is unreadable while a 53 px
-sharp one is not. Raising the floor discards real evidence; a 100 px floor
-confirms nothing anywhere. Agreement across restorations — not size — is what
-separates a real read from an invented one, and that is already what
-`consensus.py` requires.
-
-Lowering the gate below 40 px is worse still. Undersized crops pushed through
-the recogniser do not come back as near misses, they come back as fabrications:
+Lowering the gate is worse still. Undersized crops pushed through the
+recogniser do not come back as near misses, they come back as fabrications:
 `GJ06D02415` read as `LD607415`, `GJ01MR4873` as `GI667673`. A fabricated
 registration is a wrong vehicle attached to a real place and time.
 
 ## 10. Timings
 
-`anpr/metrics.py` reports P50/P95/P99 per stage — detect, assess, enhance, ocr,
-and the whole frame — and the worker logs them at the end of each run.
+The worker logs per-camera pass timings, and the engine records per-track
+frame counts with every settled reading.
 
 Percentiles rather than an average, because the average is the summary that
 hides the failure. Ninety-nine frames at 40 ms and one at 900 ms average to
 48 ms and look healthy, while the 900 ms frame is the one a viewer sees as a
-freeze. Read `frame.p99`: a 25 fps feed needs it under 40 ms to never fall
-behind.
-
-`capacity_fps` is the rate this machine could sustain if it never waited for
-anything; comparing it against `fps` separates "the box is too slow" from "the
-network delivered frames slowly".
+freeze. A 25 fps feed needs its p99 under 40 ms to never fall behind.
 
 ## 11. Engines are cached per camera
 
 A worker cycling its cameras used to build an ANPR engine per camera per pass,
 reloading hundreds of megabytes of weights and discarding everything the camera
-had learned about itself — where its burned-in clock sits, its prevailing
-direction of travel, the plate sizes it delivers. A 25-frame pass barely
-reaches those thresholds once.
+had learned about itself. A short pass barely reaches those thresholds once.
 
 `EngineCache` keeps one engine per camera between cycles. A reused engine is
 told the stream restarted (`new_stream`), so track ids never cross a cycle

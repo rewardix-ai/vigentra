@@ -172,11 +172,8 @@ Write-Host 'see the sign-in page for the rest.'
 # ---------------------------------------------------------------------------
 if (-not $SkipAnpr) {
     # Same resolution edge-worker.ps1 uses: the plate models ship beside the
-    # ANPR package, and fall back to the vendored D:\ANPR checkout.
+    # ANPR package.
     $anprModels = Join-Path $root 'services\edge-worker\models'
-    if (-not (Test-Path (Join-Path $anprModels 'plate_detector.pt'))) {
-        if (Test-Path 'D:\ANPR\models\plate_detector.pt') { $anprModels = 'D:\ANPR\models' }
-    }
     $env:ANPR_MODELS_DIR = $anprModels
 
     # The grid is behind an access password now, and the worker reads it from
@@ -191,7 +188,7 @@ if (-not $SkipAnpr) {
         }
     }
 
-    $plateModel = Join-Path $anprModels 'plate_detector.pt'
+    $plateModel = Join-Path $anprModels 'plate_det_mix_n.pt'
     if (Test-Path $plateModel) {
         Write-Host 'starting edge worker (all cameras, continuous)' -ForegroundColor Cyan
         $workerArgs = @(

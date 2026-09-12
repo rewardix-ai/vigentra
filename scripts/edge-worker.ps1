@@ -67,12 +67,9 @@ $env:YOLO_WEIGHTS_DIR = $weightsDir
 # than in weights/. Without ANPR_MODELS_DIR the engine looks in the process
 # working directory, finds nothing, and runs on with plates silently disabled.
 $anprModels = Join-Path $root 'services\edge-worker\models'
-if (-not (Test-Path (Join-Path $anprModels 'plate_detector.pt'))) {
-    if (Test-Path 'D:\ANPR\models\plate_detector.pt') { $anprModels = 'D:\ANPR\models' }
-}
 if (-not $env:ANPR_MODELS_DIR) { $env:ANPR_MODELS_DIR = $anprModels }
 if (-not $env:ANPR_ENABLE) {
-    if (Test-Path (Join-Path $env:ANPR_MODELS_DIR 'plate_detector.pt')) {
+    if (Test-Path (Join-Path $env:ANPR_MODELS_DIR 'plate_det_mix_n.pt')) {
         $env:ANPR_ENABLE = 'true'
     } else {
         $env:ANPR_ENABLE = 'false'

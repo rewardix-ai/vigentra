@@ -1,0 +1,30 @@
+# Per-camera overlay exclusion and ROI configuration.
+# Coordinates are x1,y1,x2,y2 in native frame pixels.
+# 'auto' controls the temporal-variance static-text detector, which is always
+# OR-ed with the manual rectangles below.
+auto:
+  enabled: true
+  frames: 40
+  var_thresh: 0.35          # rendered UI pixels have ~0 temporal std; encoded video has >= ~0.3 flicker
+  edge_density_thresh: 0.08
+  dilate_px: 6
+  max_auto_frac: 0.12       # safety: drop the auto mask if it claims more than 12% of the frame
+  bright_min: 150           # persistent-white text rule (OSD re-encoded with the video): min over the warm-up >= this
+  osd_band_frac: 0.0        # optional fixed top/bottom strips; 0 = the full-width strip is derived from the OSD text found (hard-masked on every camera that has it)
+  bright_min_soft: 115      # thin semi-transparent OSD on 480p feeds: min over the warm-up >= this AND (max - min) <= bright_range_max
+  bright_range_max: 90
+
+cameras:
+  default:
+    exclude: []
+  # Sample clip: screen recording of the Sentinel control room in Chrome
+  # (1920x1080). Measured on reports/frame_5s.jpg.
+  cam01_bridge_night:
+    exclude:
+      - [0, 0, 1920, 90]        # browser/app header: 'CAM01 · LIVE · Chiman bhai Bridge' + Close button
+      - [20, 90, 820, 150]      # '31/08/2026 17:21:33 IST' + ghosted second timestamp + '02:36:07' counter
+      - [1780, 80, 1920, 130]   # 'REC' badge
+      - [0, 975, 1920, 1080]    # bottom caption 'Chiman bhai Bridge CSITMS-32_PTZ2'
+      - [0, 0, 60, 1080]        # left gutter outside the video canvas
+      - [1862, 0, 1920, 1080]   # right gutter outside the video canvas
+    lanes: []

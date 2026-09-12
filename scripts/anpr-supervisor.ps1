@@ -87,8 +87,7 @@ $env:KMP_DUPLICATE_LIB_OK = 'TRUE'
 
 if (-not $env:ANPR_MODELS_DIR) {
     $bundled = Join-Path $workerDir 'models'
-    if (Test-Path (Join-Path $bundled 'plate_detector.pt')) { $env:ANPR_MODELS_DIR = $bundled }
-    elseif (Test-Path 'D:\ANPR\models\plate_detector.pt')   { $env:ANPR_MODELS_DIR = 'D:\ANPR\models' }
+    if (Test-Path (Join-Path $bundled 'plate_det_mix_n.pt')) { $env:ANPR_MODELS_DIR = $bundled }
 }
 if (-not $env:ANPR_ENABLE) { $env:ANPR_ENABLE = 'true' }
 if (-not $env:YOLO_ENABLE) { $env:YOLO_ENABLE = 'true' }

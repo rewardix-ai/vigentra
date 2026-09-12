@@ -422,8 +422,13 @@ a deploying engineer can trust.
 - **ANPR yield on wide overview footage is low, and that is optical.** A camera
   positioned for ANPR reads plates well; a general-purpose overview camera does
   not. The measured 1-in-67 figure in `docs/anpr.md` is for the *fallback*
-  single-frame reader; the track-level engine has not been measured on the
-  government feed, and we are not quoting a number for it until it has been.
+  single-frame reader. The track-level engine ran on the government feed on
+  2026-09-12 - cam01 (270 detections) and cam02 (154), one pass each - and
+  settled readings on both, but across too few tracks to quote a yield, so no
+  figure is claimed for it. The vendor's own 45-clip sandbox baseline is 6
+  confirmed reads from 1,042 vehicle tracks with **zero false confirms**, and
+  that last number is what this design optimises for: a reading naming a state
+  or district that cannot exist is dropped rather than shown.
 - **Cross-camera tracking depends entirely on plate reads.** A vehicle whose
   plate is never read does not appear on its own route.
 - **The metadata bus is direct HTTP, not Kafka.** Defensible at this scale and

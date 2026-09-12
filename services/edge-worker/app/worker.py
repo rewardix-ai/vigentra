@@ -397,6 +397,46 @@ def _plain(frames: Iterator[tuple[int, Any]]) -> Iterator[tuple[int, Any, float,
         yield index, frame, time.time(), False
 
 
+def _incident_track_id(raw: object) -> int:
+    """A tracker id as an int, whatever shape it arrived in.
+
+    The YOLO detector hands back ints; the ANPR engine hands back its own key,
+    "cam06_s0_t132". int() on the latter raised ValueError inside the per-camera
+    try block, so one unparsable id discarded the entire pass - detections,
+    plates and incidents alike. Degrade to the trailing number, or a stable
+    hash, rather than losing the cycle.
+    """
+    try:
+        return int(raw)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        text = str(raw)
+        end = len(text)
+        while end and text[end - 1].isdigit():
+            end -= 1
+        tail = text[end:]
+        return int(tail) if tail else abs(hash(text)) % 1_000_000
+
+
+def _incident_views(detections) -> list:
+    """This frame's tracked vehicles, as the incident detector sees them.
+
+    Extracted from process_camera() so the id conversion has a seam a test can
+    reach. Inline, it was a bare int() inside a comprehension inside the
+    per-camera try block: it raised on the ANPR engine's track keys
+    ("cam06_s0_t1"), discarded the entire pass - detections, plates and
+    incidents - and no test could drive it.
+    """
+    return [
+        _IncidentTrack(
+            track_id=_incident_track_id(d.extra["track_id"]),
+            box=tuple(d.bbox_xyxy),
+            label=d.class_name,
+        )
+        for d in detections
+        if d.extra.get("track_id") is not None
+    ]
+
+
 def _sighting_payload(
     sighting,
     *,
@@ -737,15 +777,7 @@ def run(
             if incidents is not None:
                 if discontinuity:
                     incidents.reset()
-                views = [
-                    _IncidentTrack(
-                        track_id=int(d.extra["track_id"]),
-                        box=tuple(d.bbox_xyxy),
-                        label=d.class_name,
-                    )
-                    for d in detections
-                    if d.extra.get("track_id") is not None
-                ]
+                views = _incident_views(detections)
                 for inc in incidents.update(views, pts_seconds):
                     incident_batch.append(inc.to_dict())
                     logger.info(

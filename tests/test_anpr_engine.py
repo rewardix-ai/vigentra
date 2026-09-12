@@ -67,7 +67,7 @@ class FakeFrame:
 def record(**over) -> dict:
     """One finalised track, shaped as `ANPRPipeline.records` holds them."""
     rec = {
-        "track_id": "cam01_7",
+        "track_id": "cam01_s0_t7",
         "camera_id": "cam01",
         "status": "CONFIRMED",
         "plate": "GJ01AB1234",
@@ -151,7 +151,7 @@ def test_a_confirmed_plate_is_emitted_once_per_track(engine_module):
     settled = engine.finish()
     assert [p.text for p in settled] == ["GJ01AB1234"]
     assert settled[0].observations == 11
-    assert settled[0].track_id == 7, "the tracker's own id, out of 'cam01_7'"
+    assert settled[0].track_id == 7, "the tracker's own id, out of 'cam01_s0_t7'"
 
 
 def test_a_settled_plate_is_not_re_emitted_on_the_next_pass(engine_module):
@@ -216,15 +216,15 @@ def test_vehicles_outside_the_canonical_vocabulary_are_dropped(engine_module):
     engine = build(
         engine_module,
         vehicles=[
-            (7, [10.0, 20.0, 110.0, 140.0], "car", 0.9),
-            (8, [0.0, 0.0, 5.0, 5.0], "traffic light", 0.8),
-            (9, [1.0, 2.0, 3.0, 4.0], "motorcycle", 0.7),
+            ("cam01_s0_t7", [10.0, 20.0, 110.0, 140.0], "car", 0.9),
+            ("cam01_s0_t8", [0.0, 0.0, 5.0, 5.0], "traffic light", 0.8),
+            ("cam01_s0_t9", [1.0, 2.0, 3.0, 4.0], "motorcycle", 0.7),
         ],
     )
     detections, _ = engine.process(None, captured_at=1.0)
     assert [d.class_name for d in detections] == ["car", "motorcycle"]
     assert [d.class_id for d in detections] == [2, 3], "COCO ids, recovered from the name"
-    assert [d.extra["track_id"] for d in detections] == [7, 9]
+    assert [d.extra["track_id"] for d in detections] == [7, 9], "ints, parsed from the engine's keys"
 
 
 def test_the_vehicle_and_plate_boxes_come_from_the_track_record(engine_module):

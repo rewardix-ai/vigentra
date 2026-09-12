@@ -111,13 +111,22 @@ class PlateSighting:
 
 
 def _track_number(raw: Any) -> int:
-    """The tracker's own id out of the engine's "<camera>_<n>" track key."""
+    """The tracker's own id out of the engine's track key.
+
+    The engine keys a track "<camera>_s<segment>_t<n>" - cam06_s0_t132 - so the
+    number is the digits at the end, whatever precedes them. Bare integers and
+    the older "<camera>_<n>" shape parse the same way.
+
+    Never raises. A track id that cannot be parsed must not take down the
+    camera's whole pass: that is exactly what int() on "cam06_s0_t1" did, and it
+    cost every detection and every plate of the cycle, not just the one track.
+    """
     text = str(raw)
-    tail = text.rsplit("_", 1)[-1]
-    try:
-        return int(tail)
-    except ValueError:
-        return abs(hash(text)) % 1_000_000
+    end = len(text)
+    while end and text[end - 1].isdigit():
+        end -= 1
+    tail = text[end:]
+    return int(tail) if tail else abs(hash(text)) % 1_000_000
 
 
 class AnprEngine:
@@ -253,7 +262,7 @@ class AnprEngine:
                     model_name=self.name,
                     model_version=self.version,
                     inference_latency_ms=round(latency_ms, 2),
-                    extra={"track_id": track_id},
+                    extra={"track_id": _track_number(track_id)},
                 )
             )
         return detections, []

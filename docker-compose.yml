@@ -201,6 +201,12 @@ services:
       # torch and paddle each ship an Intel OpenMP runtime; loading both aborts
       # the process without this.
       KMP_DUPLICATE_LIB_OK: "TRUE"
+    # The plate models are NOT in the image: *.pt and *.onnx are gitignored and
+    # the anpr stage only creates an empty /app/models. Without this mount
+    # build_engine() returns None and every pass reports "0 plates" with one
+    # log line and no error - a silent failure worth making impossible.
+    volumes:
+      - ./services/edge-worker/models:/app/models:ro
     # --forever is the whole point: every camera the account may watch, cycling
     # continuously, so the counts keep accumulating without anyone running a
     # command. --cycle-seconds paces it - each client gets its own copy of the

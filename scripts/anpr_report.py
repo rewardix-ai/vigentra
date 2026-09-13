@@ -28,6 +28,31 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+def _grammar_scorer():
+    """The engine's own plate grammar, if it can be imported.
+
+    Returns a callable text -> prior, or None. Imported lazily and by path
+    because this script runs on the host while the grammar lives with the edge
+    worker; a missing import must degrade to an unfiltered report with a
+    warning, not to a crash at report time.
+    """
+    worker = Path(__file__).resolve().parent.parent / "services" / "edge-worker"
+    if str(worker) not in sys.path:
+        sys.path.insert(0, str(worker))
+    try:
+        from anpr.plate_grammar import normalise, score_string
+    except Exception:
+        return None
+
+    def prior(text: str) -> float:
+        try:
+            return float(score_string(normalise(text)).prior)
+        except Exception:
+            return 0.0
+
+    return prior
+
+
 def call(base: str, path: str, token: str | None = None, payload: dict | None = None):
     req = urllib.request.Request(base.rstrip("/") + path)
     if token:
@@ -48,6 +73,20 @@ def main() -> int:
     ap.add_argument("--since-hours", type=int, default=24)
     ap.add_argument("--camera", default=None)
     ap.add_argument("--out", default="reports/anpr_report")
+    ap.add_argument(
+        "--min-confidence", type=float, default=0.10,
+        help="drop readings the engine itself scored below this (0 keeps all). "
+             "Grammar plausibility alone does not separate a real read from "
+             "noise: GJ232212 (0.651, genuine) and GJ170156 (0.000, noise) "
+             "score the same 0.150 prior, because both are shaped like a "
+             "registration. Confidence is what tells them apart.",
+    )
+    ap.add_argument(
+        "--min-grammar-prior", type=float, default=0.12,
+        help="drop readings whose plate grammar prior is below this (0 keeps all). "
+             "Rows written before the edge-side floor existed can name a state or "
+             "district that does not exist; this keeps them out of the report.",
+    )
     a = ap.parse_args()
 
     if not a.password:
@@ -67,6 +106,40 @@ def main() -> int:
     rows = call(a.base, query, token)
     if not isinstance(rows, list):
         rows = rows.get("items", [])
+
+    # The edge drops implausible readings before they are ever sent, but rows
+    # stored before that floor existed are still in the registry. A report is
+    # the one artefact that must not carry an invented registration, so it is
+    # filtered here too rather than trusting the write path alone.
+    dropped: list[str] = []
+
+    if a.min_confidence > 0:
+        kept = []
+        for r in rows:
+            try:
+                conf = float(r.get("confidence") or 0.0)
+            except (TypeError, ValueError):
+                conf = 0.0
+            if conf >= a.min_confidence:
+                kept.append(r)
+            else:
+                dropped.append(f"{r.get('plate_text','?')} (conf {conf:.3f})")
+        rows = kept
+
+    if a.min_grammar_prior > 0:
+        scorer = _grammar_scorer()
+        if scorer is None:
+            print("  note: plate grammar unavailable; report not filtered", file=sys.stderr)
+        else:
+            kept = []
+            for r in rows:
+                text = (r.get("plate_text") or "").strip()
+                prior = scorer(text) if text else 0.0
+                if prior >= a.min_grammar_prior:
+                    kept.append(r)
+                else:
+                    dropped.append(f"{text} ({prior:.3f})")
+            rows = kept
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -95,6 +168,9 @@ def main() -> int:
         f"Generated {generated} from `{a.base}/api/v1/sightings` "
         f"(last {a.since_hours}h). {len(rows)} reading(s) across {len(cameras)} camera(s).",
         "",
+        (f"{len(dropped)} reading(s) withheld as implausible: "
+         + ", ".join(dropped) + "." if dropped else ""),
+        "" if dropped else None,
         "Every reading carries the number of frames that agreed and whether the",
         "track's vote settled. An unconfirmed reading is evidence to look at, not",
         "a plate to act on. Readings whose grammar prior showed an impossible",
@@ -112,7 +188,7 @@ def main() -> int:
         )
     if not rows:
         lines.append("| _no readings in this window_ | | | | | |")
-    out.with_suffix(".md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out.with_suffix(".md").write_text("\n".join(l for l in lines if l is not None) + "\n", encoding="utf-8")
 
     print(f"  {len(rows)} reading(s) -> {out.with_suffix('.md')} and {out.with_suffix('.csv')}")
     return 0

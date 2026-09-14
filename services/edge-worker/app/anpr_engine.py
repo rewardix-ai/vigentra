@@ -157,6 +157,7 @@ class AnprEngine:
         self._pending: list[PlateSighting] = []
 
         try:
+            import yaml
             from anpr.pipeline import ANPRPipeline
             from anpr.sources.frame_source import Frame
         except ImportError as exc:  # pragma: no cover - depends on the image
@@ -182,6 +183,14 @@ class AnprEngine:
                 "ANPR_CONFIG_DIR, or set ANPR_ENABLE=false to run without plates."
             )
 
+        # thresholds.yaml can name a second CRNN (reading.extra_crnn_weights) that
+        # supplies a shown, never-confirmed read on tracks the primary cannot
+        # decide. Passing reader_weights skips the engine's own lookup of it, so
+        # it is resolved here, in ANPR_MODELS_DIR, and used when present.
+        reading = (yaml.safe_load(thresholds.read_text(encoding="utf-8")) or {}).get("reading") or {}
+        extra = [MODELS_DIR / Path(w).name for w in reading.get("extra_crnn_weights") or []]
+        self._readers = [str(reader)] + [str(p) for p in extra if p.exists()]
+
         try:
             self._pipeline = ANPRPipeline(
                 camera_id=camera_id,
@@ -189,7 +198,8 @@ class AnprEngine:
                 roi_cfg=roi_cfg,
                 vehicle_weights=str(vehicle),
                 plate_weights=str(plate),
-                reader_weights=[str(reader)],
+                reader_weights=self._readers,
+                device=ANPR_DEVICE,
                 # Live-only: no crop store on disk. See the module docstring.
                 evidence_dir=None,
                 keep_frames=False,

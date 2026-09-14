@@ -19,7 +19,7 @@ steps out.
 | Deliverable | What is asked (FAQ) | Our artefact | Status |
 |---|---|---|---|
 | Solution presentation | PPT/PDF: model chosen with justification, solution overview, key features (29) | `deliverables/` — to be built from the HLD | **Not started** |
-| High-level design | Architecture with diagrams; heterogeneous cameras/VMS (IP, analog, multi-vendor, varied protocols); geographically dispersed sites (bandwidth, connectivity, edge vs central); analytics (ANPR, cross-camera tracking); scalability to ~80,000; department-level details needed for feasibility (29, 30) | [`docs/hld.md`](hld.md), exported to PDF for upload | Written; being brought up to date with the 14 Sep changes |
+| High-level design | Architecture with diagrams; heterogeneous cameras/VMS (IP, analog, multi-vendor, varied protocols); geographically dispersed sites (bandwidth, connectivity, edge vs central); analytics (ANPR, cross-camera tracking); scalability to ~80,000; department-level details needed for feasibility (29, 30) | [`docs/hld.md`](hld.md), exported to PDF for upload | Current with the 14 Sep changes; dispersed sites and analog cameras now covered (§10). PDF export pending |
 | Own-feed demonstration | 2–3 min screen recording on **our own** feed: onboarding, live/recorded viewing, vehicle detection/ANPR. Working software only — no mock-ups or animations (31, 32) | Screen recording by the team, following a script in [`docs/demo-script.md`](demo-script.md) | Script to write; **needs a feed the team owns** (a phone or IP camera, or footage the team shot) — the synthetic mock-VMS clips do not qualify |
 | Government-feed demonstration | Live demo on the government feed: onboarding, viewing, analytics output — ANPR, vehicle/person/intrusion/object detection (31) | Screen recording by the team, following a script in [`docs/demo-script.md`](demo-script.md) | Platform live on all 30 grid cameras; script to write; recording pending |
 | Video & output report | The government-feed recording plus an **output report of detected vehicles or number plates with timestamps** (33) | `scripts/anpr_report.py` → `reports/anpr_report.md` + `.csv`, from the platform's own API | Plates covered; vehicle detections to add; final export on submission day |
@@ -88,3 +88,4 @@ labelled as an estimate.
 | Date | Change (commit) | Deliverables updated |
 |---|---|---|
 | 14 Sep | Tracker created | this file |
+| 14 Sep | HLD brought up to date: readers and runtime, the catalogue read once centrally, RTSP-backed liveness, the 96 px plate-search floor, 295 tests, 14 Sep measurements, and a new section on dispersed sites and thin links (FAQ 30) | HLD |

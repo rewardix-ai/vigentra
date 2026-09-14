@@ -115,7 +115,7 @@ enough to deploy anywhere and means a compromise of it yields no imagery.
 |---|---|---|
 | central-api | FastAPI, SQLAlchemy 2 (async), PostgreSQL | Running |
 | Adapters | One per source system, common ABC | Running — 3 sources |
-| edge-worker | Python, Ultralytics YOLO, PaddleOCR, OpenCV | Running |
+| edge-worker | Python, Ultralytics YOLO11, OpenCV, ONNX Runtime (CRNN-CTC plate readers) | Running — Apple GPU on the host for ANPR, CPU in Docker |
 | Consensus ANPR | Vendored `anpr/` package | Running |
 | Dashboard | Next.js 14, React 18, Tailwind, Leaflet + OpenStreetMap | Running |
 | Storage | PostgreSQL (JSONB); SQLite for the test suite | Running |
@@ -155,6 +155,12 @@ Three properties that took deliberate work:
   degrade to the last mirrored state and say so via `X-Vigentra-Degraded`, and
   every failed poll is in the audit log. Demonstrable with
   `docker compose stop municipal-vms`.
+- **Liveness follows the video, not the web gateway.** The grid's HTTPS
+  gateway and its RTSP server are separate machines. When the gateway refuses
+  (403) or its origin is down (525) but the RTSP server still accepts
+  connections, the cameras stay online on the last good catalogue instead of
+  all going offline — on 14 September, 72 of 180 minutes had been lost to
+  exactly that while the streams kept playing.
 
 Onboarding a new vendor is: implement the ABC, add a config entry, sync. The
 checklist is `docs/adapter-contract.md`.
@@ -170,9 +176,18 @@ is up is not really checked:
 RTSP forced over TCP · timing driven from PTS and never arrival time ·
 `CAP_PROP_FPS` never read anywhere · inter-frame gaps tolerated · reconnect
 with 2 s→30 s backoff · join-time decoder noise tolerated for 25 frames ·
-per-camera codec and resolution read from `/api/ingest` · scene discontinuity
-detected and long-lived state reset · nothing written to disk · no write verb
-anywhere in the module · one capture per camera, released on exit.
+frame rate measured per camera from PTS, never taken as declared · scene
+discontinuity detected and long-lived state reset · nothing written to disk ·
+no write verb anywhere in the module · one capture per camera, released on
+exit.
+
+**The camera list comes from the catalogue, read once, centrally.**
+central-api reads the grid catalogue (`/cameras.json`, which replaced the
+guide's `/api/ingest`) and decides which cameras exist before it grants a
+capture session. The worker does not read it again: reading it means signing
+in, and the gateway keeps one session per account, so every worker start
+signed central-api out. The worker captures from the documented RTSP pattern
+with the account's credentials, and the capture is the liveness test.
 
 The PTS rule is the one that silently ruins a tracker: the gateway replays a
 buffered GOP on connect, so the first second arrives faster than real time and
@@ -215,15 +230,17 @@ precise about what it does:
 frame
   ├─ overlay mask          OSD strips, static text and hoardings excluded
   ├─ vehicle detector (YOLO11 + ByteTrack) ──► stable track id per vehicle
-  ├─ plate detector        inside each vehicle box: crop → upscale ≥640 px →
-  │                        CNN (+ retro-reflective proposer) → geometry prior
+  ├─ plate detector        inside each vehicle box ≥96 px wide: crop → upscale
+  │                        ≥640 px → CNN (+ retro-reflective proposer) → geometry prior
   ├─ crop bank             every crop stamped with track, frame, PTS, quality
   │                        (a verdict is produced when the track closes)
   ├─ legibility gate       width · sharpness · contrast ──► UNREADABLE
   ├─ restoration           rectify → ECC register → fuse (weighted median or
   │                        shift-and-add SR) → glare → denoise → deblur →
   │                        deskew → binarise
-  ├─ reader                CRNN-CTC over every variant, read independently
+  ├─ readers               CRNN-CTC over every variant, read independently; a
+  │                        second CRNN fills in a shown, never-confirmed read
+  │                        only where the first cannot decide
   ├─ grammar engine        Indian plate formats + confusion-aware repair
   └─ ROVER vote            across the track's crops ──► CONFIRMED | CANDIDATE
 ```
@@ -242,6 +259,12 @@ The two layers carrying the accuracy are the **grammar engine** and the
 - **Consensus.** A plate is emitted **once per vehicle**, with the count of
   frames that agreed. That count travels to the operator's screen, because one
   frame is a guess and twelve frames agreeing is a reading.
+- **Search only where a plate can be read.** A vehicle narrower than 96 px
+  carries a plate under 40 px, which never reads exactly even when frames are
+  fused, so its plate search waits until it comes closer; it is still tracked
+  meanwhile. On the labelled Delhi clip this gave the same 36 readings and the
+  same 4 of 12 plates read exactly, in 586 s instead of 878 s — time that goes
+  back into more frames per vehicle on busy junctions.
 
 Everything that does not parse as a plausible Indian registration is dropped at
 the edge and never transmitted, then checked again centrally. Half-read text is
@@ -324,7 +347,7 @@ the account with the plate and the time.
 | Complete audit trail | Every onboarding step, sync, metadata read, footage request, decision, session, refusal, plate disclosure, watchlist change, alert raised and trace run. Rows commit independently of the request that produced them, because a denied attempt is the record you most want to survive. |
 | Machine decisions audited too | `watchlist_alert_raised` is written by the matcher, not by a person. The trail shows what the system concluded as well as what people did. |
 
-Verified by 183 automated tests, including a permission matrix that asserts
+Verified by 295 automated tests (192 platform, 103 edge worker), including a permission matrix that asserts
 refusals as carefully as it asserts successes, and a secret-scanner that fails
 the build if an RTSP URL, credential or internal hostname appears in any
 client-facing payload.
@@ -357,6 +380,34 @@ demonstration stack. The edge worker has three build targets — `base` (mock
 detector, ~120 MB, for CI), `yolo` (real inference, ~2.5 GB) and `anpr`
 (consensus reader, ~3.5 GB) — so a site pulls only what it will run. Weights
 are mounted, never baked in.
+
+### Dispersed sites and thin links
+
+Sites run from dense urban Ahmedabad to border districts roughly a thousand
+kilometres out, and the links between them are not uniform. The design copes
+by keeping the heavy traffic local:
+
+- **Processing at the edge.** Inference runs inside the department's network,
+  next to its VMS or NVR. What crosses the WAN is metadata: a busy camera peaks
+  around 48 kbps of detections against ~2 Mbps to stream it
+  (`docs/scalability.md` §2).
+- **Video on demand.** People watch a handful of brokered sessions at a time,
+  never a statewide wall, so viewing load follows attention rather than camera
+  count.
+- **Tolerant capture.** Reconnect with 2 s→30 s backoff, gaps and decoder noise
+  tolerated, and the sampling interval is a per-site dial that trades
+  detection density for bandwidth without a redeploy.
+- **Replay without duplicates.** Detection IDs are deterministic and ingest is
+  idempotent on them, so an edge queue can replay after an outage without
+  double counting. The queue itself is designed, not built (§13).
+- **Analog and legacy cameras.** An analog camera has no network interface; it
+  is integrated through the DVR or encoder that digitises it, which exposes
+  RTSP or ONVIF like any IP source. The adapter talks to the recorder, never to
+  the coax.
+- **Protocols.** RTSP for inference, WHEP for low-latency preview and HLS for
+  dashboards and networks that block 8554 — the three the grid publishes. The
+  worker captures RTSP only and says so when 8554 is unreachable, rather than
+  silently decoding a login page over HLS.
 
 ## 11. Scalability
 
@@ -422,10 +473,13 @@ a deploying engineer can trust.
 - **ANPR yield on wide overview footage is low, and that is optical.** A camera
   positioned for ANPR reads plates well; a general-purpose overview camera does
   not. The measured 1-in-67 figure in `docs/anpr.md` is for the previous
-  single-frame reader, since removed. The track-level engine ran on the government feed on
-  2026-09-12 - cam01 (270 detections) and cam02 (154), one pass each - and
-  settled readings on both, but across too few tracks to quote a yield, so no
-  figure is claimed for it. The vendor's own 45-clip sandbox baseline is 6
+  single-frame reader, since removed. On 14 September, 00:00–16:30 IST, the
+  track-level engine read 236 plates from 12 of the 30 grid cameras, 9 of them
+  at confidence ≥ 0.5, alongside 95,287 vehicle and object detections from 20
+  cameras; the grid refused our account in recurring 15–20 minute windows
+  through that day, so these are floors rather than capacity. Most readings are
+  low-confidence because the plates are narrow in pixels, which is why no
+  yield percentage is claimed. The vendor's own 45-clip sandbox baseline is 6
   confirmed reads from 1,042 vehicle tracks with **zero false confirms**, and
   that last number is what this design optimises for: a reading naming a state
   or district that cannot exist is dropped rather than shown.

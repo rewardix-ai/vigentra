@@ -123,6 +123,30 @@ async def test_an_https_outage_keeps_cameras_while_the_rtsp_gateway_serves():
         await client.aclose()
 
 
+async def test_a_camera_the_survey_never_saw_is_listed_once():
+    """Both departments federate the grid; a new camera must not appear twice."""
+    from app.adapters import build_adapters
+    from app.config import Settings
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/auth/login":
+            return httpx.Response(200, headers={"set-cookie": "sid=good; Path=/"}, text="ok")
+        return httpx.Response(200, json=[{"id": "cam45", "name": "New junction"}])
+
+    settings = Settings(
+        sentinel_grid_password="pw", sentinel_grid_email="a@b.c",
+        traffic_vms_adapter="grid_adapter", municipal_vms_adapter="grid_adapter",
+        traffic_vms_enabled=True, municipal_vms_enabled=True,
+    )
+    client = httpx.AsyncClient(base_url="https://grid.test", transport=httpx.MockTransport(handler))
+    adapters = build_adapters(settings, clients={s.source_system: client for s in settings.sources})
+    try:
+        listed = {name: [c.external_camera_id for c in await a.list_approved_cameras()] for name, a in adapters.items()}
+        assert sorted(listed.values()) == [[], ["GRID-cam45"]], listed
+    finally:
+        await client.aclose()
+
+
 async def test_a_start_during_an_outage_serves_the_surveyed_cameras(monkeypatch):
     from pathlib import Path
 

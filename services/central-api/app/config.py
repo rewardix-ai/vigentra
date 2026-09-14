@@ -608,6 +608,10 @@ class SourceSettings(BaseModel):
     #: beside `credential` and treated the same way: never logged, never
     #: echoed to a client, never placed in a URL.
     credential_identity: str = ""
+    #: Whether this source lists grid cameras the reference file has not placed
+    #: with a department. Exactly one source may, or a camera the survey never
+    #: saw appears once per department that federates the grid.
+    claims_unreferenced: bool = True
 
 
 class Settings(BaseSettings):
@@ -829,6 +833,11 @@ class Settings(BaseSettings):
                     credential_identity=(self.sentinel_grid_email
                                          if self.municipal_vms_adapter == "grid_adapter"
                                          else ""),
+                    # Grid cameras the survey has not placed go to Traffic
+                    # Police when it federates the grid too, so the ~50-camera
+                    # event grid lists each new camera once.
+                    claims_unreferenced=not (self.traffic_vms_enabled
+                                             and self.traffic_vms_adapter == "grid_adapter"),
                 )
             )
         return entries

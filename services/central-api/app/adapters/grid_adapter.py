@@ -675,7 +675,12 @@ class GridAdapter(SurveillanceAdapter):
         adapter's own, which keeps a single-source deployment working
         unchanged.
         """
-        cameras = [self._to_camera(record) for record in await self._catalogue()]
+        cameras = [
+            self._to_camera(record)
+            for record in await self._catalogue()
+            if self.config.claims_unreferenced
+            or self._reference.get(str(record["id"]), {}).get("source_system")
+        ]
         return [camera for camera in cameras if camera.source_system == self.source_system]
 
     async def check_source_health(self) -> dict[str, Any]:

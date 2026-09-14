@@ -1,614 +1,837 @@
-"""The ANPR pipeline: detection -> restoration -> OCR -> consensus.
+"""Pipeline orchestration: source -> overlay mask -> vehicle track -> plate
+detect -> crop bank -> (on track close) legibility gate -> enhance -> read ->
+fuse -> output record + evidence pack.
 
-The interesting part of this module is the **OCR scheduler**.  Detection is
-cheap and scales fine with vehicle count; OCR does not.  Reading every plate
-in every frame would collapse the moment a junction fills up, so instead each
-frame gets a fixed OCR budget that is spent on the plates that will benefit
-most:
-
-* tracks already locked to a confident answer are skipped entirely, which
-  frees the budget for vehicles that just entered the scene,
-* a crop clearly worse than the best already seen for that track is skipped,
-* whatever remains is sorted by need x crop quality and the top N are read.
-
-The result degrades gracefully: with more vehicles than budget, every vehicle
-still gets read, just over more frames.
+Every Stage B module is a toggle in `ablate` so eval can switch it off.
+Per-stage timings are accumulated for the report.
 """
 from __future__ import annotations
 
-import os
-
+import dataclasses
+import json
 import logging
 import time
-from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, Optional
 
 import cv2
 import numpy as np
+import yaml
 
-from . import enhance
-from . import layout as lay
-from . import plate_rules as pr
-from .config import Config
-from .consensus import ConsensusStore, TrackConsensus, supersedes
-from .detect import Box, Detector, PlateDetection
-from .metrics import Metrics
-from .osd import OsdSuppressor
-from .ocr import OcrEnsemble
-from .readability import ReadabilityLedger
+from anpr.detect.corners import estimate_corners
+from anpr.detect.overlay_mask import OverlayMasker, ROIConfig
+from anpr.detect.plate import PlateDetector
+from anpr.detect.static_text import StaticTextMap, _iou
+from anpr.detect.vehicle import VehicleTracker
+from anpr.enhance.deblur import Deblurrer
+from anpr.enhance.denoise import Denoiser
+from anpr.enhance.fuse import fuse
+from anpr.enhance.glare import suppress_glare
+from anpr.enhance.rectify import rectify, deskew_residual
+from anpr.enhance.sr import SuperResolver
+from anpr.evidence import write_evidence
+from anpr.fuse.rover import ReadHypothesis, rover
+from anpr.plate_grammar import looks_like_overlay
+from anpr.read.crnn import CRNNReader
+from anpr.read.ensemble import ReaderEnsemble, Variant
+from anpr.read.parseq import PARSeqReader
+from anpr.sources import Frame, FrameSource
+from anpr.track.crop_bank import CropBankStore, TrackBank
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("anpr.pipeline")
 
 
 @dataclass
-class PlateEvent:
-    """A plate reading surfaced to the UI."""
-    track_id: int
-    text: str
-    pretty: str
-    score: float
-    confidence: float
-    valid: bool
-    fmt: str | None
-    state: str | None
-    confirmed: bool
-    observations: int
-    box: dict
-    quality: dict
-    frame: int
-    timestamp: float
-    method: str = ""
-    is_new: bool = False
-    trace: list[dict] = field(default_factory=list)
+class _LayoutRead:
+    """One row-layout reading of a track (see ANPRPipeline._read_layout)."""
+    two_row: bool
+    fused: object            # FusedRead
+    hyps: list
+    n_used: int
+    reg_cc: list
+    fres_img: np.ndarray
+    enh: np.ndarray
+    n_agree: int
+
+
+def _agreeing_frames(hyps: list, plate: str) -> int:
+    """Distinct single-crop variants whose own top read is within one character of `plate`."""
+    if not plate:
+        return 0
+    import editdistance
+    return len({h.source.split("/")[0].split("~")[0] for h in hyps
+                if h.source.startswith("single") and getattr(h, "rank", 0) == 0 and editdistance.eval(h.text, plate) <= 1})
+
+
+def _readers_supporting(hyps: list, plate: Optional[str]) -> set:
+    """Reader names that produced exactly `plate` as a top string (ReadHypothesis objects or the
+    (text, weight, prob, source, is_sr) tuples kept for fragment merging). Sources look like
+    'single0/crnn', 'fused_gray/crnn_reader_crnn_v4' or 'vote/crnn+crnn_reader_crnn_v4'."""
+    out: set = set()
+    if not plate:
+        return out
+    for h in hyps:
+        text, src, rank = (h.text, h.source, getattr(h, "rank", 0)) if hasattr(h, "text") else (h[0], h[3], 0)
+        if text == plate and rank == 0 and "/" in src:
+            out.update(src.split("/", 1)[1].split("+"))
+    return out
+
+
+def _photometric_variants(g: np.ndarray, ops: list) -> list[tuple[str, np.ndarray]]:
+    """Adaptive re-renderings of one gray plate crop for the reader. 'gamma' only fires on
+    under- (mean < 90) or over-exposed (mean > 170) crops, so normal crops are not altered."""
+    out = []
+    for op in ops:
+        if op == "clahe":
+            out.append((op, cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 8)).apply(g)))
+        elif op == "gamma":
+            m = float(g.mean())
+            gamma = 0.6 if m < 90 else 1.6 if m > 170 else None
+            if gamma is not None:
+                lut = (np.power(np.arange(256) / 255.0, gamma) * 255).astype(np.uint8)
+                out.append((op, cv2.LUT(g, lut)))
+        elif op == "sharpen":
+            out.append((op, cv2.addWeighted(g, 1.6, cv2.GaussianBlur(g, (0, 0), 1.2), -0.6, 0)))
+    return out
+
+
+def _top_valid_texts(hyps: list, k: int = 3) -> list[str]:
+    """The k heaviest hypothesis strings of a record that are full registrations of a known state."""
+    from anpr.plate_grammar import score_string
+    w: dict[str, float] = {}
+    for t, wt, *_ in hyps:
+        w[t] = w.get(t, 0.0) + float(wt)
+    out = []
+    for t in sorted(w, key=w.get, reverse=True):
+        gs = score_string(t, "")
+        if len(t) >= 8 and gs.valid and not any(x.startswith("unknown_state") for x in gs.reasons):
+            out.append(t)
+            if len(out) >= k:
+                break
+    return out
+
+
+@dataclass
+class Timings:
+    frames: int = 0
+    mask_ms: float = 0.0
+    vehicle_ms: float = 0.0
+    plate_ms: float = 0.0
+    enhance_ms: float = 0.0
+    read_ms: float = 0.0
+    tracks_closed: int = 0
 
     def as_dict(self) -> dict:
-        return {
-            "track_id": self.track_id, "text": self.text, "pretty": self.pretty,
-            "score": round(self.score, 4), "confidence": round(self.confidence, 4),
-            "valid": self.valid, "format": self.fmt, "state": self.state,
-            "confirmed": self.confirmed, "observations": self.observations,
-            "box": self.box, "quality": self.quality, "frame": self.frame,
-            "timestamp": self.timestamp, "method": self.method,
-            "is_new": self.is_new, "trace": self.trace,
+        n = max(self.frames, 1)
+        t = max(self.tracks_closed, 1)
+        return {"frames": self.frames, "tracks_closed": self.tracks_closed,
+                "mask_ms_per_frame": self.mask_ms / n, "vehicle_ms_per_frame": self.vehicle_ms / n,
+                "plate_ms_per_frame": self.plate_ms / n, "enhance_ms_per_track": self.enhance_ms / t,
+                "read_ms_per_track": self.read_ms / t,
+                "total_ms_per_frame": (self.mask_ms + self.vehicle_ms + self.plate_ms) / n}
+
+
+
+class ANPRPipeline:
+    def __init__(self, camera_id: str, thresholds: str | Path = "config/thresholds.yaml",
+                 roi_cfg: str | Path = "config/roi.yaml", vehicle_weights: str = "models/yolo11s.pt",
+                 plate_weights: Optional[str] = "models/plate_det.pt", device: str = "auto",
+                 ablate: Iterable[str] = (), evidence_dir: Optional[str | Path] = "evidence",
+                 frame_stride: int = 1, write_candidates: bool = True, keep_frames: bool = True,
+                 reader_weights: Optional[list[str]] = None, vehicle_backend: str = "yolo",
+                 preferred_state: Optional[str] = None, bank_dump_dir: Optional[str | Path] = None):
+        with open(thresholds, "r", encoding="utf-8") as fh:
+            self.cfg = yaml.safe_load(fh)
+        # reading / decision options; an absent key keeps the frozen 2026-09-10 behaviour
+        self.rcfg = self.cfg.get("reading") or {}
+        # grammar tie-break state (a plate from this state gets no 0.7 prior penalty). Was
+        # hard-coded "GJ"; a Delhi deployment scores every DL plate x0.7 with it. "" = none.
+        self.state = preferred_state if preferred_state is not None else self.rcfg.get("preferred_state", "GJ")
+        # offline replay (eval/replay_banks.py): every finalised track bank is pickled here
+        self.bank_dump_dir = Path(bank_dump_dir) if bank_dump_dir else None
+        self._n_dumped = 0
+        if self.bank_dump_dir:
+            self.bank_dump_dir.mkdir(parents=True, exist_ok=True)
+        self.camera_id = camera_id
+        self.ablate = set(ablate)
+        self.evidence_dir = Path(evidence_dir) if evidence_dir else None
+        self.frame_stride = max(1, frame_stride)
+        self.write_candidates = write_candidates
+        self.keep_frames = keep_frames
+        self.frame_cache_size = 30
+        d = self.cfg["detector"]
+        # a vehicle narrower than this carries a plate too small to read (< 40 px: 0% exact even
+        # fused), so its plate search is skipped until it comes closer. 0 = search every vehicle
+        self.min_vehicle_px = float(d.get("plate_search_min_vehicle_px", 0))
+        self.vehicle_backend = vehicle_backend
+        if vehicle_backend == "rtdetr":
+            # IISc UVH-26 RT-DETRv2-S (Indian classes incl. auto/two-wheeler), fixed 640 input
+            from anpr.detect.rtdetr_vehicle import RTDETRVehicleTracker
+            self.vehicles = RTDETRVehicleTracker(device=device, conf=max(d["vehicle_conf"], 0.3), imgsz=640)
+        else:
+            self.vehicles = VehicleTracker(vehicle_weights, device, d["vehicle_imgsz"], d["vehicle_conf"],
+                                           tuple(d["vehicle_classes"]))
+        self.plates = PlateDetector(plate_weights, device, d["plate_imgsz"], d["plate_conf"],
+                                    d["vehicle_crop_upscale_min_px"], tile=d.get("tile_size", 0),
+                                    overlap=d.get("tile_overlap", 0.2), use_retro=d.get("retro_proposer", True))
+        self.masker: Optional[OverlayMasker] = None
+        self.roi_cfg = ROIConfig.load(roi_cfg, camera_id)
+        self.bank = CropBankStore(camera_id, self.cfg["crop_bank"]["max_bank"])
+        if reader_weights is None:
+            # one CRNN (ONNX preferred, .pt fallback) + PARSeq if exported. Loading both
+            # .onnx and .pt of the same CRNN doubled every hypothesis (42/track measured).
+            rw = ["models/reader_crnn.onnx" if Path("models/reader_crnn.onnx").exists() else "models/reader_crnn.pt",
+                  "models/reader_parseq.onnx"]
+            if self.rcfg.get("crnn_weights"):          # e.g. a retrained reader under evaluation
+                rw[0] = self.rcfg["crnn_weights"]
+            # further CRNNs vote alongside (e.g. v3b per-row + v4 side-by-side): a confirm then needs
+            # their evidence to agree, and one reader's confident misread splits the vote
+            rw[1:1] = list(self.rcfg.get("extra_crnn_weights") or [])
+        else:
+            rw = list(reader_weights)
+        readers = []
+        for i, w in enumerate(rw):
+            if "parseq" in w:
+                readers.append(PARSeqReader(w))
+            else:
+                r = CRNNReader(w, device)
+                if i > 0:                       # extra CRNNs get their own name so their votes stay distinguishable
+                    r.name = f"crnn_{Path(w).stem}"
+                readers.append(r)
+        if "awiros" in (self.rcfg.get("readers") or []):
+            # Awiros-ANPR-OCR (PP-OCRv5 fine-tuned on 558k Indian plates, two-row in one pass)
+            from anpr.read.awiros import AwirosReader
+            aw = AwirosReader()
+            if aw.ok:
+                readers.append(aw)
+            else:
+                log.warning("awiros reader requested but not available: %s", aw.err)
+        self.ensemble = ReaderEnsemble(readers, preferred_state=self.state,
+                                       reader_weight=self.rcfg.get("reader_weight") or {},
+                                       text_variants=int(self.rcfg.get("awiros_crops", 0)))
+        # fast CRNN-only ensemble for the per-crop read filter (reading.read_filter)
+        fast = [r for r in self.ensemble.readers if not hasattr(r, "read_batch")]
+        self.filter_ensemble = ReaderEnsemble(fast, preferred_state=self.state) if fast else None
+        self.denoiser = Denoiser()
+        self.deblurrer = Deblurrer()
+        self.sr = SuperResolver()
+        self.timings = Timings()
+        self.records: list[dict] = []
+        self.last_vehicles: list = []   # (track_id, box, cls_name, conf) for the last processed frame
+        self.last_plates: list = []     # (track_id, box, source, conf)
+        self._warm_dets: list = []      # full-frame plate detections during mask warm-up (static-text finder)
+        # hoardings / sign boards / painted road names: same position + same pixels under different vehicles
+        self.static_text = StaticTextMap(**(self.cfg.get("static_text") or {}))
+        self._best_imgs: dict[str, tuple] = {}   # track_id -> (best box, best crop) for the retroactive check at flush
+        self.frame_cache: dict[int, np.ndarray] = {}   # frame_idx -> image (for evidence)
+        self._last_frame: Optional[np.ndarray] = None
+        self.gate_log: list[dict] = []
+
+    # ------------------------------------------------------------------
+    def run(self, source: FrameSource, max_frames: Optional[int] = None) -> list[dict]:
+        n = 0
+        for frame in source:
+            if max_frames is not None and n >= max_frames:
+                break
+            self.process_frame(frame)
+            n += 1
+        self.flush()
+        return self.records
+
+    def process_frame(self, frame: Frame) -> None:
+        if self.masker is None:
+            self.masker = OverlayMasker(self.roi_cfg, frame.shape)
+        if frame.discontinuity and frame.frame_idx > 0:
+            self.vehicles.reset()
+            for b in self.bank.close_all():
+                self._finalise_track(b)
+        t0 = time.perf_counter()
+        if not self.masker.ready:
+            self.masker.observe(frame.image)
+            # overlay-by-motion: full-frame plate-like detections that sit still across the
+            # warm-up are burned-in OSD (timestamps, camera captions); collect them here
+            if self.plates.model is not None and len(self._warm_dets) < 12 and frame.frame_idx % 3 == 0:
+                try:
+                    b, s = self.plates._infer(frame.image)
+                    self._warm_dets.append([tuple(float(v) for v in bb) for bb, ss in zip(b, s) if ss >= 0.15])
+                except Exception:
+                    pass
+            if self.masker.ready and self._warm_dets:
+                n = self.masker.add_static_boxes(self._warm_dets)
+                if n:
+                    log.info("overlay-by-motion: masked %d static text boxes on %s", n, self.camera_id)
+                self._warm_dets = []
+        self.timings.mask_ms += (time.perf_counter() - t0) * 1000
+        if frame.frame_idx % self.frame_stride != 0:
+            return
+        self.timings.frames += 1
+        self._last_frame = frame.image
+        if self.keep_frames:
+            # evidence frames: keep a small window (each 1080p frame is 6 MB; the dev box has 8 GB RAM)
+            self.frame_cache[frame.frame_idx] = frame.image
+            if len(self.frame_cache) > self.frame_cache_size:
+                for k in sorted(self.frame_cache)[:-self.frame_cache_size]:
+                    del self.frame_cache[k]
+        t1 = time.perf_counter()
+        vdets = self.vehicles.update(frame.image, self.masker.mask)
+        self.timings.vehicle_ms += (time.perf_counter() - t1) * 1000
+        t2 = time.perf_counter()
+        # per-frame state for visualisation / annotation tools
+        self.last_vehicles = [(v.track_id, v.box, v.cls_name, v.conf) for v in vdets]
+        self.last_plates = []
+        for v in vdets:
+            if not self.masker.box_allowed(*v.box, max_masked_frac=0.5):
+                continue
+            self.bank.touch(v.track_id, frame.frame_idx, frame.pts_ms, v.box, v.cls_name)
+            if v.box[2] - v.box[0] < self.min_vehicle_px:
+                continue
+            pdets = self.plates.detect_in_vehicle(frame.image, v.box, v.cls_name, frame.frame_idx, v.track_id)
+            # plates banked per vehicle per frame: a second, weaker box inside the same vehicle is
+            # almost always a bumper edge or the neighbour's plate, and it filled half the top-12
+            # on the Delhi clip (68 of 116 tracks), failing registration and skewing the row vote
+            per_vehicle = int(self.cfg["detector"].get("plates_per_vehicle", 2))
+            n_banked = 0
+            for p in pdets:
+                if n_banked >= per_vehicle:
+                    break
+                if not self.masker.box_allowed(*p.box, self.cfg["detector"]["max_masked_frac"]):
+                    continue
+                self.last_plates.append((v.track_id, p.box, p.source, p.conf))
+                x1, y1, x2, y2 = p.box
+                w, h = x2 - x1, y2 - y1
+                mx, my = 0.12 * w, 0.25 * h
+                X1, Y1 = int(max(0, x1 - mx)), int(max(0, y1 - my))
+                X2, Y2 = int(min(frame.image.shape[1], x2 + mx)), int(min(frame.image.shape[0], y2 + my))
+                crop = frame.image[Y1:Y2, X1:X2]
+                if crop.size == 0:
+                    continue
+                # hoardings / sign boards / shop names: same frame position and same pixels
+                # under a different vehicle -> static scene text, never a plate
+                if self.static_text.check(p.box, crop, v.box, v.track_id, frame.frame_idx):
+                    self.plates.rejection_log.append({"frame": frame.frame_idx, "track": v.track_id,
+                                                      "box": [round(float(t), 1) for t in p.box], "reason": "static_scene_text"})
+                    continue
+                corners, cconf = estimate_corners(crop)
+                if cconf < 0.2:
+                    # trust the box: corners at the un-margined box
+                    corners = np.array([[x1 - X1, y1 - Y1], [x2 - X1, y1 - Y1], [x2 - X1, y2 - Y1], [x1 - X1, y2 - Y1]],
+                                       np.float32)
+                self.bank.add_crop(v.track_id, crop, corners, p.box, frame.frame_idx, frame.pts_ms, p.conf, p.two_row)
+                n_banked += 1
+        self.timings.plate_ms += (time.perf_counter() - t2) * 1000
+        for b in self.bank.close_stale(frame.frame_idx, self.cfg["tracker"]["track_buffer"]):
+            self._finalise_track(b)
+
+    def flush(self) -> None:
+        for b in self.bank.close_all():
+            self._finalise_track(b)
+        # retroactive: the first vehicle to pass a sign board was read before the board's
+        # position was learned from the vehicles that followed; demote those records now
+        for r in self.records:
+            if r.get("plate") and r["track_id"] in self._best_imgs:
+                box, img = self._best_imgs[r["track_id"]]
+                if self.static_text.is_static(box, img):
+                    r.update(status="UNREADABLE", plate=None, confidence=0.0, alternates=[], reason="static_scene_text")
+                    r.pop("_hyps", None)
+        self._best_imgs.clear()
+        self._merge_fragments()
+        if self.bank_dump_dir:
+            import pickle
+            with open(self.bank_dump_dir / "static_text.pkl", "wb") as fh:
+                pickle.dump(self.static_text, fh)
+
+    # ------------------------------------------------------------------
+    def _merge_fragments(self) -> None:
+        """Plate-string-based track merging (spec 13, 'track fragmentation').
+        Fragments of one vehicle (tracker id switches, duplicate boxes) get read
+        separately: on the Delhi clip DL14CE5987 was a 0.97 read with only 2
+        frames fused on one fragment and a wrong read on the 11-frame fragment.
+        Records with near-identical plate strings (edit distance <= 1) whose
+        vehicle boxes overlap in space (IoU >= 0.3) or follow each other in
+        time (<= 3 s gap, IoU >= 0.2) are re-voted on the union of their
+        hypotheses; every member receives the merged read, confidence and
+        fused-frame count, and CONFIRMED is re-decided under the same floors."""
+        import editdistance
+        cand = [r for r in self.records if r.get("plate") and r.get("_hyps")]
+        parent = {id(r): id(r) for r in cand}
+        by_id = {id(r): r for r in cand}
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        # reading.merge_by_hypotheses: fragments of one vehicle rarely share their FINAL string (one
+        # fragment's read is usually junk: 0 merges on the Delhi clip with 6+ split vehicles), but
+        # they share near-identical valid hypotheses; within 3 s that is the same plate
+        by_hyp = bool(self.rcfg.get("merge_by_hypotheses", False))
+        tops = {id(r): _top_valid_texts(r["_hyps"]) for r in cand} if by_hyp else {}
+        for i in range(len(cand)):
+            for j in range(i + 1, len(cand)):
+                a, b = cand[i], cand[j]
+                gap = max(a["first_seen_pts_ms"], b["first_seen_pts_ms"]) - min(a["last_seen_pts_ms"], b["last_seen_pts_ms"])
+                if by_hyp and gap <= 3000 and any(editdistance.eval(x, y) <= 1 for x in tops[id(a)] for y in tops[id(b)]):
+                    parent[find(id(a))] = find(id(b))
+                    continue
+                if editdistance.eval(a["plate"], b["plate"]) > 1:
+                    continue
+                iou = _iou(tuple(a["vehicle_box"]), tuple(b["vehicle_box"]))
+                overlap_in_time = gap <= 0
+                if (overlap_in_time and iou >= 0.3) or (0 < gap <= 3000 and iou >= 0.2):
+                    parent[find(id(a))] = find(id(b))
+        groups: dict[int, list[dict]] = {}
+        for r in cand:
+            groups.setdefault(find(id(r)), []).append(r)
+        ccfg, fcfg = self.cfg["confidence"], self.cfg["fusion"]
+        from anpr.fuse.rover import ReadHypothesis
+        for members in groups.values():
+            if len(members) < 2:
+                continue
+            hyps = [ReadHypothesis(t, [p], w, src, sr) for m in members for (t, w, p, src, sr) in m["_hyps"]]
+            fused = rover(hyps, self.state, ccfg["temperature"], ccfg["agreement_power"],
+                          supported_only=bool(self.rcfg.get("supported_strings_only", False)))
+            if not fused.plate or looks_like_overlay(fused.plate):
+                continue
+            n_used = sum(m["_n_used"] for m in members)
+            n_agree = sum(m.get("_n_agree", 0) for m in members)
+            best_w = max(m["_best_w"] for m in members)
+            readers = _readers_supporting(hyps, fused.plate)
+            if self.rcfg.get("string_vote", False):
+                # pool the fragments' per-crop string votes and decide on them with the same rule as a
+                # single track; re-voting with ROVER alone discarded that evidence (cam06: every
+                # vote-confirmed plate fell back to CANDIDATE once fragments were merged)
+                entries = [(w, t, p, set(src.split("/", 1)[1].split("+")), f"{m['track_id']}#{i}")
+                           for m in members for i, (t, w, p, src, sr) in enumerate(m["_hyps"]) if src.startswith("vote/")]
+                fallback = self.rcfg.get("second_reader_mode") == "fallback"
+                prim = [e for e in entries if "crnn" in e[3]] if fallback else entries
+                sv = self._vote_entries(prim, fused) if prim else None
+                if fallback and entries:
+                    ok1 = sv is not None and self._decide(sv[0], n_used, sv[1], best_w, sv[2])[0]
+                    if not ok1:
+                        sv2 = self._vote_entries(entries, fused)
+                        if sv2 is not None and (sv is None or sv2[0].plate != sv[0].plate):
+                            sv = (dataclasses.replace(sv2[0], reason="string_vote_secondary"), sv2[1], sv2[2])
+                if sv is not None:
+                    fused, n_agree, readers = sv
+            confirm_ok, why = self._decide(fused, n_used, n_agree, best_w, readers)
+            ids = [m["track_id"] for m in members]
+            for m in members:
+                m.update(plate=fused.plate, confidence=round(float(fused.confidence), 4), alternates=fused.alternates,
+                         agreement=round(fused.agreement, 3), n_hypotheses=fused.n_hyps, frames_fused=int(n_used),
+                         frames_agreeing=int(n_agree), merged_from=ids, status="CONFIRMED" if confirm_ok else "CANDIDATE",
+                         reason="" if confirm_ok else f"merged:{why}")
+        for r in cand:
+            r.pop("_hyps", None)
+            r.pop("_best_w", None)
+            r.pop("_n_used", None)
+            r.pop("_n_agree", None)
+
+    # ------------------------------------------------------------------
+    def _gate(self, b: TrackBank) -> tuple[bool, str, dict]:
+        g = self.cfg["legibility_gate"]
+        best = b.best
+        if best is None:
+            return False, "no_plate_detected", {}
+        q = best.quality
+        stats = {"w": q.width_px, "sharp": q.sharpness_lap, "contrast": q.local_contrast, "q": q.quality_score,
+                 "n_crops": len(b.crops)}
+        if q.width_px < g["w_min_px"]:
+            return False, f"width_below_gate:{q.width_px:.0f}<{g['w_min_px']}", stats
+        if q.height_px < g.get("h_min_px", 8):
+            return False, f"height_below_gate:{q.height_px:.0f}<{g.get('h_min_px', 8)}", stats
+        if q.sharpness_lap < g["sharpness_min"]:
+            return False, f"sharpness_below_gate:{q.sharpness_lap:.1f}<{g['sharpness_min']}", stats
+        if q.local_contrast < g["contrast_min"]:
+            return False, f"contrast_below_gate:{q.local_contrast:.1f}<{g['contrast_min']}", stats
+        return True, "gated_in", stats
+
+    def _finalise_track(self, b: TrackBank) -> None:
+        self.timings.tracks_closed += 1
+        if self.bank_dump_dir:
+            import pickle
+            with open(self.bank_dump_dir / f"{self._n_dumped:05d}_{b.track_id}.pkl", "wb") as fh:
+                pickle.dump(b, fh)
+            self._n_dumped += 1
+        best = b.best
+        rec = {
+            "track_id": f"{self.camera_id}_{b.track_id}", "camera_id": self.camera_id,
+            "first_seen_pts_ms": b.first_pts_ms, "last_seen_pts_ms": b.last_pts_ms,
+            "first_frame": b.first_frame, "last_frame": b.last_frame,
+            "status": "UNREADABLE", "plate": None, "confidence": 0.0, "alternates": [],
+            "plate_class": "unknown", "vehicle_type": b.vehicle_type, "frames_fused": 0,
+            "vehicle_box": [round(v, 1) for v in b.vehicle_box], "n_frames_seen": b.n_frames_seen,
+            "n_plate_hits": b.n_plate_hits, "bbox": None, "reason": "",
         }
+        if best is not None:
+            rec["bbox"] = [round(v, 1) for v in best.box_frame]
+            rec["best_frame"] = best.frame_idx
+            rec["quality"] = best.quality.as_dict()
+        ok, reason, stats = self._gate(b)
+        # overlay-by-motion at track level: a "plate" that never moves while its
+        # vehicle box does is burned-in text (timestamp / camera name), never a plate
+        if ok and len(b.crops) >= 5:
+            pc = np.array([[(c.box_frame[0] + c.box_frame[2]) / 2, (c.box_frame[1] + c.box_frame[3]) / 2] for c in b.crops])
+            plate_motion = float(np.linalg.norm(pc.max(0) - pc.min(0)))
+            # parked cars have static plates too: only reject when the VEHICLE moved and the plate did not
+            if plate_motion < 3.0 and b.vehicle_motion_px() > 30.0:
+                ok, reason = False, "static_overlay_text"
+        # hoarding / sign board already learned from earlier vehicles at this frame position
+        if ok and best is not None and self.static_text.is_static(best.box_frame, best.image):
+            ok, reason = False, "static_scene_text"
+        rec["gate"] = stats
+        self.gate_log.append({"track": rec["track_id"], "ok": ok, "reason": reason, **stats})
+        if not ok:
+            rec["status"] = "UNREADABLE"
+            rec["reason"] = reason
+            self.records.append(rec)
+            if self.evidence_dir and best is not None and self.write_candidates:
+                write_evidence(self.evidence_dir / "unreadable", rec, best.image, None, None, None)
+            return
+        if not self.ensemble.readers:
+            # ground-truth / detector-only runs: no reader loaded, skip B and C
+            rec["status"] = "CANDIDATE"
+            rec["reason"] = "no_reader_loaded"
+            self.records.append(rec)
+            return
+        # ---------------- Stage B + C --------------------------------
+        K = self.cfg["crop_bank"]["top_k"]
+        pool = b.crops
+        crop_reads = []
+        want_reads = self.rcfg.get("read_filter", False) or self.rcfg.get("string_vote", False)
+        if want_reads and self.filter_ensemble is not None:
+            crop_reads = self._crop_reads(b.crops)
+        if self.rcfg.get("read_filter", False) and crop_reads:
+            # keep only crops that read as a registration on their own: the detector also boxes
+            # headlamps, mirrors and whole bumper panels (sandbox cam06 auto GJ18X6705), and those
+            # rank high on sharpness and out-vote the real plate in the fusion
+            seen, ok = set(), []
+            for c, *_ in crop_reads:
+                if id(c) not in seen:
+                    seen.add(id(c))
+                    ok.append(c)
+            if len(ok) >= min(3, len(b.crops)):
+                pool = ok
+        groups = [sorted(pool, key=TrackBank.rank_score, reverse=True)[:K]]
+        if self.rcfg.get("cluster_by_layout", False):
+            # One track's bank can hold boxes of different objects on the vehicle. Sandbox cam06
+            # auto GJ18X6705: 46 two-row plate crops (19-55 px) and 8 wide 164-222 px boxes of
+            # something else on the auto, which ranked higher on sharpness and filled 9 of the
+            # top-12, so the plate was never read. Crops are grouped by box layout and every
+            # group of >= 3 crops is read on its own; the strongest read wins.
+            by: dict[bool, list] = {}
+            for c in pool:
+                by.setdefault(bool(c.two_row), []).append(c)
+            groups = [sorted(cs, key=TrackBank.rank_score, reverse=True)[:K]
+                      for cs in by.values() if len(cs) >= min(3, len(pool))] or groups
+        reads = []
+        for top in groups:
+            aspect_two_row = sum(1 for c in top if c.two_row) > len(top) / 2
+            # A squat detector box is no proof of a two-row plate: a tilted single-row plate gives one
+            # too (Delhi clip t3: 17.6 deg skew, box aspect 1.76) and the row split then cut through
+            # every character. With two_row_both_ways such a track is read both ways; the stronger wins.
+            layouts = [aspect_two_row]
+            if aspect_two_row and self.rcfg.get("two_row_both_ways", False):
+                layouts.append(False)
+            gbest = max(top, key=TrackBank.rank_score)
+            reads += [(self._read_layout(top, tr, gbest), gbest) for tr in layouts]
+        lr, best = max(reads, key=lambda rb: (bool(rb[0].fused.plate), rb[0].fused.confidence))
+        # evidence, width floor and static-text check follow the crops that produced the read
+        rec["bbox"] = [round(v, 1) for v in best.box_frame]
+        rec["best_frame"] = best.frame_idx
+        rec["quality"] = best.quality.as_dict()
+        fused, hyps, n_used, fres_img, enh = lr.fused, lr.hyps, lr.n_used, lr.fres_img, lr.enh
+        if self.rcfg.get("string_vote", False) and crop_reads:
+            # temporal evidence: on the Delhi clip DL1LT1087 was read exactly on 20 single crops yet
+            # the fused-image variants (weight 1.0 each vs 0.5 x quality for a single crop) won the
+            # vote with DL14T1087; every good crop now reads and votes on its own
+            # reading.second_reader_mode: fallback - the primary reader votes alone and decides every
+            # confirm; a second reader in the same vote diluted the primary's share (Delhi 4K: 9 -> 5
+            # confirms). It only supplies a displayed, never-confirmed read when the primary cannot decide
+            fallback = self.rcfg.get("second_reader_mode") == "fallback"
+            prim = [r for r in crop_reads if "crnn" in r[3]] if fallback else crop_reads
+            sv = self._string_vote(prim, fused) if prim else None
+            if fallback:
+                ok1 = sv is not None and self._decide(sv[0], n_used, sv[1], best.quality.width_px, sv[2])[0]
+                if not ok1:
+                    sv2 = self._string_vote(crop_reads, fused)
+                    if sv2 is not None and (sv is None or sv2[0].plate != sv[0].plate):
+                        sv = (dataclasses.replace(sv2[0], reason="string_vote_secondary"), sv2[1], sv2[2])
+            if sv is not None:
+                fused, n_vote, vote_readers = sv
+                # for a vote read the evidence count is the crops that read EXACTLY the winner
+                lr = dataclasses.replace(lr, fused=fused, n_agree=n_vote)
+                hyps = list(hyps) + [ReadHypothesis(t, [p] * len(t), TrackBank.rank_score(c) * p, "vote/" + "+".join(sorted(rs)), False)
+                                     for c, t, p, rs in crop_reads]
+        ccfg = self.cfg["confidence"]
+        rec["frames_fused"] = int(n_used)
+        rec["frames_agreeing"] = int(lr.n_agree)
+        rec["two_row"] = bool(lr.two_row)
+        rec["reg_cc"] = [round(float(x), 3) for x in lr.reg_cc]
+        rec["det_conf"] = round(float(best.det_conf), 3)
+        from anpr.plate_grammar import score_string
+        gs = score_string(fused.plate, self.state) if fused.plate else None
+        # a full registration of a known state (what the report / video count as a usable read)
+        rec["valid_format"] = bool(gs and gs.valid and len(fused.plate) >= 8
+                                   and not any(x.startswith("unknown_state") for x in gs.reasons))
+        rec["plate"] = fused.plate or None
+        rec["confidence"] = round(float(fused.confidence), 4)
+        rec["alternates"] = fused.alternates
+        rec["agreement"] = round(fused.agreement, 3)
+        rec["grammar_prior"] = round(fused.grammar_prior, 3)
+        rec["n_hypotheses"] = fused.n_hyps
+        rec["sr_disagree"] = fused.sr_disagree
+        rec["per_char_conf"] = [round(x, 3) for x in fused.per_char_conf]
+        # keep the hypotheses so fragments of the same vehicle can be re-voted together at flush()
+        rec["_hyps"] = [(h.text, float(h.weight), float(np.mean(h.char_probs)) if h.char_probs else 0.0, h.source, bool(h.is_sr))
+                        for h in hyps]
+        rec["_best_w"] = best.quality.width_px if best is not None else 0.0
+        rec["_n_used"] = int(n_used)
+        rec["_n_agree"] = int(lr.n_agree)
+        best_w = best.quality.width_px if best is not None else 0.0
+        confirm_ok, why = self._decide(fused, n_used, lr.n_agree, best_w, _readers_supporting(hyps, fused.plate))
+        if not fused.plate:
+            rec["status"] = "CANDIDATE"
+            rec["reason"] = fused.reason or "no_valid_hypothesis"
+        elif confirm_ok:
+            rec["status"] = "CONFIRMED"
+        else:
+            rec["status"] = "CANDIDATE"
+            rec["reason"] = why
+        if best is not None:
+            self._best_imgs[rec["track_id"]] = (best.box_frame, best.image)
+        self.records.append(rec)
+        if self.evidence_dir and (rec["status"] == "CONFIRMED" or self.write_candidates):
+            sub = self.evidence_dir / rec["status"].lower()
+            frame_img = self.frame_cache.get(best.frame_idx) if best is not None else None
+            write_evidence(sub, rec, best.image if best else None, fres_img, enh, frame_img,
+                           best.box_frame if best else None, fused.per_char_conf)
 
+    # ------------------------------------------------------------------
+    def _read_layout(self, top: list, two_row: bool, best) -> "_LayoutRead":
+        """Stage B (rectify, register, fuse, enhance) + Stage C (read, ROVER) for one row layout."""
+        t0 = time.perf_counter()
+        rect, weights = [], []
+        for c in top:
+            if "rectify" in self.ablate:
+                img = cv2.resize(c.image, (384, 92) if not two_row else (256, 128), interpolation=cv2.INTER_CUBIC)
+            else:
+                img = rectify(c.image, c.corners, two_row)
+            rect.append(img)
+            weights.append(max(c.quality.quality_score, 0.05))
+        fcfg = self.cfg["fusion"]
+        reg = "none" if "register" in self.ablate else fcfg["register"]
+        if "fuse" in self.ablate:
+            fres_img = cv2.cvtColor(rect[0], cv2.COLOR_BGR2GRAY)
+            sr_mf = None
+            n_used = 1
+            reg_cc = []
+        else:
+            fr = fuse(rect, weights, fcfg["method"], reg, sr_scale=0 if "mfsr" in self.ablate else fcfg["sr_scale"])
+            fres_img, sr_mf, n_used, reg_cc = fr.image, fr.sr_image, fr.n_used, fr.reg_cc
+        enh = fres_img
+        if "glare" not in self.ablate:
+            enh = suppress_glare(enh)
+        if "denoise" not in self.ablate:
+            enh = self.denoiser(enh)
+        if "deblur" not in self.ablate and best is not None:
+            enh = self.deblurrer(enh, best.quality.blur_extent, best.quality.blur_angle_deg)
+        enh, _ = deskew_residual(enh)
+        # the fused variants are only as good as the frames registration kept: on handheld footage
+        # ECC keeps 2 of 12 and the blurry fusion outvoted sharp single crops that read correctly
+        fw = 1.0
+        if self.rcfg.get("fused_weight_by_registration", False) and len(rect) > 1:
+            fw = min(1.0, 0.3 + 0.7 * n_used / len(rect))
+        variants = [Variant("fused_gray", fres_img, fw, two_row=two_row),
+                    Variant("enhanced", enh, fw, two_row=two_row)]
+        # No binarised variant in the vote: measured top-1 on 34 labelled legible tracks (feeds + street)
+        # was 6 % exact / CER 0.72 vs 21-31 % for the other variants (reports/LOOP_LOG.md); it only diluted
+        # agreement. Binarisation is still applied to the evidence crop for humans.
+        if sr_mf is not None:
+            variants.append(Variant("mfsr", sr_mf, 0.9 * fw, is_sr=False, two_row=two_row))
+        if "sr" not in self.ablate:
+            s = self.sr(enh)
+            if s.learned:
+                variants.append(Variant("sr", s.image, 0.8 * fw, is_sr=True, two_row=two_row))
+        # top single crops as extra evidence (rectified, glare-suppressed)
+        n_single = int(self.rcfg.get("single_crops", 3))
+        sw = float(self.rcfg.get("single_weight", 0.5))
+        # the colour crop goes to the whole-crop text reader only when the plate is wide enough for it
+        # to help (Awiros: 3.4 % exact at 40 px, 0 % at 30 px on the far test) - it costs ~0.1 s a crop
+        aw_min = float(self.rcfg.get("awiros_min_width", 0))
+        for i, (img, w) in enumerate(list(zip(rect, weights))[:n_single]):
+            g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            col = img if top[i].quality.width_px >= aw_min else None
+            variants.append(Variant(f"single{i}", suppress_glare(g), sw * w, two_row=two_row, color=col))
+            # adaptive photometric variants of the same crop (reading.single_variants); named
+            # "single<i>~<op>" so they still count as ONE frame in _agreeing_frames
+            vw = sw * w * float(self.rcfg.get("single_variant_weight", 0.5))
+            for op, pg in _photometric_variants(g, self.rcfg.get("single_variants") or []):
+                variants.append(Variant(f"single{i}~{op}", pg, vw, two_row=two_row))
+        self.timings.enhance_ms += (time.perf_counter() - t0) * 1000
+        t1 = time.perf_counter()
+        hyps = self.ensemble.read(variants)
+        ccfg = self.cfg["confidence"]
+        fused = rover(hyps, self.state, ccfg["temperature"], ccfg["agreement_power"],
+                      supported_only=bool(self.rcfg.get("supported_strings_only", False)))
+        self.timings.read_ms += (time.perf_counter() - t1) * 1000
+        if fused.plate and looks_like_overlay(fused.plate):
+            fused.plate, fused.confidence = "", 0.0
+            fused.reason = "overlay_text_rejected"
+        return _LayoutRead(two_row, fused, hyps, int(n_used), list(reg_cc), fres_img, enh,
+                           _agreeing_frames(hyps, fused.plate))
 
-#: How much to discount a reading taken from a plate touching the frame edge.
-EDGE_QUALITY_PENALTY = 0.45
-#: Pixels from the frame edge still counted as "touching".
-EDGE_MARGIN = 3
-#: Frames of separation within which two same-plate tracks are treated as one
-#: fragmented track rather than two passes of the same vehicle.
-#:
-#: Deliberately counted in *video frames*, not wall-clock seconds: offline
-#: processing runs slower than real time, so two fragments of one vehicle can
-#: be many wall seconds apart while being only a frame or two apart in the
-#: footage.  Using wall time here silently disables the merge.
-TRACK_MERGE_GAP = 60
+    @staticmethod
+    def _vote_admissible(text: str, state: str, reject: Iterable[str] = ()) -> bool:
+        """A crop's string may enter the vote only as a full registration (>= 8 chars) of a known
+        state. reading.vote_reject lists further grammar reasons that bar it - e.g. a district
+        number the state does not issue (DL81AP4175: Delhi has DL1-DL16; GJ40+: no such RTO)."""
+        from anpr.plate_grammar import score_string
+        if len(text) < 8:
+            return False
+        gs = score_string(text, state)
+        bar = ("unknown_state", *reject)
+        return gs.valid and not any(x.startswith(bar) for x in gs.reasons)
 
-
-def _touches_border(box: Box, width: int, height: int) -> bool:
-    """True when the plate box runs into the edge of the frame."""
-    return (box.x1 <= EDGE_MARGIN or box.y1 <= EDGE_MARGIN
-            or box.x2 >= width - EDGE_MARGIN or box.y2 >= height - EDGE_MARGIN)
-
-
-@dataclass
-class FrameResult:
-    frame_idx: int
-    vehicles: list[Box]
-    plates: list[PlateDetection]
-    events: list[PlateEvent]
-    stats: dict
-    #: best crop per track seen this frame, for the UI thumbnail strip
-    crops: dict[int, np.ndarray] = field(default_factory=dict)
-
-
-def plate_geometry_ok(bw: float, bh: float, frame_w: int, cfg) -> bool:
-    """Could a box this shape be a plate on this frame?
-
-    False for signboards, banners and captions: wider than
-    plate_max_width_frac of the frame, wider than plate_max_aspect plates,
-    or not wider than tall. Degenerate boxes are rejected too.
-    """
-    if bw < 1.0 or bh < 1.0:
-        return False
-    aspect = bw / bh
-    return (bw <= cfg.plate_max_width_frac * frame_w
-            and cfg.plate_min_aspect <= aspect <= cfg.plate_max_aspect)
-
-
-class AnprPipeline:
-    """Stateful, single-stream ANPR.  One instance per video or camera."""
-
-    def __init__(self, cfg: Config) -> None:
-        self.cfg = cfg
-        self.detector = Detector(cfg.detect)
-        self.ocr = OcrEnsemble(cfg.ocr)
-        self.sr = enhance.SuperResolver(cfg.enhance.sr_backend, cfg.enhance.sr_scale)
-        # Multi-frame upscaler: fuses the best few crops of a track into one
-        # sharper plate before a second read. Optional; None when absent.
-        self.mfsr = None
-        if cfg.enhance.mfsr_model and cfg.enhance.sr_backend != "off":
-            try:
-                from .config import resolve_model
-                from .sr import MultiFrameUpscaler, best_device
-                path = resolve_model(cfg.enhance.mfsr_model)
-                if os.path.exists(path):
-                    self.mfsr = MultiFrameUpscaler(path, best_device())
-                    log.info("multi-frame super-resolution: %s", self.mfsr.name)
-                else:
-                    log.info("no %s in models/; multi-frame SR off", cfg.enhance.mfsr_model)
-            except Exception as exc:                        # noqa: BLE001 - optional
-                log.warning("multi-frame SR unavailable: %s", exc)
-        self.tracks = ConsensusStore(cfg.consensus)
-        # Learns each camera's burned-in overlays (clocks, captions) live and
-        # keeps them out of the plate vote - see anpr/osd.py.
-        self.osd = OsdSuppressor()
-        # What the plates on this feed physically looked like, so the
-        # camera can say "unreadable" instead of saying nothing.
-        self.readability = ReadabilityLedger(floor_px=float(self.cfg.ocr.min_plate_width))
-        # Per-stage timings as percentiles - see anpr/metrics.py for why
-        # an average is the wrong summary here.
-        self.metrics = Metrics()
-
-        self.frame_idx = 0
-        #: track -> (text, confirmed) last pushed to the UI
-        self._announced: dict[int, tuple[str, bool]] = {}
-        self._best_crop: dict[int, tuple[float, np.ndarray]] = {}
-        self._fuse_crops: dict[int, list[tuple[float, np.ndarray]]] = {}
-        self._mf_last: dict[int, float] = {}
-        self._times: deque[float] = deque(maxlen=60)
-        self._ocr_calls = 0
-        self._skipped = 0
-
-    # -- lifecycle -------------------------------------------------------
-    @property
-    def ready(self) -> bool:
-        return self.detector.ready
-
-    def reset(self) -> None:
-        self.detector.reset()
-        self.tracks.reset()
-        self.osd.reset()
-        self.readability.reset()
-        self.metrics.reset()
-        self.frame_idx = 0
-        self._announced.clear()
-        self._best_crop.clear()
-        self._fuse_crops.clear()
-        self._mf_last.clear()
-        self._times.clear()
-        self._ocr_calls = self._skipped = 0
-
-    def on_discontinuity(self) -> None:
-        """Recover from an abrupt scene cut.
-
-        A looping recording restarts with a completely different scene, which
-        is indistinguishable from a camera reboot.  Every track id, motion
-        model and accumulated verdict from before the cut describes vehicles
-        that are no longer there - carried across, they attach old plates to
-        new cars and invent journeys that never happened.  Confirmed results
-        are already recorded downstream, so only the live state is dropped.
-        """
-        log.info("scene discontinuity - resetting track state")
-        self.detector.reset()
-        self.tracks.reset()
-        self.readability.drop_tracks()
-        self._announced.clear()
-        self._best_crop.clear()
-        self._fuse_crops.clear()
-        self._mf_last.clear()
-
-    def warmup(self, size: tuple[int, int] = (720, 1280)) -> None:
-        """Run one throwaway frame so CUDA kernels are compiled up front.
-
-        Without this the first real frame takes several seconds and the UI
-        looks broken on startup.
-        """
-        blank = np.zeros((size[0], size[1], 3), np.uint8)
-        try:
-            self.detector.process(blank, -1)
-        except Exception as exc:                # noqa: BLE001
-            log.debug("warmup failed harmlessly: %s", exc)
-        self.detector.reset()
-
-    # -- per frame -------------------------------------------------------
-    def process_frame(self, frame: np.ndarray,
-                      timestamp: float | None = None) -> FrameResult:
-        """Process one frame.
-
-        *timestamp* is the wall-clock time the frame was **captured**, taken
-        from the stream's PTS.  Pass it whenever the source can supply it:
-        route reconstruction across cameras is only as good as this number,
-        and processing time is not a substitute for capture time.
-        """
-        started = time.perf_counter()
-        captured = time.time() if timestamp is None else timestamp
-        idx = self.frame_idx
-        self.frame_idx += 1
-
-        # Vehicles whose plate is already settled do not need the ROI pass.
-        # Confirmed is a low enough bar here: re-detecting a plate we have
-        # already agreed on across several frames buys nothing, and on a busy
-        # 4K junction the ROI pass is the single largest cost in the frame.
-        settled = {tid for tid, tc in self.tracks.tracks.items()
-                   if tc.verdict.confirmed}
-        with self.metrics.time("detect"):
-            vehicles, plates = self.detector.process(frame, idx, settled)
-
-        # --- measure every crop, then decide where to spend OCR ----------
-        height, width = frame.shape[:2]
-        scored: list[tuple[float, PlateDetection, enhance.Quality, TrackConsensus]] = []
-        for det in plates:
-            if det.crop is None or det.crop.size == 0:
-                continue
-            box = (det.box.x1, det.box.y1, det.box.x2, det.box.y2)
-            # Every candidate teaches the overlay detector where the detector
-            # fires; a plate already CONFIRMED on this track rescues its
-            # position from ever being masked.
-            self.osd.observe(box, confirmed=self.tracks.get(det.track_id).verdict.confirmed)
-            # A candidate sitting in a learned overlay region is the camera's
-            # own clock or caption, not a plate. Dropped before it can cost OCR
-            # or enter the vote.
-            if self.osd.is_overlay(box):
-                self._skipped += 1
-                continue
-            # Plate geometry. A box a fifth of the frame wide, or wider than
-            # eight plates, or taller than wide, is a sign or a caption, not
-            # a plate - drop it before it costs an OCR call and a vote.
-            if not plate_geometry_ok(det.box.w, det.box.h, width, self.cfg.detect):
-                self._skipped += 1
-                continue
-            # Is there enough resolution here for a reading to mean
-            # anything? Below the floor the characters are fewer than four
-            # pixels wide and every read measured on this estate came back
-            # invented rather than wrong - see anpr/readability.py.
-            if not self.readability.observe(det.track_id, det.box.w):
-                self._skipped += 1
-                continue
-            with self.metrics.time("assess"):
-                q = enhance.assess(det.crop)
-            # A plate touching the frame edge is probably only partly in
-            # shot, and a half-visible plate reads as a *shorter* plate that
-            # can still satisfy a legal format.  Discounting these keeps the
-            # vote dominated by frames where the whole plate was visible.
-            if _touches_border(det.box, width, height):
-                q.score *= EDGE_QUALITY_PENALTY
-            tc = self.tracks.get(det.track_id)
-            self._remember_crop(det.track_id, q.score, det.crop)
-            if not tc.wants_ocr(idx, q.score, self.cfg.scheduler):
-                self._skipped += 1
-                continue
-            scored.append((tc.priority(q.score), det, q, tc))
-
-        self.osd.advance()
-
-        scored.sort(key=lambda t: t[0], reverse=True)
-        budget = max(1, self.cfg.scheduler.max_ocr_per_frame)
-
-        events: list[PlateEvent] = []
-        fallbacks_left = self.cfg.ocr.max_fallback_per_frame
-        for _prio, det, q, tc in scored[:budget]:
-            with self.metrics.time("enhance"):
-                variants = enhance.build_variants(det.crop, self.cfg.enhance,
-                                                  self.sr, q)
-            if not variants:
-                continue
-            # The detection escalation is the most expensive thing the OCR
-            # layer can do.  It is worth it for a stacked plate with real
-            # pixels, and worth nothing for a distant smear - so spend it
-            # only on crops big enough to rescue, and only a few per frame.
-            allow_fallback = (fallbacks_left > 0
-                              and q.width >= self.cfg.ocr.fallback_min_width)
-            with self.metrics.time("ocr"):
-                result = self.ocr.read(variants, allow_fallback=allow_fallback)
-            self.readability.note_read(det.track_id)
-            if allow_fallback:
-                fallbacks_left -= 1
-            self._ocr_calls += 1
-            # The track-level reads (logit fusion, multi-frame SR) run even
-            # when this frame's crop read nothing: a plate too small for any
-            # single frame is exactly the case they exist for, and skipping
-            # them on empty frames left them unreachable on short tracks.
-            candidates = list(result.candidates)
-            fused = self._fused_reading(det.track_id)
-            if fused is not None:
-                candidates.append(fused)
-            with self.metrics.time("multiframe"):
-                candidates.extend(self._multiframe_readings(det.track_id, captured))
-            if not candidates:
-                continue
-            # Classified here rather than inside the OCR layer so the track
-            # gets the verdict even when every reading was rejected: a crop
-            # that produced no legal plate still told us the plate's shape,
-            # and that is a vote worth keeping for the frames that follow.
-            tc.observe(candidates, q.score, idx, layout=lay.classify(det.crop))
-            tc.last_seen = captured
-            tc.last_capture = captured
-            if tc.first_capture is None:
-                tc.first_capture = captured
-
-            v = tc.verdict
-            if not v.text:
-                continue
-            # Surface a track when its answer first appears, when the text
-            # changes, or when it crosses into confirmed.  A steady reading
-            # must not spam the feed every frame - but the pending->confirmed
-            # transition has to get through even though the text is identical,
-            # otherwise the UI never turns the plate green.
-            previous = self._announced.get(det.track_id)
-            current = (v.text, v.confirmed)
-            if previous == current:
-                continue
-            # Do not confirm a reading that is a truncation of one another
-            # track already confirmed - that is one vehicle whose track
-            # fragmented, not two vehicles.
-            if v.confirmed and self._is_duplicate(det.track_id, v.text):
-                continue
-            self._announced[det.track_id] = current
-            events.append(PlateEvent(
-                track_id=det.track_id, text=v.text, pretty=v.pretty,
-                score=v.score, confidence=v.confidence, valid=v.valid,
-                fmt=v.fmt, state=v.state, confirmed=v.confirmed,
-                observations=v.observations, box=det.box.as_dict(),
-                quality=q.as_dict(), frame=idx, timestamp=captured,
-                method=v.method, is_new=previous is None,
-                trace=result.trace[:8],
-            ))
-
-        # --- retire tracks that have left ---------------------------------
-        alive = {d.track_id for d in plates} | {
-            v.track_id for v in vehicles if v.track_id is not None}
-        for tc in self.tracks.retire_missing(alive, idx, now=captured):
-            v = tc.verdict
-            # Every departing vehicle gets a reason, including the ones
-            # that produced no plate at all. Silence is what this replaces.
-            self.readability.retire(tc.track_id, confirmed=bool(v.text and v.confirmed))
-            if v.text and v.confirmed and self._announced.get(tc.track_id) != (v.text, True):
-                self._announced[tc.track_id] = (v.text, True)
-                events.append(PlateEvent(
-                    track_id=tc.track_id, text=v.text, pretty=v.pretty,
-                    score=v.score, confidence=v.confidence, valid=v.valid,
-                    fmt=v.fmt, state=v.state, confirmed=True,
-                    observations=v.observations, box={}, quality={},
-                    frame=idx, timestamp=captured, method=v.method))
-
-        # `retire_missing` only hands back tracks that produced a reading, so
-        # a vehicle whose plate was never even attempted would never reach the
-        # loop above - and those are exactly the UNREADABLE ones this ledger
-        # exists to count. Sweep for anything the consensus store has dropped.
-        self.readability.settle_absent(set(self.tracks.tracks))
-
-        elapsed = time.perf_counter() - started
-        self._times.append(elapsed)
-        self.metrics.record("frame", elapsed * 1000.0)
-        return FrameResult(idx, vehicles, plates, events, self.stats(),
-                           {tid: c for tid, (_, c) in self._best_crop.items()})
-
-    def _is_duplicate(self, track_id: int, text: str) -> bool:
-        """True when another track has already confirmed a fuller reading."""
-        for other, (seen, confirmed) in self._announced.items():
-            if other != track_id and confirmed and supersedes(seen, text):
-                return True
-        return False
-
-    def _remember_crop(self, track_id: int, quality: float, crop: np.ndarray) -> None:
-        prev = self._best_crop.get(track_id)
-        if prev is None or quality > prev[0]:
-            self._best_crop[track_id] = (quality, crop.copy())
-
-        # Logit fusion needs several looks at the same plate, so the best few
-        # are kept rather than only the winner. Sorted by quality and capped,
-        # because a track that lingers for a minute must not accumulate a
-        # hundred crops - and the worst of them would only dilute the sum.
-        pool = self._fuse_crops.setdefault(track_id, [])
-        pool.append((quality, crop.copy()))
-        if len(pool) > self.cfg.ocr.fuse_frames:
-            pool.sort(key=lambda entry: entry[0], reverse=True)
-            del pool[self.cfg.ocr.fuse_frames:]
-
-    def _fused_reading(self, track_id: int) -> "pr.PlateCandidate | None":
-        """One decode over every kept frame of a track, or None.
-
-        Runs only when the track has enough independent looks to be worth it,
-        and never replaces the per-frame observations - it is added alongside
-        them, so a fused reading has to win the same consensus every other
-        reading does rather than being trusted because of how it was produced.
-        """
-        if not self.cfg.ocr.fuse_track_logits:
-            return None
-        pool = self._fuse_crops.get(track_id) or []
-        if len(pool) < self.cfg.ocr.fuse_min_frames:
-            return None
-        engine = getattr(self.ocr, "fusion_engine", None)
-        if engine is None:
-            return None
-        crops = [crop for _quality, crop in sorted(pool, key=lambda e: e[0], reverse=True)]
-        reading = engine.read_track_fused(crops)
-        if reading is None:
-            return None
-        text, confidence = reading
-        return pr.normalise(text, confidence, engine=f"{engine.name}-fused", variant="track")
-
-    def _multiframe_readings(self, track_id: int, now: float) -> "list[pr.PlateCandidate]":
-        """Fuse the track's kept crops into one upscaled plate and read it.
-
-        The single-frame path reads each crop as it comes; this path waits
-        until the track has a few looks, registers them, and lets the
-        multi-frame upscaler combine them - noise and blocking average out,
-        sub-pixel shifts between frames add detail no single frame has. The
-        result goes through the same variants, engines and grammar as any
-        crop, tagged so the consensus can tell where it came from, and it
-        wins nothing by construction: it is one more vote.
-        """
-        if self.mfsr is None:
-            return []
-        pool = self._fuse_crops.get(track_id) or []
-        if len(pool) < self.cfg.ocr.fuse_min_frames:
-            return []
-        # Scheduled, not per frame: the pool changes slowly and the read is
-        # the most expensive thing a track can ask for.
-        last = self._mf_last.get(track_id)
-        if last is not None and now - last < self.cfg.ocr.mfsr_interval_s:
-            return []
-        self._mf_last[track_id] = now
-        crops = [crop for _q, crop in sorted(pool, key=lambda e: e[0], reverse=True)]
-        try:
-            fused = self.mfsr.upscale(crops[: self.cfg.ocr.fuse_frames])
-        except Exception as exc:                            # noqa: BLE001
-            log.debug("multi-frame SR failed: %s", exc)
-            return []
-        if fused is None or fused.size == 0:
-            return []
-        # Already upscaled: build the variants without a second SR pass.
-        variants = enhance.build_variants(fused, self.cfg.enhance, sr=None)
-        if not variants:
-            return []
-        result = self.ocr.read(variants, allow_fallback=False)
+    def _crop_reads(self, crops: list) -> list[tuple]:
+        """(crop, text, mean char prob) for every crop whose own quick CRNN read (each fast
+        reader, top string; squat boxes tried as two rows and as one row) is a full registration
+        of a known state (>= 8 chars) with mean character confidence >= reading.read_filter_min.
+        One entry per (crop, reader) read that qualifies, the strongest per crop first."""
+        thr = float(self.rcfg.get("read_filter_min", 0.5))
+        reject = tuple(self.rcfg.get("vote_reject") or ())
         out = []
-        for cand in result.candidates:
-            cand.engine = f"{cand.engine}-mfsr"
-            cand.variant = f"track-{cand.variant}"
-            out.append(cand)
+        for c in crops:
+            best: dict[str, list] = {}
+            for two in ((True, False) if c.two_row else (False,)):
+                g = cv2.cvtColor(rectify(c.image, c.corners, two), cv2.COLOR_BGR2GRAY)
+                for h in self.filter_ensemble.read([Variant("filter", g, 1.0, two_row=two)]):
+                    if h.rank != 0 or len(h.text) < 8 or not h.char_probs:
+                        continue
+                    p = float(np.mean(h.char_probs))
+                    if p >= thr and self._vote_admissible(h.text, self.state, reject):
+                        e = best.setdefault(h.text, [0.0, set()])
+                        e[0] = max(e[0], p)
+                        e[1].add(h.source.split("/")[-1])
+            for t, (p, rs) in sorted(best.items(), key=lambda kv: -kv[1][0]):
+                out.append((c, t, p, frozenset(rs)))
         return out
 
-    def best_crop(self, track_id: int) -> np.ndarray | None:
-        entry = self._best_crop.get(track_id)
-        return entry[1] if entry else None
+    def _readable_crops(self, crops: list) -> list:
+        seen, out = set(), []
+        for c, *_ in self._crop_reads(crops):
+            if id(c) not in seen:
+                seen.add(id(c))
+                out.append(c)
+        return out
 
-    # -- reporting -------------------------------------------------------
-    def stats(self) -> dict:
-        avg = sum(self._times) / len(self._times) if self._times else 0.0
-        confirmed = sum(1 for t in self.tracks.all_tracks() if t.verdict.confirmed)
-        return {
-            "frame": self.frame_idx,
-            "fps": round(1.0 / avg, 1) if avg > 0 else 0.0,
-            "latency_ms": round(avg * 1000, 1),
-            "active_tracks": len(self.tracks.tracks),
-            "total_tracks": len(self.tracks.all_tracks()),
-            "confirmed": confirmed,
-            "ocr_calls": self._ocr_calls,
-            "ocr_skipped": self._skipped,
-            "engines": self.ocr.engine_names,
-        }
+    def _string_vote(self, reads: list[tuple], fused):
+        """Temporal aggregation over individually read crops (reading.string_vote). Each qualifying
+        crop read votes for its string with weight = crop rank score x read confidence; the
+        heaviest string wins when >= 2 distinct crops read it. Returns (FusedRead, n_crops_agreeing)
+        or None to keep the fused / ROVER read. Confidence = vote share x mean read confidence of
+        the winning crops, so a string that is out-voted, or read by few or weak crops, stays low;
+        the usual _decide guards (runner-up ratio, agreeing crops, width) still apply."""
+        return self._vote_entries([(TrackBank.rank_score(c) * p, t, p, rs, id(c)) for c, t, p, rs in reads], fused)
 
-    def report(self) -> dict:
-        """The full picture, for a periodic log line or an operator report.
+    def _vote_entries(self, entries: list[tuple], fused):
+        """String vote over (weight, text, read confidence, readers, crop key) entries - one track's
+        crop reads, or the pooled reads of merged fragments."""
+        import dataclasses
+        w: dict[str, float] = {}
+        crops_for: dict[str, set] = {}
+        conf_for: dict[str, list] = {}
+        readers_for: dict[str, set] = {}
+        for wt, t, p, rs, key in entries:
+            w[t] = w.get(t, 0.0) + wt
+            crops_for.setdefault(t, set()).add(key)
+            conf_for.setdefault(t, []).append(p)
+            readers_for.setdefault(t, set()).update(rs)
+        if not w:
+            return None
+        win = max(w, key=w.get)
+        n = len(crops_for[win])
+        if n < 2:
+            return None
+        total = sum(w.values())
+        share = w[win] / total
+        mean_p = float(np.mean(conf_for[win]))
+        # evidence strength: the vote share, scaled by how unlikely n agreeing reads of confidence
+        # mean_p all are misreads; alternates on the same scale, so the runner-up ratio compares weights
+        strength = 1.0 - (1.0 - mean_p) ** n
+        conf = share * strength
+        alts = [{"plate": t, "confidence": round(w[t] / total * strength, 4)}
+                for t in sorted(w, key=w.get, reverse=True) if t != win][:3]
+        return dataclasses.replace(fused, plate=win, confidence=float(conf), alternates=alts, agreement=float(share),
+                                   n_hyps=len(entries), per_char_conf=[float(share)] * len(win), supported=True,
+                                   reason="string_vote"), n, readers_for[win]
 
-        Separate from `stats()` because `stats()` rides on every FrameResult
-        and this does not: computing percentiles sorts each stage's window, so
-        doing it per frame would put the measurement inside the thing being
-        measured.
-        """
-        return {
-            **self.stats(),
-            # Why this camera produced what it produced. An empty plate list
-            # with `unreadable` high is a camera placement finding, not a
-            # pipeline failure, and the two must not look alike.
-            "readability": self.readability.describe(),
-            "timings": self.metrics.describe(),
-        }
+    def _decide(self, fused, n_used: int, n_agree: int, best_w: float,
+                readers: Optional[set] = None) -> tuple[bool, str]:
+        """(confirm?, reason if not). One rule set for fresh tracks and merged fragments."""
+        ccfg, fcfg = self.cfg["confidence"], self.cfg["fusion"]
+        # with several fast readers, a confirm needs the string from more than one of them: the v4
+        # snapshot alone confirmed UP14DK7400 (true UP14DM7400) and DL11T1087 (true DL1LT1087) on the
+        # Delhi clip, strings the other CRNN never produced
+        n_fast = len(self.filter_ensemble.readers) if self.filter_ensemble is not None else 1
+        need = int(self.rcfg.get("confirm_min_reader_agreement", 1))
+        if readers is not None and n_fast >= 2 and len(readers) < min(need, n_fast):
+            return False, "readers_disagree"
+        # reading.confirm_require_primary: a second reader may add reads (it is stronger on two-row
+        # and far plates) but a string only IT produced is never confirmed - its misreads were the
+        # confident ones (UP14DK7400, DL11T1087); requiring full agreement instead cut the primary
+        # reader's own confirms on the Delhi clip from 9 to 5
+        if self.rcfg.get("confirm_require_primary") and readers is not None and n_fast >= 2 and "crnn" not in readers:
+            return False, "primary_reader_disagrees"
+        if getattr(fused, "reason", "") == "string_vote_secondary":
+            return False, "second_reader_only"          # shown as a read, never confirmed
+        vc = self.rcfg.get("vote_confirm")
+        if vc and getattr(fused, "reason", "") == "string_vote":
+            # evidence rule for a temporal string vote (reading.vote_confirm): enough distinct crops
+            # read EXACTLY this string, it holds enough of the vote, and the runner-up is well behind
+            top_alt = fused.alternates[0]["confidence"] if fused.alternates else 0.0
+            for ok, why in ((n_agree >= int(vc.get("min_crops", 4)), "too_few_agreeing_frames"),
+                            (fused.agreement >= float(vc.get("min_share", 0.4)), "low_vote_share"),
+                            (best_w >= ccfg.get("confirm_min_width_px", 40), "below_confirm_width"),
+                            (top_alt < float(self.rcfg.get("confirm_max_alt_ratio", 0.5)) * max(fused.confidence, 1e-9),
+                             "close_alternate")):
+                if not ok:
+                    return False, why
+            return True, ""
+        # every character must individually win its vote: on sandbox cam06 a plate read with one
+        # undecided digit (6 vs 8 at 0.24) reached 0.75 overall and would have been a false confirm
+        min_char = min(fused.per_char_conf) if fused.per_char_conf else 0.0
+        frames = n_used
+        if self.rcfg.get("count_agreeing_frames", False):
+            # single frames whose own top read is (within one character) the winner are evidence
+            # too, not only the frames registration kept: handheld Delhi t179 fused 2 of 12 frames
+            frames = max(n_used, n_agree)
+        alt_ratio = self.rcfg.get("confirm_max_alt_ratio")
+        top_alt = fused.alternates[0]["confidence"] if fused.alternates else 0.0
+        checks = (
+            (fused.confidence >= ccfg["confirm_threshold"], "low_confidence"),
+            (best_w >= ccfg.get("confirm_min_width_px", 40), "below_confirm_width"),
+            (fused.n_hyps >= ccfg.get("confirm_min_hypotheses", 6), "too_few_hypotheses"),
+            (min_char >= ccfg.get("confirm_min_char_vote", 0.5), "undecided_character"),
+            (frames >= fcfg["min_frames_for_confirm"], "too_few_frames"),
+            # a runner-up close behind the winner is a coin toss, not a read: the Delhi-clip
+            # false confirm DL11T1087 (0.83) had the true DL1LT1087 right behind it (0.52)
+            (alt_ratio is None or top_alt < alt_ratio * fused.confidence, "close_alternate"),
+            # independent single frames must back the read on their own: sandbox cam06 GJ11EJ7578
+            # (true series 'CJ' by eye) confirmed at 0.92 from the fused variants with 1 agreeing frame
+            (n_agree >= int(self.rcfg.get("confirm_min_agreeing_singles", 0)), "too_few_agreeing_frames"),
+            (fused.supported or not self.rcfg.get("supported_strings_only", False), "unsupported_string"),
+        )
+        for ok, why in checks:
+            if not ok:
+                return False, why
+        return True, ""
 
-    def results(self) -> list[dict]:
-        """Every plate seen so far, best first - used for CSV/JSON export.
-
-        Readings that are a one-character truncation of a stronger reading are
-        dropped: they are the same vehicle seen through a fragmented track,
-        not a second vehicle.
-        """
-        out = []
-        for tc in self.tracks.all_tracks():
-            v = tc.verdict
-            if not v.text:
-                continue
-            out.append({
-                "track_id": tc.track_id, **v.as_dict(),
-                "first_seen": tc.first_seen, "last_seen": tc.last_seen,
-                "first_frame": tc.first_frame, "last_frame": tc.last_frame,
-            })
-        out.sort(key=lambda r: (r["confirmed"], r["score"]), reverse=True)
-
-        # Compare against every row, not just the ones already kept: a
-        # truncation can outscore the full reading it came from, in which case
-        # an order-dependent pass would keep the truncation and drop nothing.
-        texts = [r["text"] for r in out]
-        out = [row for i, row in enumerate(out)
-               if not any(supersedes(t, row["text"])
-                          for j, t in enumerate(texts) if j != i)]
-
-        # Two tracks reading the same plate while both were on screen are one
-        # vehicle whose track fragmented, not two vehicles.  Overlapping
-        # lifetimes are the test - the same vehicle genuinely passing twice
-        # later in a long session must still be reported twice.
-        merged: list[dict] = []
-        for row in out:
-            twin = next(
-                (m for m in merged
-                 if m["text"] == row["text"]
-                 and row["first_frame"] <= m["last_frame"] + TRACK_MERGE_GAP
-                 and m["first_frame"] <= row["last_frame"] + TRACK_MERGE_GAP),
-                None)
-            if twin is None:
-                merged.append(row)
-                continue
-            twin["observations"] += row["observations"]
-            twin["first_seen"] = min(twin["first_seen"], row["first_seen"])
-            twin["last_seen"] = max(twin["last_seen"], row["last_seen"])
-            twin["first_frame"] = min(twin["first_frame"], row["first_frame"])
-            twin["last_frame"] = max(twin["last_frame"], row["last_frame"])
-        return merged
-
-
-# --------------------------------------------------------------------------
-# Annotation
-# --------------------------------------------------------------------------
-
-COLOR_CONFIRMED = (86, 219, 127)     # green
-COLOR_PENDING = (60, 190, 245)       # amber
-COLOR_UNREAD = (140, 140, 140)       # grey
-COLOR_VEHICLE = (95, 80, 70)         # muted blue-grey
-
-
-def annotate(frame: np.ndarray, result: FrameResult,
-             pipeline: AnprPipeline, show_vehicles: bool = True) -> np.ndarray:
-    """Draw boxes and current verdicts onto a copy of the frame."""
-    out = frame.copy()
-
-    if show_vehicles:
-        for v in result.vehicles:
-            x1, y1, x2, y2 = v.as_int()
-            cv2.rectangle(out, (x1, y1), (x2, y2), COLOR_VEHICLE, 1)
-            if v.track_id is not None:
-                cv2.putText(out, f"#{v.track_id}", (x1 + 2, max(12, y1 - 4)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.42, COLOR_VEHICLE, 1,
-                            cv2.LINE_AA)
-
-    for det in result.plates:
-        tc = pipeline.tracks.tracks.get(det.track_id)
-        verdict = tc.verdict if tc else None
-        if verdict and verdict.confirmed:
-            color, label = COLOR_CONFIRMED, verdict.pretty or verdict.text
-        elif verdict and verdict.text:
-            color, label = COLOR_PENDING, f"{verdict.pretty or verdict.text}?"
-        else:
-            color, label = COLOR_UNREAD, "reading..."
-
-        x1, y1, x2, y2 = det.box.as_int()
-        cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
-
-        # Label sits above the plate, or below it when there is no room.
-        scale = 0.62
-        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
-        ty = y1 - 8 if y1 - th - 12 > 0 else y2 + th + 10
-        bx1, by1 = x1, ty - th - 6
-        cv2.rectangle(out, (bx1, by1), (bx1 + tw + 12, ty + 6), color, -1)
-        cv2.putText(out, label, (bx1 + 6, ty), cv2.FONT_HERSHEY_SIMPLEX, scale,
-                    (18, 18, 18), 2, cv2.LINE_AA)
-
-        if verdict and verdict.observations:
-            meta = f"{int(verdict.score*100)}% x{verdict.observations}"
-            cv2.putText(out, meta, (x1, y2 + 16), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.42, color, 1, cv2.LINE_AA)
-
-    return out
+    # ------------------------------------------------------------------
+    def dump(self, path: str | Path) -> None:
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"camera_id": self.camera_id, "records": self.records, "timings": self.timings.as_dict(),
+                       "gate_log": self.gate_log, "rejections": self.plates.rejection_log[:2000],
+                       "static_scene_text": {"boxes": [[round(v, 1) for v in b] for b in self.static_text.static_boxes],
+                                             "candidates_rejected": self.static_text.n_rejected}}, fh, indent=1)

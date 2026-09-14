@@ -16,9 +16,6 @@
 
 export const PRODUCT_NAME = "Vigentra";
 
-/** The logo's own line, set under the wordmark with red separators. */
-export const LOGO_TAGLINE = ["Vigilance", "Intelligence", "Safer Roads"] as const;
-
 /**
  * The mark alone. `tone` picks the cut: the reversed white one for the navy
  * chrome, the original colours on light surfaces. `labelled` when it stands
@@ -34,9 +31,13 @@ export function VigentraMark({
   labelled?: boolean;
 }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+    // width/height give the browser the mark's shape before the file arrives.
+    // Without them the first paint after sign-in has a zero-width mark, and the
+    // wordmark jumps sideways when the image lands.
     <img
       src={tone === "onDark" ? "/brand/vigentra-mark-light.png" : "/brand/vigentra-mark.png"}
+      width={395}
+      height={270}
       alt={labelled ? PRODUCT_NAME : ""}
       aria-hidden={labelled ? undefined : true}
       className={className}
@@ -49,31 +50,29 @@ export function VigentraMark({
 const WORDMARK_ASPECT = 955 / 107;
 
 /**
- * "VIGILANCE | INTELLIGENCE | SAFER ROADS", stretched to exactly the
- * wordmark's width as it is in the logo. Set in SVG because `textLength` is
- * the only reliable way to justify one line to a measured width.
+ * "VIGILANCE | INTELLIGENCE | SAFER ROADS", spread to exactly the wordmark's
+ * width as it is in the logo. Flexbox, not SVG: Safari lays out an SVG
+ * `textLength` with tspans glyph by glyph and scrambles the line.
  */
 function LogoTagline({ width, dark }: { width: number; dark: boolean }) {
-  const red = "#e0443a";
-  const gap = "\u00a0\u00a0";
+  const bar = <span style={{ color: "#e0443a" }}>|</span>;
   return (
-    <svg viewBox={`0 0 ${width} 9`} width={width} height={9} aria-hidden className="block">
-      <text
-        x="0"
-        y="7.4"
-        textLength={width}
-        lengthAdjust="spacing"
-        fontSize="7.2"
-        fontWeight={500}
-        fill={dark ? "rgba(255,255,255,0.62)" : "#5b6472"}
-      >
-        {`VIGILANCE${gap}`}
-        <tspan fill={red}>|</tspan>
-        {`${gap}INTELLIGENCE${gap}`}
-        <tspan fill={red}>|</tspan>
-        {`${gap}SAFER ROADS`}
-      </text>
-    </svg>
+    <span
+      aria-hidden
+      className="flex justify-between whitespace-nowrap font-medium leading-none"
+      style={{
+        width,
+        fontSize: width * 0.0367,
+        letterSpacing: "0.08em",
+        color: dark ? "rgba(255,255,255,0.62)" : "#5b6472",
+      }}
+    >
+      <span>VIGILANCE</span>
+      {bar}
+      <span>INTELLIGENCE</span>
+      {bar}
+      <span>SAFER ROADS</span>
+    </span>
   );
 }
 
@@ -83,26 +82,24 @@ function LogoTagline({ width, dark }: { width: number; dark: boolean }) {
  * `tone` picks the two places this appears: `onDark` in the navy header,
  * `onLight` on light surfaces. `size="lg"` on a light surface is the full
  * approved lockup image, exactly as drawn. Otherwise it is the mark beside the
- * wordmark cut from the same artwork, with the tagline justified under it;
- * pass `subtitle` as a string to replace the tagline, or null to drop it.
+ * wordmark cut from the same artwork, with the tagline justified under it.
  */
 export function BrandLockup({
   tone = "onLight",
   size = "sm",
-  subtitle,
 }: {
   tone?: "onDark" | "onLight";
   size?: "sm" | "lg";
-  subtitle?: string | null;
 }) {
   const dark = tone === "onDark";
   const large = size === "lg";
 
   if (large && !dark) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img
         src="/brand/vigentra-logo.png"
+        width={955}
+        height={501}
         alt="Vigentra - Vigilance, Intelligence, Safer Roads"
         className="h-auto w-72 max-w-full"
         draggable={false}
@@ -121,26 +118,13 @@ export function BrandLockup({
     >
       <VigentraMark tone={tone} className={(large ? "h-12" : "h-9") + " w-auto shrink-0"} />
       <span className="flex flex-col gap-[5px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={dark ? "/brand/vigentra-wordmark-light.png" : "/brand/vigentra-wordmark.png"}
           alt=""
           style={{ height: wordHeight, width: wordWidth }}
           draggable={false}
         />
-        {subtitle === undefined ? (
-          <LogoTagline width={wordWidth} dark={dark} />
-        ) : (
-          subtitle && (
-            <span
-              className={
-                "block text-2xs uppercase tracking-wider " + (dark ? "text-white/60" : "text-ink-500")
-              }
-            >
-              {subtitle}
-            </span>
-          )
-        )}
+        <LogoTagline width={wordWidth} dark={dark} />
       </span>
     </span>
   );

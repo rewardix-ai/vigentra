@@ -1,11 +1,12 @@
 """Authorized video sessions.
 
-Four routes:
+Five routes:
 
     POST   /api/v1/video-sessions              open an authorized session
     GET    /api/v1/video-sessions/{id}/status  countdown / state for the player
     DELETE /api/v1/video-sessions/{id}         stop it now
     GET    /api/v1/streams/{id}                the bytes, proxied, range-aware
+    GET    /api/v1/cameras/{id}/snapshot       latest still frame for the live wall
 
 Every refusal is a 403 with `VIDEO_ACCESS_DENIED` and lands in the audit trail.
 The body carries a `state` telling the two kinds of no apart: a flat `denied`,
@@ -24,7 +25,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import get_db
+from ..database import get_db, get_session_factory
 from ..dependencies import (
     AdaptersDep,
     CurrentUser,
@@ -40,6 +41,7 @@ from ..schemas import VideoAccessState, VideoSessionCreate, VideoSessionOut
 from ..services import audit_service, video_broker, video_permissions
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..video_adapters import VideoAdapterError, VideoNotConfigured
+from .cameras import _load_camera
 
 logger = logging.getLogger("vigentra.video.router")
 
@@ -68,17 +70,6 @@ def _denied(
         body["owning_department"] = camera.owning_department
         body["request_access_at"] = "/api/v1/video-access-requests"
     return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=body)
-
-
-async def _load_camera(db: AsyncSession, camera_id: str) -> CameraRow:
-    row = (
-        await db.execute(select(CameraRow).where(CameraRow.camera_id == camera_id))
-    ).scalar_one_or_none()
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown camera '{camera_id}'"
-        )
-    return row
 
 
 # ---------------------------------------------------------------------------
@@ -455,6 +446,19 @@ async def read_stream(
 # ---------------------------------------------------------------------------
 # Live wall snapshots
 # ---------------------------------------------------------------------------
+
+_SNAPSHOT_CLIENT = None
+
+
+def _snapshot_client():
+    """One pooled client for the frame service, not a new connection per tile."""
+    global _SNAPSHOT_CLIENT
+    if _SNAPSHOT_CLIENT is None:
+        import httpx
+
+        _SNAPSHOT_CLIENT = httpx.AsyncClient(timeout=8.0)
+    return _SNAPSHOT_CLIENT
+
 #
 # The grid's HLS CDN delivers a 6-second segment in 15-80 seconds and 403s the
 # moment two requests overlap, so a browser HLS wall of thirty tiles blacks out
@@ -475,13 +479,16 @@ async def camera_snapshot(
     camera_id: str,
     settings: SettingsDep,
     user: CurrentUser,
-    db: AsyncSession = Depends(get_db),
 ) -> Response:
     from ..schemas import VideoMode
     from ..services import video_grants
 
-    camera = await _load_camera(db, camera_id)
-    grant = await video_grants.active_grant_for(db, username=user.username, camera_id=camera.camera_id)
+    # A short session, closed before the frame is fetched: a wall polls fifty of
+    # these every few seconds, and holding a pool connection across the upstream
+    # call starved every other route of the database.
+    async with get_session_factory()() as db:
+        camera = await _load_camera(db, camera_id)
+        grant = await video_grants.active_grant_for(db, username=user.username, camera_id=camera.camera_id)
     decision = video_permissions.evaluate(
         user, camera, settings, grant=list(grant.allowed_modes) if grant else None
     )
@@ -492,18 +499,18 @@ async def camera_snapshot(
         )
 
     external = camera.external_camera_id or ""
-    if not settings.edge_snapshot_url or not external.startswith("GRID-"):
+    if not settings.edge_snapshot_url or not external:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": "SNAPSHOT_UNAVAILABLE", "message": "No live-frame source for this camera."},
         )
-    grid_id = external[len("GRID-"):]
-    import httpx
-
-    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{grid_id}.jpg"
+    # The edge decodes grid cameras over RTSP and department-VMS feeds through
+    # the VMS's own authorised handle; either way a frame is keyed by the
+    # source's id (the grid's without its GRID- prefix).
+    snap_id = external[len("GRID-"):] if external.startswith("GRID-") else external
+    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{snap_id}.jpg"
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            upstream = await client.get(url)
+        upstream = await _snapshot_client().get(url)
     except Exception as exc:  # noqa: BLE001 - never echo the upstream URL
         logger.warning("snapshot proxy failed for %s: %s", camera.camera_id, type(exc).__name__)
         raise HTTPException(

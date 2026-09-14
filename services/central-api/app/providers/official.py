@@ -14,8 +14,9 @@ NOT connected to any live portal, and it will not attempt to be:
     documented contract rather than anything inferred from a live site.
 
 Nothing here scrapes, probes, reverse-engineers or fingerprints a portal. If
-official access is not granted, run in `mock` or `federated` mode and say so —
-`docs/resource-integration.md` covers the prerequisites for switching over.
+official access is not granted, run in `mock` or `federated` mode and say so.
+Switching over takes `SENTINEL_RESOURCE_MODE=official` plus both
+`SENTINEL_RESOURCE_API_URL` and `SENTINEL_RESOURCE_API_TOKEN`.
 """
 from __future__ import annotations
 
@@ -25,7 +26,7 @@ from typing import Any
 
 import httpx
 
-from ..config import Settings, normalize_city
+from ..config import Settings
 from ..schemas import (
     CameraProvenance,
     CameraStatus,

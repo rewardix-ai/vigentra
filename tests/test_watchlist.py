@@ -267,6 +267,27 @@ async def test_an_exact_plate_read_raises_an_alert(api, login, traffic_camera):
     assert hits[0]["category"] == "stolen"
 
 
+async def test_the_badge_count_is_not_an_audited_read(api, login, traffic_camera):
+    """The sidebar badge polls every 15 s on every page. Through the alert list
+    each poll wrote an "alerts viewed" row and buried the audit log; a count
+    discloses no plate, so it writes none."""
+    watcher = await login("traffic.state")
+    await add_watch(api, watcher, "GJ01AB1234")
+    edge = await login("traffic.ai")
+    await api.post(
+        "/api/v1/detections/ingest",
+        headers=edge,
+        json={"detections": [plate_detection(traffic_camera["camera_id"], "GJ01AB1234", detection_id="det-badge-1")]},
+    )
+
+    count = await api.get("/api/v1/alerts/open-count", headers=watcher)
+    assert count.status_code == 200, count.text
+    assert count.json() == {"open": 1}
+
+    viewed = await api.get("/api/v1/audit?action=alerts_viewed&limit=200", headers=await login("auditor"))
+    assert viewed.json() == []
+
+
 async def test_a_single_misread_still_alerts_but_is_marked_inexact(
     api, login, traffic_camera
 ):

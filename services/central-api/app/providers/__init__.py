@@ -7,17 +7,12 @@ Selecting a provider decides where the authorized camera inventory comes from:
     official   a documented official export/API, only when authorized config
                is supplied. Never guesses an endpoint.
 
-See docs/resource-integration.md.
+Configured by the `sentinel_resource_*` settings in `config.Settings`.
 """
 from __future__ import annotations
 
 from ..config import Settings
-from .base import (
-    CameraResourceProvider,
-    ProviderError,
-    ProviderNotConfigured,
-    ProviderUnavailable,
-)
+from .base import CameraResourceProvider, ProviderNotConfigured
 from .federated import FederatedProvider
 from .mock import MockCameraResourceProvider
 from .official import OfficialVigentraProvider
@@ -44,16 +39,3 @@ def build_provider(settings: Settings, *, adapters: dict | None = None) -> Camer
         f"SENTINEL_RESOURCE_MODE must be one of {', '.join(PROVIDER_MODES)}; got '{mode}'",
         provider="unknown",
     )
-
-
-__all__ = [
-    "CameraResourceProvider",
-    "FederatedProvider",
-    "MockCameraResourceProvider",
-    "OfficialVigentraProvider",
-    "PROVIDER_MODES",
-    "ProviderError",
-    "ProviderNotConfigured",
-    "ProviderUnavailable",
-    "build_provider",
-]

@@ -1,61 +1,31 @@
-# ANPR extra - number-plate reading. Requires requirements-yolo.txt as well.
+# ANPR extra - number-plate reading with the vendored `anpr/` engine.
 #
 #   pip install -r requirements.txt -r requirements-yolo.txt -r requirements-anpr.txt
 #
 # Plate text is personal data. Read docs/anpr.md before enabling this.
 #
-# ---------------------------------------------------------------------------
-# The consensus engine (preferred)
-# ---------------------------------------------------------------------------
-# `anpr/` beside this file is the real reader: it tracks each vehicle, reads
-# its plate across every frame the vehicle appears in, repairs each reading
-# against the Indian plate grammar and takes a per-track vote. That is what
-# turns a one-in-sixty-seven yield on wide footage into a usable one.
+# OpenCV, numpy, torch and ultralytics come from requirements-yolo.txt. The
+# engine calls only core OpenCV, so the headless build installed there serves.
 #
-# Python 3.12 is required for this path. PaddlePaddle publishes no 3.13/3.14
-# wheels, and the CUDA PyTorch builds lag new interpreter releases. On 3.13+
-# the install below fails and the worker falls back to the single-frame reader
-# at the bottom of this file - which works, and is worse. See docs/anpr.md.
-#
-# Install PyTorch FIRST from its own index, or pip pulls the CPU-only build
-# and detection silently runs on CPU:
-#   CPU:      pip install torch --index-url https://download.pytorch.org/whl/cpu
-#   CUDA 12:  pip install torch --index-url https://download.pytorch.org/whl/cu126
-#
-# Then fetch the weights - plate_detector.pt and ESPCN_x4.pb - into
-# services/edge-worker/models/ (or wherever ANPR_MODELS_DIR points).
+# NOT here on purpose: paddlepaddle / paddleocr. Only anpr/read/awiros.py
+# imports them, lazily, as an alternative reader. The shipped reader is the ONNX
+# CRNN, so pulling ~1 GB of Paddle for a path the pipeline does not take is a
+# poor trade.
 
-# opencv-contrib, NOT plain opencv-python: the restoration stack uses
-# dnn_superres for plate super-resolution, which ships only in contrib.
-# ultralytics depends on opencv-python, so after any reinstall of it:
-#   pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python
-#   pip install opencv-contrib-python==4.11.0.86
-opencv-contrib-python==4.11.0.86
-
-# OCR. Pinned: a stored plate records the build that produced it, so the
-# version must not drift underneath a result already in the registry.
-paddleocr==3.7.0
-paddlepaddle==3.3.1
-onnxruntime==1.29.0
-
-# Tracking. ByteTrack needs these; without them every vehicle is a new track
-# on every frame and the consensus vote never gets a second observation.
-lap==0.5.13
-filterpy==1.4.5
-scipy>=1.11
 PyYAML>=6.0
+# Levenshtein over plate strings, used by the track-level fusion (ROVER).
+editdistance>=0.8
 
-# ---------------------------------------------------------------------------
-# Fallback: the single-frame reader
-# ---------------------------------------------------------------------------
-# Used only when the engine above cannot be built. It reads one crop from one
-# frame and keeps the answer if it parses, which on wide street footage yields
-# roughly one plate per sixty-seven vehicles - and gives no way to tell a
-# correct read from a format-valid misread, because the vehicle was only seen
-# once. Keep it installed as a safety net, not as the plan.
-#
-# EasyOCR downloads two models on first use. On a network that intercepts TLS
-# that download fails, and you must place these in ~/.EasyOCR/model/ yourself:
-#   craft_mlt_25k.pth   https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip
-#   english_g2.pth      https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/english_g2.zip
-easyocr>=1.7,<2.0
+# The CRNN reader and the denoise/deblur stages load ONNX models through
+# onnxruntime. Every import of it is inside a function, so a missing wheel
+# does not fail the import sweep - it surfaces as a reader that silently
+# reads nothing. It must be a declared dependency, not an implicit one.
+onnxruntime>=1.20
+
+# ByteTrack. The ANPR engine tracks vehicles through ultralytics'
+# model.track(), which imports its tracker - and that tracker's lap and
+# scipy - lazily, only on the first tracked frame. The plain YOLO detector
+# only ever calls predict(), so nothing else here pulls them in and their
+# absence surfaces as a crash on frame 1 rather than at import.
+lap>=0.5.12
+scipy>=1.11

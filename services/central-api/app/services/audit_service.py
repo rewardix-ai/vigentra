@@ -60,13 +60,11 @@ class AuditAction(str, Enum):
 
     # analytics
     DETECTIONS_INGESTED = "detections_ingested"
-    DETECTIONS_VIEWED = "detections_viewed"
     #: Registration numbers were disclosed to a reader. Deliberately distinct
-    #: from detections_viewed: seeing that a vehicle passed is not the same act
+    #: from viewing detections: seeing that a vehicle passed is not the same act
     #: as learning which vehicle it was.
     PLATE_DATA_VIEWED = "plate_data_viewed"
     INCIDENT_REVIEWED = "incident_reviewed"
-    INCIDENTS_INGESTED = "incidents_ingested"
 
     # plate identity - watchlist, alerts, movement
     WATCHLIST_ENTRY_ADDED = "watchlist_entry_added"
@@ -84,7 +82,6 @@ class AuditAction(str, Enum):
     PLATE_SEARCHED = "plate_searched"
 
     # vehicle reference registry
-    VEHICLE_REGISTRY_IMPORTED = "vehicle_registry_imported"
     VEHICLE_REGISTRY_SEARCHED = "vehicle_registry_searched"
     VEHICLE_RECORD_VIEWED = "vehicle_record_viewed"
 

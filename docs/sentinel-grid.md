@@ -42,9 +42,10 @@ Two consequences are enforced in code rather than left to convention:
 | **DO** expect a scene discontinuity | A backwards PTS jump of more than 5 s (or one landing near the start) sets `Frame.discontinuity` and withholds `dt_ms`; a smaller backwards step is timestamp jitter (cam10's H.264 feed does it every few seconds) and only withholds `dt_ms`, so a tracker is never fed an impossible delta and is never reset for jitter | `test_backwards_pts_raises_discontinuity_and_resets_timing`, `test_pts_jitter_is_not_a_loop` |
 | **DON'T** plan around obtaining copies | Frames are decoded from a live capture; nothing is written to disk | `test_nothing_is_written_to_disk` |
 | **DON'T** publish to the gateway | No write verb appears in a call anywhere in the module | `test_module_only_ever_reads` |
-| **DO** pace your load | Catalogue cached 30 s; one capture per camera, released on exit; dashboard tiles hold a session only while on screen | `test_capture_is_released_on_exit` |
+| **DO** pace your load | Catalogue cached 30 s; one capture per camera, released on exit; dashboard tiles hold a session only while on screen. The live-wall frame service (`snapshot_wall.py`) decodes a camera **only while it is being watched** - demand recorded on each `/snap` request, dropped a few seconds after the last one - so with the wall closed it opens no streams at all | `test_capture_is_released_on_exit`, `test_snapshot_demand.py` |
 | **Credentials required** (access model, 2026-09-10) | RTSP and WHEP authenticate every connection with the registered email and access password in the URL, the email's `@` percent-encoded. `with_credentials` injects them from `SENTINEL_GRID_EMAIL`/`SENTINEL_GRID_PASSWORD`; `safe_url` redacts them from every label, log line and report | `tests/test_grid_urls.py` |
-| **Start from the catalogue** | `cameras.json` is read first; when the CDN gateway is unreachable (it has been down or 403 for hours while the RTSP gateway stayed up) `catalogue_or_fallback` composes the documented ids cam01..cam30 with the documented URLs so the worker keeps processing | `test_fallback_catalogue_when_gateway_unreachable` |
+| **Start from the catalogue** | central-api reads `cameras.json` and decides which cameras exist before it grants a capture session. The worker does not: reading it means signing in, and the gateway keeps one session per account, so every worker start signed central-api out. It composes the stream URL from the documented pattern for whichever grid id the registry names — cam01..cam30 today, the ~50 of the event with no change (`fallback_catalogue`); `snapshot_wall.py` still tries the catalogue first (`catalogue_or_fallback`) | `test_fallback_catalogue_when_gateway_unreachable`, `test_grid_resolve.py` |
+| **HLS only where 8554 is blocked** | The worker captures over RTSP; it does **not** silently fall to the CDN HLS URL, which needs a sign-in cookie a capture cannot carry - an unreachable RTSP port raises a clear error instead of decoding the login page | `test_open_capture.py` |
 
 Every row above is pinned by a test in `services/edge-worker/tests/test_grid_capture.py`
 (URL and credential handling in `tests/test_grid_urls.py`) that runs against a fake capture, so the rules hold whether or not the sandbox is
@@ -217,8 +218,6 @@ all thirty cameras) or `traffic.state` / `municipal.state` for one department's
 share. **Fit all on screen** puts every feed on one screen at once; Esc leaves.
 The grid cameras offer live only, **not** playback, whoever is watching.
 
-Regenerate the reference data after re-surveying:
-
-```bash
-python scripts/compile_grid_reference.py
-```
+After re-surveying, edit `data/reference/grid_cameras.json` directly. Each
+camera carries its own evidence in `geo_source`, `geo_confidence` and
+`facing_basis`, so a changed coordinate says where it came from.

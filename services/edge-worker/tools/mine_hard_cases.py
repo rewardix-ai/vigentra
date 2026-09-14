@@ -34,7 +34,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -43,8 +43,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 from _corpus import (  # noqa: E402
-    DifficultyTag, NEEDS_HUMAN, PHYSICAL_FLOOR_PX, Readability,
-    frame_number_of, load_json, percentiles, write_json,
+    DifficultyTag, Readability, load_json, percentiles, write_json,
 )
 
 log = logging.getLogger("mine_hard_cases")

@@ -51,6 +51,7 @@ from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
 from ..services.plate_geography import origin_of
+from .cameras import _load_camera
 
 logger = logging.getLogger("vigentra.detections")
 
@@ -586,13 +587,7 @@ async def camera_detections(
     since_hours: int = Query(default=24, ge=1, le=720),
     limit: int = Query(default=200, ge=1, le=1000),
 ) -> list[DetectionOut]:
-    camera = (
-        await db.execute(select(CameraRow).where(CameraRow.camera_id == camera_id))
-    ).scalar_one_or_none()
-    if camera is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown camera '{camera_id}'"
-        )
+    camera = await _load_camera(db, camera_id)
     if not may_read_detections(user, camera):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -690,13 +685,7 @@ async def record_frame_quality(
     siting problem, not an analytics problem.
     """
     camera_id = str(payload.get("camera_id") or "")
-    camera = (
-        await db.execute(select(CameraRow).where(CameraRow.camera_id == camera_id))
-    ).scalar_one_or_none()
-    if camera is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown camera '{camera_id}'"
-        )
+    camera = await _load_camera(db, camera_id)
     if not may_read_detections(user, camera):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Camera outside your scope."

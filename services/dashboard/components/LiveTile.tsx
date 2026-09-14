@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { api, errorMessage } from "@/lib/api";
+import { api, ApiError, errorMessage } from "@/lib/api";
+import { relative } from "@/lib/format";
 import { streamQueue, type Release } from "@/lib/streamQueue";
-import type { Camera, VideoSession } from "@/lib/types";
+import type { Camera, Sighting, VideoSession } from "@/lib/types";
 
 /**
  * One camera on the live wall.
@@ -48,6 +49,7 @@ function backoffMs(attempt: number): number {
 
 type Phase = "idle" | "queued" | "opening" | "live" | "waiting";
 
+
 export function LiveTile({
   camera,
   reason,
@@ -55,6 +57,7 @@ export function LiveTile({
   onOpenFull,
   compact = false,
   snapshot = false,
+  plates = [],
 }: {
   camera: Camera;
   reason: string;
@@ -75,6 +78,8 @@ export function LiveTile({
    * Used when every camera has to fit on one screen at once.
    */
   compact?: boolean;
+  /** This camera's newest settled plate reads, newest first (see PlateChips). */
+  plates?: Sighting[];
 }) {
   const [session, setSession] = useState<VideoSession | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +100,19 @@ export function LiveTile({
   // twenty seconds after appearing looks exactly like footage that does not
   // work at all.
   const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One feed full screen over the wall. The same video element grows, so there
+  // is no second session: no second password and no second audited access.
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopImmediatePropagation(); // Esc leaves the feed first, then the wall
+      setFocused(false);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [focused]);
 
   const watchable =
     camera.video_access === "live_and_playback" || camera.video_access === "live_only";
@@ -193,6 +211,19 @@ export function LiveTile({
         setSession(opened);
         setError(null);
       } catch (err) {
+        // A refused step-up password is refused again on every retry, and each
+        // refusal writes a denied-access audit record - a wall of tiles did
+        // that every few seconds for as long as it stayed open. Stop and show
+        // the message instead; the password is a dependency of this effect, so
+        // re-entering it starts the tile again.
+        const detail = err instanceof ApiError ? (err.detail as { code?: unknown } | undefined) : undefined;
+        if (err instanceof ApiError && err.status === 401 && detail?.code === "STEP_UP_FAILED") {
+          clearWatchdog();
+          releaseSlot();
+          setError(errorMessage(err));
+          setPhase("idle");
+          return;
+        }
         fail(errorMessage(err));
       }
     })();
@@ -285,9 +316,10 @@ export function LiveTile({
           void close();
           setError("Feed stopped");
           setPhase("waiting");
-          setTimeout(() => {
-            if (!destroyed) setAttempt((n) => n + 1);
-          }, backoffMs(1));
+          // Deliberately not gated on `destroyed`: close() clears the session,
+          // which tears this effect down and sets `destroyed` before the timer
+          // fires - the retry was being cancelled by the call meant to enable it.
+          setTimeout(() => setAttempt((n) => n + 1), backoffMs(1));
         });
         instance.loadSource(src);
         instance.attachMedia(video);
@@ -306,7 +338,7 @@ export function LiveTile({
 
   if (snapshot) {
     return (
-      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} />
+      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} plates={plates} />
     );
   }
 
@@ -314,19 +346,28 @@ export function LiveTile({
     <div
       ref={holderRef}
       className={
-        compact
-          ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
-          : "overflow-hidden rounded border border-line bg-white"
+        focused
+          ? "fixed inset-0 z-[75] overflow-hidden bg-black"
+          : compact
+            ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
+            : "overflow-hidden rounded border border-line bg-white"
       }
     >
-      <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
+      <div
+        className={
+          compact || focused ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"
+        }
+      >
         {session ? (
           <>
             <video
               ref={videoRef}
               key={session.session_id}
-              className={compact ? "h-full w-full object-contain" : "h-full w-full object-cover"}
+              className={`h-full w-full cursor-pointer ${compact || focused ? "object-contain" : "object-cover"}`}
+              onClick={() => setFocused((on) => !on)}
+              title={focused ? "Back to the wall (Esc)" : "Focus this feed"}
               muted
+              loop
               autoPlay
               playsInline
             />
@@ -345,6 +386,7 @@ export function LiveTile({
               : statusText(phase, visible, error, attempt)}
           </div>
         )}
+        <PlateChips plates={plates} />
       </div>
 
       {compact ? (
@@ -440,16 +482,31 @@ function SnapshotTile({
   camera,
   compact,
   onOpenFull,
+  plates,
 }: {
   camera: Camera;
   compact: boolean;
   onOpenFull?: (cameraId: string) => void;
+  plates: Sighting[];
 }) {
   const holderRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const [everLoaded, setEverLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Click a tile to fill the screen with it (Esc returns). Frames come faster
+  // while focused, so the detection boxes follow the traffic.
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopImmediatePropagation(); // Esc leaves the feed first, then the wall
+      setFocused(false);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [focused]);
 
   useEffect(() => {
     const node = holderRef.current;
@@ -469,29 +526,36 @@ function SnapshotTile({
       if (alive) setSrc(api.snapshotUrl(camera.camera_id, Date.now()));
     };
     refresh();
-    const timer = setInterval(refresh, 2500);
+    const timer = setInterval(refresh, focused ? 600 : 2500);
     return () => {
       alive = false;
       clearInterval(timer);
     };
-  }, [visible, camera.camera_id]);
+  }, [visible, camera.camera_id, focused]);
 
   return (
     <div
       ref={holderRef}
       className={
-        compact
-          ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
-          : "overflow-hidden rounded border border-line bg-black"
+        focused
+          ? "fixed inset-0 z-[75] overflow-hidden bg-black"
+          : compact
+            ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
+            : "overflow-hidden rounded border border-line bg-black"
       }
     >
-      <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
+      <div
+        className={
+          compact || focused ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"
+        }
+      >
         {src && (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={camera.name}
-            className={compact ? "h-full w-full object-cover" : "h-full w-full object-cover"}
+            className={`h-full w-full cursor-pointer ${focused ? "object-contain" : "object-cover"}`}
+            onClick={() => setFocused((on) => !on)}
+            title={focused ? "Back to the wall (Esc)" : "Focus this feed"}
             onLoad={() => {
               setEverLoaded(true);
               setFailed(false);
@@ -508,6 +572,7 @@ function SnapshotTile({
           <span className={`h-1.5 w-1.5 rounded-full ${everLoaded && !failed ? "animate-pulse bg-bad" : "bg-ink-500"}`} />
           Live
         </span>
+        <PlateChips plates={plates} />
         <button
           className="absolute bottom-1 left-1 max-w-[80%] truncate rounded bg-black/60 px-1.5 py-0.5 text-left text-[11px] font-semibold text-white hover:underline"
           title={camera.name}
@@ -518,4 +583,33 @@ function SnapshotTile({
       </div>
     </div>
   );
+}
+
+/**
+ * The newest plate reads the edge ANPR engine settled on this camera, over its
+ * live picture. A read lands when the vehicle's track closes, so it trails the
+ * frame; the age on each chip says by how much. Green is a strong read, amber
+ * a likely one, grey a weak one worth a human look.
+ */
+function PlateChips({ plates }: { plates: Sighting[] }) {
+  if (plates.length === 0) return null;
+  return (
+    <div className="pointer-events-none absolute right-1.5 top-1.5 flex max-w-[65%] flex-col items-end gap-0.5">
+      {plates.slice(0, 3).map((p) => (
+        <span
+          key={p.sighting_id}
+          className={`max-w-full truncate rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white ${plateTone(p.confidence)}`}
+        >
+          {p.plate_withheld ? "plate withheld" : p.plate_text} · {Math.round(p.confidence * 100)}% ·{" "}
+          {relative(p.timestamp_utc)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function plateTone(confidence: number): string {
+  if (confidence >= 0.75) return "bg-ok/90";
+  if (confidence >= 0.35) return "bg-warn/90";
+  return "bg-black/70";
 }

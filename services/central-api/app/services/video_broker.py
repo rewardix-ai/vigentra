@@ -20,7 +20,6 @@ import logging
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 import httpx
 from fastapi.responses import StreamingResponse
@@ -28,6 +27,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask
 
+from ..adapters.grid_adapter import _as_float
 from ..config import GRID_BROWSER_UA, DemoUser, Settings
 from ..models import Camera as CameraRow
 from ..models import VideoSession as VideoSessionRow
@@ -255,13 +255,6 @@ async def create_session(
     )
 
 
-def _as_float(value: Any) -> float | None:
-    try:
-        return float(value) if value is not None else None
-    except (TypeError, ValueError):
-        return None
-
-
 def to_out(
     row: VideoSessionRow,
     *,
@@ -386,7 +379,15 @@ def _resolve_hls_target(reference: str, sub_path: str | None) -> str:
     # refused; a single slash does not.
     if "://" in sub_path or sub_path.startswith("//"):
         raise HTTPExceptionLike("Stream sub-path may not name its own host")
-    if ".." in sub_path.split("?")[0].split("/"):
+    path_part = sub_path.split("?", 1)[0]
+    # No percent-encoding in the path. The checks below read the literal path,
+    # but urljoin passes "%2e%2e" through unchanged and the gateway decodes it
+    # to ".." after our checks have run - so "%2e%2e/cam07/index.m3u8" reached
+    # another camera. Real HLS URIs from this grid are plain ASCII paths, so a
+    # "%" in the path is an escape attempt, not a segment name.
+    if "%" in path_part:
+        raise HTTPExceptionLike("Stream sub-path may not be percent-encoded")
+    if ".." in path_part.split("/"):
         raise HTTPExceptionLike("Stream sub-path may not traverse upwards")
 
     target = urljoin(reference, sub_path)
@@ -718,22 +719,3 @@ def _stream_local_clip(
     return StreamingResponse(
         _iter(), status_code=status_code, media_type="video/mp4", headers=headers
     )
-
-
-async def expire_stale_sessions(db: AsyncSession) -> int:
-    """Mark past-expiry sessions expired. Called by the health monitor sweep."""
-    now = datetime.now(timezone.utc)
-    rows = (
-        await db.execute(
-            select(VideoSessionRow).where(VideoSessionRow.status == "active")
-        )
-    ).scalars().all()
-    changed = 0
-    for row in rows:
-        expires = to_utc(row.expires_at_utc)
-        if expires is None or expires <= now:
-            row.status = "expired"
-            changed += 1
-    if changed:
-        await db.commit()
-    return changed

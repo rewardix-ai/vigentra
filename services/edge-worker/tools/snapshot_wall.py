@@ -49,6 +49,11 @@ READ_TIMEOUT_MS = 5000
 FAIL_BACKOFF_MIN_S = 5.0
 FAIL_BACKOFF_MAX_S = 300.0
 
+#: A camera is decoded while it has been asked for within this window. The
+#: dashboard tile re-requests every ~2.5s while on screen, so a viewer keeps
+#: it live; a few seconds after they scroll away the slot drops it.
+DEMAND_TTL = 20.0
+
 
 def _open(url: str):
     return cv2.VideoCapture(url, cv2.CAP_FFMPEG,
@@ -67,6 +72,66 @@ os.environ.setdefault(
     "OPENCV_FFMPEG_CAPTURE_OPTIONS",
     "rtsp_transport;tcp|timeout;6000000|stimeout;6000000",
 )
+
+
+#: Box colours (BGR) by the detector's canonical class.
+BOX_COLOURS = {"car": (240, 180, 80), "truck": (60, 140, 250), "bus": (60, 200, 250),
+               "motorcycle": (210, 120, 250), "bicycle": (160, 210, 110), "person": (110, 220, 120)}
+
+
+def draw_detections(image, detections) -> None:
+    """Each detection as a box and a 'class 0.87' tag, in place."""
+    for det in detections:
+        x1, y1, x2, y2 = (int(v) for v in det.bbox_xyxy)
+        colour = BOX_COLOURS.get(det.class_name, (230, 230, 230))
+        cv2.rectangle(image, (x1, y1), (x2, y2), colour, 2)
+        label = f"{det.class_name} {det.confidence:.2f}"
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.42, 1)
+        top = max(th + 4, y1)
+        cv2.rectangle(image, (x1, top - th - 4), (x1 + tw + 6, top), colour, -1)
+        cv2.putText(image, label, (x1 + 3, top - 3), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (15, 15, 15), 1, cv2.LINE_AA)
+
+
+def _via(vms_url: str, media_url: str) -> str:
+    """The VMS names its media by the address it knows itself by (inside the
+    compose network); fetch it the way the VMS itself was reached."""
+    from urllib.parse import urlsplit
+
+    return urlsplit(media_url)._replace(netloc=urlsplit(vms_url).netloc).geturl()
+
+
+#: Settled readings, as the engine labels them: (background, text) in BGR.
+READ_COLOURS = {"CONFIRMED": ((71, 127, 26), (255, 255, 255)), "CANDIDATE": ((48, 168, 240), (20, 20, 20))}
+READ_HOLD_S = 4.0
+
+
+def draw_anpr(image, vehicles, plates, labels, last_box) -> None:
+    """The ANPR engine's view of a frame: vehicle tracks, plate boxes, and each
+    track's reading for a few seconds after the engine settles it."""
+    for tid, b, cls in vehicles:
+        x1, y1, x2, y2 = (int(v) for v in b)
+        cv2.rectangle(image, (x1, y1), (x2, y2), (224, 160, 111), 3)
+        cv2.putText(image, f"#{tid} {cls}", (x1 + 3, max(22, y1 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                    (224, 160, 111), 2, cv2.LINE_AA)
+    for b in plates:
+        x1, y1, x2, y2 = (int(v) for v in b)
+        cv2.rectangle(image, (x1, y1), (x2, y2), (159, 220, 125), 3)
+    now = time.time()
+    h, w = image.shape[:2]
+    for tid, (rec, at) in list(labels.items()):
+        if now - at > READ_HOLD_S:
+            labels.pop(tid, None)
+            continue
+        b = last_box.get(tid) or rec.get("bbox")
+        if not b:
+            continue
+        bg, fg = READ_COLOURS[rec["status"]]
+        text = f"{rec['plate']}  {float(rec.get('confidence') or 0):.2f}"
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, 1.1, 2)
+        x = min(max(0, int(b[0])), w - tw - 20)
+        y = min(int(b[3]) + 12, h - th - 20)
+        cv2.rectangle(image, (x, y), (x + tw + 18, y + th + 18), bg, -1)
+        cv2.putText(image, text, (x + 9, y + th + 8), cv2.FONT_HERSHEY_DUPLEX, 1.1, fg, 2, cv2.LINE_AA)
 
 
 def load_env(path: Path) -> None:
@@ -96,14 +161,34 @@ class Estate:
     """
 
     def __init__(self, cameras: list[str], pool: int, focus: list[str], width: int,
-                 hold_s: float, max_fps: float):
+                 hold_s: float, max_fps: float, urls: dict[str, str] | None = None):
         self.cameras = cameras
+        #: cam -> the stream URL the CATALOGUE gave us. The guide is explicit:
+        #: "start from the catalogue rather than hard-coding - the camera set
+        #: can change". Composing the URL pattern here would survive exactly
+        #: until the gateway renames it, as it already has once.
+        self.urls = dict(urls or {})
         self.focus = focus
         self.width = width
         self.hold_s = hold_s
         self.min_dt = 1.0 / max_fps if max_fps > 0 else 0.0
-        self.frames: dict[str, bytes] = {}
+        #: cam -> latest decoded frame (already at wall width) and its sequence,
+        #: rendered to JPEG only when asked for: detection runs per shown frame,
+        #: not per decoded one.
+        self.frames: dict[str, object] = {}
+        self.seq: dict[str, int] = {}
+        self.rendered: dict[str, tuple[int, bytes]] = {}
         self.updated: dict[str, float] = {}
+        #: optional object detector (--detect); one model, so one call at a time
+        self.detector = None
+        self.detect_lock = threading.Lock()
+        #: cameras the ANPR engine draws on itself (--anpr): the detector skips them
+        #: and the rotating pool leaves them to their own continuous decoder
+        self.predrawn: set[str] = set()
+        #: cam -> when it was last asked for. A camera is decoded only while it
+        #: is being watched (the guide's "open only the cameras you are
+        #: processing"); when nobody is watching, no stream is open at all.
+        self.demand: dict[str, float] = {}
         self.lock = threading.Lock()
         self.pool = max(1, min(pool, len(cameras)))
         self.mode = "coverage"
@@ -119,24 +204,49 @@ class Estate:
             threading.Thread(target=self._slot, args=(i,), daemon=True).start()
 
     def _url(self, cam: str) -> str:
+        url = self.urls.get(cam)
+        if url:
+            return url
+        # Only when the catalogue itself was unreachable AND had no entry for
+        # this camera: grid.fallback_catalogue composes the documented pattern
+        # in the one place that is allowed to.
         from app import grid
 
-        return grid.with_credentials(f"rtsp://{grid.RTSP_HOST}:{grid.RTSP_PORT}/stream/{cam}")
+        return grid.fallback_catalogue(
+            os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud"), (cam,)
+        )[cam].rtsp_url
+
+    def note_demand(self, cam: str) -> None:
+        """Record that `cam` was just asked for, so a slot will decode it."""
+        self.demand[cam] = time.monotonic()
+
+    def is_demanded(self, cam: str) -> bool:
+        return time.monotonic() - self.demand.get(cam, 0.0) < DEMAND_TTL
+
+    def _active_targets(self) -> list[str]:
+        """The cameras currently being watched, in this mode's order."""
+        pool_cams = self.focus if self.mode == "focus" else self.cameras
+        return [c for c in pool_cams if self.is_demanded(c) and c not in self.predrawn]
 
     def _slot(self, index: int) -> None:
         rot = index
         backoff = 0.0
         while True:
             gen = self.generation
-            if self.mode == "focus":
-                if index >= len(self.focus):
-                    while self.generation == gen:
-                        time.sleep(0.2)  # spare slot idles in focus mode
-                    continue
-                cam, hold = self.focus[index], 1e12
-            else:
-                cam, hold = self.cameras[rot % len(self.cameras)], self.hold_s
-                rot += self.pool
+            targets = self._active_targets()
+            # Nobody watching this slot's share: no capture is opened at all.
+            if not targets or index >= len(targets):
+                for _ in range(6):  # ~1.2s, then re-check demand and generation
+                    if self.generation != gen:
+                        break
+                    time.sleep(0.2)
+                rot = index
+                continue
+            cam = targets[rot % len(targets)]
+            rot += self.pool
+            # Few enough to pin one per slot: hold it continuously. More than
+            # the pool: rotate on the hold interval so all get refreshed.
+            hold = 1e12 if len(targets) <= self.pool else self.hold_s
             if self._pump(cam, hold_s=hold, gen=gen):
                 backoff = 0.0
                 continue
@@ -155,7 +265,7 @@ class Estate:
             deadline = time.time() + hold_s
             got_at = time.time()
             last_pub = 0.0
-            while time.time() < deadline and self.generation == gen:
+            while time.time() < deadline and self.generation == gen and self.is_demanded(cam):
                 ok, frame = cap.read()
                 now = time.time()
                 if not ok:
@@ -168,23 +278,237 @@ class Estate:
                 if self.min_dt and now - last_pub < self.min_dt:
                     continue
                 last_pub = now
-                h, w = frame.shape[:2]
-                if w > self.width:
-                    frame = cv2.resize(frame, (self.width, int(h * self.width / w)),
-                                       interpolation=cv2.INTER_AREA)
-                ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 72])
-                if ok:
-                    data = buf.tobytes()
-                    with self.lock:
-                        self.frames[cam] = data
-                        self.updated[cam] = now
+                self._publish(cam, frame, now)
             return got_any
         finally:
             cap.release()
 
-    def snapshot(self, cam: str) -> bytes | None:
+    def _publish(self, cam: str, frame, now: float, width: int | None = None) -> None:
+        h, w = frame.shape[:2]
+        width = width or self.width
+        if w > width:
+            frame = cv2.resize(frame, (width, int(h * width / w)), interpolation=cv2.INTER_AREA)
         with self.lock:
-            return self.frames.get(cam)
+            self.frames[cam] = frame
+            self.seq[cam] = self.seq.get(cam, 0) + 1
+            self.updated[cam] = now
+
+    def snapshot(self, cam: str) -> bytes | None:
+        """The latest frame as JPEG, at once.
+
+        With the detector on, a background worker draws the boxes and this
+        returns the newest frame it has finished - a request never waits on
+        detection, so fifty polling tiles cost the API only a copy. The first
+        request for a camera gets its frame unboxed rather than nothing.
+        """
+        self.note_demand(cam)
+        with self.lock:
+            frame, seq = self.frames.get(cam), self.seq.get(cam, 0)
+            done = self.rendered.get(cam)
+        if done and (done[0] == seq or (self.detector is not None and cam not in self.predrawn)):
+            return done[1]
+        if frame is None:
+            return None
+        return self._render(cam, frame, seq, detect=False)
+
+    def _render(self, cam: str, frame, seq: int, detect: bool) -> bytes | None:
+        image = frame.copy()
+        if detect:
+            with self.detect_lock:
+                found = self.detector.detect(image)
+            draw_detections(image, found)
+        ok, buf = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 74])
+        if not ok:
+            return None
+        data = buf.tobytes()
+        with self.lock:
+            if seq >= self.rendered.get(cam, (-1, b""))[0]:
+                self.rendered[cam] = (seq, data)
+        return data
+
+    def annotate_forever(self) -> None:
+        """Box each watched camera's newest frame, round-robin, as fast as the detector goes."""
+        while True:
+            with self.lock:
+                due = [c for c, s in self.seq.items() if c not in self.predrawn and self.is_demanded(c)
+                       and self.rendered.get(c, (-1, b""))[0] < s]
+            if not due:
+                time.sleep(0.05)
+                continue
+            for cam in due:
+                with self.lock:
+                    frame, seq = self.frames.get(cam), self.seq.get(cam, 0)
+                if frame is not None:
+                    self._render(cam, frame, seq, detect=True)
+
+    # -- live ANPR ------------------------------------------------------------
+    def add_anpr(self, cams: list[str], vms_url: str | None, api_key: str) -> None:
+        """Run the full ANPR engine live on these cameras, drawing what it sees.
+
+        Plates need every frame at full resolution and a tracker that sees them
+        in order, so each gets its own continuous decoder instead of a rotating
+        pool slot, and its frames are published already marked up: vehicle
+        tracks, plate boxes and each reading as the engine settles it.
+        """
+        from app.anpr_engine import MIN_GRAMMAR_PRIOR, AnprEngine
+
+        # One engine runs at a time: on a Mac the engines share the GPU, and
+        # PyTorch's Metal backend does not survive calls from several threads.
+        self.engine_lock = threading.Lock()
+        for cam in cams:
+            self.predrawn.add(cam)
+            threading.Thread(target=self._anpr_feed, args=(cam, vms_url, api_key, AnprEngine, MIN_GRAMMAR_PRIOR),
+                             daemon=True).start()
+
+    def _open_feed(self, cam: str, vms_url: str | None, api_key: str):
+        """(capture, fps) - fps only for a recording, which is paced; a live stream sets its own pace."""
+        if not vms_url or cam in self.cameras:
+            return _open(self._url(cam)), None
+        import json
+        import urllib.request
+
+        req = urllib.request.Request(f"{vms_url.rstrip('/')}/traffic/cameras/{cam}/live", headers={"X-API-Key": api_key})
+        cap = cv2.VideoCapture(_via(vms_url, json.load(urllib.request.urlopen(req, timeout=10))["playback_url"]),
+                               cv2.CAP_FFMPEG)
+        return cap, cap.get(cv2.CAP_PROP_FPS) or 25.0
+
+    def _anpr_feed(self, cam: str, vms_url: str | None, api_key: str, engine_cls, min_prior: float) -> None:
+        engine = engine_cls(camera_id=cam)
+        pipe = engine._pipeline
+        seen, labels, last_box = 0, {}, {}
+        while True:
+            if not self.is_demanded(cam):
+                time.sleep(1.0)
+                continue
+            try:
+                cap, fps = self._open_feed(cam, vms_url, api_key)
+            except Exception:  # noqa: BLE001 - the source refused; ask again shortly
+                time.sleep(10)
+                continue
+            start, n, taken = time.time(), 0, 0
+            newest = {"frame": None, "n": 0, "alive": True}
+            grabber = None
+            if fps is None:  # live: a reader keeps only the newest frame, so the stream never backs up
+                def keep_newest(cap=cap, newest=newest) -> None:
+                    try:
+                        while newest["alive"]:
+                            ok, fr = cap.read()
+                            if not ok:
+                                break
+                            newest["frame"], newest["n"] = fr, newest["n"] + 1
+                    finally:
+                        newest["alive"] = False
+                        cap.release()  # only this thread reads the capture, so only it may free it
+
+                grabber = threading.Thread(target=keep_newest, daemon=True)
+                grabber.start()
+            try:
+                while self.is_demanded(cam):
+                    if grabber is not None:
+                        if not newest["alive"]:
+                            break  # the stream dropped: open it again
+                        if newest["n"] == taken:
+                            time.sleep(0.02)
+                            continue
+                        taken, frame = newest["n"], newest["frame"]
+                    else:
+                        ok, frame = cap.read()
+                        if not ok:
+                            break  # the recording ended: take a fresh ticket and play it again
+                        n += 1
+                        due = start + n / fps  # camera pace; frames the engine is too slow for are dropped
+                        if due < time.time() - 0.2:
+                            continue
+                        if due > time.time():
+                            time.sleep(due - time.time())
+                    began = time.time()
+                    with self.engine_lock:
+                        engine.process(frame, captured_at=began)
+                    vehicles = [(str(t).split("_")[-1], b, c) for t, b, c, _ in pipe.last_vehicles]
+                    for tid, b, _ in vehicles:
+                        last_box[tid] = b
+                    records = pipe.records
+                    for rec in (records[seen:] if seen <= len(records) else records[-5:]):
+                        prior = rec.get("grammar_prior")
+                        sure = rec.get("status") == "CONFIRMED" or float(rec.get("confidence") or 0) >= 0.10
+                        if rec.get("status") in READ_COLOURS and rec.get("plate") and sure and (prior is None or prior >= min_prior):
+                            labels[str(rec.get("track_id")).split("_")[-1]] = (rec, began)
+                    seen = len(records)
+                    draw_anpr(frame, vehicles, [b for _, b, _, _ in pipe.last_plates], labels, last_box)
+                    self._publish(cam, frame, time.time(), width=1280)
+            finally:
+                newest["alive"] = False
+                if grabber is not None:
+                    # Freeing a capture while a read is still in it segfaults inside
+                    # FFmpeg, so wait for the reader: it releases on its way out,
+                    # bounded by the stream's read timeout.
+                    grabber.join()
+                else:
+                    cap.release()
+
+    # -- department VMS feeds ---------------------------------------------
+    def add_vms(self, vms_url: str, api_key: str) -> None:
+        """Serve the Traffic Police VMS's cameras beside the grid's.
+
+        Each is opened through the VMS's own authorised live handle (a ticketed
+        URL, as a real VMS hands out), decoded at the pace a camera delivers
+        and played again when a recording ends. Retries until the VMS answers.
+        """
+        import json
+        import urllib.request
+
+        def run() -> None:
+            while True:
+                try:
+                    req = urllib.request.Request(vms_url.rstrip("/") + "/traffic/approved-cameras",
+                                                 headers={"X-API-Key": api_key})
+                    records = json.load(urllib.request.urlopen(req, timeout=10)).get("records", [])
+                    break
+                except Exception as exc:  # noqa: BLE001 - the VMS may still be starting
+                    print(f"VMS not answering ({type(exc).__name__}); retrying in 10 s", flush=True)
+                    time.sleep(10)
+            codes = [r["cam_code"] for r in records if r.get("state") in ("REGISTERED", "SYNCED")]
+            for code in codes:
+                threading.Thread(target=self._vms_feed, args=(vms_url, api_key, code), daemon=True).start()
+            print(f"department VMS feeds: {len(codes)}", flush=True)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _vms_feed(self, vms_url: str, api_key: str, code: str) -> None:
+        import json
+        import urllib.request
+
+        while True:
+            if code in self.predrawn:
+                return  # the ANPR engine reads this feed itself
+            if not self.is_demanded(code):
+                time.sleep(1.0)
+                continue
+            try:
+                req = urllib.request.Request(f"{vms_url.rstrip('/')}/traffic/cameras/{code}/live",
+                                             headers={"X-API-Key": api_key})
+                url = _via(vms_url, json.load(urllib.request.urlopen(req, timeout=10))["playback_url"])
+            except Exception:  # noqa: BLE001 - the VMS refused or is down; ask again shortly
+                time.sleep(10)
+                continue
+            cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+            fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+            start, n, last_pub = time.time(), 0, 0.0
+            try:
+                while self.is_demanded(code):
+                    ok, frame = cap.read()
+                    if not ok:
+                        break  # the recording ended: take a fresh ticket and play it again
+                    n += 1
+                    lag = start + n / fps - time.time()
+                    if lag > 0:
+                        time.sleep(lag)
+                    now = time.time()
+                    if now - last_pub >= self.min_dt:
+                        last_pub = now
+                        self._publish(code, frame, now)
+            finally:
+                cap.release()
 
     def ages(self) -> dict[str, float]:
         now = time.time()
@@ -193,7 +517,7 @@ class Estate:
 
 
 def probe_capacity(cameras: list[str], candidates=(6, 4), secs: float = 6.0,
-                   target_fps: float = 6.0) -> int:
+                   target_fps: float = 6.0, urls: dict[str, str] | None = None) -> int:
     """The largest camera count the box decodes concurrently at a healthy rate.
 
     Opens that many known feeds at once, reads for a few seconds and measures
@@ -203,7 +527,9 @@ def probe_capacity(cameras: list[str], candidates=(6, 4), secs: float = 6.0,
     from app import grid
 
     def one(cam: str, out: dict) -> None:
-        url = grid.with_credentials(f"rtsp://{grid.RTSP_HOST}:{grid.RTSP_PORT}/stream/{cam}")
+        url = (urls or {}).get(cam) or grid.fallback_catalogue(
+            os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud"), (cam,)
+        )[cam].rtsp_url
         cap = _open(url)
         n = 0
         t0 = time.time()
@@ -389,6 +715,12 @@ def main() -> int:
     ap.add_argument("--motion-size", default="auto", help="cameras in the motion grid, or 'auto' to probe")
     ap.add_argument("--max-fps", type=float, default=12.0, help="cap published frames per second per camera")
     ap.add_argument("--cameras", nargs="*", default=None)
+    ap.add_argument("--detect", action="store_true",
+                    help="draw the object detector's boxes on every frame a tile is shown")
+    ap.add_argument("--vms-url", default=None,
+                    help="also serve this Traffic VMS's cameras (API key from TRAFFIC_VMS_API_KEY)")
+    ap.add_argument("--anpr", nargs="*", default=[],
+                    help="cameras to run the full ANPR engine on live (grid ids or VMS codes); needs the ANPR models")
     args = ap.parse_args()
 
     sys.path.insert(0, str(WORKER_ROOT))
@@ -396,7 +728,14 @@ def main() -> int:
     if not os.getenv("SENTINEL_GRID_PASSWORD"):
         raise SystemExit("SENTINEL_GRID_PASSWORD is not set (repo .env)")
 
-    cams = args.cameras or [f"cam{i:02d}" for i in range(1, 31)]
+    from app import grid
+
+    base = os.getenv("SENTINEL_GRID_BASE_URL", "https://cctv.corp8.cloud")
+    grid_cams, source = grid.catalogue_or_fallback(base)
+    print(f"catalogue: {len(grid_cams)} camera(s) (source: {source})")
+    # The catalogue is the contract: its ids AND its stream URLs.
+    urls = {cid: cam.rtsp_url for cid, cam in grid_cams.items() if cam.rtsp_url}
+    cams = args.cameras or list(grid_cams)
     catalogue = _catalogue()
 
     # Motion grid: the few cameras the box decodes at once, chosen by probe.
@@ -409,15 +748,29 @@ def main() -> int:
     # actually sustain, which the probe measures.
     if args.motion_size == "auto":
         print("probing decode capacity for the motion grid...")
-        n = probe_capacity(ordered, candidates=(args.pool, max(2, args.pool - 2)))
+        n = probe_capacity(ordered, candidates=(args.pool, max(2, args.pool - 2)), urls=urls)
     else:
         n = max(1, int(args.motion_size))
     motion = ordered[:min(n, args.pool, len(ordered))]
     print(f"motion grid size: {len(motion)} ({', '.join(motion)})")
 
     estate = Estate(cams, pool=args.pool, focus=motion, width=args.width,
-                    hold_s=args.hold, max_fps=args.max_fps)
+                    hold_s=args.hold, max_fps=args.max_fps, urls=urls)
     estate.start()
+    if args.detect:
+        from app.detectors import UltralyticsYoloDetector
+
+        # On the CPU, so the tile boxes never queue behind (or collide with) the
+        # ANPR engines on the GPU.
+        estate.detector = UltralyticsYoloDetector(confidence_threshold=0.35, device="cpu")
+        estate.detector.load()
+        threading.Thread(target=estate.annotate_forever, daemon=True).start()
+        print("live detection: on (YOLO, boxes drawn in the background on every watched feed)")
+    if args.vms_url:
+        estate.add_vms(args.vms_url, os.getenv("TRAFFIC_VMS_API_KEY", "traffic-demo-key"))
+    if args.anpr:
+        estate.add_anpr(args.anpr, args.vms_url, os.getenv("TRAFFIC_VMS_API_KEY", "traffic-demo-key"))
+        print(f"live ANPR on: {', '.join(args.anpr)}")
     print(f"snapshot wall: {len(cams)} cameras, pool {estate.pool}, motion grid {len(motion)}, "
           f"on http://{args.host}:{args.port}  (coverage / and motion /motion)")
 

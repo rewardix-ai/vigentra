@@ -2,7 +2,7 @@
 
 Unlike the two demo department systems, this one is a REAL upstream: the live
 grid documented at https://sentinel.gujarat.gov.in/resource and served from
-`live.corp8.cloud`. Everything the integrator's guide asks of a client is
+`cctv.corp8.cloud`. Everything the integrator's guide asks of a client is
 enforced here or in the video adapter beside it. See docs/sentinel-grid.md.
 
 Two things make this adapter different from the department adapters:
@@ -19,7 +19,7 @@ cameras advertise the `live` capability and never `playback`. A playback
 request is refused by capability, independently of any role check.
 
 The catalogue is the contract, the URL pattern is not: camera ids and the set
-of cameras change, so `/api/ingest` is re-read (behind a short TTL, because
+of cameras change, so `/cameras.json` is re-read (behind a short TTL, because
 "pace your load" applies to the control plane too) rather than hard-coded.
 Per-camera codec, resolution and frame rate come from the catalogue as well -
 the grid is deliberately not uniform.
@@ -38,6 +38,7 @@ import os
 import time
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -60,7 +61,6 @@ from .base import (
     SourceAuthError,
     ResourceNotFoundError,
     SourceConflictError,
-    SourceUnavailableError,
     SurveillanceAdapter,
     UpstreamProtocolError,
 )
@@ -174,6 +174,15 @@ def _external_id(grid_id: str) -> str:
     return f"GRID-{int(grid_id):03d}" if grid_id.isdigit() else f"GRID-{grid_id}"
 
 
+def _rtsp_address(reference: dict[str, dict[str, Any]]) -> tuple[str, int] | None:
+    """The RTSP gateway's host and port, as the surveyed stream URLs name it."""
+    for row in reference.values():
+        url = urlsplit(str(row.get("rtsp_url") or ""))
+        if url.hostname:
+            return url.hostname, url.port or 554
+    return None
+
+
 def _is_live(record: dict[str, Any]) -> bool:
     """Whether the catalogue claims this camera is live.
 
@@ -268,9 +277,15 @@ class _GridGate:
             await self._login(source_system, credential, identity)
 
     async def _login(self, source_system: str, credential: str, identity: str) -> None:
+        # Only a refusal caches a backoff. Any other error - a transport error
+        # or a 5xx - is the gateway being unwell, not a refusal, so it
+        # propagates uncached: the old session (still in the jar) keeps
+        # working, and the next pass may well succeed.
         try:
             await self._login_once(source_system, credential, identity)
-        except Exception as exc:
+        except SourceAuthError as exc:
+            # A genuine refusal (no session cookie): hold off for RETRY_AFTER_S
+            # so one bad credential does not become a login storm.
             self._failed_at = time.monotonic()
             self._failure = exc
             raise
@@ -278,11 +293,6 @@ class _GridGate:
         self._failure = None
 
     async def _login_once(self, source_system: str, credential: str, identity: str) -> None:
-        # Drop the old session first. The success check below looks for a
-        # cookie, and the previous session's cookie still sat in the jar - so a
-        # refused sign-in (200 + the login page, no Set-Cookie) passed as a
-        # success and the "credential was refused" error never surfaced.
-        self._client.cookies.clear()
         # The form grew a second field. It took a password alone and now takes
         # a registered address alongside it; the address is omitted when none
         # is configured, so a gateway still running the older form is unchanged.
@@ -317,11 +327,14 @@ class _GridGate:
                 detail=str(response.status_code),
             )
 
-        # A cookie is the only proof it worked. A REJECTED sign-in comes back
-        # HTTP 200 with the sign-in page again, so status alone marked the
-        # adapter authenticated over a session that did not exist.
-        if not any(cookie for cookie in self._client.cookies.jar):
-            raise UpstreamProtocolError(
+        # A NEW cookie on THIS response is the only proof it worked - not any
+        # cookie in the jar, which still holds the previous session's. A
+        # rejected sign-in comes back HTTP 200 with the login page and no
+        # Set-Cookie, so judging by the whole jar marked a refusal a success.
+        # Checking the response alone means we never clear the jar, so a
+        # transient sign-in failure cannot wipe a session that still works.
+        if not any(True for _ in response.cookies.jar):
+            raise SourceAuthError(
                 "The grid accepted the sign-in request but issued no session "
                 "cookie, which means the credential was refused. Check "
                 "SENTINEL_GRID_EMAIL and SENTINEL_GRID_PASSWORD.",
@@ -358,6 +371,10 @@ class GridAdapter(SurveillanceAdapter):
         #: shared sandbox on the public internet was slow.
         self._stale_ttl = 300.0
         self._stale = False
+        #: When the RTSP gateway last accepted a connection while the catalogue
+        #: could not be read. See `_fallback`.
+        self._rtsp_ok_at = 0.0
+        self._rtsp_address = _rtsp_address(self._reference)
 
     # -- access ------------------------------------------------------------
 
@@ -411,10 +428,11 @@ class GridAdapter(SurveillanceAdapter):
         if self._cache is not None and (now - self._cache_at) < self._cache_ttl:
             return self._cache
         if self._failure is not None and (now - self._failed_at) < self._cache_ttl:
-            if self._cache is not None and (now - self._cache_at) < self._stale_ttl:
-                self._stale = True
-                return self._cache
-            raise self._failure
+            fallback = self._fallback()
+            if fallback is None:
+                raise self._failure
+            self._stale = True
+            return fallback
 
         # Two catalogue shapes are accepted: a bare list of {id, name}, and
         # the older {"cameras": [...]} carrying codec, resolution and stream
@@ -449,8 +467,15 @@ class GridAdapter(SurveillanceAdapter):
                     gate.note_rejected(again)
                     raise
         except AdapterError as exc:
-            self._failed_at = now
+            # Stamp when it FAILED, not `now` (captured before the request):
+            # a real timeout takes ~80s with retries, so `now` was already
+            # older than the cache window and the negative cache never fired,
+            # sending the health sweep back to the network for every camera.
+            self._failed_at = time.monotonic()
             self._failure = exc
+            rtsp_up = await self._rtsp_reachable()
+            if rtsp_up:
+                self._rtsp_ok_at = self._failed_at
             # Serve the last good catalogue rather than propagating a blip.
             #
             # The health monitor probes every 20s and the wall re-reads on
@@ -459,14 +484,16 @@ class GridAdapter(SurveillanceAdapter):
             # until the next successful poll. Falling back keeps the registry
             # true for as long as the last answer can be trusted, and lets the
             # error through once it cannot.
-            if self._cache is not None and (now - self._cache_at) < self._stale_ttl:
+            fallback = self._fallback()
+            if fallback is not None:
                 logger.warning(
-                    "grid catalogue unavailable (%s); serving the copy read %.0fs ago",
+                    "grid catalogue unavailable (%s); serving the last good list "
+                    "(RTSP gateway %s)",
                     exc,
-                    now - self._cache_at,
+                    "up" if rtsp_up else "down",
                 )
                 self._stale = True
-                return self._cache
+                return fallback
             gate = self._gate()
             if gate is not None:
                 gate._authenticated = False  # force a fresh sign-in next pass
@@ -485,6 +512,39 @@ class GridAdapter(SurveillanceAdapter):
         self._failure = None
         self._stale = False
         return cameras
+
+    def _fallback(self) -> list[dict[str, Any]] | None:
+        """What to serve while the catalogue cannot be read, if anything.
+
+        The last good list stays valid for `_stale_ttl` after the grid last
+        showed a sign of life: a catalogue read, or its RTSP gateway accepting
+        a connection. The RTSP gateway is a separate server, and it kept every
+        stream playing through the HTTPS gateway's 403/525 outages - 72 of 180
+        minutes on 2026-09-14, all of which this adapter reported as thirty
+        cameras offline, so the video gate refused every stream.
+        """
+        if time.monotonic() - max(self._cache_at, self._rtsp_ok_at) >= self._stale_ttl:
+            return None
+        if self._cache is not None:
+            return self._cache
+        if not self._rtsp_ok_at:
+            return None
+        # Started during an outage: the surveyed list names the same cameras.
+        rows = {str(r["grid_id"]): r for r in self._reference.values() if r.get("grid_id")}
+        return [{"id": gid, "name": r.get("grid_name")} for gid, r in rows.items()] or None
+
+    async def _rtsp_reachable(self) -> bool:
+        """Whether the RTSP gateway accepts a TCP connection within 3 s."""
+        if self._rtsp_address is None:
+            return False
+        try:
+            _, writer = await asyncio.wait_for(
+                asyncio.open_connection(*self._rtsp_address), timeout=3.0
+            )
+        except (OSError, asyncio.TimeoutError):
+            return False
+        writer.close()
+        return True
 
     def _to_camera(self, record: dict[str, Any]) -> CameraMetadata:
         grid_id = str(record["id"])
@@ -615,7 +675,12 @@ class GridAdapter(SurveillanceAdapter):
         adapter's own, which keeps a single-source deployment working
         unchanged.
         """
-        cameras = [self._to_camera(record) for record in await self._catalogue()]
+        cameras = [
+            self._to_camera(record)
+            for record in await self._catalogue()
+            if self.config.claims_unreferenced
+            or self._reference.get(str(record["id"]), {}).get("source_system")
+        ]
         return [camera for camera in cameras if camera.source_system == self.source_system]
 
     async def check_source_health(self) -> dict[str, Any]:

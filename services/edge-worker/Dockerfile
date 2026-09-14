@@ -83,22 +83,19 @@ FROM yolo AS anpr
 # reading against the Indian plate grammar and votes. It is copied explicitly
 # here - a feature that is fully tested and simply absent from the image is a
 # failure mode this repository has already had once, and it is silent.
-#
-# The base is python:3.11-slim, which PaddlePaddle publishes wheels for. Do NOT
-# move it to 3.13/3.14: there are no Paddle wheels there, the OCR install
-# fails, and the worker silently degrades to the single-frame reader.
 
 USER root
 
 COPY services/edge-worker/requirements-anpr.txt ./requirements-anpr.txt
-# opencv-contrib replaces the headless build pulled in by requirements-yolo:
-# the restoration stack needs dnn_superres, which only ships in contrib.
-RUN pip uninstall -y opencv-python opencv-python-headless opencv-contrib-python || true \
- && pip install --no-cache-dir -r requirements-anpr.txt
+RUN pip install --no-cache-dir -r requirements-anpr.txt
 
 COPY services/edge-worker/anpr ./anpr
+# The engine reads its thresholds, ROI and tracker settings from config/ at
+# construction (ANPRPipeline(thresholds=..., roi_cfg=...)), so the YAML has to
+# be in the image beside the package, not just on a developer's machine.
+COPY services/edge-worker/config ./config
 
-# Weights are NOT baked in - plate_detector.pt and ESPCN_x4.pb are mounted.
+# Weights are NOT baked in - docker-compose.yml mounts services/edge-worker/models.
 # Missing weights are not fatal: build_engine() logs one actionable line and
 # the worker carries on producing detections without plates.
 RUN mkdir -p /app/models && chown -R edge:edge /app

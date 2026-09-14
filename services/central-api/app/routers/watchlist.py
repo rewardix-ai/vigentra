@@ -338,6 +338,29 @@ async def deactivate_watchlist_entry(
 # Alerts
 # ---------------------------------------------------------------------------
 
+@router.get("/alerts/open-count", summary="How many watchlist alerts are waiting")
+async def open_alert_count(
+    user: DemoUser = Depends(require_permission(Permission.ALERT_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, int]:
+    """The sidebar badge's number, in the operator's scope.
+
+    The badge polls every 15 s on every page. Going through list_alerts wrote
+    an "alerts viewed" audit row each time, and the audit log filled with them.
+    A count discloses no plate, so it is not an audited read.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    rows = (
+        await db.execute(
+            select(WatchlistAlert.camera_id).where(
+                WatchlistAlert.timestamp_utc >= cutoff, WatchlistAlert.acknowledged.is_(False)
+            )
+        )
+    ).scalars().all()
+    cameras = await _readable_cameras(db, user)
+    return {"open": sum(1 for camera_id in rows if camera_id in cameras)}
+
+
 @router.get("/alerts", response_model=list[AlertOut], summary="List watchlist alerts")
 async def list_alerts(
     request: Request,

@@ -4,6 +4,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+
+import { usePersisted } from "@/lib/persist";
 import { Download, X } from "lucide-react";
 
 import { LoadingPanel } from "@/components/Shell";
@@ -67,12 +69,22 @@ function Registry() {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>((params.get("view") as View) === "map" ? "map" : "table");
-  const [filters, setFilters] = useState<Filters>({
-    ...EMPTY,
-    installation_status: params.get("installation_status") ?? "",
-    owning_department: params.get("owning_department") ?? "",
-  });
+  // Kept across a reload; a link that sets its own filters wins over memory.
+  const linked = ["view", "installation_status", "owning_department"].some((k) => params.has(k));
+  const [view, setView] = usePersisted<View>(
+    "registry.view",
+    (params.get("view") as View) === "map" ? "map" : "table",
+    !linked,
+  );
+  const [filters, setFilters] = usePersisted<Filters>(
+    "registry.filters",
+    {
+      ...EMPTY,
+      installation_status: params.get("installation_status") ?? "",
+      owning_department: params.get("owning_department") ?? "",
+    },
+    !linked,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -96,13 +108,6 @@ function Registry() {
     };
   }, []);
 
-  // If this account can watch even one camera in the list, the custody
-  // notice is answering a question it did not ask.
-  const anyWatchable = useMemo(
-    () => cameras.some((camera) => WATCHABLE_STATES.has(camera.video_access)),
-    [cameras],
-  );
-
   const options = useMemo(() => {
     const unique = (values: (string | null | undefined)[]) =>
       Array.from(new Set(values.filter(Boolean) as string[])).sort();
@@ -120,12 +125,10 @@ function Registry() {
       if (filters.owning_department && camera.owning_department !== filters.owning_department) return false;
       if (filters.district && camera.location.district !== filters.district) return false;
       if (filters.status && camera.health.status !== filters.status) return false;
-      if (
-        filters.installation_status &&
-        camera.installation.installation_status !== filters.installation_status
-      ) {
-        return false;
-      }
+      // In service by default; a decommissioned camera is one pick away, not in the way.
+      const wanted = filters.installation_status;
+      if (wanted === "" && camera.installation.installation_status === "DECOMMISSIONED") return false;
+      if (wanted && wanted !== "*" && camera.installation.installation_status !== wanted) return false;
       if (
         needle &&
         !camera.name.toLowerCase().includes(needle) &&
@@ -241,7 +244,8 @@ function Registry() {
                 value={filters.installation_status}
                 onChange={(event) => set({ installation_status: event.target.value })}
             >
-                <option value="">All</option>
+                <option value="">In service</option>
+                <option value="*">All, with decommissioned</option>
                 {options.installation.map((value) => (
                   <option key={value} value={value}>
                     {value}
@@ -288,11 +292,10 @@ function Registry() {
                     <th>Camera name</th>
                     <th>Department</th>
                     <th>District</th>
-                    <th>Source system</th>
                     <th>Installation</th>
                     <th>Approval</th>
                     <th>Health</th>
-                    <th>Last metadata sync</th>
+                    <th>Last sync</th>
                     <th>Video</th>
                     <th>Actions</th>
                   </tr>
@@ -301,7 +304,7 @@ function Registry() {
                   {visible.map((camera) => (
                     <tr key={camera.camera_id}>
                       <td className="mono whitespace-nowrap">{camera.camera_id}</td>
-                      <td>
+                      <td className="min-w-[14rem]">
                         <Link
                           href={`/registry/${encodeURIComponent(camera.camera_id)}`}
                           className="font-medium text-brand-600 hover:underline"
@@ -312,9 +315,9 @@ function Registry() {
                       </td>
                       <td>
                         <DepartmentTag department={camera.owning_department} />
+                        <div className="mono mt-0.5 text-ink-400">{camera.source_system}</div>
                       </td>
                       <td>{camera.location.district}</td>
-                      <td className="text-ink-500">{camera.source_system}</td>
                       <td>
                         <InstallationPill status={camera.installation.installation_status} />
                       </td>
@@ -345,18 +348,6 @@ function Registry() {
                               Watch
                             </Link>
                           )}
-                          <Link
-                            className="btn btn-sm"
-                            href={`/registry/${encodeURIComponent(camera.camera_id)}`}
-                          >
-                            Details
-                          </Link>
-                          <Link
-                            className="btn btn-sm"
-                            href={`/registry/${encodeURIComponent(camera.camera_id)}/policy`}
-                          >
-                            Policy
-                          </Link>
                         </div>
                       </td>
                     </tr>

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
+
+import { usePersisted } from "@/lib/persist";
 import { Download, FileBarChart2 } from "lucide-react";
 
 import {
@@ -36,8 +38,8 @@ export default function AnprReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
-  const [cameraId, setCameraId] = useState("");
-  const [sinceHours, setSinceHours] = useState("24");
+  const [cameraId, setCameraId] = usePersisted("report.camera", "");
+  const [sinceHours, setSinceHours] = usePersisted("report.since", "24");
 
   const generate = useCallback(async () => {
     setBusy(true);

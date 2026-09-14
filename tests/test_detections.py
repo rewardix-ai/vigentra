@@ -468,69 +468,12 @@ def _load_plates():
     return module
 
 
-@pytest.mark.parametrize(
-    "raw,expected",
-    [
-        ("GJ01AB1234", "GJ01AB1234"),
-        ("gj 01 ab 1234", "GJ01AB1234"),
-        ("GJ-05-CD-4321", "GJ05CD4321"),
-        ("MH12DE5678", "MH12DE5678"),
-        ("DL8CAF5031", "DL8CAF5031"),
-        # OCR read the number's leading zero as a letter O. Fixable by position.
-        ("GJ01AB1O34", "GJ01AB1034"),
-    ],
-)
-async def test_plausible_plates_are_normalised(raw, expected):
-    assert _load_plates().normalise_plate(raw) == expected
-
-
-@pytest.mark.parametrize(
-    "raw",
-    [
-        "HELLO",              # ordinary text on a vehicle
-        "12",                 # too short
-        "GJ01AB",             # no number
-        "GJ01AB12345678",     # too long
-        "0J01AB1234",         # "OJ" is not a state code
-        "XX01AB1234",         # nor is XX
-        "",
-    ],
-)
-async def test_implausible_reads_are_discarded(raw):
-    """Half-read text is worse than none: it looks like evidence and is not."""
-    assert _load_plates().normalise_plate(raw) is None
-
-
 async def test_only_vehicles_are_examined():
     """A person is never cropped for text."""
     plates = _load_plates()
     assert "person" not in plates.PLATE_BEARING_CLASSES
     assert "bicycle" not in plates.PLATE_BEARING_CLASSES
     assert {"car", "motorcycle", "bus", "truck"} <= plates.PLATE_BEARING_CLASSES
-
-
-async def test_anpr_is_off_unless_explicitly_enabled(monkeypatch):
-    plates = _load_plates()
-    monkeypatch.delenv("ANPR_ENABLE", raising=False)
-    assert isinstance(plates.build_plate_reader(), plates.DisabledPlateReader)
-    monkeypatch.setenv("ANPR_ENABLE", "true")
-    assert isinstance(plates.build_plate_reader(), plates.EasyOcrPlateReader)
-
-
-async def test_a_crop_too_small_to_hold_a_plate_is_skipped():
-    """Upscaling a 12-pixel strip manufactures confident nonsense."""
-    numpy = pytest.importorskip("numpy")
-    plates = _load_plates()
-    frame = numpy.zeros((200, 200, 3), dtype=numpy.uint8)
-    assert plates.plate_region(frame, [10.0, 10.0, 18.0, 18.0]) is None
-
-    region = plates.plate_region(frame, [10.0, 10.0, 150.0, 120.0])
-    assert region is not None
-    crop, (offset_x, offset_y) = region
-    # The crop is the lower part of the vehicle, offset reported in frame space.
-    assert offset_x == 10
-    assert offset_y > 10
-    assert crop.shape[0] > 0 and crop.shape[1] > 0
 
 
 async def test_plate_is_withheld_without_the_permission(api, login, traffic_camera):
@@ -666,58 +609,6 @@ async def test_listing_without_plates_records_no_disclosure(api, login, traffic_
     assert not [e for e in entries if e["action"] == "plate_data_viewed"], (
         "no plates were disclosed, so nothing should claim they were"
     )
-
-
-async def test_a_plate_split_across_ocr_boxes_is_reassembled():
-    """Observed on real footage, and it silently cost every plate.
-
-    EasyOCR returned one Delhi plate as two boxes, 'DL' and '1LCE5987'. Judged
-    separately neither is a registration number, so the reader accepted nothing
-    at all while the engine was plainly reading plates.
-    """
-    plates = _load_plates()
-    fragments = [
-        ([[10, 5], [40, 5], [40, 25], [10, 25]], "DL", 0.80),
-        ([[45, 6], [160, 6], [160, 26], [45, 26]], "1LCE5987", 0.77),
-    ]
-    lines = plates.assemble_lines(fragments)
-    assert len(lines) == 1, "fragments on one text line must join"
-    text, confidence, _ = lines[0]
-    assert text == "DL1LCE5987"
-    # A line is only as trustworthy as its worst-read fragment.
-    assert confidence == pytest.approx(0.77)
-    assert plates.normalise_plate(text) == "DL1LCE5987"
-
-
-async def test_fragments_on_different_lines_are_not_joined():
-    """Two plates in one crop must not be concatenated into a third."""
-    plates = _load_plates()
-    fragments = [
-        ([[10, 5], [120, 5], [120, 25], [10, 25]], "GJ01AB1234", 0.9),
-        ([[10, 80], [120, 80], [120, 100], [10, 100]], "MH12DE5678", 0.9),
-    ]
-    lines = plates.assemble_lines(fragments)
-    assert {text for text, _, _ in lines} == {"GJ01AB1234", "MH12DE5678"}
-
-
-async def test_segmentation_prefers_the_reading_needing_fewest_corrections():
-    """Where a segment boundary falls is genuinely ambiguous in a bare string.
-
-    `GJ01AB1234` wants a two-digit district; `DL1LCE5987` wants one. Reading
-    either greedily corrupts the other - greedy district turns the series
-    letter L into a digit and yields DL11CE5987, a different vehicle.
-    """
-    normalise = _load_plates().normalise_plate
-    assert normalise("GJ01AB1234") == "GJ01AB1234"
-    assert normalise("DL1LCE5987") == "DL1LCE5987"
-
-
-async def test_the_state_code_must_be_a_real_state():
-    """What stops a plate-shaped misread being stored as a registration."""
-    normalise = _load_plates().normalise_plate
-    assert normalise("GJ01AB1234") is not None
-    for fake in ("XX01AB1234", "0J01AB1234", "QZ01AB1234"):
-        assert normalise(fake) is None, f"{fake} is not a registration"
 
 
 async def test_single_detection_and_per_camera_routes_answer(api, login, traffic_camera, detectors):

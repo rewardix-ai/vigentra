@@ -15,8 +15,10 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { usePersisted } from "@/lib/persist";
+import { relative } from "@/lib/format";
 import { streamQueue } from "@/lib/streamQueue";
-import type { Camera } from "@/lib/types";
+import type { Camera, Sighting } from "@/lib/types";
 
 /**
  * The live wall: every camera this account may watch, on one screen.
@@ -31,22 +33,27 @@ export default function LiveWallPage() {
   const router = useRouter();
   const [cameras, setCameras] = useState<Camera[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [department, setDepartment] = useState("");
-  const [district, setDistrict] = useState("");
-  const [reason, setReason] = useState("");
+  // Everything but the password survives a reload of the tab.
+  const [department, setDepartment] = usePersisted("live.department", "");
+  const [district, setDistrict] = usePersisted("live.district", "");
+  const [reason, setReason] = usePersisted("live.reason", "");
   const [password, setPassword] = useState("");
-  const [started, setStarted] = useState(false);
+  const [startedBefore, setStarted] = usePersisted("live.started", false);
   // Wall mode: every feed on one screen at once, nothing else. Tiles stay
   // mounted across the switch (same element, different classes), so the
   // sessions already open are kept rather than reopened.
-  const [wall, setWall] = useState(false);
+  const [wall, setWall] = usePersisted("live.wall", false);
   // Snapshot mode: the wall shows server-decoded still frames instead of HLS.
   // The grid's HLS CDN is far too slow to feed a browser player (a 6 s segment
   // takes 15-80 s and 403s under load), so an HLS wall of thirty tiles blacks
   // out; snapshots come off the fast RTSP path and always render. On by
   // default because it is the only path that works on this network.
-  const [snapshot, setSnapshot] = useState(true);
+  const [snapshot, setSnapshot] = usePersisted("live.snapshot", true);
+  // A snapshot wall opens no session, so it can come back on its own after a
+  // reload; a full-motion one needs the password typed again.
+  const started = startedBefore && (snapshot || password.length > 0);
   const [viewport, setViewport] = useState({ w: 1920, h: 1080 });
+  const [plates, setPlates] = useState<Sighting[]>([]);
 
   useEffect(() => {
     const measure = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
@@ -70,6 +77,30 @@ export default function LiveWallPage() {
       .then(setCameras)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
+
+  // Plate reads for the whole wall, polled once rather than per tile: one
+  // request and one audited disclosure per interval. A read lands when a
+  // vehicle's track closes at the edge, so polling faster would not make it
+  // any fresher.
+  useEffect(() => {
+    if (!started) return;
+    let alive = true;
+    const load = () => {
+      void api
+        .sightings({ since_hours: "1", limit: "500" })
+        .then((rows) => {
+          // Under 10% is noise on a glance view; the report still lists every read.
+          if (alive) setPlates(rows.filter((p) => p.confidence >= 0.1));
+        })
+        .catch(() => undefined);
+    };
+    load();
+    const timer = setInterval(load, 20_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [started]);
 
   const watchable = useMemo(
     () =>
@@ -99,7 +130,15 @@ export default function LiveWallPage() {
     [watchable, department, district],
   );
 
+  const platesByCamera = useMemo(() => {
+    const out: Record<string, Sighting[]> = {};
+    for (const p of plates) (out[p.camera_id] ??= []).push(p);
+    return out;
+  }, [plates]);
+
   const columns = bestColumns(shown.length, viewport.w, viewport.h);
+  const canStart =
+    reason.trim().length >= 5 && (snapshot || password.length > 0) && watchable.length > 0;
 
   if (error) return <Notice tone="bad">{error}</Notice>;
   if (!cameras) return <LoadingPanel />;
@@ -113,7 +152,13 @@ export default function LiveWallPage() {
 
       {!started ? (
         <Card>
-          <div className="space-y-3 px-4 py-3">
+          <form
+            className="space-y-3 px-4 py-3"
+            onSubmit={(event) => {
+              event.preventDefault(); // Enter in the password starts the wall
+              if (canStart) setStarted(true);
+            }}
+          >
             <FloatTextarea
               label="Why are you viewing these feeds?"
               required
@@ -142,22 +187,14 @@ export default function LiveWallPage() {
                 checked={snapshot}
                 onChange={(event) => setSnapshot(event.target.checked)}
               />
-              Snapshot wall (recommended) — live frames off the fast path, every
-              camera at once. Uncheck for full-motion HLS, which the grid CDN is
-              currently too slow to serve.
+              Snapshot wall (recommended) — every camera at once, as live frames
+              with the edge&apos;s vehicle detection drawn in. Uncheck for full-motion
+              video, which the grid CDN is currently too slow to serve.
             </label>
-            <button
-              className="btn btn-primary"
-              disabled={
-                reason.trim().length < 5 ||
-                (!snapshot && password.length === 0) ||
-                watchable.length === 0
-              }
-              onClick={() => setStarted(true)}
-            >
+            <button className="btn btn-primary" type="submit" disabled={!canStart}>
               Start {shown.length} feed{shown.length === 1 ? "" : "s"}
             </button>
-          </div>
+          </form>
         </Card>
       ) : (
         <Card>
@@ -214,6 +251,23 @@ export default function LiveWallPage() {
         </Card>
       )}
 
+      {started && !wall && plates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-2xs">
+          <span className="font-semibold text-ink-700">Latest plate reads</span>
+          {plates.slice(0, 8).map((p) => (
+            <span key={p.sighting_id} className="rounded border border-line bg-white px-1.5 py-0.5">
+              <span className="font-mono font-semibold">
+                {p.plate_withheld ? "withheld" : p.plate_text}
+              </span>{" "}
+              <span className="text-ink-500">
+                {p.camera_name ?? p.camera_id} · {Math.round(p.confidence * 100)}% ·{" "}
+                {relative(p.timestamp_utc)}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {started &&
         (shown.length === 0 ? (
           <EmptyState
@@ -244,6 +298,7 @@ export default function LiveWallPage() {
                 password={password}
                 compact={wall}
                 snapshot={snapshot}
+                plates={platesByCamera[camera.camera_id]}
                 onOpenFull={(id) => router.push(`/registry/${encodeURIComponent(id)}`)}
               />
             ))}

@@ -59,7 +59,9 @@ function RequestList() {
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return records.filter((record) => {
-      if (status && record.status !== status) return false;
+      // Active by default: a decommissioned record is history, one pick away.
+      if (status === "" && record.status === "DECOMMISSIONED") return false;
+      if (status && status !== "*" && record.status !== status) return false;
       if (
         needle &&
         !(record.camera_name ?? "").toLowerCase().includes(needle) &&
@@ -127,7 +129,8 @@ function RequestList() {
               value={status}
               onChange={(event) => setStatus(event.target.value)}
           >
-              <option value="">All statuses</option>
+              <option value="">Active (hides decommissioned)</option>
+              <option value="*">All statuses</option>
               {STATUSES.map((value) => (
                 <option key={value} value={value}>
                   {value.replace(/_/g, " ")} {counts[value] ? `(${counts[value]})` : ""}

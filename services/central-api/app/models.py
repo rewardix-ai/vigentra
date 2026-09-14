@@ -1,6 +1,6 @@
 """SQLAlchemy models for the central metadata registry.
 
-Ten tables, matching shared/canonical-schemas.md:
+Twenty-one tables:
 
     users                            demo accounts, seeded from configuration
     roles                            role catalogue and its permission set
@@ -12,9 +12,17 @@ Ten tables, matching shared/canonical-schemas.md:
     camera_health                    time-series health samples
     metadata_sync_logs               one row per source per synchronisation run
     audit_logs                       who did what, to which record
-
-There is no `video_sessions` table. Module 1 has no video path, so it has
-nowhere to record one.
+    events                           normalised generic events
+    video_sessions                   short-lived, audited viewing sessions
+    video_access_grants              requests to an owning unit to view its cameras
+    model_versions                   detector builds that have produced detections
+    detections                       generic object detections from the edge
+    frame_quality_events             frames flagged as other than normal quality
+    vehicles                         vehicle registration REFERENCE records
+    plate_sightings                  one plate read at one camera
+    watchlist_entries                registration numbers to be alerted on
+    watchlist_alerts                 sightings the matcher tied to a watchlist entry
+    incidents                        edge-raised traffic-incident candidates
 
 JSON columns use JSONB on PostgreSQL and fall back to plain JSON on SQLite so
 the test-suite can run without a database container.
@@ -594,8 +602,8 @@ class Vehicle(Base, TimestampMixin):
     That separation is the whole point. Vehicle attributes on their own are
     low-risk reference data. The risk lives in the JOIN - linking "camera X saw
     this plate at 14:32" to a registration is what turns a camera registry into
-    a person-tracking system. Making that join needs ANPR, which this phase does
-    not implement, and it would need its own legal basis besides.
+    a person-tracking system. ANPR now reads plates, so that join is possible;
+    it would need its own legal basis, and nothing in this codebase makes it.
 
     There is no owner column here, and there must never be one. The source file
     ships without owner name, address, phone, chassis or engine number, and

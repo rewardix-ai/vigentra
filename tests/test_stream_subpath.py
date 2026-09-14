@@ -53,6 +53,9 @@ def test_no_sub_path_is_the_manifest_itself(broker):
         "//evil.example/steal.ts",             # protocol-relative, changes host
         "../../etc/passwd",                    # upward traversal
         "seg/../../../secret.ts",              # traversal buried mid-path
+        "%2e%2e/cam07/index.m3u8",             # percent-encoded ".." (decoded upstream)
+        "%2E%2E%2Fcam07%2Findex.m3u8",         # fully percent-encoded traversal
+        "..%2fcam07/index.m3u8",               # mixed literal + encoded slash
     ],
 )
 def test_the_proxy_refuses_to_fetch_elsewhere(broker, hostile):

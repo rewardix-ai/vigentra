@@ -385,6 +385,14 @@ class VigentraGridVideoAdapter(BaseVideoAdapter):
 
         base = self.config.base_url.rstrip("/")
 
+        # Composed, not read from the catalogue - and that is forced, not lazy.
+        # The guide says to start from the catalogue, but the gateway's
+        # cameras.json now carries only {id, name} for all thirty cameras: no
+        # hls_live_url, no rtsp_url, nothing to resolve a stream URL from
+        # (verified against the live catalogue, 2026-09-11). The documented URL
+        # patterns are the only source left. edge-worker/app/grid.py composes
+        # them in one place for the same reason; keep the two in step.
+
         # No probe here on purpose. Opening a session used to GET the manifest
         # first to decide HLS-vs-fallback, but the fallback (/stream/<id>) is a
         # dead 404 on this gateway, so the probe only ever chose HLS or a broken

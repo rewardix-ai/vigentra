@@ -42,16 +42,8 @@ export interface Basemap {
   maxZoom: number;
   /** Highest zoom the service actually serves; Leaflet upscales beyond it. */
   maxNativeZoom?: number;
-  /** CSS filter applied to the tile layer, for styling without a new provider. */
-  filter?: string;
-  /**
-   * Purely descriptive: this style's tiles are dark.
-   *
-   * Nothing recolours itself from it. It is kept so a future overlay that
-   * genuinely cannot be read on both - a white halo behind a label, say - has
-   * something to test, and so the flag is not silently re-derived from the id.
-   */
-  dark?: boolean;
+  /** Class for the tile layer, styled in globals.css - restyling without a new provider. */
+  tileClassName?: string;
   /**
    * Labels drawn ON TOP of the base tiles.
    *
@@ -61,7 +53,6 @@ export interface Basemap {
    * in it - you could see a junction and not know which junction.
    */
   labels?: string;
-  labelsAttribution?: string;
 }
 
 const OSM_ATTRIBUTION =
@@ -106,7 +97,6 @@ export const BASEMAPS: Basemap[] = [
     // serves z18; maxNativeZoom below upscales the rest.
     maxZoom: 19,
     maxNativeZoom: 18,
-    dark: true,
     labels:
       "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
   },
@@ -122,7 +112,7 @@ export const BASEMAPS: Basemap[] = [
     // the same shade, and "is that camera pointed at water" stopped being
     // answerable. Keeping a third of the saturation leaves green as green and
     // blue as blue while still letting the wedges sit in front.
-    filter: "saturate(0.35) brightness(1.06) contrast(0.92)",
+    tileClassName: "vigentra-muted-tiles",
   },
 ];
 
@@ -143,13 +133,12 @@ export function BasemapLayer({ basemap }: { basemap: Basemap }) {
         // plotted over an ocean that is really the Bay of Bengal three worlds
         // along.
         noWrap
-        className={basemap.filter ? "vigentra-muted-tiles" : undefined}
+        className={basemap.tileClassName}
       />
       {basemap.labels && (
         <TileLayer
           key={`${basemap.id}-labels`}
           url={basemap.labels}
-          attribution={basemap.labelsAttribution ?? ""}
           maxZoom={basemap.maxZoom}
           maxNativeZoom={basemap.maxNativeZoom}
           noWrap

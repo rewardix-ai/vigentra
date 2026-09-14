@@ -21,7 +21,6 @@ import {
   ScanEye,
   ScrollText,
   Upload,
-  Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -149,8 +148,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       }
       if (permissions.includes("alert:read")) {
         api
-          .alerts({ unacknowledged_only: "true", limit: "100" })
-          .then((rows) => set("alerts", rows.length))
+          .openAlertCount()
+          .then((count) => set("alerts", count.open))
           .catch(() => undefined);
       }
     };
@@ -171,8 +170,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   const can = (permission?: string) =>
     !permission || (operator?.permissions ?? []).includes(permission);
-
-  /** Whether this account may be handed footage at all, live or recorded. */
 
   const statusTone =
     health?.status === "ok"
@@ -212,7 +209,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <div className="hidden text-right leading-tight sm:block">
                 <div className="text-[13px] font-medium">{operator?.display_name ?? "…"}</div>
                 <div className="text-2xs text-white/60">
-                  {operator ? `${operator.role.replace(/_/g, " ")} · ${operator.department}` : ""}
+                  {operator
+                    ? `${operator.role.replace(/_/g, " ")} · ${
+                        operator.department === "*" ? "all departments" : operator.department
+                      }`
+                    : ""}
                 </div>
               </div>
               <button

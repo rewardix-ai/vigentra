@@ -60,9 +60,9 @@ for candidate in (str(WORKER_ROOT), str(HERE)):
 
 import cv2  # noqa: E402
 
-from anpr import enhance  # noqa: E402
+from anpr.enhance import quality as enhance  # noqa: E402  (assess() moved into the enhance package)
 from _corpus import (  # noqa: E402
-    PHYSICAL_FLOOR_PX, PlateSample, Readability, SizeBands, angle_category,
+    PHYSICAL_FLOOR_PX, PlateSample, Readability, angle_category,
     classify_difficulty, derive_bands, estimate_skew_deg, load_json,
     measure_frame, percentiles, split_of, to_yolo, write_json,
     TIME_BLOCK_FRAMES,
@@ -380,7 +380,8 @@ def build(args) -> dict:
                    if s.get("detection_source") != "prior"]
         write_json(root / "unverified" / "pending_review.json", {
             "generated_at": datetime.now(timezone.utc).isoformat(),
-            "why": ("Proposals from the deployed detector (plate_detector.pt). "
+            "why": ("Proposals from the detector deployed when they were made "
+                    "(plate_detector.pt; the engine has since been replaced). "
                     "These are NOT labels and are excluded from every split. "
                     "Adjudicate them with tools/dataset_report.py --sheets, "
                     "then re-run with --verdicts pointing at the result."),

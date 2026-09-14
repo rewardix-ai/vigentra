@@ -52,7 +52,6 @@ class VideoDecision:
 _DENY_NOT_ENABLED = "The owning department has not enabled brokered video for this camera."
 _DENY_ROLE = "Your role does not permit footage viewing."
 _DENY_INACTIVE = "This account is not active."
-_DENY_DEPARTMENT = "This camera belongs to a department outside your scope."
 _DENY_CITY = "This camera is in a city outside your scope."
 _DENY_ZONE = "This camera is in a zone outside your assignment."
 _DENY_WITHDRAWN = "This camera is suspended or decommissioned."

@@ -5,7 +5,7 @@ list supplied by environment. What is NOT simplified is authorisation: every
 route declares the permission it needs, and every record-touching route also
 checks that the account's department owns the record.
 
-There is no media client dependency here, because there is no video path.
+`get_media_client` supplies the HTTP client the video stream proxy reads through.
 """
 from __future__ import annotations
 
@@ -27,11 +27,7 @@ bearer_scheme = HTTPBearer(auto_error=False, description="Vigentra demo bearer t
 TOKEN_ISSUER = "vigentra-central-api"
 
 
-def get_settings_dep() -> Settings:
-    return get_settings()
-
-
-SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
 # --------------------------------------------------------------------------
@@ -148,8 +144,10 @@ AdaptersDep = Annotated[dict, Depends(get_adapters)]
 def get_media_client(request: Request) -> httpx.AsyncClient:
     """The client used to proxy brokered video.
 
-    Separate from the adapters' clients so a long video read cannot starve
-    control-plane calls behind a shared connection pool.
+    In a grid deployment this is the grid adapters' own client, not a separate
+    one: the gateway allows one session per account, so a second client would
+    need a second sign-in that invalidates the first (see `main.lifespan`).
+    Other deployments get a dedicated media client.
     """
     client = getattr(request.app.state, "media_client", None)
     if client is None:

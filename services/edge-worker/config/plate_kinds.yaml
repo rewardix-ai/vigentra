@@ -1,0 +1,182 @@
+# Indian plate kinds for the synthetic reader-training generator (tools/synth_kinds.py).
+# Source + citations: docs/PLATE_RULES.md (researched 2026-09-11). Priors are rough on-road shares.
+# Tokens: S=state code, A=letter (A-Z minus I,O unless allow_IO), D=digit, [XY]=literal.
+# Row-split modes: sd = state+district on top / rest below
+#                  half = equal halves, odd extra char on row 2 (Rule 50 proviso)
+#                  sds = state+district+series on top / number below
+alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+series_letters_exclude: [I, O]
+pad_number_to_4: {hsrp: 0.95, non_hsrp: 0.7}
+state_codes: [AN,AP,AR,AS,BR,CG,CH,DD,DL,GA,GJ,HP,HR,JH,JK,KA,KL,LA,LD,MH,ML,MN,MP,MZ,NL,OD,PB,PY,RJ,SK,TG,TN,TR,UK,UP,WB,TS,OR,UA,DN]  # last 4 legacy
+state_weights: {GJ: 0.45, DL: 0.25, other: 0.30}
+district: {GJ: "01-40 excl 28,29", DL: "1-14 no pad", default: "01-99 zero-pad"}
+kinds:
+  - name: private_car_1row
+    vehicle_types: [car, suv]
+    colours: {bg: white, fg: black}
+    rows: 1
+    aspect: 4.17
+    char_height_frac: 0.54
+    templates: ["S DD A DDDD", "S DD AA DDDD", "S DD AAA DDDD"]
+    prior: 0.20
+  - name: private_car_2row
+    vehicle_types: [suv, car_rear_squarewell]
+    colours: {bg: white, fg: black}
+    rows: 2
+    row_split: {sd: 0.6, half: 0.25, sds: 0.15}
+    aspect: 1.7
+    char_height_frac: 0.33
+    templates: ["S DD AA DDDD", "S DD A DDDD"]
+    prior: 0.03
+  - name: private_2w_2row
+    vehicle_types: [motorcycle, scooter]
+    colours: {bg: white, fg: black}
+    rows: 2
+    row_split: {sd: 0.6, half: 0.25, sds: 0.15}
+    aspect: 2.0
+    char_height_frac: 0.38
+    templates: ["S DD AA DDDD", "S DD A DDDD", "S DD AAA DDDD"]
+    prior: 0.40
+  - name: private_2w_front_1row
+    vehicle_types: [motorcycle, tractor_front]
+    colours: {bg: white, fg: black}
+    rows: 1
+    aspect: 6.33
+    char_height_frac: 0.67
+    templates: ["S DD AA DDDD"]
+    prior: 0.05
+  - name: delhi_private
+    vehicle_types: [car, motorcycle, scooter]
+    colours: {bg: white, fg: black}
+    rows: [1, 2]
+    row_split: {sd: 0.5, half: 0.35, sds: 0.15}
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.54, 0.38]
+    templates: ["[DL] D{1,2} [C|S] A{0,2} DDDD", "[DL] D{1,2} AA DDDD"]
+    prior: 0.06   # applied only when state=DL
+  - name: auto_3w_yellow
+    vehicle_types: [autorickshaw]
+    colours: {bg: yellow, fg: black}
+    rows: 2
+    row_split: {sd: 0.6, half: 0.3, sds: 0.1}
+    aspect: 2.0
+    char_height_frac: 0.38
+    templates: ["S DD A{1,2} DDDD", "[DL] D{1,2} [R] A{1,2} DDDD"]
+    prior: 0.08
+  - name: commercial_car_1row
+    vehicle_types: [taxi, cab]
+    colours: {bg: yellow, fg: black}
+    rows: 1
+    aspect: 4.17
+    char_height_frac: 0.54
+    templates: ["S DD A{1,2} DDDD", "[DL] D{1,2} [T|Y|Z] A{1,2} DDDD"]
+    prior: 0.04
+  - name: commercial_goods_bus_2row
+    vehicle_types: [truck, lcv, bus, tractor_trailer]
+    colours: {bg: yellow, fg: black}
+    rows: 2
+    row_split: {sd: 0.7, half: 0.2, sds: 0.1}
+    aspect: 1.7
+    char_height_frac: 0.33
+    templates: ["S DD A{1,2} DDDD", "[GJ] [18] [Z|Y|X] DDDD"]
+    prior: 0.06
+  - name: ev_private
+    vehicle_types: [car, scooter, motorcycle]
+    colours: {bg: green, fg: white}
+    inverted: true
+    rows: [1, 2]
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.54, 0.38]
+    templates: ["S DD A{1,3} DDDD", "[DL] D{1,2} [EV|GD] DDDD"]
+    prior: 0.03
+  - name: ev_commercial
+    vehicle_types: [e_rickshaw, e_auto, e_bus, e_goods]
+    colours: {bg: green, fg: yellow}
+    inverted: true
+    rows: [1, 2]
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.54, 0.38]
+    templates: ["S DD A{1,2} DDDD", "[DL] D{1,2} [ER] A{0,1} DDDD"]
+    prior: 0.025
+  - name: bh_series
+    vehicle_types: [car, motorcycle]
+    colours: {bg: white, fg: black}   # green/white if EV
+    rows: [1, 2]
+    row_split: {sd: 0.7, half: 0.3}
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.54, 0.38]
+    templates: ["DD [BH] DDDD AA"]
+    prior: 0.01
+  - name: rental_self_drive
+    vehicle_types: [car, scooter, motorcycle]
+    colours: {bg: black, fg: yellow}
+    inverted: true
+    rows: [1, 2]
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.54, 0.38]
+    templates: ["S DD A{1,2} DDDD", "[DL] D{1,2} [N] A{0,2} DDDD"]
+    prior: 0.005
+  - name: temporary
+    vehicle_types: [any_new]
+    colours: {bg: yellow, fg: red}
+    rows: [1, 2]
+    row_split: {half: 1.0}
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.45, 0.33]
+    templates: ["[T] DDDD S DDDD A{1,2}"]
+    prior: 0.01
+  - name: trade
+    vehicle_types: [dealer_any]
+    colours: {bg: red, fg: white}
+    inverted: true
+    rows: [1, 2]
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.40, 0.30]
+    templates: ["S DD [A|C|E|F|G] DDDD [TC] D{1,4}"]
+    prior: 0.002
+  - name: diplomatic
+    vehicle_types: [car]
+    colours: {bg: blue, fg: white}
+    inverted: true
+    rows: 1
+    aspect: 4.17
+    char_height_frac: 0.54
+    templates: ["D{1,3} [CD|CC|UN] D{1,4}"]
+    prior: 0.001   # x10 in central Delhi
+  - name: army
+    vehicle_types: [jeep, truck, motorcycle]
+    colours: {bg: black, fg: white}
+    inverted: true
+    rows: 1
+    aspect: 4.17
+    char_height_frac: 0.45
+    templates: ["DD [A|B|C|D|E|F|H|K|P|X] DDDDDD A"]   # arrow glyph rendered, not labelled
+    prior: 0.002
+  - name: vintage
+    vehicle_types: [car, motorcycle]
+    colours: {bg: white, fg: black}
+    rows: 1
+    aspect: 4.17
+    char_height_frac: 0.54
+    templates: ["S [VA] AA DDDD"]
+    prior: 0.0002
+  - name: legacy_pre1989
+    vehicle_types: [car, motorcycle, truck]
+    colours: {bg: [white, yellow, black], fg: [black, black, white]}
+    rows: [1, 2]
+    aspect: [4.17, 2.0]
+    char_height_frac: [0.5, 0.38]
+    templates: ["AAA D{1,4}"]
+    prior: 0.005
+  - name: vip_emblem_no_text
+    vehicle_types: [car]
+    colours: {bg: red, fg: gold}
+    inverted: true
+    rows: 0
+    templates: []   # negative sample: label empty / reject
+    prior: 0.0005
+render_modifiers:
+  hsrp: {prob: 0.8, ind_strip_frac: [0.05, 0.12], laser_pin: true, india_foil_45deg: true, embossed: true}
+  nonstandard: {prob: 0.2, fonts: [fancy, arial_bold, stencil], stickers: true, devanagari_gujarati: 0.03}
+  stroke_to_height: [0.15, 0.20]
+  glyph_aspect_w_h: [0.5, 0.62]

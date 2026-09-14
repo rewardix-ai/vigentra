@@ -30,6 +30,7 @@ from ..schemas import (
 from ..services import audit_service, video_grants
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.video_grants import DuplicateRequest, GrantError
+from .cameras import _load_camera
 
 router = APIRouter(prefix="/api/v1/video-access-requests", tags=["video access requests"])
 
@@ -69,17 +70,6 @@ async def _load(db: AsyncSession, grant_id: str) -> VideoAccessGrant:
     return row
 
 
-async def _camera(db: AsyncSession, camera_id: str) -> CameraRow:
-    row = (
-        await db.execute(select(CameraRow).where(CameraRow.camera_id == camera_id))
-    ).scalar_one_or_none()
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown camera '{camera_id}'"
-        )
-    return row
-
-
 @router.post(
     "",
     response_model=VideoAccessRequestOut,
@@ -92,7 +82,7 @@ async def request_access(
     user: DemoUser = Depends(require_permission(Permission.VIDEO_REQUEST_ACCESS)),
     db: AsyncSession = Depends(get_db),
 ) -> VideoAccessRequestOut:
-    camera = await _camera(db, payload.camera_id)
+    camera = await _load_camera(db, payload.camera_id)
 
     try:
         grant = await video_grants.request_access(

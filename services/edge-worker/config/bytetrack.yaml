@@ -1,0 +1,10 @@
+tracker_type: bytetrack
+# Night/wide-FoV: moving vehicles are small and score 0.15-0.4; the default
+# new_track_thresh of 0.5 discarded every one of them on the sample clip
+# (only the two parked cars ever became tracks). Measured 2026-09-09.
+track_high_thresh: 0.30
+track_low_thresh: 0.05
+new_track_thresh: 0.20
+track_buffer: 45
+match_thresh: 0.8
+fuse_score: true

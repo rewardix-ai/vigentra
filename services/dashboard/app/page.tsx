@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
@@ -12,51 +11,11 @@ import {
   PageHeader,
   Pill,
   Spinner,
+  Stat,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ist, latency, relative } from "@/lib/format";
 import type { Operator, Overview, SourceSystem, SyncResponse } from "@/lib/types";
-
-function Stat({
-  label,
-  value,
-  hint,
-  tone = "plain",
-  href,
-}: {
-  label: string;
-  value: number | string;
-  hint?: string;
-  tone?: "plain" | "ok" | "warn" | "bad";
-  href?: string;
-}) {
-  const colour = {
-    plain: "text-ink-900",
-    ok: "text-ok",
-    warn: "text-warn",
-    bad: "text-bad",
-  }[tone];
-
-  const body = (
-    <>
-      <div className="field-label">{label}</div>
-      <div className={`tabular mt-1 text-[26px] font-semibold leading-none ${colour}`}>{value}</div>
-      {hint && <div className="mt-1.5 text-2xs text-ink-500">{hint}</div>}
-    </>
-  );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="card block px-4 py-3 transition hover:border-brand-500 hover:shadow-raised"
-      >
-        {body}
-      </Link>
-    );
-  }
-  return <div className="card px-4 py-3">{body}</div>;
-}
 
 export default function OverviewPage() {
   const [operator, setOperator] = useState<Operator | null>(null);

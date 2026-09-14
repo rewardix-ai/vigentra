@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+
+import { usePersisted } from "@/lib/persist";
 import { Search } from "lucide-react";
 
 import {
@@ -44,10 +46,10 @@ const TrackMap = dynamic(() => import("@/components/TrackMap").then((mod) => mod
 });
 
 export default function PlatesPage() {
-  const [query, setQuery] = useState("");
-  const [reason, setReason] = useState("");
-  const [sinceHours, setSinceHours] = useState("168");
-  const [maxDistance, setMaxDistance] = useState("1.0");
+  const [query, setQuery] = usePersisted("trace.plate", "");
+  const [reason, setReason] = usePersisted("trace.reason", "");
+  const [sinceHours, setSinceHours] = usePersisted("trace.since", "168");
+  const [maxDistance, setMaxDistance] = usePersisted("trace.distance", "1.0");
 
   const [hits, setHits] = useState<PlateSearchHit[] | null>(null);
   const [track, setTrack] = useState<Track | null>(null);

@@ -36,8 +36,8 @@ from typing import Any, Iterator
 import httpx
 
 from . import grid
-from .anpr_engine import EngineCache, build_engine
-from .detectors import Detection, DetectorError, build_detector
+from .anpr_engine import EngineCache, _track_number, build_engine
+from .detectors import DetectorError, build_detector
 
 try:
     from anpr.incidents import IncidentDetector
@@ -49,12 +49,7 @@ try:
 except Exception:  # pragma: no cover - analytics extras absent
     AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
-from .plates import (
-    PLATE_BEARING_CLASSES,
-    DisabledPlateReader,
-    PlateReadUnavailable,
-    build_plate_reader,
-)
+from .plates import PLATE_BEARING_CLASSES
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -205,11 +200,11 @@ _GRID_CATALOGUE: dict[str, "grid.GridCamera"] | None = None
 def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera | None":
     """The grid camera behind a canonical registry ID, or None.
 
-    Resolution goes through the catalogue rather than through a URL built from
-    the camera id, because the catalogue is the contract and the URL pattern is
-    not - ids and the set of cameras change. Fetched once per process and held,
-    since `grid.fetch_catalogue` is a network call and the worker asks this
-    question once per camera per cycle.
+    Resolved from the documented ids and URL pattern, not from cameras.json:
+    reading the catalogue means signing in, and the gateway keeps ONE session
+    per account, so a worker signing in signs central-api out of the grid.
+    central-api reads the catalogue and decides which cameras exist before it
+    grants this worker a session; the capture is the liveness test.
     """
     global _GRID_CATALOGUE
     if not GRID_ENABLED:
@@ -226,26 +221,9 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
         return None
 
     if not _GRID_CATALOGUE:
-        try:
-            _GRID_CATALOGUE = grid.fetch_catalogue(GRID_BASE_URL)
-            logger.info("grid catalogue: %d camera(s)", len(_GRID_CATALOGUE))
-        except Exception as exc:
-            # A grid that is unreachable is a normal condition, not a crash:
-            # the worker still has whatever local and departmental cameras it
-            # was given.
-            #
-            # The failure is NOT cached. Caching an empty catalogue meant one
-            # slow response - on a gateway that takes tens of seconds on a cold
-            # connection - disabled grid capture for the entire life of a
-            # process meant to run for ever, sending every camera down the
-            # broker path instead, where a live-only source has nothing to
-            # serve and answers 404. Retrying on the next camera costs one
-            # request; the alternative costs the whole run.
-            logger.warning(
-                "grid catalogue unavailable (%s); skipping grid cameras this pass", exc
-            )
-            _GRID_CATALOGUE = {}
-            return None
+        # Always a direct-RTSP capture, never the broker path, which would
+        # download a live-only feed to a file.
+        _GRID_CATALOGUE = grid.fallback_catalogue(GRID_BASE_URL)
 
     raw = reference[len(GRID_EXTERNAL_PREFIX):]
     # Try the id as given first, then the old numeric form with its padding
@@ -254,7 +232,11 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
         camera = _GRID_CATALOGUE.get(key)
         if camera is not None:
             return camera
-    return None
+    # An id the documented list does not hold yet - the grid grows from 30
+    # cameras to ~50 for the event - is composed from the same pattern, since
+    # central-api has already found it in the catalogue before granting a
+    # session for it.
+    return grid.fallback_catalogue(GRID_BASE_URL, ids=(raw,))[raw] if raw else None
 
 
 # ---------------------------------------------------------------------------
@@ -410,6 +392,71 @@ def _plain(frames: Iterator[tuple[int, Any]]) -> Iterator[tuple[int, Any, float,
         yield index, frame, time.time(), False
 
 
+def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenance) -> int:
+    """Settle the pass: drain the engine's plates, then flush everything once.
+
+    Order is the whole point, which is why this is one function rather than two
+    statements in run(). A track's verdict exists only once its bank closes, so
+    the plates arrive from finish() after the last frame - and flushing before
+    that drain shipped the detections and dropped every plate on the floor. The
+    worker logged "4 plates" while the registry recorded none, with no error
+    anywhere, because a dropped list is silent.
+
+    Returns how many plates were drained.
+    """
+    plates = 0
+    if anpr is not None:
+        try:
+            settled = anpr.finish()
+        except Exception as exc:  # pragma: no cover - engine fault
+            logger.warning("ANPR could not settle this pass: %s", exc)
+            settled = []
+        settled_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for sighting in settled:
+            plates += 1
+            pending.append(
+                _sighting_payload(
+                    sighting,
+                    camera_id=camera_id,
+                    timestamp_iso=settled_at,
+                    source_mode=source_mode,
+                    reader_version=f"{anpr.name}/{anpr.version}",
+                    provenance=base_provenance,
+                )
+            )
+            logger.info(
+                "plate %s (score %.2f, %d frames%s) on track %d",
+                sighting.text, sighting.confidence, sighting.observations,
+                "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
+            )
+
+    if client and pending:
+        result = client.ingest(pending)
+        logger.info("ingested final batch: %s", result)
+        pending.clear()
+    return plates
+
+
+def _incident_views(detections) -> list:
+    """This frame's tracked vehicles, as the incident detector sees them.
+
+    Extracted from process_camera() so the id conversion has a seam a test can
+    reach. Inline, it was a bare int() inside a comprehension inside the
+    per-camera try block: it raised on the ANPR engine's track keys
+    ("cam06_s0_t1"), discarded the entire pass - detections, plates and
+    incidents - and no test could drive it.
+    """
+    return [
+        _IncidentTrack(
+            track_id=_track_number(d.extra["track_id"]),
+            box=tuple(d.bbox_xyxy),
+            label=d.class_name,
+        )
+        for d in detections
+        if d.extra.get("track_id") is not None
+    ]
+
+
 def _sighting_payload(
     sighting,
     *,
@@ -442,7 +489,7 @@ def _sighting_payload(
         "source_mode": source_mode,
         "is_demo_data": source_mode != "authorized_edge",
         "plate_text": sighting.text,
-        "plate_confidence": round(float(sighting.score), 4),
+        "plate_confidence": round(float(sighting.confidence), 4),
         "plate_bbox_xyxy": sighting.plate_bbox or None,
         "plate_reader": reader_version,
         "provenance": {
@@ -499,21 +546,16 @@ def run(
     detector = detector or build_detector()
     router = FrameQualityRouter()
 
-    # ANPR is off unless ANPR_ENABLE is set.
-    #
-    # Two readers, and the choice is not a preference. The consensus engine is
-    # stateful per camera and votes a plate across every frame a vehicle
-    # appears in, so it is built HERE, per run, and never shared between
-    # cameras. The single-frame reader is the fallback for when the analytics
-    # extras are missing - it is worse, and it says so in docs/anpr.md, but a
-    # worker that reads no plates at all is worse still.
+    # ANPR is off unless ANPR_ENABLE is set. The consensus engine is stateful
+    # per camera - it votes a plate across every frame a vehicle appears in -
+    # so it is never shared between cameras. Without it the worker still
+    # counts vehicles; it just reads no plates.
     #
     # A supervisor passes a cache so the engine - and everything the camera has
     # learned about itself: its overlays, its plate votes - survives from one
     # cycle to the next. A one-shot run builds its own and throws it away,
     # which is right for a single pass.
     anpr = anpr_cache.get(camera_id) if anpr_cache is not None else build_engine()
-    plate_reader = build_plate_reader() if anpr is None else None
     plates_read = 0
 
     # Incident detection rides on the same tracker the ANPR engine already
@@ -563,6 +605,15 @@ def run(
     # above is still opened and still audited - the authorisation decision is
     # unchanged, only the transport differs.
     grid_camera = None if (synthetic or clip) else grid_camera_for(camera_id, external_camera_id)
+    is_grid = bool(external_camera_id and external_camera_id.upper().startswith("GRID-"))
+    if is_grid and grid_camera is None and not (synthetic or clip):
+        # A live-only grid camera has no archive to download. If it cannot be
+        # resolved to a direct capture, skip it this cycle rather than falling
+        # to the broker path, which would fetch footage to a temp file.
+        raise DetectorError(
+            f"{camera_id}: live grid camera could not be resolved from the "
+            f"catalogue; skipped (never downloaded)."
+        )
 
     # Adaptive sampling on every real video source - live grid and local clip
     # alike. A fixed stride spends its frames evenly and so spends most of them
@@ -650,7 +701,6 @@ def run(
                 except Exception as exc:  # pragma: no cover - engine fault
                     logger.error("ANPR engine failed, falling back to plain detection: %s", exc)
                     anpr = None
-                    plate_reader = build_plate_reader()
                     detections = detector.detect(frame_to_detect)
             else:
                 detections = detector.detect(frame_to_detect)
@@ -679,23 +729,6 @@ def run(
 
             for position, detection in enumerate(detections):
                 detection.frame_quality = assessment.quality.value
-
-                # The single-frame reader is only used when the consensus
-                # engine is unavailable. Only vehicles, and only on the frame
-                # the detector actually saw - a person is never cropped.
-                plate = None
-                if plate_reader is not None and detection.class_name in PLATE_BEARING_CLASSES:
-                    try:
-                        plate = plate_reader.read(frame_to_detect, detection.bbox_xyxy)
-                    except PlateReadUnavailable as exc:
-                        # Say it once, then carry on producing detections. ANPR
-                        # failing is not a reason to stop counting vehicles.
-                        logger.error("ANPR unavailable, continuing without plates: %s", exc)
-                        plate_reader = DisabledPlateReader()
-                    except Exception as exc:  # pragma: no cover - engine fault
-                        logger.warning("plate read failed on one vehicle: %s", exc)
-                if plate is not None:
-                    plates_read += 1
                 pending.append(
                     detection.to_payload(
                         camera_id,
@@ -703,10 +736,6 @@ def run(
                         position,
                         source_mode=source_mode,
                         is_demo_data=source_mode != "authorized_edge",
-                        plate_text=plate.text if plate else None,
-                        plate_confidence=plate.confidence if plate else None,
-                        plate_bbox_xyxy=plate.bbox_xyxy if plate else None,
-                        plate_reader=plate.reader_version if plate else None,
                         provenance=dict(base_provenance),
                     )
                 )
@@ -731,7 +760,7 @@ def run(
                 )
                 logger.info(
                     "plate %s (score %.2f, %d frames%s) on track %d",
-                    sighting.text, sighting.score, sighting.observations,
+                    sighting.text, sighting.confidence, sighting.observations,
                     "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
                 )
 
@@ -741,15 +770,7 @@ def run(
             if incidents is not None:
                 if discontinuity:
                     incidents.reset()
-                views = [
-                    _IncidentTrack(
-                        track_id=int(d.extra["track_id"]),
-                        box=tuple(d.bbox_xyxy),
-                        label=d.class_name,
-                    )
-                    for d in detections
-                    if d.extra.get("track_id") is not None
-                ]
+                views = _incident_views(detections)
                 for inc in incidents.update(views, pts_seconds):
                     incident_batch.append(inc.to_dict())
                     logger.info(
@@ -768,9 +789,14 @@ def run(
                 logger.info("ingested batch: %s", result)
                 pending.clear()
 
-        if client and pending:
-            result = client.ingest(pending)
-            logger.info("ingested final batch: %s", result)
+        plates_read += _finish_pass(
+            client,
+            pending,
+            anpr,
+            camera_id=camera_id,
+            source_mode=source_mode,
+            base_provenance=base_provenance,
+        )
 
         if client and incident_batch:
             try:

@@ -36,16 +36,13 @@ All commands run from `services/edge-worker/`.
 
 ### 1. Measure the feeds
 
-```bash
-python tools/analyze_feeds.py --per-camera 20
-```
-
-Add `--ocr` to measure readability too (much slower, and memory-hungry when the
-detector and PaddleOCR are both resident). Restrict with
-`--cameras cam06 cam07`, point elsewhere with `--roots <dir>`.
-
-Writes `reports/feed_analysis.json` (per-camera statistics and the stage funnel)
-and `reports/plate_samples.json` (every measured plate box).
+The feed-analysis entry point (`tools/analyze_feeds.py`) was removed with the
+previous engine, which it depended on. `tools/_corpus.py` holds the shared
+machinery it used, and `mine_hard_cases.py` and `prepare_dataset.py` below read
+the reports it produced:
+`reports/feed_analysis.json` (per-camera statistics and the stage funnel) and
+`reports/plate_samples.json` (every measured plate box). Supply those two files
+from a measurement run, or start at step 3 with an existing dataset.
 
 ### 2. Mine the hard cases
 
@@ -85,23 +82,18 @@ it.
 ```bash
 # compare two sets of weights, per size band: precision, recall and AP.
 # imgsz defaults to 960 and NMS to 0.7 - what the deployed ROI pass runs.
-python tools/eval_by_size.py --weights D:/ANPR/models/plate_detector.pt --tag baseline
+python tools/eval_by_size.py --weights models/plate_det_mix_n.pt --tag baseline
 python tools/eval_by_size.py --weights runs/detect/runs/plate/C_smallobj_aug/weights/best.pt
-
-# the pipeline's own view: recall through the deployed Detector wrapper
-python tools/eval_plate_detector.py --version v2 --split test
 
 # what the errors actually look like
 python tools/error_analysis.py --weights <weights> --imgsz 960 --conf 0.25
-
-# and the far end: the full pipeline on untouched full frames
-python tools/compare_on_footage.py --weights <baseline> <candidate>     --labels baseline candidate --cameras cam06 cam07
 ```
 
-`eval_by_size.py` is the tool for comparing weights; `eval_plate_detector.py`
-answers the different question of how the assembled pipeline behaves. The
-headline number in both is recall on tiny plates - a model strong on large
-plates and weak on small ones has not solved this problem.
+`eval_by_size.py` is the tool for comparing weights. The headline number is
+recall on tiny plates - a model strong on large plates and weak on small ones
+has not solved this problem. Its end-to-end counterparts,
+`tools/compare_on_footage.py` and `tools/eval_plate_detector.py`, were removed
+with the previous engine: both drove that engine's pipeline directly.
 
 ---
 
@@ -170,8 +162,10 @@ checkpoints under `services/edge-worker/runs/plate/<name>/` — a rerun gets
 
 Retraining cannot help a plate the pipeline discards after finding it. The
 funnel on cam06/cam07 showed 18 of 20 detected plates orphaned — not attached
-to any vehicle — for two reasons that were fixed in `anpr/detect.py` before
-any training result was trusted: the ROI pass searched a vehicle box expanded
+to any vehicle — for two reasons that were fixed in the previous engine's
+`anpr/detect.py` before any training result was trusted (the engine has since
+been replaced; `anpr/detect/` is now a package and attachment lives in
+`anpr/detect/plate.py`): the ROI pass searched a vehicle box expanded
 by 4% but attachment tested containment against the *unexpanded* box, so a
 bumper plate flush with the searched edge failed the 0.55 floor exactly when it
 was small; and vehicles the tracker had not yet assigned an id were skipped
@@ -249,8 +243,9 @@ the only thing that differs from C.
 
 ## Evaluation
 
-`eval_plate_detector.py` matches predictions to labels greedily at
-**IoU ≥ 0.30**, not the usual 0.50. At 12 px wide a one-pixel offset costs about
+Detector evaluation (`tools/eval_plate_detector.py`, removed with the previous
+engine) matched predictions to labels greedily at **IoU ≥ 0.30**, not the usual
+0.50. At 12 px wide a one-pixel offset costs about
 0.25 IoU, so 0.50 would score a correct detection on a small plate as a miss —
 baking the bias we are measuring into the measurement.
 

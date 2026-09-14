@@ -1,0 +1,26 @@
+# Runtime profiles. LITE = CPU laptop, a few cameras. FULL = GPU box, batched.
+profiles:
+  LITE:
+    device: cpu
+    runtime: onnxruntime          # onnxruntime (OpenVINO EP if available) | torch
+    vehicle_model: models/yolo11n_vehicle.onnx
+    plate_model: models/plate_det_n.onnx
+    reader_models: [models/reader_crnn.onnx]
+    vehicle_imgsz: 960
+    tile_size: 640
+    frame_stride: 2
+    enable_sr: false
+    enable_deblur: false
+    max_cameras: 4
+  FULL:
+    device: cuda
+    runtime: torch
+    vehicle_model: models/yolo11s.pt
+    plate_model: models/plate_det_s.pt
+    reader_models: [models/reader_parseq.onnx, models/reader_crnn.onnx]
+    vehicle_imgsz: 1280
+    tile_size: 512
+    frame_stride: 1
+    enable_sr: true
+    enable_deblur: true
+    max_cameras: 50

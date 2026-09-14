@@ -14,6 +14,7 @@ import {
   PageHeader,
   Pill,
   Spinner,
+  Stat,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { download, toCSV } from "@/lib/csv";
@@ -182,20 +183,20 @@ export default function GapAnalysisPage() {
 
         {/* Totals */}
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-          <StatTile label="Cameras in registry" value={report.totals.cameras} />
-          <StatTile
+          <Stat label="Cameras in registry" value={report.totals.cameras} />
+          <Stat
             label="Active cameras"
             value={report.totals.active_cameras}
             hint="excluding withdrawn assets"
           />
-          <StatTile label="Districts covered" value={report.totals.districts_covered} />
-          <StatTile
+          <Stat label="Districts covered" value={report.totals.districts_covered} />
+          <Stat
             label="Thin districts"
             value={report.totals.thin_districts}
             tone={report.totals.thin_districts > 0 ? "warn" : "plain"}
             hint={`< ${report.thresholds.min_cameras_per_district} active`}
           />
-          <StatTile
+          <Stat
             label="Ageing cameras"
             value={report.totals.ageing_cameras}
             tone={report.totals.ageing_cameras > 0 ? "warn" : "plain"}
@@ -327,30 +328,5 @@ export default function GapAnalysisPage() {
         </p>
       </div>
     </>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  hint,
-  tone = "plain",
-}: {
-  label: string;
-  value: number | string;
-  hint?: string;
-  tone?: "plain" | "warn" | "bad";
-}) {
-  const colour = {
-    plain: "text-ink-900",
-    warn: "text-warn",
-    bad: "text-bad",
-  }[tone];
-  return (
-    <div className="card px-4 py-3">
-      <div className="field-label">{label}</div>
-      <div className={`tabular mt-1 text-[26px] font-semibold leading-none ${colour}`}>{value}</div>
-      {hint && <div className="mt-1.5 text-2xs text-ink-500">{hint}</div>}
-    </div>
   );
 }

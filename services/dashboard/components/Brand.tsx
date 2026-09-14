@@ -50,31 +50,29 @@ export function VigentraMark({
 const WORDMARK_ASPECT = 955 / 107;
 
 /**
- * "VIGILANCE | INTELLIGENCE | SAFER ROADS", stretched to exactly the
- * wordmark's width as it is in the logo. Set in SVG because `textLength` is
- * the only reliable way to justify one line to a measured width.
+ * "VIGILANCE | INTELLIGENCE | SAFER ROADS", spread to exactly the wordmark's
+ * width as it is in the logo. Flexbox, not SVG: Safari lays out an SVG
+ * `textLength` with tspans glyph by glyph and scrambles the line.
  */
 function LogoTagline({ width, dark }: { width: number; dark: boolean }) {
-  const red = "#e0443a";
-  const gap = "\u00a0\u00a0";
+  const bar = <span style={{ color: "#e0443a" }}>|</span>;
   return (
-    <svg viewBox={`0 0 ${width} 9`} width={width} height={9} aria-hidden className="block">
-      <text
-        x="0"
-        y="7.4"
-        textLength={width}
-        lengthAdjust="spacing"
-        fontSize="7.2"
-        fontWeight={500}
-        fill={dark ? "rgba(255,255,255,0.62)" : "#5b6472"}
-      >
-        {`VIGILANCE${gap}`}
-        <tspan fill={red}>|</tspan>
-        {`${gap}INTELLIGENCE${gap}`}
-        <tspan fill={red}>|</tspan>
-        {`${gap}SAFER ROADS`}
-      </text>
-    </svg>
+    <span
+      aria-hidden
+      className="flex justify-between whitespace-nowrap font-medium leading-none"
+      style={{
+        width,
+        fontSize: width * 0.0367,
+        letterSpacing: "0.08em",
+        color: dark ? "rgba(255,255,255,0.62)" : "#5b6472",
+      }}
+    >
+      <span>VIGILANCE</span>
+      {bar}
+      <span>INTELLIGENCE</span>
+      {bar}
+      <span>SAFER ROADS</span>
+    </span>
   );
 }
 

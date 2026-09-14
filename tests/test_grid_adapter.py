@@ -2,12 +2,14 @@
 
 The gateway keeps one session per account and the HLS stream proxy shares the
 adapter's httpx client, so how the gate treats a failed sign-in decides whether
-live video keeps playing. These pin the two rules a regression broke:
+live video keeps playing. These pin the rules regressions broke:
 
   * a transport error or 5xx on /auth/login must not discard a session that
     still works, and must not wedge the grid behind a 60 s backoff;
   * a genuine refusal (200 + the login page, no Set-Cookie) must be caught and
-    must hold off further attempts.
+    must hold off further attempts;
+  * an HTTPS outage must not report cameras offline while the separate RTSP
+    gateway is still serving them.
 """
 from __future__ import annotations
 
@@ -83,5 +85,58 @@ async def test_a_refused_signin_is_caught_and_backs_off():
             await gate.ensure(source_system=adapter.source_system, credential="bad", identity="a@b.c")
         # A genuine refusal arms the backoff so one bad credential is not a storm.
         assert gate._recent_failure() is not None
+    finally:
+        await client.aclose()
+
+
+async def test_an_https_outage_keeps_cameras_while_the_rtsp_gateway_serves():
+    from app.schemas import CameraStatus
+
+    phase = {"v": "ok"}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/auth/login":
+            return httpx.Response(200, headers={"set-cookie": "sid=good; Path=/"}, text="ok")
+        if phase["v"] == "ok":
+            return httpx.Response(200, json=[{"id": "cam01", "name": "C1"}])
+        return httpx.Response(503, text="origin down")
+
+    adapter, client = _build(handler)
+    rtsp = {"up": True}
+
+    async def rtsp_reachable() -> bool:
+        return rtsp["up"]
+
+    adapter._rtsp_reachable = rtsp_reachable
+    try:
+        await adapter._catalogue()
+        phase["v"] = "down"
+        adapter._cache_at -= 3600  # the last good read is an hour old
+        adapter._cache_ttl = 0  # every call goes back to the network
+        assert (await adapter.check_source_health())["reachable"] is True
+        assert (await adapter.get_camera_health("GRID-cam01"))["status"] == CameraStatus.ONLINE
+
+        rtsp["up"] = False
+        adapter._rtsp_ok_at -= 3600  # and the RTSP gateway went quiet an hour ago
+        assert (await adapter.check_source_health())["reachable"] is False
+    finally:
+        await client.aclose()
+
+
+async def test_a_start_during_an_outage_serves_the_surveyed_cameras(monkeypatch):
+    from pathlib import Path
+
+    from app.adapters import grid_adapter
+
+    reference = Path(__file__).resolve().parent.parent / "data" / "reference" / "grid_cameras.json"
+    monkeypatch.setattr(grid_adapter, "REFERENCE_PATH", str(reference))
+    adapter, client = _build(lambda req: httpx.Response(503, text="origin down"))
+
+    async def rtsp_reachable() -> bool:
+        return True
+
+    adapter._rtsp_reachable = rtsp_reachable
+    try:
+        assert {"cam05", "cam17"} <= {c["id"] for c in await adapter._catalogue()}
     finally:
         await client.aclose()

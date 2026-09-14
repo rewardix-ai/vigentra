@@ -38,6 +38,7 @@ import os
 import time
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -171,6 +172,15 @@ _OFFLINE_STATUSES = frozenset(
 def _external_id(grid_id: str) -> str:
     """The registry's id for a grid camera: GRID-007 for 7, GRID-cam07 for cam07."""
     return f"GRID-{int(grid_id):03d}" if grid_id.isdigit() else f"GRID-{grid_id}"
+
+
+def _rtsp_address(reference: dict[str, dict[str, Any]]) -> tuple[str, int] | None:
+    """The RTSP gateway's host and port, as the surveyed stream URLs name it."""
+    for row in reference.values():
+        url = urlsplit(str(row.get("rtsp_url") or ""))
+        if url.hostname:
+            return url.hostname, url.port or 554
+    return None
 
 
 def _is_live(record: dict[str, Any]) -> bool:
@@ -361,6 +371,10 @@ class GridAdapter(SurveillanceAdapter):
         #: shared sandbox on the public internet was slow.
         self._stale_ttl = 300.0
         self._stale = False
+        #: When the RTSP gateway last accepted a connection while the catalogue
+        #: could not be read. See `_fallback`.
+        self._rtsp_ok_at = 0.0
+        self._rtsp_address = _rtsp_address(self._reference)
 
     # -- access ------------------------------------------------------------
 
@@ -414,10 +428,11 @@ class GridAdapter(SurveillanceAdapter):
         if self._cache is not None and (now - self._cache_at) < self._cache_ttl:
             return self._cache
         if self._failure is not None and (now - self._failed_at) < self._cache_ttl:
-            if self._cache is not None and (now - self._cache_at) < self._stale_ttl:
-                self._stale = True
-                return self._cache
-            raise self._failure
+            fallback = self._fallback()
+            if fallback is None:
+                raise self._failure
+            self._stale = True
+            return fallback
 
         # Two catalogue shapes are accepted: a bare list of {id, name}, and
         # the older {"cameras": [...]} carrying codec, resolution and stream
@@ -458,6 +473,9 @@ class GridAdapter(SurveillanceAdapter):
             # sending the health sweep back to the network for every camera.
             self._failed_at = time.monotonic()
             self._failure = exc
+            rtsp_up = await self._rtsp_reachable()
+            if rtsp_up:
+                self._rtsp_ok_at = self._failed_at
             # Serve the last good catalogue rather than propagating a blip.
             #
             # The health monitor probes every 20s and the wall re-reads on
@@ -466,14 +484,16 @@ class GridAdapter(SurveillanceAdapter):
             # until the next successful poll. Falling back keeps the registry
             # true for as long as the last answer can be trusted, and lets the
             # error through once it cannot.
-            if self._cache is not None and (now - self._cache_at) < self._stale_ttl:
+            fallback = self._fallback()
+            if fallback is not None:
                 logger.warning(
-                    "grid catalogue unavailable (%s); serving the copy read %.0fs ago",
+                    "grid catalogue unavailable (%s); serving the last good list "
+                    "(RTSP gateway %s)",
                     exc,
-                    now - self._cache_at,
+                    "up" if rtsp_up else "down",
                 )
                 self._stale = True
-                return self._cache
+                return fallback
             gate = self._gate()
             if gate is not None:
                 gate._authenticated = False  # force a fresh sign-in next pass
@@ -492,6 +512,39 @@ class GridAdapter(SurveillanceAdapter):
         self._failure = None
         self._stale = False
         return cameras
+
+    def _fallback(self) -> list[dict[str, Any]] | None:
+        """What to serve while the catalogue cannot be read, if anything.
+
+        The last good list stays valid for `_stale_ttl` after the grid last
+        showed a sign of life: a catalogue read, or its RTSP gateway accepting
+        a connection. The RTSP gateway is a separate server, and it kept every
+        stream playing through the HTTPS gateway's 403/525 outages - 72 of 180
+        minutes on 2026-09-14, all of which this adapter reported as thirty
+        cameras offline, so the video gate refused every stream.
+        """
+        if time.monotonic() - max(self._cache_at, self._rtsp_ok_at) >= self._stale_ttl:
+            return None
+        if self._cache is not None:
+            return self._cache
+        if not self._rtsp_ok_at:
+            return None
+        # Started during an outage: the surveyed list names the same cameras.
+        rows = {str(r["grid_id"]): r for r in self._reference.values() if r.get("grid_id")}
+        return [{"id": gid, "name": r.get("grid_name")} for gid, r in rows.items()] or None
+
+    async def _rtsp_reachable(self) -> bool:
+        """Whether the RTSP gateway accepts a TCP connection within 3 s."""
+        if self._rtsp_address is None:
+            return False
+        try:
+            _, writer = await asyncio.wait_for(
+                asyncio.open_connection(*self._rtsp_address), timeout=3.0
+            )
+        except (OSError, asyncio.TimeoutError):
+            return False
+        writer.close()
+        return True
 
     def _to_camera(self, record: dict[str, Any]) -> CameraMetadata:
         grid_id = str(record["id"])

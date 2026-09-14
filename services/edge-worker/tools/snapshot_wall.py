@@ -364,12 +364,15 @@ class Estate:
             grabber = None
             if fps is None:  # live: a reader keeps only the newest frame, so the stream never backs up
                 def keep_newest(cap=cap, newest=newest) -> None:
-                    while newest["alive"]:
-                        ok, fr = cap.read()
-                        if not ok:
-                            break
-                        newest["frame"], newest["n"] = fr, newest["n"] + 1
-                    newest["alive"] = False
+                    try:
+                        while newest["alive"]:
+                            ok, fr = cap.read()
+                            if not ok:
+                                break
+                            newest["frame"], newest["n"] = fr, newest["n"] + 1
+                    finally:
+                        newest["alive"] = False
+                        cap.release()  # only this thread reads the capture, so only it may free it
 
                 grabber = threading.Thread(target=keep_newest, daemon=True)
                 grabber.start()
@@ -410,8 +413,12 @@ class Estate:
             finally:
                 newest["alive"] = False
                 if grabber is not None:
-                    grabber.join(timeout=3)
-                cap.release()
+                    # Freeing a capture while a read is still in it segfaults inside
+                    # FFmpeg, so wait for the reader: it releases on its way out,
+                    # bounded by the stream's read timeout.
+                    grabber.join()
+                else:
+                    cap.release()
 
     # -- department VMS feeds ---------------------------------------------
     def add_vms(self, vms_url: str, api_key: str) -> None:

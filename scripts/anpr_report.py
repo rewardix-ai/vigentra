@@ -9,7 +9,9 @@ of what was read.
 
     python scripts/anpr_report.py --since-hours 24 --out reports/anpr_report
 
-Writes <out>.md and <out>.csv. Every row carries the frame count and whether
+Writes <out>.md, <out>.csv (plates) and <out>_vehicles.csv (vehicles counted
+per camera and class, with first and last sighting - the challenge accepts
+vehicles as well as plates). Every plate row carries the frame count and whether
 the reading was confirmed, because one frame is a guess and twelve frames
 agreeing is a reading - and an operator is entitled to know which they are
 looking at.
@@ -25,6 +27,7 @@ import sys
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+from urllib.parse import quote
 from pathlib import Path
 
 
@@ -160,6 +163,32 @@ def main() -> int:
                 "reader": r.get("reader"),
             })
 
+    # Vehicles, counted per camera and class in the database by
+    # /cameras/{id}/traffic rather than fetched row by row: a watched camera
+    # holds hundreds of thousands of detections.
+    listing = call(a.base, "/api/v1/cameras?limit=2000", token)
+    camera_ids = [c.get("camera_id") for c in (listing.get("items", []) if isinstance(listing, dict) else listing)]
+    traffic = []
+    for cid in camera_ids:
+        if not cid or (a.camera and cid != a.camera):
+            continue
+        try:
+            summary = call(a.base, f"/api/v1/cameras/{quote(cid, safe='')}/traffic?since_hours={a.since_hours}", token)
+        except urllib.error.HTTPError:
+            continue  # a camera this account may not read answers 404
+        if summary.get("total_detections"):
+            traffic.append(summary)
+    vehicles_csv = out.with_name(out.name + "_vehicles.csv")
+    with open(vehicles_csv, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["camera_id", "camera_name", "vehicles", "detections", "by_class", "first_seen_utc", "last_seen_utc"])
+        for t in traffic:
+            w.writerow([
+                t.get("camera_id"), t.get("camera_name"), t.get("total_vehicles"), t.get("total_detections"),
+                "; ".join(f"{c.get('class_name')} {c.get('count')}" for c in t.get("by_class") or []),
+                t.get("first_seen_utc"), t.get("last_seen_utc"),
+            ])
+
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
     cameras = sorted({r.get("camera_id") for r in rows if r.get("camera_id")})
     lines = [
@@ -188,9 +217,29 @@ def main() -> int:
         )
     if not rows:
         lines.append("| _no readings in this window_ | | | | | |")
+    lines += [
+        "",
+        "## Vehicles detected",
+        "",
+        f"{sum(t.get('total_vehicles') or 0 for t in traffic)} vehicle detection(s) across {len(traffic)} "
+        "camera(s). A vehicle is counted once per sampled frame it appears in, so these are detection "
+        "counts, not unique vehicles.",
+        "",
+        "| Camera | Vehicles | By class | First seen (UTC) | Last seen (UTC) |",
+        "|---|---|---|---|---|",
+    ]
+    for t in traffic:
+        by_class = ", ".join(f"{c.get('class_name')} {c.get('count')}" for c in t.get("by_class") or [])
+        lines.append(
+            f"| {t.get('camera_name') or t.get('camera_id')} | {t.get('total_vehicles')} | {by_class} "
+            f"| {t.get('first_seen_utc') or ''} | {t.get('last_seen_utc') or ''} |"
+        )
+    if not traffic:
+        lines.append("| _no detections in this window_ | | | | |")
     out.with_suffix(".md").write_text("\n".join(l for l in lines if l is not None) + "\n", encoding="utf-8")
 
-    print(f"  {len(rows)} reading(s) -> {out.with_suffix('.md')} and {out.with_suffix('.csv')}")
+    print(f"  {len(rows)} reading(s) and {len(traffic)} camera(s) of vehicles -> "
+          f"{out.with_suffix('.md')}, {out.with_suffix('.csv')} and {vehicles_csv}")
     return 0
 
 

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vigentra — Solution presentation</title>
+<!--
+  Source of deliverables/Vigentra_Solution_Presentation.pdf. Rebuild after any
+  change to a figure below (docs/submission.md, "Measured so far"):
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+      --no-pdf-header-footer --print-to-pdf=deliverables/Vigentra_Solution_Presentation.pdf \
+      deliverables/presentation/index.html
+-->
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  :root {
+    --navy: #0e1e33; --navy2: #1b2f4b; --blue: #1b4f9c; --blue2: #2463b8;
+    --ice: #e3edf9; --mist: #f1f6fc; --paper: #f4f6f8; --line: #d8dee6;
+    --ink: #1f2933; --ink2: #3b4753; --mute: #5b6670;
+    --ok: #1a7f47; --okbg: #e7f4ec; --warn: #a2680a; --warnbg: #fdf3e0; --bad: #b3261e; --badbg: #fbeae9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { font-family: -apple-system, "Helvetica Neue", "Segoe UI", Arial, sans-serif; color: var(--ink);
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide { width: 1280px; height: 720px; position: relative; overflow: hidden; page-break-after: always;
+           padding: 56px 64px; background: #fff; }
+  .slide:last-child { page-break-after: auto; }
+  .dark { background: var(--navy); color: #fff; }
+  .kicker { font-size: 14px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue2); }
+  .dark .kicker { color: #8fb4e6; }
+  h1 { font-size: 44px; line-height: 1.12; font-weight: 800; letter-spacing: -.01em; margin-top: 10px; }
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  p, li { font-size: 17px; line-height: 1.45; }
+  .mute { color: var(--mute); }
+  .dark .mute { color: #aebdd1; }
+  .foot { position: absolute; left: 64px; right: 64px; bottom: 26px; display: flex; justify-content: space-between;
+          font-size: 12px; color: var(--mute); }
+  .dark .foot { color: #8193ab; }
+  .grid { display: grid; gap: 22px; }
+  .card { background: var(--mist); border-radius: 14px; padding: 22px 24px; }
+  .dark .card { background: var(--navy2); }
+  .badge { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+           border-radius: 50%; background: var(--blue2); color: #fff; font-weight: 800; font-size: 16px;
+           margin-bottom: 12px; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+  .pill.ok { background: var(--okbg); color: var(--ok); } .pill.bad { background: var(--badbg); color: var(--bad); }
+  .pill.info { background: var(--ice); color: var(--blue); }
+  .stat .n { font-size: 60px; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+  .stat .l { font-size: 15px; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; font-size: 15px; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
+  .flow { display: flex; align-items: stretch; gap: 10px; }
+  .flow .step { flex: 1; background: var(--mist); border-radius: 12px; padding: 14px 14px; }
+  .flow .arrow { align-self: center; color: var(--blue2); font-size: 22px; font-weight: 800; }
+  .step b { display: block; font-size: 15px; margin-bottom: 4px; color: var(--blue); }
+  .step span { font-size: 13.5px; line-height: 1.35; color: var(--ink2); display: block; }
+  ul.clean { list-style: none; } ul.clean li { padding-left: 20px; position: relative; margin-bottom: 9px; }
+  ul.clean li::before { content: ""; position: absolute; left: 0; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--blue2); }
+  .dark ul.clean li::before { background: #8fb4e6; }
+  .bar { display: grid; grid-template-columns: 150px 1fr 44px; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 13.5px; }
+  .bar .t { height: 16px; border-radius: 8px; background: #2a4466; position: relative; }
+  .bar .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; background: #6fa0e0; }
+  .bar .s { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; background: #7ddc9f; }
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide dark">
+  <img src="logo-on-dark.png" alt="Vigentra" style="height:120px; margin-top:24px; margin-left:-12px">
+  <div class="kicker" style="margin-top:58px">Gujarat Police Innovation Challenge 2026 · CCTV Integration Hackathon</div>
+  <h1 style="font-size:54px; max-width:1000px">One platform over Gujarat's CCTV — without asking 26 departments to replace theirs</h1>
+  <p class="mute" style="margin-top:22px; font-size:20px; max-width:980px">A federated camera registry and GIS, live analytics at the edge, watchlist alerts and cross-camera vehicle tracking, running today on the 30-camera government feed.</p>
+  <div class="foot"><span>Solution presentation</span><span>September 2026</span></div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <h1>Many systems, no shared view, no shared memory</h1>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-top:34px">
+    <div class="card stat"><div class="n" style="color:var(--blue)">26</div><div class="l">government departments, each with its own CCTV and VMS</div></div>
+    <div class="card stat"><div class="n" style="color:var(--blue)">~80,000</div><div class="l">cameras to reach statewide, analog and IP, many vendors</div></div>
+    <div class="card stat"><div class="n" style="color:var(--blue)">~1,000 km</div><div class="l">between the furthest sites, on links that are not uniform</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns: 1.2fr 1fr; margin-top:30px">
+    <ul class="clean">
+      <li>Vendors, AMC periods and storage differ; retention runs from 7 days to 15 or more.</li>
+      <li>No department can see another's cameras, or check what a camera sees against the records that would make it actionable.</li>
+      <li>The brief: one searchable platform, analysed and alerting in real time, that grows toward 80,000 cameras without a redesign.</li>
+    </ul>
+    <div class="card" style="background:var(--ice)">
+      <h2 style="color:var(--blue)">The constraint that shapes everything</h2>
+      <p>Departments keep running their own systems. The first department to join gets value on day one, and the twenty-sixth changes nothing for the first.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Model choice -->
+<section class="slide">
+  <div class="kicker">Model chosen, and why</div>
+  <h1>A hybrid: Model 1 foundation, Model 3 integration, Model 2 console</h1>
+  <div class="grid" style="grid-template-columns: repeat(4, 1fr); margin-top:32px">
+    <div class="card"><div class="badge">1</div><h2>Registry &amp; GIS</h2><span class="pill ok">Adopted in full</span>
+      <p style="margin-top:12px; font-size:15px">Mandatory, and correct: nothing else works without knowing which cameras exist, where, and who owns them. Useful on day one with no analytics at all.</p></div>
+    <div class="card"><div class="badge">3</div><h2>VMS federation</h2><span class="pill ok">The integration</span>
+      <p style="margin-top:12px; font-size:15px">One adapter per vendor, normalising to one camera model. Vendor differences stop at the adapter; a department joins without touching anything downstream.</p></div>
+    <div class="card"><div class="badge">2</div><h2>Unified viewing</h2><span class="pill info">As the surface</span>
+      <p style="margin-top:12px; font-size:15px">One console for operators — but it talks to the platform, never directly to 26 VMS, so a new vendor is never a change to the screen people use.</p></div>
+    <div class="card"><div class="badge" style="background:var(--bad)">4</div><h2>Central VMS</h2><span class="pill bad">Rejected</span>
+      <p style="margin-top:12px; font-size:15px">Streaming 80,000 cameras centrally is ~160 Gbps and ~1.7 PB a day, and puts every camera credential in one place. Inference goes to the video instead.</p></div>
+  </div>
+  <p class="mute" style="margin-top:28px">Video is pulled on demand, per authorised session. Analytics run next to the cameras and send only metadata.</p>
+</section>
+
+<!-- 4. Architecture -->
+<section class="slide">
+  <div class="kicker">Solution overview</div>
+  <h1>Frames stay where they are; metadata travels</h1>
+  <svg viewBox="0 0 1150 440" style="width:1150px; height:440px; margin-top:22px" font-family="-apple-system, Helvetica Neue, Arial" font-size="15">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2463b8"/></marker></defs>
+    <text x="0" y="16" font-size="13" font-weight="700" fill="#5b6670" letter-spacing="1.5">DEPARTMENT SYSTEMS</text>
+    <g fill="#f1f6fc" stroke="#bcc6d2"><rect x="0" y="30" width="250" height="62" rx="10"/><rect x="0" y="104" width="250" height="62" rx="10"/><rect x="0" y="178" width="250" height="62" rx="10"/></g>
+    <g fill="#1f2933"><text x="16" y="56" font-weight="700">Traffic Police VMS</text><text x="16" y="78" font-size="13" fill="#5b6670">snake_case · IST strings · API key</text>
+      <text x="16" y="130" font-weight="700">Municipal Corporation VMS</text><text x="16" y="152" font-size="13" fill="#5b6670">camelCase · epoch ms · bearer token</text>
+      <text x="16" y="204" font-weight="700">Sentinel government grid</text><text x="16" y="226" font-size="13" fill="#5b6670">RTSP · WHEP · HLS · live only</text></g>
+    <rect x="0" y="290" width="250" height="120" rx="12" fill="#e3edf9"/>
+    <text x="16" y="318" font-weight="700" fill="#1b4f9c">Edge worker</text>
+    <text x="16" y="342" font-size="13.5" fill="#1f2933">YOLO11 detection + tracking</text>
+    <text x="16" y="362" font-size="13.5" fill="#1f2933">track-level ANPR</text>
+    <text x="16" y="382" font-size="13.5" fill="#1f2933">next to the video, in the site</text>
+    <path d="M125 240 L125 288" stroke="#2463b8" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#a)"/>
+    <text x="134" y="270" font-size="12.5" fill="#5b6670">live frames</text>
+    <g stroke="#2463b8" stroke-width="2" fill="none" marker-end="url(#a)"><path d="M252 61 L318 150"/><path d="M252 135 L318 160"/><path d="M252 209 L318 172"/><path d="M252 350 L318 300"/></g>
+    <line x1="290" y1="20" x2="290" y2="420" stroke="#b3261e" stroke-width="1.5" stroke-dasharray="4 5"/>
+    <text x="298" y="416" font-size="12.5" fill="#b3261e" font-weight="700">only metadata crosses this line</text>
+    <rect x="320" y="30" width="560" height="360" rx="14" fill="#0e1e33"/>
+    <text x="344" y="62" font-weight="800" fill="#fff" font-size="17">Vigentra central — vendor-neutral</text>
+    <g fill="#1b2f4b"><rect x="344" y="80" width="250" height="56" rx="9"/><rect x="608" y="80" width="250" height="56" rx="9"/>
+      <rect x="344" y="148" width="250" height="56" rx="9"/><rect x="608" y="148" width="250" height="56" rx="9"/>
+      <rect x="344" y="216" width="250" height="56" rx="9"/><rect x="608" y="216" width="250" height="56" rx="9"/>
+      <rect x="344" y="284" width="514" height="56" rx="9"/></g>
+    <g fill="#fff" font-weight="700"><text x="360" y="104">Adapters</text><text x="624" y="104">Registry + GIS</text>
+      <text x="360" y="172">Detection ingest</text><text x="624" y="172">Watchlist matcher</text>
+      <text x="360" y="240">Route reconstruction</text><text x="624" y="240">Video broker</text>
+      <text x="360" y="308">Audit log — append-only, refusals included</text></g>
+    <g fill="#aebdd1" font-size="12.5"><text x="360" y="124">normalise every dialect</text><text x="624" y="124">canonical camera model</text>
+      <text x="360" y="192">metadata only, idempotent</text><text x="624" y="192">fuzzy, at ingest</text>
+      <text x="360" y="260">timestamped, location-wise</text><text x="624" y="260">opaque, per-segment auth</text>
+      <text x="360" y="328">every sign-in, read, grant, refusal, alert</text></g>
+    <path d="M882 210 L958 210" stroke="#2463b8" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="960" y="130" width="190" height="160" rx="12" fill="#f1f6fc" stroke="#bcc6d2"/>
+    <text x="978" y="162" font-weight="800" fill="#1b4f9c">Operator console</text>
+    <g font-size="13.5" fill="#1f2933"><text x="978" y="190">registry and map</text><text x="978" y="212">live wall + plate reads</text>
+      <text x="978" y="234">alerts and traces</text><text x="978" y="256">health and audit</text></g>
+  </svg>
+</section>
+
+<!-- 5. Heterogeneous integration -->
+<section class="slide">
+  <div class="kicker">Integrating heterogeneous CCTV</div>
+  <h1>One adapter per vendor; above it, every camera looks the same</h1>
+  <table style="margin-top:26px">
+    <tr><th></th><th>Traffic Police</th><th>Municipal Corporation</th><th>Sentinel grid</th></tr>
+    <tr><td><b>Fields</b></td><td>flat snake_case</td><td>nested camelCase</td><td>minimal catalogue</td></tr>
+    <tr><td><b>Time</b></td><td>IST wall-clock strings</td><td>epoch milliseconds</td><td>absent — PTS from the stream</td></tr>
+    <tr><td><b>Auth</b></td><td>API key header</td><td>bearer token</td><td>one session per account</td></tr>
+    <tr><td><b>Register / archive</b></td><td>yes / yes</td><td>yes / yes</td><td>none / none — read-only, live-only in code</td></tr>
+  </table>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-top:26px">
+    <div class="card"><h2>Analog and legacy</h2><p style="font-size:15px">An analog camera is reached through the DVR or encoder that digitises it, which exposes RTSP or ONVIF like any IP source.</p></div>
+    <div class="card"><h2>Outages stay local</h2><p style="font-size:15px">One department down leaves the rest working; its cameras go offline with a stated reason, and every failed poll is audited.</p></div>
+    <div class="card"><h2>Liveness follows the video</h2><p style="font-size:15px">If the grid's web gateway refuses but its video server answers, cameras stay online — this recovered 72 of 180 lost minutes on 14 Sep.</p></div>
+  </div>
+</section>
+
+<!-- 6. ANPR -->
+<section class="slide">
+  <div class="kicker">Video analytics</div>
+  <h1>ANPR that reads a vehicle, not a frame</h1>
+  <div class="flow" style="margin-top:30px">
+    <div class="step"><b>1 · Detect &amp; track</b><span>YOLO11 + ByteTrack give each vehicle a stable id</span></div><div class="arrow">›</div>
+    <div class="step"><b>2 · Find the plate</b><span>only on vehicles ≥ 96 px wide, where a plate can be read</span></div><div class="arrow">›</div>
+    <div class="step"><b>3 · Bank the crops</b><span>every crop stamped with frame, PTS and quality</span></div><div class="arrow">›</div>
+    <div class="step"><b>4 · Restore</b><span>rectify, register, fuse, deglare, deblur</span></div><div class="arrow">›</div>
+    <div class="step"><b>5 · Read</b><span>CRNN readers on every variant; a second reader fills gaps</span></div><div class="arrow">›</div>
+    <div class="step"><b>6 · Vote</b><span>Indian plate grammar + consensus across the track</span></div>
+  </div>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-top:28px">
+    <div class="card"><h2>Grammar, not guesswork</h2><p style="font-size:15px">A character's position says letter or digit, so <b>GJ05JV34S6</b> can only be GJ05JV3456. Impossible states and districts are dropped at the edge.</p></div>
+    <div class="card"><h2>One vehicle, one reading</h2><p style="font-size:15px">Emitted once per vehicle with the number of frames that agreed. Unconfirmed readings are shown as unconfirmed, never as fact.</p></div>
+    <div class="card"><h2>Object detection</h2><p style="font-size:15px">Person, car, motorcycle, bus, truck, auto-rickshaw, bicycle — with a frame-quality router that skips frames too degraded to mean anything.</p></div>
+  </div>
+  <p class="mute" style="margin-top:22px; font-size:15px">Skipping plate search on vehicles too small to read gave the same 36 readings on the labelled Delhi clip in 586 s instead of 878 s.</p>
+</section>
+
+<!-- 7. Watchlist + tracking -->
+<section class="slide">
+  <div class="kicker">Watchlist alerts and vehicle tracking</div>
+  <h1>Known at the moment of the read; traced across cameras</h1>
+  <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top:30px">
+    <div class="card">
+      <div class="badge">!</div><h2>Matched at ingest</h2>
+      <ul class="clean" style="margin-top:8px">
+        <li>Every plate reading is checked against the active watchlist as it arrives — stolen, wanted, missing, blacklisted.</li>
+        <li>Fuzzy on purpose: a known OCR confusion (B↔8, O↔0) costs 0.35, an unrelated character 1.0.</li>
+        <li>Alerts say whether the match was exact, and near matches are shown, not hidden.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="badge">→</div><h2>The route, from the plate</h2>
+      <ul class="clean" style="margin-top:8px">
+        <li>Given a registration: every permitted sighting in time order, with distance, elapsed time and speed per leg, on the map.</li>
+        <li>Repeated reads at one camera collapse into one pass; impossible legs are flagged, never dropped.</li>
+        <li>Every trace needs a written reason, recorded against the account.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="mute" style="margin-top:24px">This is the hackathon-day test case: a designated vehicle's complete route and timestamped, location-wise movement history.</p>
+</section>
+
+<!-- 8. Security -->
+<section class="slide">
+  <div class="kicker">Cybersecurity, privacy and audit</div>
+  <h1>Nobody sees more as cameras are added</h1>
+  <div id="s8cards" class="grid" style="grid-template-columns: repeat(3, 1fr); gap:20px; margin-top:32px">
+    <div class="card"><div class="badge">1</div><h2>Brokered, opaque video</h2><p style="font-size:15.5px">Short-lived, watermarked sessions; every segment is re-authorised, so revoking a grant stops a playing stream.</p></div>
+    <div class="card"><div class="badge">2</div><h2>Scope in three dimensions</h2><p style="font-size:15.5px">Department, city and zone, checked per request, plus each camera's own access policy.</p></div>
+    <div class="card"><div class="badge">3</div><h2>Least privilege</h2><p style="font-size:15.5px">13 roles, 22 permissions. The account that ingests plates cannot read the watchlist back.</p></div>
+    <div class="card"><div class="badge">4</div><h2>Withheld, not refused</h2><p style="font-size:15.5px">Without plate permission an officer still gets the alert, with the plate withheld.</p></div>
+    <div class="card"><div class="badge">5</div><h2>Retention on read</h2><p style="font-size:15.5px">Plates keep a shorter clock, applied at read time — a failed purge cannot extend it.</p></div>
+    <div class="card"><div class="badge">6</div><h2>A complete audit trail</h2><p style="font-size:15.5px">Every sign-in, read, grant, refusal and machine-raised alert, each committed on its own.</p></div>
+  </div>
+</section>
+
+<!-- 9. Measured -->
+<section class="slide dark">
+  <div class="kicker">Working on the government feed — 14 September 2026</div>
+  <h1>Live, measured, and honest about the limits</h1>
+  <div class="grid" style="grid-template-columns: 1fr 1.15fr; gap:40px; margin-top:26px">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap:18px">
+      <div class="card stat"><div class="n">30<span style="font-size:30px">/30</span></div><div class="l mute">grid cameras onboarded, online</div></div>
+      <div class="card stat"><div class="n">96,691</div><div class="l mute">vehicle and object detections, 20 cameras</div></div>
+      <div class="card stat"><div class="n">236</div><div class="l mute">plate readings from 12 cameras, 9 at confidence ≥ 0.5</div></div>
+      <div class="card stat"><div class="n">295</div><div class="l mute">automated tests passing</div></div>
+    </div>
+    <div>
+      <h2 style="margin-bottom:14px">Plate readings per camera, 14 Sep</h2>
+      <div class="bar"><span>Traffic AHM cam01</span><div class="t"><div class="f" style="width:100%"></div></div><span>64</span></div>
+      <div class="bar"><span>Municipal RAJ cam17</span><div class="t"><div class="f" style="width:64%"></div></div><span>41</span></div>
+      <div class="bar"><span>Traffic AHM cam04</span><div class="t"><div class="f" style="width:56%"></div><div class="s" style="width:3%"></div></div><span>36</span></div>
+      <div class="bar"><span>Traffic AHM cam05</span><div class="t"><div class="f" style="width:45%"></div><div class="s" style="width:11%"></div></div><span>29</span></div>
+      <div class="bar"><span>Traffic AHM cam02</span><div class="t"><div class="f" style="width:33%"></div></div><span>21</span></div>
+      <div class="bar"><span>Municipal RAJ cam18</span><div class="t"><div class="f" style="width:22%"></div></div><span>14</span></div>
+      <div class="bar"><span>Traffic GUJ cam30</span><div class="t"><div class="f" style="width:17%"></div></div><span>11</span></div>
+      <div class="bar"><span>Traffic AHM cam13</span><div class="t"><div class="f" style="width:12.5%"></div></div><span>8</span></div>
+      <div class="bar"><span>Five more cameras</span><div class="t"><div class="f" style="width:19%"></div></div><span>12</span></div>
+      <p class="mute" style="font-size:13px; margin-top:10px"><span style="color:#7ddc9f">■</span> confidence ≥ 0.5 &nbsp; <span style="color:#6fa0e0">■</span> all readings</p>
+    </div>
+  </div>
+  <p class="mute" style="font-size:14px; margin-top:22px">Floors, not capacity: the grid refused access in recurring 15–20 minute windows that day. Most readings are low-confidence because wide junction views make plates only a few pixels wide.</p>
+</section>
+
+<!-- 10. Scale -->
+<section class="slide">
+  <div class="kicker">Plan for scale</div>
+  <h1>To ~80,000 cameras without moving the video</h1>
+  <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top:30px">
+    <div class="card" style="background:var(--badbg)"><h2 style="color:var(--bad)">Streaming everything centrally</h2>
+      <div class="stat"><div class="n" style="color:var(--bad); font-size:52px">160 Gbps</div><div class="l">sustained, and ~1.7 PB of video per day</div></div></div>
+    <div class="card" style="background:var(--okbg)"><h2 style="color:var(--ok)">Vigentra: metadata only</h2>
+      <div class="stat"><div class="n" style="color:var(--ok); font-size:52px">0.6–1 Gbps</div><div class="l">statewide, 40–250× less; departments keep their footage</div></div></div>
+  </div>
+  <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap:18px; margin-top:24px">
+    <div class="card"><h2>~3,000 GPUs</h2><p style="font-size:14.5px">ANPR only where the optics allow, classified at onboarding (estimate)</p></div>
+    <div class="card"><h2>Hot · warm · cold</h2><p style="font-size:14.5px">30 days, 1 year, 7 years; plates on a shorter clock</p></div>
+    <div class="card"><h2>RPO 5 min · RTO 1 h</h2><p style="font-size:14.5px">synchronous standby, point-in-time recovery, DR site</p></div>
+    <div class="card"><h2>Watched at scale</h2><p style="font-size:14.5px">per-camera health history, liveness from the video, audited</p></div>
+  </div>
+  <p class="mute" style="margin-top:22px; font-size:15px">Named and planned: trigram prefilter for fuzzy plate search, bloom filter for the watchlist, PostGIS for corridor queries.</p>
+</section>
+
+<!-- 11. Rollout -->
+<section class="slide">
+  <div class="kicker">Statewide rollout</div>
+  <h1>Each phase is useful on its own</h1>
+  <div id="s11flow" class="flow" style="margin-top:44px">
+    <div class="step" style="background:var(--ice); padding:24px 20px"><b style="font-size:20px">Phase 1 · ~50 cameras</b><span style="font-size:16px; margin-top:6px">one district, all four models exercised — this hackathon</span></div><div class="arrow">›</div>
+    <div class="step" style="padding:24px 20px"><b style="font-size:20px">Phase 2 · ~2,000</b><span style="font-size:16px; margin-top:6px">3 districts, 2 departments — genuinely different VMS vendors</span></div><div class="arrow">›</div>
+    <div class="step" style="padding:24px 20px"><b style="font-size:20px">Phase 3 · ~15,000</b><span style="font-size:16px; margin-top:6px">all districts, Home Department — statewide load, DR failover tested</span></div><div class="arrow">›</div>
+    <div class="step" style="padding:24px 20px"><b style="font-size:20px">Phase 4 · ~80,000</b><span style="font-size:16px; margin-top:6px">all 26 departments — steady state</span></div>
+  </div>
+  <div class="card" style="margin-top:36px; background:var(--ice)">
+    <h2 style="color:var(--blue)">Model 1 goes first, in full, at every phase</h2>
+    <p>An accurate statewide camera inventory with coverage-gap analysis is valuable on the day it exists — and nobody has one today. Analytics follow the inventory.</p>
+  </div>
+</section>
+
+<!-- 12. Bonus -->
+<section class="slide">
+  <div class="kicker">Beyond the mandatory</div>
+  <h1>Built, running, and verifiable in the code</h1>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:16px; margin-top:28px">
+    <div class="card"><h2>Hybrid architecture</h2><p style="font-size:15px">Models 1, 3 and 2 together, each where it fits</p></div>
+    <div class="card"><h2>Cross-camera tracking</h2><p style="font-size:15px">routes from plate reads, impossible legs flagged</p></div>
+    <div class="card"><h2>Edge processing</h2><p style="font-size:15px">inference beside the video, on CPU or GPU</p></div>
+    <div class="card"><h2>Bandwidth optimisation</h2><p style="font-size:15px">metadata only; video on demand; sampling dial</p></div>
+    <div class="card"><h2>Security and audit</h2><p style="font-size:15px">brokered sessions, fine roles, append-only trail</p></div>
+    <div class="card"><h2>Automated alerts</h2><p style="font-size:15px">watchlist matched at ingest, exact and near</p></div>
+    <div class="card"><h2>Health monitoring</h2><p style="font-size:15px">per-source and per-camera, with history</p></div>
+    <div class="card"><h2>Operational dashboards</h2><p style="font-size:15px">registry, map, live wall, alerts, reports</p></div>
+    <div class="card"><h2>Integration-ready APIs</h2><p style="font-size:15px">documented REST API and adapter contract</p></div>
+  </div>
+</section>
+
+<!-- 13. Close -->
+<section class="slide dark">
+  <img src="logo-on-dark.png" alt="Vigentra" style="height:96px; margin-top:12px; margin-left:-10px">
+  <h1 style="margin-top:40px; font-size:48px">Everything here runs — check it</h1>
+  <div class="grid" style="grid-template-columns: 1fr 1fr; gap:26px; margin-top:34px">
+    <div class="card"><h2>Source and design</h2>
+      <ul class="clean" style="margin-top:8px"><li>github.com/rewardix-ai/vigentra</li><li>High-level design: docs/hld.md</li><li>Scalability plan: docs/scalability.md</li></ul></div>
+    <div class="card"><h2>Demonstrations</h2>
+      <ul class="clean" style="margin-top:8px"><li>Own-feed and government-feed recordings: links in the submission</li><li>Output report: plates and vehicles with timestamps</li></ul></div>
+  </div>
+  <div class="foot"><span>Vigentra · Gujarat Police Innovation Challenge 2026</span><span>Thank you</span></div>
+</section>
+
+</body>
+</html>

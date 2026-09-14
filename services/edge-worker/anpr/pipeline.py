@@ -161,6 +161,9 @@ class ANPRPipeline:
         self.keep_frames = keep_frames
         self.frame_cache_size = 30
         d = self.cfg["detector"]
+        # a vehicle narrower than this carries a plate too small to read (< 40 px: 0% exact even
+        # fused), so its plate search is skipped until it comes closer. 0 = search every vehicle
+        self.min_vehicle_px = float(d.get("plate_search_min_vehicle_px", 0))
         self.vehicle_backend = vehicle_backend
         if vehicle_backend == "rtdetr":
             # IISc UVH-26 RT-DETRv2-S (Indian classes incl. auto/two-wheeler), fixed 640 input
@@ -281,6 +284,8 @@ class ANPRPipeline:
             if not self.masker.box_allowed(*v.box, max_masked_frac=0.5):
                 continue
             self.bank.touch(v.track_id, frame.frame_idx, frame.pts_ms, v.box, v.cls_name)
+            if v.box[2] - v.box[0] < self.min_vehicle_px:
+                continue
             pdets = self.plates.detect_in_vehicle(frame.image, v.box, v.cls_name, frame.frame_idx, v.track_id)
             # plates banked per vehicle per frame: a second, weaker box inside the same vehicle is
             # almost always a bumper edge or the neighbour's plate, and it filled half the top-12

@@ -25,6 +25,7 @@ detector:
   max_masked_frac: 0.15
   retro_proposer: true
   plates_per_vehicle: 1   # was 2: the second box was a bumper edge / neighbour's plate and diluted the bank
+  plate_search_min_vehicle_px: 96   # narrower vehicle => plate < 40 px, never read; Delhi clip: same 36 reads, 1.5x faster
 tracker:
   type: bytetrack
   track_high_thresh: 0.4

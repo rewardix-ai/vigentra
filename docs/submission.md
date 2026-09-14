@@ -33,13 +33,13 @@ cost-benefit, department-wise requirements and a roadmap.
 
 | Page item | FAQ 35 wording | Where it is answered | Status |
 |---|---|---|---|
-| Hardware & software requirements | central, regional and edge-compute requirements | scalability §1, §3, §6 | Software stack and per-tier sizing to be made explicit |
-| Network & bandwidth planning | network-bandwidth planning and low-bandwidth strategies | scalability §2, §5 | Stale line on HLS fallback to correct |
+| Hardware & software requirements | central, regional and edge-compute requirements | scalability §2 — per-tier sizing (estimate) and the software stack | Complete |
+| Network & bandwidth planning | network-bandwidth planning and low-bandwidth strategies | scalability §3 | Complete |
 | Storage & retention strategy | hot/warm/cold storage tiers based on retention | scalability §4 | Complete |
-| AI processing capacity | GPU/accelerator capacity for analytics | scalability §3 | ANPR throughput now measured; to update |
-| Disaster recovery strategy | high availability, backup and disaster recovery; load balancing, horizontal scaling, monitoring/logging/health checks | scalability §6 | Thin — to expand |
-| Statewide rollout plan | phased statewide rollout plan | scalability §8 | Complete |
-| (FAQ 24) cost-benefit | cost-benefit analysis | scalability §3 capital estimate only | To add |
+| AI processing capacity | GPU/accelerator capacity for analytics | scalability §5 — measured ANPR throughput plus the GPU estimate | Complete |
+| Disaster recovery strategy | high availability, backup and disaster recovery; load balancing, horizontal scaling, monitoring/logging/health checks | scalability §6 (scaling, monitoring) and §7 (HA, backup, DR) | Complete; targets untested at scale, and said so |
+| Statewide rollout plan | phased statewide rollout plan | scalability §9 | Complete |
+| (FAQ 24) cost-benefit | cost-benefit analysis | scalability §10 | Complete; central tiers priced at tender, not guessed |
 
 ## Evaluation areas (FAQ 36) and what answers each
 
@@ -89,3 +89,4 @@ labelled as an estimate.
 |---|---|---|
 | 14 Sep | Tracker created | this file |
 | 14 Sep | HLD brought up to date: readers and runtime, the catalogue read once centrally, RTSP-backed liveness, the 96 px plate-search floor, 295 tests, 14 Sep measurements, and a new section on dispersed sites and thin links (FAQ 30) | HLD |
+| 14 Sep | Scalability plan reorganised around FAQ 35's list: per-tier hardware and software, monitoring and health checks, HA/backup/DR, cost-benefit; measured ANPR throughput replaces "not yet measured"; stale HLS-fallback claim corrected | scalability plan |

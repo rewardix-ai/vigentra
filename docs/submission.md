@@ -92,3 +92,4 @@ labelled as an estimate.
 | 14 Sep | Scalability plan reorganised around FAQ 35's list: per-tier hardware and software, monitoring and health checks, HA/backup/DR, cost-benefit; measured ANPR throughput replaces "not yet measured"; stale HLS-fallback claim corrected | scalability plan |
 | 14 Sep | Output report covers vehicles as well as plates (FAQ 33): per camera and class, first and last sighting, counted in the database | output report |
 | 14 Sep | Solution presentation built: model choice and justification, architecture, integration, analytics, alerts and tracking, security, 14 Sep measurements, scale, rollout, bonus features | presentation |
+| 14 Sep | Worker resolves any grid camera the registry names, not only cam01–cam30, so the ~50-camera event grid needs no worker change (Step 4) | sentinel-grid doc |

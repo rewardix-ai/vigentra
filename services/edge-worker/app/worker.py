@@ -232,7 +232,11 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
         camera = _GRID_CATALOGUE.get(key)
         if camera is not None:
             return camera
-    return None
+    # An id the documented list does not hold yet - the grid grows from 30
+    # cameras to ~50 for the event - is composed from the same pattern, since
+    # central-api has already found it in the catalogue before granting a
+    # session for it.
+    return grid.fallback_catalogue(GRID_BASE_URL, ids=(raw,))[raw] if raw else None
 
 
 # ---------------------------------------------------------------------------

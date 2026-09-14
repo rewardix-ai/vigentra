@@ -107,6 +107,19 @@ export function LiveTile({
   // twenty seconds after appearing looks exactly like footage that does not
   // work at all.
   const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One feed full screen over the wall. The same video element grows, so there
+  // is no second session: no second password and no second audited access.
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopImmediatePropagation(); // Esc leaves the feed first, then the wall
+      setFocused(false);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [focused]);
 
   const watchable =
     camera.video_access === "live_and_playback" || camera.video_access === "live_only";
@@ -340,18 +353,26 @@ export function LiveTile({
     <div
       ref={holderRef}
       className={
-        compact
-          ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
-          : "overflow-hidden rounded border border-line bg-white"
+        focused
+          ? "fixed inset-0 z-[75] overflow-hidden bg-black"
+          : compact
+            ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
+            : "overflow-hidden rounded border border-line bg-white"
       }
     >
-      <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
+      <div
+        className={
+          compact || focused ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"
+        }
+      >
         {session ? (
           <>
             <video
               ref={videoRef}
               key={session.session_id}
-              className={compact ? "h-full w-full object-contain" : "h-full w-full object-cover"}
+              className={`h-full w-full cursor-pointer ${compact || focused ? "object-contain" : "object-cover"}`}
+              onClick={() => setFocused((on) => !on)}
+              title={focused ? "Back to the wall (Esc)" : "Focus this feed"}
               muted
               loop
               autoPlay

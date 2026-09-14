@@ -200,11 +200,11 @@ _GRID_CATALOGUE: dict[str, "grid.GridCamera"] | None = None
 def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera | None":
     """The grid camera behind a canonical registry ID, or None.
 
-    Resolution goes through the catalogue rather than through a URL built from
-    the camera id, because the catalogue is the contract and the URL pattern is
-    not - ids and the set of cameras change. Fetched once per process and held,
-    since `grid.fetch_catalogue` is a network call and the worker asks this
-    question once per camera per cycle.
+    Resolved from the documented ids and URL pattern, not from cameras.json:
+    reading the catalogue means signing in, and the gateway keeps ONE session
+    per account, so a worker signing in signs central-api out of the grid.
+    central-api reads the catalogue and decides which cameras exist before it
+    grants this worker a session; the capture is the liveness test.
     """
     global _GRID_CATALOGUE
     if not GRID_ENABLED:
@@ -221,13 +221,9 @@ def grid_camera_for(camera_id: str, external_id: str | None) -> "grid.GridCamera
         return None
 
     if not _GRID_CATALOGUE:
-        # catalogue_or_fallback never raises: if cameras.json is unreachable it
-        # returns the documented ids (cam01..cam30) with their direct-RTSP URLs.
-        # So a grid camera ALWAYS resolves to a direct capture and is never sent
-        # down the broker path, which would download a live-only feed to a file.
-        catalogue, source = grid.catalogue_or_fallback(GRID_BASE_URL)
-        _GRID_CATALOGUE = catalogue
-        logger.info("grid catalogue: %d camera(s) (source: %s)", len(catalogue), source)
+        # Always a direct-RTSP capture, never the broker path, which would
+        # download a live-only feed to a file.
+        _GRID_CATALOGUE = grid.fallback_catalogue(GRID_BASE_URL)
 
     raw = reference[len(GRID_EXTERNAL_PREFIX):]
     # Try the id as given first, then the old numeric form with its padding

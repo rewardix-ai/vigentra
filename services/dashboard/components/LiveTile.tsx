@@ -49,6 +49,14 @@ function backoffMs(attempt: number): number {
 
 type Phase = "idle" | "queued" | "opening" | "live" | "waiting";
 
+/**
+ * Whether the edge worker has still frames for this camera. It decodes the grid
+ * over RTSP; a department VMS relays its own feed at full motion instead.
+ */
+export function hasSnapshot(camera: Camera): boolean {
+  return camera.external_camera_id.startsWith("GRID-");
+}
+
 export function LiveTile({
   camera,
   reason,
@@ -322,7 +330,7 @@ export function LiveTile({
 
   const loc = camera.location;
 
-  if (snapshot) {
+  if (snapshot && hasSnapshot(camera)) {
     return (
       <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} plates={plates} />
     );
@@ -345,6 +353,7 @@ export function LiveTile({
               key={session.session_id}
               className={compact ? "h-full w-full object-contain" : "h-full w-full object-cover"}
               muted
+              loop
               autoPlay
               playsInline
             />

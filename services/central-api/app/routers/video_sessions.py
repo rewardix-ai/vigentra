@@ -483,15 +483,18 @@ async def camera_snapshot(
         )
 
     external = camera.external_camera_id or ""
-    if not settings.edge_snapshot_url or not external.startswith("GRID-"):
+    if not settings.edge_snapshot_url or not external:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": "SNAPSHOT_UNAVAILABLE", "message": "No live-frame source for this camera."},
         )
-    grid_id = external[len("GRID-"):]
+    # The edge decodes grid cameras over RTSP and department-VMS feeds through
+    # the VMS's own authorised handle; either way a frame is keyed by the
+    # source's id (the grid's without its GRID- prefix).
+    snap_id = external[len("GRID-"):] if external.startswith("GRID-") else external
     import httpx
 
-    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{grid_id}.jpg"
+    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{snap_id}.jpg"
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             upstream = await client.get(url)

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { hasSnapshot, LiveTile } from "@/components/LiveTile";
+import { LiveTile } from "@/components/LiveTile";
 import { LoadingPanel } from "@/components/Shell";
 import {
   Card,
@@ -132,9 +132,6 @@ export default function LiveWallPage() {
   }, [plates]);
 
   const columns = bestColumns(shown.length, viewport.w, viewport.h);
-  // Snapshots cover the grid only; any other feed opens a session, and a
-  // session re-checks the password.
-  const needsPassword = !snapshot || shown.some((c) => !hasSnapshot(c));
 
   if (error) return <Notice tone="bad">{error}</Notice>;
   if (!cameras) return <LoadingPanel />;
@@ -177,16 +174,15 @@ export default function LiveWallPage() {
                 checked={snapshot}
                 onChange={(event) => setSnapshot(event.target.checked)}
               />
-              Snapshot wall (recommended) — live frames off the fast path, every
-              grid camera at once. Uncheck for full-motion HLS, which the grid CDN
-              is currently too slow to serve. Department-VMS feeds always play in
-              full motion.
+              Snapshot wall (recommended) — every camera at once, as live frames
+              with the edge&apos;s vehicle detection drawn in. Uncheck for full-motion
+              video, which the grid CDN is currently too slow to serve.
             </label>
             <button
               className="btn btn-primary"
               disabled={
                 reason.trim().length < 5 ||
-                (needsPassword && password.length === 0) ||
+                (!snapshot && password.length === 0) ||
                 watchable.length === 0
               }
               onClick={() => setStarted(true)}

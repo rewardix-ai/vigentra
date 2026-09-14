@@ -49,13 +49,6 @@ function backoffMs(attempt: number): number {
 
 type Phase = "idle" | "queued" | "opening" | "live" | "waiting";
 
-/**
- * Whether the edge worker has still frames for this camera. It decodes the grid
- * over RTSP; a department VMS relays its own feed at full motion instead.
- */
-export function hasSnapshot(camera: Camera): boolean {
-  return camera.external_camera_id.startsWith("GRID-");
-}
 
 export function LiveTile({
   camera,
@@ -343,7 +336,7 @@ export function LiveTile({
 
   const loc = camera.location;
 
-  if (snapshot && hasSnapshot(camera)) {
+  if (snapshot) {
     return (
       <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} plates={plates} />
     );
@@ -501,6 +494,19 @@ function SnapshotTile({
   const [src, setSrc] = useState<string | null>(null);
   const [everLoaded, setEverLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Click a tile to fill the screen with it (Esc returns). Frames come faster
+  // while focused, so the detection boxes follow the traffic.
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopImmediatePropagation(); // Esc leaves the feed first, then the wall
+      setFocused(false);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [focused]);
 
   useEffect(() => {
     const node = holderRef.current;
@@ -520,28 +526,36 @@ function SnapshotTile({
       if (alive) setSrc(api.snapshotUrl(camera.camera_id, Date.now()));
     };
     refresh();
-    const timer = setInterval(refresh, 2500);
+    const timer = setInterval(refresh, focused ? 600 : 2500);
     return () => {
       alive = false;
       clearInterval(timer);
     };
-  }, [visible, camera.camera_id]);
+  }, [visible, camera.camera_id, focused]);
 
   return (
     <div
       ref={holderRef}
       className={
-        compact
-          ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
-          : "overflow-hidden rounded border border-line bg-black"
+        focused
+          ? "fixed inset-0 z-[75] overflow-hidden bg-black"
+          : compact
+            ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
+            : "overflow-hidden rounded border border-line bg-black"
       }
     >
-      <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
+      <div
+        className={
+          compact || focused ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"
+        }
+      >
         {src && (
           <img
             src={src}
             alt={camera.name}
-            className="h-full w-full object-cover"
+            className={`h-full w-full cursor-pointer ${focused ? "object-contain" : "object-cover"}`}
+            onClick={() => setFocused((on) => !on)}
+            title={focused ? "Back to the wall (Esc)" : "Focus this feed"}
             onLoad={() => {
               setEverLoaded(true);
               setFailed(false);

@@ -270,6 +270,7 @@ services:
       SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
       SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
       SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+      TRAFFIC_VMS_API_KEY: ${TRAFFIC_VMS_API_KEY:-traffic-demo-key}
     # --host 0.0.0.0: the default 127.0.0.1 is the container's own loopback,
     # which central-api cannot reach - every live-wall tile stays blank.
     # Pool 4 + a 15 s hold: ~14 new RTSP sessions a minute instead of ~50, each
@@ -279,6 +280,12 @@ services:
     command: >
       python tools/snapshot_wall.py --host 0.0.0.0 --port 9100
       --pool ${SNAPSHOT_POOL:-4} --hold ${SNAPSHOT_HOLD:-15} --motion-size ${SNAPSHOT_MOTION_SIZE:-4}
+      --detect --vms-url http://traffic-vms:8001
+    # --detect draws YOLO11n's boxes on every frame a wall tile is shown, with
+    # the weights the Municipal detector already fetched (mounted read-only).
+    # --vms-url adds the Traffic Police VMS feeds, opened through the VMS's own
+    # authorised live handle, so every tile on the wall is the same kind of frame.
+    volumes: [yolo_weights_municipal:/app/weights:ro]
     expose: ["9100"]
 
   # ---------------------------------------------------------------------------

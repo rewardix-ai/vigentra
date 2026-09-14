@@ -11,7 +11,10 @@
     pages 5-6  the addendum, appended after page 51
   Every position is in pt, the units of the PDF, so a value here can be checked against the
   original with pdfinfo. Text is DM Sans at optical size 11, which matches the widths LibreOffice
-  set; a CSS top is the measured PDF line top plus a fixed offset per size (see the calibration notes).
+  set. A CSS top is the measured PDF line top plus a fixed offset per size, found by comparing
+  rendered ink with the original: 11pt +2.16, 9.5pt table line +3.52, 8.5pt +1.89 (header and
+  footer) or +1.62 (caption), 15pt heading +3.79, 19pt title +4.87. With a 17.15pt line height
+  an 11pt paragraph's CSS top is its first PDF line top minus 0.915.
 -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600&family=Montserrat:wght@600;700;800&family=Roboto+Mono&display=block">
 <style>
@@ -26,9 +29,9 @@
   /* ---- overlays: a cover in the ground colour, and the new text at the measured position ---- */
   .cover { position: absolute; }
   .ln { position: absolute; white-space: nowrap; line-height: 1; }
-  .b11 { font-size: 11pt; }            /* CSS top = PDF top + 2.16 */
-  .b95 { font-size: 9.5pt; }           /* CSS top = PDF top + 3.52 (table cell line) */
-  .para17 { position: absolute; font-size: 11pt; line-height: 17.15pt; }   /* CSS top = PDF top - 0.915 */
+  .b11 { font-size: 11pt; }
+  .b95 { font-size: 9.5pt; }
+  .para17 { position: absolute; font-size: 11pt; line-height: 17.15pt; }
 
   /* ---- addendum page furniture, as on every original page ---- */
   .stripe { position: absolute; top: 0; height: 6.22pt; width: 119.06pt; }
@@ -47,7 +50,7 @@
   li { position: relative; padding-left: 18pt; }
   li + li { margin-top: 3pt; }
   li::before { content: "\2022"; position: absolute; left: 4.1pt; }
-  .cap { font-size: 8.5pt; line-height: 1; color: #6a6a6a; }
+  .cap { font-size: 8.5pt; line-height: 1; color: #6a6a6a; white-space: nowrap; }
   .cap b { font-weight: 600; }
   table { border-collapse: collapse; table-layout: fixed; width: 454.15pt; margin-left: -0.15pt; }
   th, td { border: 0.5pt solid #e3e3e3; padding: 8.1pt 9.9pt 9.6pt; text-align: left; vertical-align: middle; }
@@ -139,10 +142,9 @@
 
 <div id="flow">
   <h1>Addendum. What changed after first issue</h1>
-  <p>This proposal was first issued on 14 September 2026. The same day, the running system grew from the 30 grid cameras to a 50-camera estate, and the wall moved from refreshed stills to live frames with detection drawn on them. Pages 16, 17, 40 and 43 are revised to match.</p>
+  <p>This proposal was first issued on 14 September 2026. That day the running system grew from 30 grid cameras to a 50-camera estate, and the wall moved from refreshed stills to live frames with detection drawn on them. Pages 16, 17, 40 and 43 are revised to match.</p>
 
   <h2>A.1 The fifty-camera estate</h2>
-  <p>All 50 cameras in service are online. The last 20 were onboarded through the Traffic Police VMS installation-request flow.</p>
   <table>
     <colgroup><col style="width:152pt"><col style="width:68pt"><col></colgroup>
     <tr><th>Source</th><th>Cameras</th><th>How it reaches Vigentra</th></tr>
@@ -151,16 +153,16 @@
     <tr><td>Traffic Police VMS, TfL JamCam</td><td>19</td><td>Installation requests; public clips relayed by the VMS. Powered by TfL Open Data</td></tr>
   </table>
   <p class="cap"><b>Table A1.</b> The fifty cameras in service, by source.</p>
-  <p>The registry holds 70 cameras: 50 in service and 20 decommissioned. Decommissioned cameras are kept, not deleted, for the audit trail.</p>
+  <p>All 50 are in service and online. The last 20 were onboarded through the Traffic Police VMS installation-request flow. The registry holds 70 cameras: 50 in service and 20 decommissioned, kept for the audit trail.</p>
 
   <h2>A.2 Live frames with live detection on the wall</h2>
-  <p>An edge frame service decodes every feed in a bounded pool, keeps the newest frame and draws YOLO11n vehicle detection on it in a background annotator. A tile is answered from memory in about 2 ms. VMS feeds are opened through the VMS’s own authorised live handle. Each tile holds a session only while it is on screen; click one for full screen, and Esc returns to the wall.</p>
+  <p>An edge frame service decodes every feed in a bounded pool and keeps the newest frame, and a background annotator draws YOLO11n vehicle detection on it. A tile is answered from memory in about 2 ms. VMS feeds open through the VMS’s own authorised live handle. A tile holds a session only while on screen; click it for full screen, and Esc returns.</p>
 
   <h2>A.3 Live ANPR on chosen feeds</h2>
-  <p>The full Vigentra ANPR engine runs live on chosen feeds: the Delhi test clip and grid CAM06, on Madhuram Bypass Road in Bhavnagar. Each read is drawn with its confidence, and a low one is shown as low. The engines share one lock, because the GPU backend is not safe across threads, and each live reader releases its own capture. That removed two crashes found under load.</p>
+  <p>The full Vigentra ANPR engine runs live on chosen feeds: the Delhi test clip and grid CAM06, Madhuram Bypass Road, Bhavnagar. Each read is drawn with its confidence, and a low one is shown as low. The engines share one lock, as the GPU backend is not safe across threads, and each live reader releases its own capture. That removed two crashes found under load.</p>
 
   <h2>A.4 Keeping the API responsive under the wall</h2>
-  <p>The snapshot route checks permission in a short database session, releases it, and only then fetches the frame, with a pooled HTTP client. Under the full wall, API health now answers in 0.02 to 0.1 seconds, where it took 5 to 15. The open-alert badge that every page polls is a count, and is deliberately not audited. Reading the alerts themselves still is.</p>
+  <p>The snapshot route checks permission in a short database session, releases it, then fetches the frame with a pooled HTTP client. Under the full wall, API health now answers in 0.02 to 0.1 seconds, where it took 5 to 15. The open-alert badge every page polls is a count and is deliberately not audited; reading the alerts themselves still is.</p>
 
   <h2>A.5 Console fixes found while recording the demonstration</h2>
   <ul>
@@ -172,16 +174,15 @@
 
   <h2>A.6 Measured, 15 September 2026</h2>
   <table>
-    <colgroup><col style="width:150pt"><col></colgroup>
+    <colgroup><col style="width:132pt"><col></colgroup>
     <tr><th>Measure</th><th>Value</th></tr>
     <tr><td>Cameras in service</td><td>50 of 50, all online</td></tr>
     <tr><td>Detections</td><td>278,362 vehicles and objects, cumulative</td></tr>
     <tr><td>Plate readings</td><td>870, across 15 cameras</td></tr>
-    <tr><td>Automated tests</td><td>301 passing: 196 platform and 105 edge worker. 4 skipped, as they need video fixtures kept out of the repository.</td></tr>
-    <tr><td>Wall tile response</td><td>About 2 ms, answered from memory</td></tr>
+    <tr><td>Automated tests</td><td>301 passing (196 platform, 105 edge worker), 4 skipped</td></tr>
     <tr><td>API health, full wall</td><td>0.02 to 0.1 s, was 5 to 15 s</td></tr>
   </table>
-  <p class="cap"><b>Table A2.</b> Measured on the running system, 15 September 2026.</p>
+  <p class="cap"><b>Table A2.</b> Measured on 15 September 2026. Skipped tests need video fixtures kept out of the repository.</p>
   <p>Pages revised in this issue: 16 (transport fallback), 17 (the live wall), 40 (test count) and 43 (ports and the browser).</p>
 </div>
 
@@ -237,22 +238,21 @@ window.__report = () => {
   const pt = px => Math.round(px / PT * 100) / 100;
   const out = {};
   document.querySelectorAll('.add').forEach((s, i) => {
-    const c = s.querySelector('.content'), last = c.lastElementChild;
+    const c = s.querySelector('.content'), last = c.lastElementChild, top = s.getBoundingClientRect().top;
     out['addendum' + (i + 1)] = {
-      blocks: c.children.length,
-      lastBottomPt: last ? pt(last.getBoundingClientRect().bottom - s.getBoundingClientRect().top) : null,
-      limitPt: pt(c.getBoundingClientRect().bottom - s.getBoundingClientRect().top),
+      lastBottomPt: last ? pt(last.getBoundingClientRect().bottom - top) : null,
+      limitPt: pt(c.getBoundingClientRect().bottom - top),
       overflow: last ? last.getBoundingClientRect().bottom > c.getBoundingClientRect().bottom + 0.5 : false,
-      first: c.firstElementChild && c.firstElementChild.textContent.slice(0, 40),
-      last: last && last.textContent.slice(0, 40),
+      blocks: [...c.children].map(el => el.tagName + (el.tagName === 'P' && !el.classList.contains('cap') ? ':' + lines(el) : '') + ' ' + el.textContent.trim().slice(0, 18)),
     };
   });
   out.flowLeft = document.getElementById('flow').children.length;
-  out.p17lines = lines17();
-  out.wrappedHeadings = [...document.querySelectorAll('h1, h2')].filter(h => h.getBoundingClientRect().height > 20 * PT).map(h => h.textContent);
+  out.p17lines = Math.round(document.getElementById('p17').getBoundingClientRect().height / LINE);
+  out.wrapped = [...document.querySelectorAll('h1, h2, .cap')].filter(h => h.getBoundingClientRect().height > 20 * PT || h.scrollWidth > h.parentElement.clientWidth + 1).map(h => h.textContent.slice(0, 30));
+  out.tableRowsPt = [...document.querySelectorAll('.add table')].map(t => [...t.rows].map(r => pt(r.getBoundingClientRect().height)));
   return out;
 };
-function lines17() { const p = document.getElementById('p17'); return Math.round(p.getBoundingClientRect().height / LINE); }
+const lines = el => Math.round(el.getBoundingClientRect().height / LINE);
 document.fonts.ready.then(paginate);
 </script>
 </body>

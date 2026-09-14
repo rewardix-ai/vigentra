@@ -52,7 +52,13 @@ def adapter_for_department(
     settings: Settings,
     department: str,
 ) -> tuple[str, SurveillanceAdapter]:
-    source = settings.source_for_department(department)
+    # A form goes to the department's own VMS. The grid gateway is read-only,
+    # so where a department has both, the system that keeps a register takes it.
+    source = next(
+        (s for s in settings.sources
+         if s.department == department and s.adapter != "grid_adapter" and s.source_system in adapters),
+        None,
+    ) or settings.source_for_department(department)
     if source is None or source.source_system not in adapters:
         raise DepartmentNotFederated(department)
     return source.source_system, adapters[source.source_system]

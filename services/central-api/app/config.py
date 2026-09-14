@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 TRAFFIC_SOURCE = "traffic_vms"
+TRAFFIC_LOCAL_SOURCE = "traffic_vms_local"
 MUNICIPAL_SOURCE = "municipal_vms"
 #: The Gujarat Police Sentinel sandbox camera grid. A real, live, third-party
 #: source - not a mock department - federated through the same adapter
@@ -653,6 +654,11 @@ class Settings(BaseSettings):
     traffic_vms_api_key: str = "traffic-demo-key"
     traffic_vms_department: str = TRAFFIC_DEPARTMENT
     traffic_vms_city: str = "Ahmedabad"
+    #: The Traffic Police's own VMS federated beside the grid, as a source of
+    #: its own. Unlike the grid it keeps an installation register and a
+    #: recording, so a camera can be onboarded through the form, watched and
+    #: read - the own-feed demonstration.
+    traffic_local_vms_enabled: bool = False
 
     municipal_vms_base_url: str = "http://municipal-vms:8002"
     municipal_vms_token: str = "municipal-demo-token"
@@ -806,6 +812,20 @@ class Settings(BaseSettings):
                     credential_identity=(self.sentinel_grid_email
                                          if self.traffic_vms_adapter == "grid_adapter"
                                          else ""),
+                )
+            )
+        if self.traffic_local_vms_enabled:
+            entries.append(
+                SourceSettings(
+                    source_system=TRAFFIC_LOCAL_SOURCE,
+                    display_name="Traffic Police local VMS",
+                    adapter="traffic_adapter",
+                    base_url=self.traffic_vms_base_url,
+                    credential=self.traffic_vms_api_key,
+                    department=self.traffic_vms_department,
+                    default_district=self.traffic_vms_city,
+                    department_code="TRAFFIC",
+                    default_city=self.traffic_vms_city,
                 )
             )
         if self.municipal_vms_enabled:

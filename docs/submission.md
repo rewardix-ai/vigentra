@@ -96,3 +96,4 @@ labelled as an estimate.
 | 14 Sep | A grid camera the survey never saw is listed once, under Traffic Police, instead of once per department (Step 4). Needs a central-api rebuild before the event | tracker |
 | 14 Sep | Presentation: "Our perspective" slide added — what the team believes and what the government feed taught us (draft in the team's voice, for the team to edit) | presentation |
 | 14 Sep | Presentation: closing slide says what was built in the time available and what upgraded hardware (edge GPUs, cameras placed for ANPR) would add | presentation |
+| 14 Sep | Own-feed demonstration path: the Traffic Police's own VMS federates beside the grid as a third source, takes installation forms, and plays the Delhi test clip for the camera onboarded (FAQ 31) | tracker; demo script to follow once deployed |

@@ -252,6 +252,8 @@ export const api = {
     since_hours?: string;
     limit?: string;
   } = {}) => request<Alert[]>(`/api/v1/alerts${query(filters)}`),
+  /** The sidebar badge: a count only, so no plate is disclosed and nothing is audited. */
+  openAlertCount: () => request<{ open: number }>("/api/v1/alerts/open-count"),
 
   acknowledgeAlert: (alertId: string, dismissedReason?: string) =>
     post<Alert>(`/api/v1/alerts/${encodeURIComponent(alertId)}/acknowledge`, {

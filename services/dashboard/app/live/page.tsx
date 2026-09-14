@@ -84,7 +84,8 @@ export default function LiveWallPage() {
       void api
         .sightings({ since_hours: "1", limit: "500" })
         .then((rows) => {
-          if (alive) setPlates(rows);
+          // Under 10% is noise on a glance view; the report still lists every read.
+          if (alive) setPlates(rows.filter((p) => p.confidence >= 0.1));
         })
         .catch(() => undefined);
     };

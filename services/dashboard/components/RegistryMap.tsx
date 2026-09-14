@@ -115,7 +115,10 @@ function FitToPoints({ points }: { points: Placed[] }) {
       map.setView([points[0].lat, points[0].lng], 14);
       return;
     }
-    const bounds: LatLngBoundsExpression = points.map((p) => [p.lat, p.lng]);
+    // Frame the state when it has cameras here: a few demo feeds abroad must not
+    // zoom the register out to a world map. They stay plotted, one zoom away.
+    const home = points.filter((p) => p.lat >= 20 && p.lat <= 24.8 && p.lng >= 68 && p.lng <= 74.6);
+    const bounds: LatLngBoundsExpression = (home.length > 1 ? home : points).map((p) => [p.lat, p.lng]);
     // Deferred a frame for the same reason as invalidateSize above: fitting
     // bounds to a container Leaflet still believes is 0x0 produces a
     // world-level zoom that then never corrects itself.

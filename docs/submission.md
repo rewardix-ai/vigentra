@@ -98,3 +98,5 @@ labelled as an estimate.
 | 14 Sep | Presentation: closing slide says what was built in the time available and what upgraded hardware (edge GPUs, cameras placed for ANPR) would add | presentation |
 | 14 Sep | Own-feed demonstration path: the Traffic Police's own VMS federates beside the grid as a third source, takes installation forms, and plays the Delhi test clip for the camera onboarded (FAQ 31) | tracker; demo script to follow once deployed |
 | 14 Sep | Annotated detection video: the engine's own boxes and readings on the Delhi test clip (6 of 12 labelled plates confirmed exactly, one wrong) and CAM06 (GJ23H1546 and GJ11S7924 confirmed), built by `tools/annotate_video.py` and `tools/assemble_demo_video.py` | video & output report |
+| 14 Sep | Live wall plays department-VMS feeds in full motion, and asks for the password whenever one is on it (f039ac6) | tracker |
+| 14 Sep | 50 cameras in service: the Traffic Police VMS beside the grid now carries the Delhi own-feed clip and 19 public TfL JamCam feeds (Powered by TfL Open Data), labelled as London cameras; the 19 grid recordings tried first were decommissioned, not deleted | tracker, walkthrough video |

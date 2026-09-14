@@ -89,12 +89,14 @@ services:
       # "central-api itself", which is how this silently 502s.
       TRAFFIC_VMS_PUBLIC_BASE_URL: http://traffic-vms:8001
     ports: ["8001:8001"]
-    # Own-feed demonstration: the Delhi test clip replaces this department's
-    # default recording, so a camera onboarded through the form plays real
-    # street footage and the readers have plates to read. The clip lives in
-    # data/videos/own/ and is not in git (*.mp4); copy it there first.
+    # Own-feed demonstration: this department's recordings are the files in
+    # data/videos/own/ (not in git, *.mp4). traffic_01.mp4 is the Delhi test
+    # clip - the default recording, so a camera onboarded through the form
+    # plays real street footage the readers can read - and tfl_NN.mp4 are the
+    # public TfL JamCam clips (Powered by TfL Open Data) the TFL-JNN demo
+    # feeds replay, taking the estate to 50 cameras in service.
     volumes:
-      - ./data/videos/own/delhi_1080p.mp4:/app/videos/traffic_01.mp4:ro
+      - ./data/videos/own:/app/videos:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=2).status == 200 else 1)"]
       interval: 10s

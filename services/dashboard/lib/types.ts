@@ -1,8 +1,8 @@
 /**
  * Canonical types mirroring services/central-api/app/schemas.py.
  *
- * Metadata only. There is deliberately no VideoSession type, no stream URL and
- * no media token anywhere in this file - the API has none to send.
+ * Video is brokered rather than handed over: `VideoSession.stream_url` is a
+ * Vigentra-owned opaque path, and there is no media token in this file.
  */
 
 export type CameraHealthStatus = "online" | "offline" | "degraded" | "unavailable" | "unknown";
@@ -30,15 +30,6 @@ export type VideoAccessState =
   | "needs_unit_approval"
   | "camera_unavailable";
 
-export type DetectionClass =
-  | "person"
-  | "car"
-  | "motorcycle"
-  | "bus"
-  | "truck"
-  | "auto-rickshaw"
-  | "bicycle";
-
 /** One object seen in one frame, as recorded by an edge worker. */
 export interface Detection {
   detection_id: string;
@@ -47,7 +38,7 @@ export interface Detection {
   owning_department: string | null;
   city: string | null;
   timestamp_utc: string;
-  class_name: DetectionClass | string;
+  class_name: string;
   class_id: number;
   confidence: number;
   bbox_xyxy: number[];
@@ -72,6 +63,20 @@ export interface Detection {
   plate_state: string | null;
   plate_rto: string | null;
   plate_district: string | null;
+}
+
+/** A plate the edge ANPR engine settled for one vehicle (GET /api/v1/sightings). */
+export interface Sighting {
+  sighting_id: string;
+  camera_id: string;
+  camera_name: string | null;
+  plate_text: string | null;
+  /** True when a plate was read but this account may not see it. */
+  plate_withheld: boolean;
+  timestamp_utc: string;
+  confidence: number;
+  /** How many frames voted for this reading. */
+  observations: number;
 }
 
 /** What the platform is configured to run, and what has actually reported. */

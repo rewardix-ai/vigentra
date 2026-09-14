@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, ApiError, errorMessage } from "@/lib/api";
+import { relative } from "@/lib/format";
 import { streamQueue, type Release } from "@/lib/streamQueue";
-import type { Camera, VideoSession } from "@/lib/types";
+import type { Camera, Sighting, VideoSession } from "@/lib/types";
 
 /**
  * One camera on the live wall.
@@ -55,6 +56,7 @@ export function LiveTile({
   onOpenFull,
   compact = false,
   snapshot = false,
+  plates = [],
 }: {
   camera: Camera;
   reason: string;
@@ -75,6 +77,8 @@ export function LiveTile({
    * Used when every camera has to fit on one screen at once.
    */
   compact?: boolean;
+  /** This camera's newest settled plate reads, newest first (see PlateChips). */
+  plates?: Sighting[];
 }) {
   const [session, setSession] = useState<VideoSession | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -320,7 +324,7 @@ export function LiveTile({
 
   if (snapshot) {
     return (
-      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} />
+      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} plates={plates} />
     );
   }
 
@@ -359,6 +363,7 @@ export function LiveTile({
               : statusText(phase, visible, error, attempt)}
           </div>
         )}
+        <PlateChips plates={plates} />
       </div>
 
       {compact ? (
@@ -454,10 +459,12 @@ function SnapshotTile({
   camera,
   compact,
   onOpenFull,
+  plates,
 }: {
   camera: Camera;
   compact: boolean;
   onOpenFull?: (cameraId: string) => void;
+  plates: Sighting[];
 }) {
   const holderRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -501,11 +508,10 @@ function SnapshotTile({
     >
       <div className={compact ? "relative h-full w-full bg-black" : "relative aspect-video bg-black"}>
         {src && (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={camera.name}
-            className={compact ? "h-full w-full object-cover" : "h-full w-full object-cover"}
+            className="h-full w-full object-cover"
             onLoad={() => {
               setEverLoaded(true);
               setFailed(false);
@@ -522,6 +528,7 @@ function SnapshotTile({
           <span className={`h-1.5 w-1.5 rounded-full ${everLoaded && !failed ? "animate-pulse bg-bad" : "bg-ink-500"}`} />
           Live
         </span>
+        <PlateChips plates={plates} />
         <button
           className="absolute bottom-1 left-1 max-w-[80%] truncate rounded bg-black/60 px-1.5 py-0.5 text-left text-[11px] font-semibold text-white hover:underline"
           title={camera.name}
@@ -532,4 +539,33 @@ function SnapshotTile({
       </div>
     </div>
   );
+}
+
+/**
+ * The newest plate reads the edge ANPR engine settled on this camera, over its
+ * live picture. A read lands when the vehicle's track closes, so it trails the
+ * frame; the age on each chip says by how much. Green is a strong read, amber
+ * a likely one, grey a weak one worth a human look.
+ */
+function PlateChips({ plates }: { plates: Sighting[] }) {
+  if (plates.length === 0) return null;
+  return (
+    <div className="pointer-events-none absolute right-1.5 top-1.5 flex max-w-[65%] flex-col items-end gap-0.5">
+      {plates.slice(0, 3).map((p) => (
+        <span
+          key={p.sighting_id}
+          className={`max-w-full truncate rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white ${plateTone(p.confidence)}`}
+        >
+          {p.plate_withheld ? "plate withheld" : p.plate_text} · {Math.round(p.confidence * 100)}% ·{" "}
+          {relative(p.timestamp_utc)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function plateTone(confidence: number): string {
+  if (confidence >= 0.75) return "bg-ok/90";
+  if (confidence >= 0.35) return "bg-warn/90";
+  return "bg-black/70";
 }

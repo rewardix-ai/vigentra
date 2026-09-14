@@ -1,9 +1,11 @@
 /**
  * Browser-side client for the Vigentra registry.
  *
- * Every call goes to /api/vigentra/... on this origin, which the Next.js server
- * proxies using an httpOnly session cookie. Nothing here knows a department
- * credential, an internal hostname, or a video URL - because none exists.
+ * Every data call goes to /api/vigentra/... on this origin, which the Next.js
+ * server proxies using an httpOnly session cookie; sign-in and sign-out go to
+ * /api/auth/*. Nothing here knows a department
+ * credential or an internal hostname; the only video URLs it builds
+ * (streamUrl, snapshotUrl) are paths on that same proxy.
  */
 import type { Incident,
   CameraTrafficSummary,
@@ -31,6 +33,7 @@ import type { Incident,
   VideoMode,
   VideoSession,
   PlateSearchHit,
+  Sighting,
   Track,
   WatchCategory,
   WatchlistEntry,
@@ -201,6 +204,10 @@ export const api = {
     since_hours?: string;
     limit?: string;
   } = {}) => request<Detection[]>(`/api/v1/detections${query(filters)}`),
+
+  /** Settled plate reads, newest first. One audited disclosure per call. */
+  sightings: (filters: { camera_id?: string; since_hours?: string; limit?: string } = {}) =>
+    request<Sighting[]>(`/api/v1/sightings${query(filters)}`),
 
   detectorHealth: () => request<DetectorHealth>("/api/v1/detector/health"),
 

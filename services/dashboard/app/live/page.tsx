@@ -15,8 +15,9 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { relative } from "@/lib/format";
 import { streamQueue } from "@/lib/streamQueue";
-import type { Camera } from "@/lib/types";
+import type { Camera, Sighting } from "@/lib/types";
 
 /**
  * The live wall: every camera this account may watch, on one screen.
@@ -47,6 +48,7 @@ export default function LiveWallPage() {
   // default because it is the only path that works on this network.
   const [snapshot, setSnapshot] = useState(true);
   const [viewport, setViewport] = useState({ w: 1920, h: 1080 });
+  const [plates, setPlates] = useState<Sighting[]>([]);
 
   useEffect(() => {
     const measure = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
@@ -70,6 +72,29 @@ export default function LiveWallPage() {
       .then(setCameras)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
+
+  // Plate reads for the whole wall, polled once rather than per tile: one
+  // request and one audited disclosure per interval. A read lands when a
+  // vehicle's track closes at the edge, so polling faster would not make it
+  // any fresher.
+  useEffect(() => {
+    if (!started) return;
+    let alive = true;
+    const load = () => {
+      void api
+        .sightings({ since_hours: "1", limit: "500" })
+        .then((rows) => {
+          if (alive) setPlates(rows);
+        })
+        .catch(() => undefined);
+    };
+    load();
+    const timer = setInterval(load, 20_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [started]);
 
   const watchable = useMemo(
     () =>
@@ -98,6 +123,12 @@ export default function LiveWallPage() {
       ),
     [watchable, department, district],
   );
+
+  const platesByCamera = useMemo(() => {
+    const out: Record<string, Sighting[]> = {};
+    for (const p of plates) (out[p.camera_id] ??= []).push(p);
+    return out;
+  }, [plates]);
 
   const columns = bestColumns(shown.length, viewport.w, viewport.h);
 
@@ -214,6 +245,23 @@ export default function LiveWallPage() {
         </Card>
       )}
 
+      {started && !wall && plates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-2xs">
+          <span className="font-semibold text-ink-700">Latest plate reads</span>
+          {plates.slice(0, 8).map((p) => (
+            <span key={p.sighting_id} className="rounded border border-line bg-white px-1.5 py-0.5">
+              <span className="font-mono font-semibold">
+                {p.plate_withheld ? "withheld" : p.plate_text}
+              </span>{" "}
+              <span className="text-ink-500">
+                {p.camera_name ?? p.camera_id} · {Math.round(p.confidence * 100)}% ·{" "}
+                {relative(p.timestamp_utc)}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {started &&
         (shown.length === 0 ? (
           <EmptyState
@@ -244,6 +292,7 @@ export default function LiveWallPage() {
                 password={password}
                 compact={wall}
                 snapshot={snapshot}
+                plates={platesByCamera[camera.camera_id]}
                 onOpenFull={(id) => router.push(`/registry/${encodeURIComponent(id)}`)}
               />
             ))}

@@ -28,8 +28,13 @@
   /* Offsets (--dy) move the CSS box so the glyph box lands on the measured PDF top. */
   .k   { left: 99pt; font: 600 14.25pt/14.25pt "DM Sans", sans-serif; letter-spacing: var(--k-ls, .18em);
          color: #a7a7a7; margin-top: var(--k-dy, 0pt); }
-  .t   { left: 99pt; font: 800 51pt/55.5pt Montserrat, sans-serif; letter-spacing: var(--t-ls, -.03em);
-         color: #111; margin-top: var(--t-dy, 0pt); }
+  /* The deck's titles are Montserrat ExtraBold with Chrome's synthetic bold on top (outlines ~0.8 pt
+     heavier, advances unchanged). Same file as the Google Fonts face, declared at 400 and asked for
+     at 700, so Chrome synthesises bold again; wght is pinned at 800. */
+  @font-face { font-family: "Montserrat Title"; font-weight: 400; font-display: block;
+               src: url(https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WlhyyTh89Y.woff2) format("woff2"); }
+  .t   { left: 99pt; font: 700 51pt/55.5pt "Montserrat Title", Montserrat, sans-serif; font-variation-settings: "wght" 800;
+         letter-spacing: var(--t-ls, -.03em); color: #111; margin-top: var(--t-dy, -6.7pt); }
   .n   { font: 800 52.5pt/52.5pt Montserrat, sans-serif; letter-spacing: var(--n-ls, -.033em); color: #111;
          margin-top: var(--n-dy, 0pt); }
   .n small { font-size: 33pt; }
@@ -48,9 +53,11 @@
   .shot { display: block; border-radius: 12pt; }
   .dark { background: #0e1522; }
   .cb  { left: 99pt; font: 400 23.25pt/33.75pt "DM Sans", sans-serif; color: #a7a7a7; margin-top: var(--cb-dy, 0pt); }
-  .lab { letter-spacing: var(--lab-ls, .14em); }
-  /* After the font shorthands, which reset it: one optical size for all DM Sans, as in the original. */
-  .k, .l, .f, .pn, .lab, .b, .bs, .cap, .cb { font-variation-settings: "opsz" var(--opsz, 9); }
+  .lab { letter-spacing: var(--lab-ls, .13em); }
+  /* After the font shorthands, which reset it: a fixed optical size, as in the original
+     (opsz 9 matches its widths up to 16.5 pt; the 23.25 pt closing body matches at opsz 14). */
+  .k, .l, .f, .pn, .lab, .b, .bs, .cap { font-variation-settings: "opsz" 9; }
+  .cb { font-variation-settings: "opsz" 14; }
   /* Measured against the original slides 14, 16 and 17 (ink bounds at 4400 px). */
   :root { --k-ls: .205em; --k-dy: 2.3pt; --lab-dy: 2.3pt; --n-dy: 6.27pt; --l-dy: -.75pt; --f-dy: -1.3pt;
           --pn-dy: 2.2pt; --h-dy: 3pt; --b-dy: -.7pt; --cb-dy: -1.35pt; }
@@ -78,8 +85,8 @@
 <section class="slide">
   <div class="k" style="top:142.61pt">THE LIVE WALL</div>
   <div class="t" style="top:193.23pt">Fifty cameras, one screen.</div>
-  <img class="shot" src="wall_live.jpg" alt="The live wall: fifty camera tiles" style="left:99pt; top:291pt; width:576pt; height:273.6pt">
-  <div class="cap" style="left:99pt; top:576.6pt">Live wall, 14 September 2026. TfL JamCam feeds: Powered by TfL Open Data.</div>
+  <img class="shot" src="wall_live.jpg" alt="The live wall: fifty camera tiles" style="left:99pt; top:291pt; width:576pt; height:271.06pt">
+  <div class="cap" style="left:99pt; top:572pt">Live wall, 14 September 2026. TfL JamCam feeds: Powered by TfL Open Data.</div>
 
   <div class="lab" style="left:723pt; top:287.3pt">LIVE</div>
   <div class="h"   style="left:723pt; top:313.49pt">Every tile is the feed</div>
@@ -95,8 +102,8 @@
 <section class="slide">
   <div class="k" style="top:142.61pt">READING PLATES, LIVE</div>
   <div class="t" style="top:193.23pt">The plate, read on the live feed.</div>
-  <img class="shot" src="delhi_live.jpg" alt="Delhi test clip, full screen, with a plate read" style="left:99pt; top:291pt; width:488.72pt; height:232.14pt">
-  <img class="shot" src="cam06_live.jpg" alt="Grid CAM06, full screen, with plate reads" style="left:612.52pt; top:291pt; width:488.72pt; height:232.14pt">
+  <img class="shot" src="delhi_live.jpg" alt="Delhi test clip, full screen, with a plate read" style="left:99pt; top:291pt; width:488.72pt; height:232.81pt">
+  <img class="shot" src="cam06_live.jpg" alt="Grid CAM06, full screen, with plate reads" style="left:612.52pt; top:291pt; width:488.72pt; height:232.81pt">
   <div class="bs" style="left:99pt;     top:538pt">Our Delhi test clip</div>
   <div class="b"  style="left:99pt;     top:561.63pt">Every vehicle boxed; the green box is the plate our ANPR read.</div>
   <div class="bs" style="left:612.52pt; top:538pt">Grid CAM06, Madhuram Bypass Road</div>

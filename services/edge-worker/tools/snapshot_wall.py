@@ -294,26 +294,52 @@ class Estate:
             self.updated[cam] = now
 
     def snapshot(self, cam: str) -> bytes | None:
-        """The latest frame as JPEG, with the detector's boxes when it is on."""
+        """The latest frame as JPEG, at once.
+
+        With the detector on, a background worker draws the boxes and this
+        returns the newest frame it has finished - a request never waits on
+        detection, so fifty polling tiles cost the API only a copy. The first
+        request for a camera gets its frame unboxed rather than nothing.
+        """
         self.note_demand(cam)
         with self.lock:
             frame, seq = self.frames.get(cam), self.seq.get(cam, 0)
             done = self.rendered.get(cam)
+        if done and (done[0] == seq or (self.detector is not None and cam not in self.predrawn)):
+            return done[1]
         if frame is None:
             return None
-        if done and done[0] == seq:
-            return done[1]
+        return self._render(cam, frame, seq, detect=False)
+
+    def _render(self, cam: str, frame, seq: int, detect: bool) -> bytes | None:
         image = frame.copy()
-        if self.detector is not None and cam not in self.predrawn:
+        if detect:
             with self.detect_lock:
                 found = self.detector.detect(image)
             draw_detections(image, found)
         ok, buf = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 74])
         if not ok:
             return None
+        data = buf.tobytes()
         with self.lock:
-            self.rendered[cam] = (seq, buf.tobytes())
-        return self.rendered[cam][1]
+            if seq >= self.rendered.get(cam, (-1, b""))[0]:
+                self.rendered[cam] = (seq, data)
+        return data
+
+    def annotate_forever(self) -> None:
+        """Box each watched camera's newest frame, round-robin, as fast as the detector goes."""
+        while True:
+            with self.lock:
+                due = [c for c, s in self.seq.items() if c not in self.predrawn and self.is_demanded(c)
+                       and self.rendered.get(c, (-1, b""))[0] < s]
+            if not due:
+                time.sleep(0.05)
+                continue
+            for cam in due:
+                with self.lock:
+                    frame, seq = self.frames.get(cam), self.seq.get(cam, 0)
+                if frame is not None:
+                    self._render(cam, frame, seq, detect=True)
 
     # -- live ANPR ------------------------------------------------------------
     def add_anpr(self, cams: list[str], vms_url: str | None, api_key: str) -> None:
@@ -738,7 +764,8 @@ def main() -> int:
         # ANPR engines on the GPU.
         estate.detector = UltralyticsYoloDetector(confidence_threshold=0.35, device="cpu")
         estate.detector.load()
-        print("live detection: on (YOLO, boxes drawn on every served frame)")
+        threading.Thread(target=estate.annotate_forever, daemon=True).start()
+        print("live detection: on (YOLO, boxes drawn in the background on every watched feed)")
     if args.vms_url:
         estate.add_vms(args.vms_url, os.getenv("TRAFFIC_VMS_API_KEY", "traffic-demo-key"))
     if args.anpr:

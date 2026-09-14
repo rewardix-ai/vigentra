@@ -31,8 +31,13 @@ export function VigentraMark({
   labelled?: boolean;
 }) {
   return (
+    // width/height give the browser the mark's shape before the file arrives.
+    // Without them the first paint after sign-in has a zero-width mark, and the
+    // wordmark jumps sideways when the image lands.
     <img
       src={tone === "onDark" ? "/brand/vigentra-mark-light.png" : "/brand/vigentra-mark.png"}
+      width={395}
+      height={270}
       alt={labelled ? PRODUCT_NAME : ""}
       aria-hidden={labelled ? undefined : true}
       className={className}
@@ -95,6 +100,8 @@ export function BrandLockup({
     return (
       <img
         src="/brand/vigentra-logo.png"
+        width={955}
+        height={501}
         alt="Vigentra - Vigilance, Intelligence, Safer Roads"
         className="h-auto w-72 max-w-full"
         draggable={false}

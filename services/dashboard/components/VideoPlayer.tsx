@@ -252,9 +252,16 @@ export function VideoPlayer({
 
   // ---------------------------------------------------------------- request
 
+  const canOpen = !busy && reason.trim().length >= 5 && password.length > 0;
   if (!session) {
     return (
-      <div className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3 [--field-bg:#f7f8fa]">
+      <form
+        className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3 [--field-bg:#f7f8fa]"
+        onSubmit={(event) => {
+          event.preventDefault(); // Enter in the password opens the camera
+          if (canOpen) void open();
+        }}
+      >
         <div className="text-[13px] font-semibold text-ink-900">
           {isPlayback ? "Request recorded footage" : "Open a live session"} · {cameraName}
         </div>
@@ -329,14 +336,10 @@ export function VideoPlayer({
           written to the audit trail. The owning unit can end it at any time.
         </p>
         {error && <Notice tone="bad">{error}</Notice>}
-        <button
-          className="btn btn-primary"
-          disabled={busy || reason.trim().length < 5 || password.length === 0}
-          onClick={open}
-        >
+        <button className="btn btn-primary" type="submit" disabled={!canOpen}>
           {busy && <Spinner />} {isPlayback ? "Retrieve footage" : "Start live"}
         </button>
-      </div>
+      </form>
     );
   }
 

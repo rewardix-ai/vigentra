@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
+import { usePersisted } from "@/lib/persist";
+
 import {
   Card,
   DepartmentTag,
@@ -50,10 +52,10 @@ export default function DetectionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [askedAt, setAskedAt] = useState<string | null>(null);
 
-  const [className, setClassName] = useState("");
-  const [cameraId, setCameraId] = useState("");
-  const [sinceHours, setSinceHours] = useState("24");
-  const [minConfidence, setMinConfidence] = useState("0.45");
+  const [className, setClassName] = usePersisted("detections.class", "");
+  const [cameraId, setCameraId] = usePersisted("detections.camera", "");
+  const [sinceHours, setSinceHours] = usePersisted("detections.since", "24");
+  const [minConfidence, setMinConfidence] = usePersisted("detections.confidence", "0.45");
 
   const query = useCallback(async () => {
     setBusy(true);

@@ -15,6 +15,7 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { usePersisted } from "@/lib/persist";
 import { relative } from "@/lib/format";
 import { streamQueue } from "@/lib/streamQueue";
 import type { Camera, Sighting } from "@/lib/types";
@@ -32,21 +33,25 @@ export default function LiveWallPage() {
   const router = useRouter();
   const [cameras, setCameras] = useState<Camera[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [department, setDepartment] = useState("");
-  const [district, setDistrict] = useState("");
-  const [reason, setReason] = useState("");
+  // Everything but the password survives a reload of the tab.
+  const [department, setDepartment] = usePersisted("live.department", "");
+  const [district, setDistrict] = usePersisted("live.district", "");
+  const [reason, setReason] = usePersisted("live.reason", "");
   const [password, setPassword] = useState("");
-  const [started, setStarted] = useState(false);
+  const [startedBefore, setStarted] = usePersisted("live.started", false);
   // Wall mode: every feed on one screen at once, nothing else. Tiles stay
   // mounted across the switch (same element, different classes), so the
   // sessions already open are kept rather than reopened.
-  const [wall, setWall] = useState(false);
+  const [wall, setWall] = usePersisted("live.wall", false);
   // Snapshot mode: the wall shows server-decoded still frames instead of HLS.
   // The grid's HLS CDN is far too slow to feed a browser player (a 6 s segment
   // takes 15-80 s and 403s under load), so an HLS wall of thirty tiles blacks
   // out; snapshots come off the fast RTSP path and always render. On by
   // default because it is the only path that works on this network.
-  const [snapshot, setSnapshot] = useState(true);
+  const [snapshot, setSnapshot] = usePersisted("live.snapshot", true);
+  // A snapshot wall opens no session, so it can come back on its own after a
+  // reload; a full-motion one needs the password typed again.
+  const started = startedBefore && (snapshot || password.length > 0);
   const [viewport, setViewport] = useState({ w: 1920, h: 1080 });
   const [plates, setPlates] = useState<Sighting[]>([]);
 
@@ -132,6 +137,8 @@ export default function LiveWallPage() {
   }, [plates]);
 
   const columns = bestColumns(shown.length, viewport.w, viewport.h);
+  const canStart =
+    reason.trim().length >= 5 && (snapshot || password.length > 0) && watchable.length > 0;
 
   if (error) return <Notice tone="bad">{error}</Notice>;
   if (!cameras) return <LoadingPanel />;
@@ -145,7 +152,13 @@ export default function LiveWallPage() {
 
       {!started ? (
         <Card>
-          <div className="space-y-3 px-4 py-3">
+          <form
+            className="space-y-3 px-4 py-3"
+            onSubmit={(event) => {
+              event.preventDefault(); // Enter in the password starts the wall
+              if (canStart) setStarted(true);
+            }}
+          >
             <FloatTextarea
               label="Why are you viewing these feeds?"
               required
@@ -178,18 +191,10 @@ export default function LiveWallPage() {
               with the edge&apos;s vehicle detection drawn in. Uncheck for full-motion
               video, which the grid CDN is currently too slow to serve.
             </label>
-            <button
-              className="btn btn-primary"
-              disabled={
-                reason.trim().length < 5 ||
-                (!snapshot && password.length === 0) ||
-                watchable.length === 0
-              }
-              onClick={() => setStarted(true)}
-            >
+            <button className="btn btn-primary" type="submit" disabled={!canStart}>
               Start {shown.length} feed{shown.length === 1 ? "" : "s"}
             </button>
-          </div>
+          </form>
         </Card>
       ) : (
         <Card>

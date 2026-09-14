@@ -4,6 +4,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+
+import { usePersisted } from "@/lib/persist";
 import { Download, X } from "lucide-react";
 
 import { LoadingPanel } from "@/components/Shell";
@@ -67,12 +69,22 @@ function Registry() {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>((params.get("view") as View) === "map" ? "map" : "table");
-  const [filters, setFilters] = useState<Filters>({
-    ...EMPTY,
-    installation_status: params.get("installation_status") ?? "",
-    owning_department: params.get("owning_department") ?? "",
-  });
+  // Kept across a reload; a link that sets its own filters wins over memory.
+  const linked = ["view", "installation_status", "owning_department"].some((k) => params.has(k));
+  const [view, setView] = usePersisted<View>(
+    "registry.view",
+    (params.get("view") as View) === "map" ? "map" : "table",
+    !linked,
+  );
+  const [filters, setFilters] = usePersisted<Filters>(
+    "registry.filters",
+    {
+      ...EMPTY,
+      installation_status: params.get("installation_status") ?? "",
+      owning_department: params.get("owning_department") ?? "",
+    },
+    !linked,
+  );
 
   useEffect(() => {
     let cancelled = false;

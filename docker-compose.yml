@@ -92,9 +92,11 @@ services:
     # Own-feed demonstration: this department's recordings are the files in
     # data/videos/own/ (not in git, *.mp4). traffic_01.mp4 is the Delhi test
     # clip - the default recording, so a camera onboarded through the form
-    # plays real street footage the readers can read - and tfl_NN.mp4 are the
-    # public TfL JamCam clips (Powered by TfL Open Data) the TFL-JNN demo
-    # feeds replay, taking the estate to 50 cameras in service.
+    # plays real street footage the readers can read. delhi_annotated.mp4 and
+    # cam06_annotated.mp4 are the edge engine's own output on the Delhi clip
+    # and a CAM06 recording (boxes and plate reads drawn in), which the Delhi
+    # feed and the REC-C06A feed play; tfl_NN.mp4 are public TfL JamCam clips
+    # (Powered by TfL Open Data). Together: 50 cameras in service.
     volumes:
       - ./data/videos/own:/app/videos:ro
     healthcheck:

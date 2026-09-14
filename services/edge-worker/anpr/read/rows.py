@@ -1,41 +1,9 @@
-"""Two-row plate handling (spec 8.2): detect row count from aspect + horizontal
-projection profile, split, and return row crops top-to-bottom."""
+"""Two-row plate handling (spec 8.2): split a two-row plate and return its row
+crops top-to-bottom."""
 from __future__ import annotations
 
 import cv2
 import numpy as np
-
-
-def detect_rows(gray: np.ndarray, aspect_hint: float | None = None) -> int:
-    h, w = gray.shape[:2]
-    asp = aspect_hint if aspect_hint else w / max(h, 1)
-    # Measured on 501 real single-row plates (Gamester03 holdout): the previous
-    # rule flagged 47 of them as two-row and cost ~4 points of exact match.
-    # Indian single-row plates are >= 2.5:1 even with a loose crop; two-row
-    # plates (bikes/autos) are 1.2-2.0:1. Be conservative: aspect first, and
-    # only then require BOTH a deep ink valley in the middle band AND two
-    # separate ink bands above and below it.
-    if asp >= 2.4:
-        return 1
-    if asp <= 1.6:
-        return 2
-    from anpr.enhance.binarize import polarity_normalise
-    g = polarity_normalise(gray)
-    g = cv2.GaussianBlur(g, (3, 3), 0)
-    ink = (255 - g).astype(np.float32)
-    prof = ink.mean(1)
-    prof = (prof - prof.min()) / (prof.max() - prof.min() + 1e-6)
-    lo, hi = int(h * 0.38), int(h * 0.62)
-    mid = prof[lo:hi]
-    if mid.size < 3:
-        return 1
-    valley = float(mid.min())
-    top_band = prof[int(h * 0.12): lo]
-    bot_band = prof[hi: int(h * 0.88)]
-    if top_band.size == 0 or bot_band.size == 0:
-        return 1
-    two_bands = top_band.max() > 0.6 and bot_band.max() > 0.6
-    return 2 if (valley < 0.25 and two_bands) else 1
 
 
 def split_rows(gray: np.ndarray, overlap: float = 0.06, cut_frac: float | None = None) -> list[np.ndarray]:

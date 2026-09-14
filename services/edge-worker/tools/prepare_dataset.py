@@ -62,7 +62,7 @@ import cv2  # noqa: E402
 
 from anpr.enhance import quality as enhance  # noqa: E402  (assess() moved into the enhance package)
 from _corpus import (  # noqa: E402
-    PHYSICAL_FLOOR_PX, PlateSample, Readability, SizeBands, angle_category,
+    PHYSICAL_FLOOR_PX, PlateSample, Readability, angle_category,
     classify_difficulty, derive_bands, estimate_skew_deg, load_json,
     measure_frame, percentiles, split_of, to_yolo, write_json,
     TIME_BLOCK_FRAMES,

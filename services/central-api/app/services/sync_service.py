@@ -33,7 +33,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..adapters.base import AdapterError, SurveillanceAdapter
-from ..config import Settings, SourceSettings
+from ..config import Settings, SourceSettings, normalize_city
 from ..models import Camera as CameraRow
 from ..models import (
     CameraHealth,
@@ -46,7 +46,6 @@ from ..schemas import (
     CameraMetadata,
     CameraStatus,
     InstallationRequestOut,
-    InstallationStatus,
     PUBLISHABLE_STATUSES,
     RequestStatus,
     SyncResponse,
@@ -234,7 +233,7 @@ async def _upsert_camera(
     row.owning_unit = camera.owning_unit
     row.police_station_or_zone = camera.police_station_or_zone
     row.city = camera.city or ""
-    row.city_normalized = norm.normalize_city(camera.city)
+    row.city_normalized = normalize_city(camera.city)
     row.zone = camera.zone
     row.capabilities = list(camera.capabilities or [])
     row.maintenance_agency = camera.maintenance_agency

@@ -47,17 +47,15 @@ validate normally. Change it in `config/thresholds.yaml` under
 The chain and its thresholds are documented in
 [`anpr-reading.md`](anpr-reading.md).
 
-### The single-frame reader (`app/plates.py`) — fallback
-
-Reads OCR off one crop from one frame and keeps the answer if it parses. It is
-used only when the track-level engine cannot be built — a missing wheel, an
-unsupported interpreter, absent weights. It works, and it is measurably worse:
-see §8. A worker that reads no plates at all is worse still, which is why it
-stays.
+### When the engine cannot be built
 
 `build_engine()` returns `None` rather than raising when the extras are
 missing, the worker logs one actionable line, and detection continues without
 plates. ANPR failing is never a reason to stop counting vehicles.
+
+There is no second reader to fall back to. The earlier single-frame EasyOCR
+reader was removed: `easyocr` was never installed in any image, so it could
+not run.
 
 ## 2. What it does
 
@@ -103,13 +101,13 @@ from:
 | `yolo11s.pt` | vehicle detector |
 | `plate_det_mix_n.pt` | plate detector |
 | `reader_crnn.onnx` | CRNN-CTC plate reader |
+| `reader_crnn_v6.onnx` | second reader (`reading.extra_crnn_weights`): fills in a read, never a confirm, on tracks the first cannot decide. Used when present. |
 
 Then run a worker with ANPR on (`ANPR_ENABLE=true` in its environment).
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `ANPR_ENABLE` | `false` | Off unless set. |
-| `ANPR_MIN_SCORE` | `0.55` | Score floor for an emitted reading. See §8. |
 | `ANPR_EMIT_UNCONFIRMED` | `false` | Ship readings the vote has not settled. Turning this on reintroduces single-frame behaviour through the side door. |
 | `ANPR_REVIEW_SCORE` | `0.35` | Below the floor but worth a human look. |
 | `ANPR_MODELS_DIR` | `services/edge-worker/models` | Where the weights live. |
@@ -119,7 +117,6 @@ Then run a worker with ANPR on (`ANPR_ENABLE=true` in its environment).
 | `ANPR_READER_WEIGHTS` | `reader_crnn.onnx` | Reader filename. |
 | `ANPR_ENGINE_CACHE` | `4` | Engines kept between camera cycles. See §11. |
 | `ANPR_RECORD_TAIL` | `500` | Settled track records retained per engine. |
-| `ANPR_MIN_CONFIDENCE` | `0.55` | Fallback reader only. |
 | `ANPR_PLATE_RETENTION_DAYS` | `30` | How long a plate is disclosed for. |
 
 Per-camera tuning lives in `config/thresholds.yaml`, not in environment
@@ -180,10 +177,10 @@ the operator's stated reason.
 
 ## 8. Accuracy, measured
 
-### The fallback reader
+### The previous single-frame reader
 
-Run against the bundled 4K street clip (`126434-735976920.mp4`), 12 sampled
-frames, 67 vehicle crops examined:
+Measured before it was removed, on the bundled 4K street clip
+(`126434-735976920.mp4`), 12 sampled frames, 67 vehicle crops examined:
 
 | | |
 |---|---|
@@ -204,26 +201,25 @@ units and are in the first category; most are in the second.
 
 ### The track-level engine
 
-Not measured on the government feed. The engine's adapter is covered by
-`tests/test_anpr_engine.py`, and the engine carries its own thresholds'
-provenance in `config/thresholds.yaml`, but the number that matters — yield per
-vehicle on the grid's own footage — needs a run against the live cameras with
-the weights installed, and that has not been done. **Do not quote a figure for
-it until it has.** The fallback's 1-in-67 is the only measured number here, and
-it measures the reader we are trying not to use.
+It has run on the government feed since 2026-09-12. What it read is in the
+ANPR report, which lists every reading with its timestamp and confidence. Set
+`REPORT_PASSWORD` for a reporting account, then:
 
-### Two findings worth keeping
+    python scripts/anpr_report.py --since-hours 72
 
-**OCR returns a plate in pieces.** The first real read came back as two boxes,
-`DL` and `1LCE5987`. Judged separately neither is a registration and the plate
-was lost entirely. Fragments on a shared text line are joined left-to-right
-before parsing — see `assemble_lines` in the fallback reader.
+Most readings on these wide junction views are low-confidence because the plates
+are narrow in pixels: the vendor's measurement behind
+`confidence.confirm_min_width_px` in `config/thresholds.yaml` reads nothing
+exactly below 40 px. Quote the report, not a yield figure.
 
-**Format validation cannot catch a confident misread.** The same car one second
-later read as `DL11CES9871` at confidence 0.49: eleven characters, valid state
-code, correct shape — and wrong. Nothing structural rejects it. That is why the
-default floor is **0.55** rather than 0.40, set above where misreads were
-actually observed rather than at a number that looked reasonable.
+### A finding worth keeping
+
+**Format validation cannot catch a confident misread.** With the previous
+reader, the same car one second later read as `DL11CES9871` at confidence 0.49:
+eleven characters, valid state code, correct shape — and wrong. Nothing
+structural rejects it, which is why the track-level engine confirms a plate only
+when several frames agree, and why an unconfirmed reading is shown as
+unconfirmed.
 
 ### Still true
 

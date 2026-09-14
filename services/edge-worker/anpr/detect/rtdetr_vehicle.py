@@ -22,8 +22,6 @@ from anpr.detect.vehicle import VehicleDet
 ROOT = Path(__file__).resolve().parent.parent.parent
 RTDETR_DIR = ROOT / "third_party" / "RT-DETR" / "rtdetrv2_pytorch"
 
-UVH_NAMES = {1: "Hatchback", 2: "Sedan", 3: "SUV", 4: "MUV", 5: "Bus", 6: "Truck", 7: "Three-wheeler",
-             8: "Two-wheeler", 9: "LCV", 10: "Mini-bus", 11: "Tempo-traveller", 12: "Bicycle", 13: "Van", 14: "Others"}
 UVH_TO_TYPE = {1: "car", 2: "car", 3: "car", 4: "car", 5: "bus", 6: "truck", 7: "auto", 8: "motorcycle",
                9: "truck", 10: "bus", 11: "bus", 12: None, 13: "car", 14: None}
 

@@ -96,9 +96,6 @@ function Registry() {
     };
   }, []);
 
-  // If this account can watch even one camera in the list, the custody
-  // notice is answering a question it did not ask.
-
   const options = useMemo(() => {
     const unique = (values: (string | null | undefined)[]) =>
       Array.from(new Set(values.filter(Boolean) as string[])).sort();

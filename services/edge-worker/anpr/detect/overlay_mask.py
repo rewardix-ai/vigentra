@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -303,13 +303,3 @@ class OverlayMasker:
         inv = (self._mask == 0).astype(np.uint8)
         n, _, stats, _ = cv2.connectedComponentsWithStats(inv, 8)
         return [(int(s[0]), int(s[1]), int(s[0] + s[2]), int(s[1] + s[3])) for s in stats[1:]]
-
-
-def warm_up(masker: OverlayMasker, frames: Iterable[np.ndarray]) -> OverlayMasker:
-    for f in frames:
-        masker.observe(f)
-        if masker.ready:
-            break
-    if not masker.ready and masker._acc:
-        masker._finalise()
-    return masker

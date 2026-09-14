@@ -3,26 +3,25 @@
 /**
  * Interactive registry map.
  *
- * Leaflet + OpenStreetMap tiles. No API key, no vendor account, and no data
- * leaves the browser except the tile requests to openstreetmap.org.
+ * Leaflet over keyless basemaps (OpenStreetMap, OpenTopoMap and Esri - see
+ * BasemapPicker). No API key, no vendor account, and no data leaves the
+ * browser except the tile requests to those providers.
  *
  * Marker semantics: shape (circle) is constant, fill = department, ring = health
- * status. Withdrawn cameras use a hatched fill so an operator can spot
- * suspended / decommissioned assets at a glance.
+ * status. Withdrawn cameras get a paler fill and a dashed ring so an operator
+ * can spot suspended / decommissioned assets at a glance.
  *
- * Coordinates are synthetic demo values, labelled as such in the popup.
+ * Coordinates are synthetic demo values.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, CircleMarker, Popup, useMap } from "react-leaflet";
 import Link from "next/link";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 
-// Leaflet's CSS is handled by the framework bundler. Next's own ambient types
-// already declare side-effect CSS imports, so no suppression is needed here -
-// and a `@ts-expect-error` that suppresses nothing is itself a build error
-// under `next build`, which checks unused directives.
-// Leaflet does not expose a TypeScript declaration for its stylesheet.
-// Next.js handles the CSS import at build time.
+// Leaflet's stylesheet, bundled by Next.js at build time. Leaflet ships no
+// type declaration for it and none is needed (global.d.ts declares `*.css`),
+// so there is no `@ts-expect-error` here - one that suppresses nothing is
+// itself a type error.
 
 import "leaflet/dist/leaflet.css";
 import type { Camera, CameraHealthStatus } from "@/lib/types";
@@ -67,7 +66,6 @@ function placeable(cameras: Camera[]): Placed[] {
     }));
 }
 
-/** Recompute bounds whenever the visible list changes. */
 /**
  * Tell Leaflet how big it actually is.
  *
@@ -102,6 +100,7 @@ function KeepMapSized({ containerRef }: { containerRef: React.RefObject<HTMLDivE
   return null;
 }
 
+/** Recompute bounds whenever the visible list changes. */
 function FitToPoints({ points }: { points: Placed[] }) {
   const map = useMap();
   const fittedSignature = useRef<string | null>(null);

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -47,9 +48,6 @@ _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 #: frame.
 _CANONICAL_TO_COCO: dict[str, int] = {name: cid for cid, name in COCO_TO_CANONICAL.items()}
 
-#: Below this a reading is not acted on automatically.
-DEFAULT_MIN_SCORE = float(os.getenv("ANPR_MIN_SCORE", "0.55"))
-
 #: Off by default. An unconfirmed reading is one the track has seen too few
 #: agreeing frames of; surfacing it as a sighting invites acting on it.
 EMIT_UNCONFIRMED = os.getenv("ANPR_EMIT_UNCONFIRMED", "false").lower() == "true"
@@ -66,6 +64,10 @@ REVIEW_SCORE = float(os.getenv("ANPR_REVIEW_SCORE", "0.35"))
 #: and are not, which is the one output this system must never produce, so they
 #: are dropped even when EMIT_UNCONFIRMED is on. Set to 0 to keep everything.
 MIN_GRAMMAR_PRIOR = float(os.getenv("ANPR_MIN_GRAMMAR_PRIOR", "0.12"))
+
+#: Model device. "auto" means CUDA if present, else CPU - never the Apple GPU,
+#: so a host run on a Mac needs ANPR_DEVICE=mps (Docker cannot reach it).
+ANPR_DEVICE = os.getenv("ANPR_DEVICE", "auto")
 
 #: How many per-camera engines to keep loaded at once. A memory dial, not a
 #: speed dial: each engine owns a vehicle detector, a plate detector and a
@@ -99,7 +101,6 @@ class PlateSighting:
 
     track_id: int
     text: str
-    score: float
     confidence: float
     observations: int
     confirmed: bool
@@ -113,29 +114,24 @@ class PlateSighting:
     captured_at: float
     frame_index: int
     method: str = ""
-    #: True when the reading cleared the review floor but not the acting
-    #: threshold: show it to a human, do not act on it automatically.
-    needs_review: bool = False
     quality: dict = field(default_factory=dict)
 
 
 def _track_number(raw: Any) -> int:
-    """The tracker's own id out of the engine's track key.
+    """A tracker id as an int, whatever shape it arrived in.
 
-    The engine keys a track "<camera>_s<segment>_t<n>" - cam06_s0_t132 - so the
-    number is the digits at the end, whatever precedes them. Bare integers and
-    the older "<camera>_<n>" shape parse the same way.
+    YOLO hands back ints; the engine keys a track "<camera>_s<segment>_t<n>" -
+    cam06_s0_t132 - so the number is the digits at the end.
 
     Never raises. A track id that cannot be parsed must not take down the
     camera's whole pass: that is exactly what int() on "cam06_s0_t1" did, and it
     cost every detection and every plate of the cycle, not just the one track.
     """
-    text = str(raw)
-    end = len(text)
-    while end and text[end - 1].isdigit():
-        end -= 1
-    tail = text[end:]
-    return int(tail) if tail else abs(hash(text)) % 1_000_000
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        tail = re.search(r"\d+$", str(raw))
+        return int(tail.group()) if tail else abs(hash(str(raw))) % 1_000_000
 
 
 class AnprEngine:
@@ -148,9 +144,8 @@ class AnprEngine:
 
     name = "vigentra-anpr"
 
-    def __init__(self, *, camera_id: str = "camera", min_score: float = DEFAULT_MIN_SCORE) -> None:
+    def __init__(self, *, camera_id: str = "camera") -> None:
         self.camera_id = camera_id
-        self.min_score = min_score
         self._frames = 0
         self._started = time.perf_counter()
         #: Track keys already emitted, so a settled plate is sent once even
@@ -304,9 +299,8 @@ class AnprEngine:
             score = float(rec.get("confidence") or 0.0)
             if not confirmed and not EMIT_UNCONFIRMED:
                 continue
-            # Between the review floor and the acting threshold a reading is
-            # still worth surfacing - flagged, not acted on. Below the floor
-            # there is not enough agreement to be worth a human's time.
+            # Below the review floor there is not enough agreement to be worth
+            # a human's time.
             if score < REVIEW_SCORE:
                 continue
             # A reading whose grammar prior is negligible is not a plate we
@@ -328,11 +322,9 @@ class AnprEngine:
                 PlateSighting(
                     track_id=_track_number(key),
                     text=str(text),
-                    score=score,
                     confidence=score,
                     observations=int(rec.get("frames_fused") or rec.get("n_plate_hits") or 1),
                     confirmed=confirmed,
-                    needs_review=score < self.min_score,
                     # The engine fuses under a grammar rather than reporting a
                     # state of its own; leaving this None beats inferring one
                     # from the first two characters of a fused reading.
@@ -372,7 +364,8 @@ class AnprEngine:
             "vehicle_model": VEHICLE_WEIGHTS,
             "plate_model": PLATE_WEIGHTS,
             "reader_model": READER_WEIGHTS,
-            "min_score": self.min_score,
+            "readers": [Path(r).name for r in getattr(self, "_readers", [READER_WEIGHTS])],
+            "device": ANPR_DEVICE,
             "emit_unconfirmed": EMIT_UNCONFIRMED,
         }
 
@@ -388,9 +381,7 @@ class AnprEngine:
         }
 
 
-def build_engine(
-    *, camera_id: str = "camera", min_score: float = DEFAULT_MIN_SCORE
-) -> AnprEngine | None:
+def build_engine(*, camera_id: str = "camera") -> AnprEngine | None:
     """Build the engine, or return None when ANPR is off or unavailable.
 
     Returns None rather than raising when the extras are missing, because ANPR
@@ -401,7 +392,7 @@ def build_engine(
         logger.info("ANPR disabled (set ANPR_ENABLE=true to turn it on)")
         return None
     try:
-        engine = AnprEngine(camera_id=camera_id, min_score=min_score)
+        engine = AnprEngine(camera_id=camera_id)
     except AnprUnavailable as exc:
         logger.error("%s", exc)
         return None

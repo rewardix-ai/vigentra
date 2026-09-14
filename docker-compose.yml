@@ -202,8 +202,8 @@ services:
       # A CONFIRMED plate is a long-dwell event - the median track fuses 7
       # frames and a confirm needs ~12 - so confirmed-only reporting hides
       # most of what the pipeline actually read. Unconfirmed rows carry
-      # confirmed=false and needs_review=true and must be shown as such:
-      # evidence to look at, never a plate to act on.
+      # confirmed=false and must be shown as such: evidence to look at, never
+      # a plate to act on.
       ANPR_EMIT_UNCONFIRMED: ${ANPR_EMIT_UNCONFIRMED:-false}
       # Floor below which a reading is dropped entirely; 0 keeps every
       # settled reading with its score attached.

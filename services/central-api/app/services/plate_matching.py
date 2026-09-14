@@ -14,9 +14,9 @@ coincidental look-alikes down.
 
 This module is deliberately free of any CV or ML dependency. The central API
 receives characters, never pixels, and this container stays small enough to
-deploy anywhere. The confusion tables are the same ones the edge reader uses to
-repair a plate in the first place — kept in sync by
-``tests/test_plate_matching.py``, which asserts them against the edge package.
+deploy anywhere. The edge worker keeps its own confusion tables for repairing a
+read in the first place (e.g. ``CONFUSABLE`` in ``anpr/plate_grammar.py``);
+they are maintained separately from these, and no test compares the two.
 """
 from __future__ import annotations
 
@@ -198,10 +198,6 @@ class PlateMatch:
     seen_plate: str
     distance: float
     exact: bool
-
-    @property
-    def similarity(self) -> float:
-        return similarity(self.watch_plate, self.seen_plate)
 
 
 def best_matches(

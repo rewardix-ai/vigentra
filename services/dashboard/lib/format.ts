@@ -2,7 +2,9 @@
  * Display formatting.
  *
  * House rule: every timestamp crossing the API is UTC, and every timestamp an
- * operator reads is Asia/Kolkata. The conversion happens here and nowhere else.
+ * operator reads is Asia/Kolkata, formatted by the helpers here. The
+ * deliberate exception is VideoPlayer's playback window, which is entered and
+ * shown in the viewer's own timezone and sent as UTC.
  */
 
 export const DISPLAY_TIMEZONE = "Asia/Kolkata";

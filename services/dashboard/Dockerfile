@@ -1,4 +1,4 @@
-# Vigentra dashboard - metadata-only console.
+# Vigentra dashboard - operator console (registry, analytics, authorised video).
 # Two stages: build the standalone Next.js bundle, then serve it from a
 # small runtime image.
 FROM node:20-alpine AS builder

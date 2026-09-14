@@ -29,141 +29,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
-from collections import Counter
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Sequence
 
 import cv2
 import numpy as np
-
-# ---------------------------------------------------------------------------
-# Feed discovery
-# ---------------------------------------------------------------------------
-
-#: `cam06_0142.jpg` (flat capture dirs) and `cam06/0142.jpg` (nested) are both
-#: in use across the capture tools, so both are understood.
-_FLAT = re.compile(r"^(?P<cam>[A-Za-z0-9]+)[_-](?P<seq>\d+)\.(jpg|jpeg|png)$", re.I)
-
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
-VIDEO_SUFFIXES = {".mp4", ".mkv", ".avi", ".mov", ".ts", ".m4v"}
-
-
-@dataclass
-class Feed:
-    """One camera's worth of footage, however it is stored on disk.
-
-    `camera_id` is the physical camera; `feed_id` identifies this particular
-    capture of it. They differ when the same camera was captured more than
-    once - which is common here, and matters: two sessions of cam06 restart
-    their frame numbering, so treating them as one feed would let block N of
-    one session and block N of the other land in different splits while
-    showing the same traffic.
-    """
-
-    camera_id: str
-    #: Still frames in capture order. Empty for a video feed.
-    frames: list[Path] = field(default_factory=list)
-    #: Set instead of `frames` when the feed is a video file.
-    video: Path | None = None
-    #: Where this came from, recorded so a dataset can name its provenance.
-    source: str = ""
-    #: Seconds between consecutive frames, when the capture recorded it.
-    #: None means unknown - and unknown is not treated as "adjacent".
-    frame_interval_s: float | None = None
-    #: Unique per capture session. Equal to `camera_id` unless the same camera
-    #: was found under more than one root, in which case discover_feeds
-    #: disambiguates it.
-    feed_id: str = ""
-
-    def __post_init__(self) -> None:
-        if not self.feed_id:
-            self.feed_id = self.camera_id
-
-    @property
-    def kind(self) -> str:
-        return "video" if self.video is not None else "frames"
-
-    @property
-    def count(self) -> int:
-        return 1 if self.video is not None else len(self.frames)
-
-
-def discover_feeds(roots: Sequence[str | Path]) -> list[Feed]:
-    """Find every camera feed under *roots*.
-
-    Handles the three layouts this project has actually produced: a flat
-    directory of `camNN_SSSS.jpg`, a directory per camera, and loose video
-    files. Anything unrecognised is skipped rather than guessed at - a
-    mis-parsed camera id would silently merge two junctions into one feed.
-    """
-    by_camera: dict[tuple[str, str], Feed] = {}
-    videos: list[Feed] = []
-
-    for root in roots:
-        root = Path(root)
-        if not root.exists():
-            continue
-        if root.is_file():
-            if root.suffix.lower() in VIDEO_SUFFIXES:
-                videos.append(Feed(root.stem, video=root, source=str(root)))
-            continue
-
-        for path in sorted(root.rglob("*")):
-            if not path.is_file():
-                continue
-            suffix = path.suffix.lower()
-            if suffix in VIDEO_SUFFIXES:
-                videos.append(Feed(path.stem, video=path, source=str(root)))
-                continue
-            if suffix not in IMAGE_SUFFIXES:
-                continue
-
-            match = _FLAT.match(path.name)
-            if match:
-                camera = match.group("cam")
-            elif path.parent != root:
-                # camNN/anything.jpg - the directory names the camera.
-                camera = path.parent.name
-            else:
-                continue
-            key = (camera, str(root))
-            feed = by_camera.get(key)
-            if feed is None:
-                feed = by_camera[key] = Feed(camera, source=str(root))
-            feed.frames.append(path)
-
-    feeds = sorted(by_camera.values(), key=lambda f: (f.source, f.camera_id))
-
-    # Disambiguate a camera captured under more than one root. The suffix is a
-    # short stable hash of the source path rather than an index, so adding a
-    # new root later does not renumber - and therefore does not reshuffle -
-    # every existing feed's split assignment.
-    seen = Counter(f.camera_id for f in feeds)
-    for feed in feeds:
-        feed.frames.sort()
-        if seen[feed.camera_id] > 1:
-            tag = hashlib.sha256(feed.source.encode("utf-8")).hexdigest()[:6]
-            feed.feed_id = f"{feed.camera_id}.{tag}"
-
-    return feeds + sorted(videos, key=lambda f: f.camera_id)
-
-
-def sample_frames(feed: Feed, limit: int | None, *, seed: int = 0) -> list[Path]:
-    """Take up to *limit* frames spread evenly across the feed.
-
-    Evenly, not randomly: a feed is a timeline, and an even spread covers the
-    whole capture window (traffic builds and empties, light changes) where a
-    random draw clumps. Deterministic given the same inputs, which is what
-    makes a rebuilt dataset reproducible.
-    """
-    frames = feed.frames
-    if limit is None or limit >= len(frames) or limit <= 0:
-        return list(frames)
-    step = len(frames) / float(limit)
-    return [frames[min(len(frames) - 1, int(i * step))] for i in range(limit)]
 
 
 # ---------------------------------------------------------------------------
@@ -421,7 +293,6 @@ BRIGHT_LUMA = 200.0
 GLARE_FRACTION = 0.035         # per anpr.enhance.Quality.is_glared
 LOW_CONTRAST_STD = 32.0
 LOW_CONF = 0.35
-EDGE_MARGIN_PX = 3
 
 
 @dataclass
@@ -517,23 +388,6 @@ def classify_difficulty(
     return tags
 
 
-def readability_of(sample: PlateSample, text: str, confidence: float,
-                   *, physical_floor_px: float = PHYSICAL_FLOOR_PX) -> str:
-    """Decide the readability of a plate that has already been OCR'd.
-
-    The order matters and encodes the rule this whole task turns on: a failed
-    read on a plate with too few pixels is NOT the same event as a failed read
-    on a plate with plenty. The first is physics and the detector should still
-    be trained to find it; the second is a model deficiency and is the case
-    worth mining hardest.
-    """
-    if text:
-        return Readability.READABLE.value
-    if sample.plate_width_px < physical_floor_px:
-        return Readability.UNREADABLE_TOO_SMALL.value
-    return Readability.UNREADABLE_QUALITY.value
-
-
 # ---------------------------------------------------------------------------
 # Deterministic splitting
 # ---------------------------------------------------------------------------
@@ -562,15 +416,6 @@ def split_of(camera_id: str, frame_number: int, *, seed: int = 0,
     if point < train + val:
         return "val"
     return "test"
-
-
-def frame_number_of(path: Path) -> int:
-    """Sequence number from a capture filename, or 0 when it carries none."""
-    match = _FLAT.match(path.name)
-    if match:
-        return int(match.group("seq"))
-    digits = re.findall(r"\d+", path.stem)
-    return int(digits[-1]) if digits else 0
 
 
 # ---------------------------------------------------------------------------

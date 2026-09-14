@@ -354,10 +354,3 @@ def build_capabilities(*, live: bool, playback: bool, commissioned: bool) -> lis
     if commissioned and playback:
         capabilities.append("playback")
     return capabilities
-
-
-def normalize_city(value: str | None) -> str:
-    """`  Ahmedabad ` -> `ahmedabad`, for case-insensitive city filtering."""
-    if not value:
-        return ""
-    return re.sub(r"\s+", " ", str(value).strip()).lower()

@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from sqlalchemy import select
@@ -40,8 +40,6 @@ from . import plate_matching
 from .plate_matching import DEFAULT_MAX_DISTANCE
 
 logger = logging.getLogger("vigentra.watchlist")
-
-WATCH_CATEGORIES = ("stolen", "wanted", "blacklist", "missing", "suspect")
 
 #: How long the active watchlist may be served from memory. Deliberately short:
 #: this is a correctness/latency trade, and the correctness side is an operator
@@ -116,11 +114,7 @@ class SightingResult:
     sightings_recorded: int = 0
     sightings_duplicate: int = 0
     sightings_rejected: int = 0
-    alerts_raised: list[WatchlistAlert] = None  # type: ignore[assignment]
-
-    def __post_init__(self) -> None:
-        if self.alerts_raised is None:
-            self.alerts_raised = []
+    alerts_raised: list[WatchlistAlert] = field(default_factory=list)
 
     def as_dict(self) -> dict:
         return {

@@ -26,8 +26,6 @@ import ast
 import pathlib
 import sys
 
-import pytest
-
 ANPR = pathlib.Path(__file__).resolve().parent.parent / "anpr"
 REQUIREMENTS = pathlib.Path(__file__).resolve().parent.parent / "requirements-anpr.txt"
 
@@ -37,14 +35,12 @@ OPTIONAL = {
     "paddle",        # anpr/read/awiros.py - PaddleOCR reader, off by default
     "ppocr",         # same
     "safetensors",   # same
-    "anthropic",     # anpr/read/claude_reader.py, off by default
-    "matplotlib",    # anpr/fuse/calibrate.py - plotting a calibration curve
-    "imageio_ffmpeg",  # anpr/sources/grid.py - an ingest path we do not use
     "src",           # anpr/detect/rtdetr_vehicle.py - an alternative backend
 }
 
-#: Provided by the yolo image stage rather than requirements-anpr.txt.
-FROM_YOLO_STAGE = {"torch", "torchvision", "ultralytics"}
+#: Provided by the yolo image stage (requirements-yolo.txt) rather than
+#: requirements-anpr.txt.
+FROM_YOLO_STAGE = {"torch", "torchvision", "ultralytics", "cv2", "numpy"}
 
 
 def _imported_packages() -> dict[str, set[str]]:
@@ -74,8 +70,7 @@ def _declared_requirements() -> set[str]:
         if not line or line.startswith("#"):
             continue
         name = line.split("=")[0].split(">")[0].split("<")[0].split(";")[0].strip()
-        # opencv ships as opencv-contrib-python-headless but imports as cv2
-        declared.add("cv2" if name.startswith("opencv") else name.lower())
+        declared.add(name.lower())
     return declared
 
 
@@ -95,7 +90,7 @@ def test_every_required_package_is_declared_or_deliberately_optional():
     for pkg, files in _imported_packages().items():
         if pkg in OPTIONAL or pkg in FROM_YOLO_STAGE:
             continue
-        # PyYAML imports as yaml; numpy and editdistance match their own names
+        # PyYAML imports as yaml; the others import under their own names
         candidates = {pkg.lower(), "pyyaml" if pkg == "yaml" else pkg.lower()}
         if not candidates & declared:
             missing[pkg] = sorted(files)
@@ -114,10 +109,9 @@ def test_onnxruntime_is_declared_because_every_import_of_it_is_lazy():
     assert "onnxruntime" in _declared_requirements()
 
 
-@pytest.mark.parametrize("module", ["pipeline", "api"])
-def test_core_modules_parse(module):
-    """A guard against a bad edit to the two modules most often patched here."""
-    ast.parse((ANPR / f"{module}.py").read_text())
+def test_the_pipeline_parses():
+    """A guard against a bad edit to the module most often patched here."""
+    ast.parse((ANPR / "pipeline.py").read_text())
 
 
 def test_the_trackers_own_dependencies_are_declared():

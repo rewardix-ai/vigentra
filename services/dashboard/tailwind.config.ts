@@ -55,10 +55,7 @@ const config: Config = {
       borderRadius: {
         sm: "6px",
         DEFAULT: "10px",
-        md: "12px",
         lg: "16px",
-        xl: "20px",
-        "2xl": "24px",
       },
       boxShadow: {
         card: "0 1px 2px rgba(16, 30, 51, 0.06)",

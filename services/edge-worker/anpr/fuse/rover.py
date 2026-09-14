@@ -3,13 +3,13 @@ voting across frames, image variants and readers; grammar prior; agreement
 ratio; calibrated confidence; SR-agreement guard; ranked alternates."""
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 
 import editdistance
 import numpy as np
 
-from anpr.plate_grammar import fits_slot, normalise, score_string, slot_types, FORMATS_BY_LEN
+from anpr.plate_grammar import fits_slot, score_string, FORMATS_BY_LEN
 
 
 @dataclass
@@ -171,7 +171,7 @@ def rover(hyps: list[ReadHypothesis], preferred_state: str = "GJ", temperature: 
         for h in sr:
             top_sr[h.text] += h.weight
         sr_disagree = max(top_non_sr, key=top_non_sr.get) != max(top_sr, key=top_sr.get)
-    # calibrated confidence. Temperature is fitted (anpr/fuse/calibrate.py) on the FINAL
+    # calibrated confidence. Temperature was fitted offline on the FINAL
     # reported confidence, so it is applied to the full product, not the character term.
     if sr_disagree:
         raw *= sr_penalty

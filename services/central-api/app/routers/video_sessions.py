@@ -1,11 +1,12 @@
 """Authorized video sessions.
 
-Four routes:
+Five routes:
 
     POST   /api/v1/video-sessions              open an authorized session
     GET    /api/v1/video-sessions/{id}/status  countdown / state for the player
     DELETE /api/v1/video-sessions/{id}         stop it now
     GET    /api/v1/streams/{id}                the bytes, proxied, range-aware
+    GET    /api/v1/cameras/{id}/snapshot       latest still frame for the live wall
 
 Every refusal is a 403 with `VIDEO_ACCESS_DENIED` and lands in the audit trail.
 The body carries a `state` telling the two kinds of no apart: a flat `denied`,
@@ -40,6 +41,7 @@ from ..schemas import VideoAccessState, VideoSessionCreate, VideoSessionOut
 from ..services import audit_service, video_broker, video_permissions
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..video_adapters import VideoAdapterError, VideoNotConfigured
+from .cameras import _load_camera
 
 logger = logging.getLogger("vigentra.video.router")
 
@@ -68,17 +70,6 @@ def _denied(
         body["owning_department"] = camera.owning_department
         body["request_access_at"] = "/api/v1/video-access-requests"
     return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=body)
-
-
-async def _load_camera(db: AsyncSession, camera_id: str) -> CameraRow:
-    row = (
-        await db.execute(select(CameraRow).where(CameraRow.camera_id == camera_id))
-    ).scalar_one_or_none()
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Unknown camera '{camera_id}'"
-        )
-    return row
 
 
 # ---------------------------------------------------------------------------

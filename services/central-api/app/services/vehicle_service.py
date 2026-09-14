@@ -10,9 +10,10 @@ that stays true.
 The separation is the point. Vehicle attributes on their own are ordinary
 reference data — the same category as a make/model catalogue. The risk lives in
 the JOIN: linking "camera X saw this plate at 14:32" to a registration is what
-turns a camera registry into a person-tracking system. That join needs ANPR,
-which this phase does not implement, and it would need its own legal basis
-besides. So the table exists; the join does not.
+turns a camera registry into a person-tracking system. ANPR now reads plates
+(see `watchlist_service` and `track_service`), so that join is possible; it
+would need its own legal basis, and nothing in this codebase makes it. So the
+table exists; the join does not.
 
 **The import guard.** `assert_no_owner_fields` rejects any record carrying an
 owner-identifying column. This is not defensive paranoia about the current

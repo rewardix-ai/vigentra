@@ -78,11 +78,10 @@ camera-placement finding, and the system reports it as one instead of guessing.
 `reading.readers` selects them. `crnn` is the only reader enabled by default
 and the only one whose weights ship in `models/`; it runs on ONNX Runtime.
 
-Two further readers exist in the tree and are imported lazily, so neither is a
-dependency of the image: `anpr/read/awiros.py` (PaddleOCR-based) and
-`anpr/read/claude_reader.py`. Enabling either means adding its own heavy
-dependencies to `requirements-anpr.txt` first; `thresholds.yaml` records the
-measured cost of the Awiros reader and why it is off.
+One further reader exists in the tree and is imported lazily, so it is not a
+dependency of the image: `anpr/read/awiros.py` (PaddleOCR-based). Enabling it
+means adding its heavy dependencies to `requirements-anpr.txt` first;
+`thresholds.yaml` records its measured cost and why it is off.
 
 `reading.extra_crnn_weights` and `reading.second_reader_mode` in the shipped
 config come from the vendor's own evaluation setup and name a weight file that

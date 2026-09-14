@@ -120,9 +120,10 @@ export function isOmnidirectional(camera: Camera): boolean {
 /**
  * Offset a lat/lng by a distance and bearing.
  *
- * Flat-earth approximation, deliberately. Over 120 m the error is far below a
- * pixel at any zoom this map uses, and the alternative pulls in a geodesy
- * dependency to draw a shape whose range is a convention anyway.
+ * Flat-earth approximation, deliberately. The drawn range never exceeds
+ * MAX_RANGE_M (2.5 km), and over that the error is far below a pixel at any
+ * zoom this map uses; the alternative pulls in a geodesy dependency to draw a
+ * shape whose range is a convention anyway.
  */
 function offset(lat: number, lng: number, metres: number, bearingDeg: number): [number, number] {
   const rad = (bearingDeg * Math.PI) / 180;

@@ -1,8 +1,9 @@
 """Canonical Pydantic v2 schemas - the vendor-neutral, METADATA-ONLY contract.
 
-Module 1 federates camera *records*, not camera *feeds*. There is no stream URL,
-no RTSP address, no media token and no video-session model anywhere in this
-file, and `tests/test_no_video_access.py` asserts that stays true.
+Module 1 federates camera *records*, not camera *feeds*. The one video address
+any schema here carries is `VideoSessionOut.stream_url`: this service's own
+opaque `/api/v1/streams/{session_id}` route, never a department URL, an RTSP
+address or a media token.
 
 A department system's own field names, lifecycle vocabulary, timestamp format
 and error envelope stop at its adapter and never reach the database, the API or
@@ -887,24 +888,6 @@ class VideoAccessRequestOut(BaseModel):
 # ---------------------------------------------------------------------------
 # Detections
 # ---------------------------------------------------------------------------
-
-class BoundingBox(BaseModel):
-    """xyxy in pixels, validated against the frame if dimensions are supplied."""
-
-    x1: float
-    y1: float
-    x2: float
-    y2: float
-
-    @classmethod
-    def from_xyxy(cls, values: list[float]) -> "BoundingBox":
-        if len(values) != 4:
-            raise ValueError("bbox_xyxy must have exactly four values")
-        return cls(x1=values[0], y1=values[1], x2=values[2], y2=values[3])
-
-    def as_list(self) -> list[float]:
-        return [self.x1, self.y1, self.x2, self.y2]
-
 
 #: Generic classes only. No plate text, no face, no vehicle identity.
 DETECTION_CLASSES = [

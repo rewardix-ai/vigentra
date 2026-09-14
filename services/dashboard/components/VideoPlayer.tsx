@@ -414,7 +414,7 @@ export function VideoPlayer({
         </div>
       )}
 
-      {session && <DetectionControls state={detections} />}
+      <DetectionControls state={detections} />
 
       {error && <Notice tone="bad">{error}</Notice>}
 

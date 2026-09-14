@@ -20,7 +20,6 @@ import logging
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 import httpx
 from fastapi.responses import StreamingResponse
@@ -28,6 +27,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask
 
+from ..adapters.grid_adapter import _as_float
 from ..config import GRID_BROWSER_UA, DemoUser, Settings
 from ..models import Camera as CameraRow
 from ..models import VideoSession as VideoSessionRow
@@ -253,13 +253,6 @@ async def create_session(
         segment_start_seconds=_as_float(handle.get("segment_start_seconds")),
         segment_end_seconds=_as_float(handle.get("segment_end_seconds")),
     )
-
-
-def _as_float(value: Any) -> float | None:
-    try:
-        return float(value) if value is not None else None
-    except (TypeError, ValueError):
-        return None
 
 
 def to_out(
@@ -726,22 +719,3 @@ def _stream_local_clip(
     return StreamingResponse(
         _iter(), status_code=status_code, media_type="video/mp4", headers=headers
     )
-
-
-async def expire_stale_sessions(db: AsyncSession) -> int:
-    """Mark past-expiry sessions expired. Called by the health monitor sweep."""
-    now = datetime.now(timezone.utc)
-    rows = (
-        await db.execute(
-            select(VideoSessionRow).where(VideoSessionRow.status == "active")
-        )
-    ).scalars().all()
-    changed = 0
-    for row in rows:
-        expires = to_utc(row.expires_at_utc)
-        if expires is None or expires <= now:
-            row.status = "expired"
-            changed += 1
-    if changed:
-        await db.commit()
-    return changed

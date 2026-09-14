@@ -55,11 +55,8 @@ if (-not $WorkerArgs -or $WorkerArgs.Count -eq 0) {
     exit 2
 }
 
-# 127.0.0.1, never 'localhost'. run-local binds uvicorn to 127.0.0.1 (IPv4
-# only), but on Windows 'localhost' resolves to ::1 first - and if Docker has
-# ever published port 8000, its relay is still listening there. The worker then
-# ingests into the Docker stack's Postgres while the dashboard reads the local
-# SQLite, and every batch comes back "accepted" with nothing to show for it.
+# 127.0.0.1, never 'localhost': on Windows 'localhost' resolves to ::1 first,
+# which is not always where the central API is listening.
 if (-not $env:CENTRAL_API_URL) { $env:CENTRAL_API_URL = 'http://127.0.0.1:8000' }
 $env:YOLO_WEIGHTS_DIR = $weightsDir
 

@@ -1,27 +1,23 @@
 """The dataset machinery's load-bearing guarantees.
 
-Four things must hold or the dataset is worse than useless, and each is tested
+Three things must hold or the dataset is worse than useless, and each is tested
 here rather than trusted:
 
   * a size band is derived from the data, and degrades honestly when there is
     too little data to derive one;
-  * OCR failure never turns into "no plate";
   * a vehicle sequence cannot straddle train and val/test;
   * rebuilding from the same inputs reproduces the same split.
 """
 import sys
 from pathlib import Path
 
-import pytest
-
 TOOLS = Path(__file__).resolve().parent.parent / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from _corpus import (  # noqa: E402
-    NEEDS_HUMAN, PHYSICAL_FLOOR_PX, PlateSample, Readability, angle_category,
-    classify_difficulty, derive_bands, frame_number_of, readability_of,
-    split_of, to_yolo,
+    NEEDS_HUMAN, PHYSICAL_FLOOR_PX, PlateSample, angle_category,
+    classify_difficulty, derive_bands, split_of, to_yolo,
 )
 
 
@@ -65,26 +61,6 @@ def test_bands_stay_a_partition_when_widths_are_all_the_same():
     # bands must still order strictly or classify() becomes ambiguous.
     bands = derive_bands([42.0] * 50, provenance="test")
     assert bands.extremely_tiny < bands.very_small < bands.small < bands.medium
-
-
-# --- readability is never allowed to mean "no plate" -----------------------
-
-def test_an_unread_small_plate_is_unreadable_not_absent():
-    sample = _sample(plate_width_px=30.0)
-    verdict = readability_of(sample, "", 0.0)
-    assert verdict == Readability.UNREADABLE_TOO_SMALL.value
-    # The crucial property: it is still a plate sample, with a real box.
-    assert sample.plate_width_px == 30.0
-
-
-def test_an_unread_large_plate_is_a_quality_failure_not_a_size_one():
-    sample = _sample(plate_width_px=140.0)
-    assert readability_of(sample, "", 0.0) == Readability.UNREADABLE_QUALITY.value
-
-
-def test_a_read_plate_is_readable_at_any_size():
-    assert readability_of(_sample(plate_width_px=12.0), "GJ01AB1234", 0.9) == \
-        Readability.READABLE.value
 
 
 # --- difficulty tagging ----------------------------------------------------
@@ -155,10 +131,3 @@ def test_yolo_conversion_clamps_a_box_running_off_the_frame():
     cx, cy, w, h = to_yolo((-10, -5, 50, 25), 100, 50)
     assert 0.0 <= cx <= 1.0 and 0.0 <= cy <= 1.0
     assert 0.0 <= w <= 1.0 and 0.0 <= h <= 1.0
-
-
-@pytest.mark.parametrize("name,expected", [
-    ("cam06_0142.jpg", 142), ("cam06-0007.png", 7), ("frame_00099.jpg", 99),
-])
-def test_frame_numbers_are_parsed_from_capture_names(name, expected):
-    assert frame_number_of(Path(name)) == expected

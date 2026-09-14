@@ -36,8 +36,8 @@ from typing import Any, Iterator
 import httpx
 
 from . import grid
-from .anpr_engine import EngineCache, build_engine
-from .detectors import Detection, DetectorError, build_detector
+from .anpr_engine import EngineCache, _track_number, build_engine
+from .detectors import DetectorError, build_detector
 
 try:
     from anpr.incidents import IncidentDetector
@@ -49,12 +49,7 @@ try:
 except Exception:  # pragma: no cover - analytics extras absent
     AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
-from .plates import (
-    PLATE_BEARING_CLASSES,
-    DisabledPlateReader,
-    PlateReadUnavailable,
-    build_plate_reader,
-)
+from .plates import PLATE_BEARING_CLASSES
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -397,26 +392,6 @@ def _plain(frames: Iterator[tuple[int, Any]]) -> Iterator[tuple[int, Any, float,
         yield index, frame, time.time(), False
 
 
-def _incident_track_id(raw: object) -> int:
-    """A tracker id as an int, whatever shape it arrived in.
-
-    The YOLO detector hands back ints; the ANPR engine hands back its own key,
-    "cam06_s0_t132". int() on the latter raised ValueError inside the per-camera
-    try block, so one unparsable id discarded the entire pass - detections,
-    plates and incidents alike. Degrade to the trailing number, or a stable
-    hash, rather than losing the cycle.
-    """
-    try:
-        return int(raw)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        text = str(raw)
-        end = len(text)
-        while end and text[end - 1].isdigit():
-            end -= 1
-        tail = text[end:]
-        return int(tail) if tail else abs(hash(text)) % 1_000_000
-
-
 def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenance) -> int:
     """Settle the pass: drain the engine's plates, then flush everything once.
 
@@ -451,7 +426,7 @@ def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenan
             )
             logger.info(
                 "plate %s (score %.2f, %d frames%s) on track %d",
-                sighting.text, sighting.score, sighting.observations,
+                sighting.text, sighting.confidence, sighting.observations,
                 "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
             )
 
@@ -473,7 +448,7 @@ def _incident_views(detections) -> list:
     """
     return [
         _IncidentTrack(
-            track_id=_incident_track_id(d.extra["track_id"]),
+            track_id=_track_number(d.extra["track_id"]),
             box=tuple(d.bbox_xyxy),
             label=d.class_name,
         )
@@ -514,7 +489,7 @@ def _sighting_payload(
         "source_mode": source_mode,
         "is_demo_data": source_mode != "authorized_edge",
         "plate_text": sighting.text,
-        "plate_confidence": round(float(sighting.score), 4),
+        "plate_confidence": round(float(sighting.confidence), 4),
         "plate_bbox_xyxy": sighting.plate_bbox or None,
         "plate_reader": reader_version,
         "provenance": {
@@ -571,21 +546,16 @@ def run(
     detector = detector or build_detector()
     router = FrameQualityRouter()
 
-    # ANPR is off unless ANPR_ENABLE is set.
-    #
-    # Two readers, and the choice is not a preference. The consensus engine is
-    # stateful per camera and votes a plate across every frame a vehicle
-    # appears in, so it is built HERE, per run, and never shared between
-    # cameras. The single-frame reader is the fallback for when the analytics
-    # extras are missing - it is worse, and it says so in docs/anpr.md, but a
-    # worker that reads no plates at all is worse still.
+    # ANPR is off unless ANPR_ENABLE is set. The consensus engine is stateful
+    # per camera - it votes a plate across every frame a vehicle appears in -
+    # so it is never shared between cameras. Without it the worker still
+    # counts vehicles; it just reads no plates.
     #
     # A supervisor passes a cache so the engine - and everything the camera has
     # learned about itself: its overlays, its plate votes - survives from one
     # cycle to the next. A one-shot run builds its own and throws it away,
     # which is right for a single pass.
     anpr = anpr_cache.get(camera_id) if anpr_cache is not None else build_engine()
-    plate_reader = build_plate_reader() if anpr is None else None
     plates_read = 0
 
     # Incident detection rides on the same tracker the ANPR engine already
@@ -731,7 +701,6 @@ def run(
                 except Exception as exc:  # pragma: no cover - engine fault
                     logger.error("ANPR engine failed, falling back to plain detection: %s", exc)
                     anpr = None
-                    plate_reader = build_plate_reader()
                     detections = detector.detect(frame_to_detect)
             else:
                 detections = detector.detect(frame_to_detect)
@@ -760,23 +729,6 @@ def run(
 
             for position, detection in enumerate(detections):
                 detection.frame_quality = assessment.quality.value
-
-                # The single-frame reader is only used when the consensus
-                # engine is unavailable. Only vehicles, and only on the frame
-                # the detector actually saw - a person is never cropped.
-                plate = None
-                if plate_reader is not None and detection.class_name in PLATE_BEARING_CLASSES:
-                    try:
-                        plate = plate_reader.read(frame_to_detect, detection.bbox_xyxy)
-                    except PlateReadUnavailable as exc:
-                        # Say it once, then carry on producing detections. ANPR
-                        # failing is not a reason to stop counting vehicles.
-                        logger.error("ANPR unavailable, continuing without plates: %s", exc)
-                        plate_reader = DisabledPlateReader()
-                    except Exception as exc:  # pragma: no cover - engine fault
-                        logger.warning("plate read failed on one vehicle: %s", exc)
-                if plate is not None:
-                    plates_read += 1
                 pending.append(
                     detection.to_payload(
                         camera_id,
@@ -784,10 +736,6 @@ def run(
                         position,
                         source_mode=source_mode,
                         is_demo_data=source_mode != "authorized_edge",
-                        plate_text=plate.text if plate else None,
-                        plate_confidence=plate.confidence if plate else None,
-                        plate_bbox_xyxy=plate.bbox_xyxy if plate else None,
-                        plate_reader=plate.reader_version if plate else None,
                         provenance=dict(base_provenance),
                     )
                 )
@@ -812,7 +760,7 @@ def run(
                 )
                 logger.info(
                     "plate %s (score %.2f, %d frames%s) on track %d",
-                    sighting.text, sighting.score, sighting.observations,
+                    sighting.text, sighting.confidence, sighting.observations,
                     "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
                 )
 

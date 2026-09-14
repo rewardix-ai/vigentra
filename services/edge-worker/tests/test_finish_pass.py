@@ -54,7 +54,6 @@ def sighting(text: str, track: int = 1) -> PlateSighting:
     return PlateSighting(
         track_id=track,
         text=text,
-        score=0.82,
         confidence=0.82,
         observations=12,
         confirmed=True,

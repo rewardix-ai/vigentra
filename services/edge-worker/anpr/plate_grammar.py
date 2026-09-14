@@ -10,14 +10,12 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 LETTERS = set(ALPHABET[:26])
 DIGITS = set(ALPHABET[26:])
-BLANK = "-"  # CTC blank token used by the readers
 
 _CODES_FILE = Path(__file__).resolve().parent.parent / "config" / "india_codes.yaml"
 
@@ -108,9 +106,6 @@ for _f in FORMATS:
 # ---------------------------------------------------------------------------
 # Position-aware confusion maps (spec 5.4)
 # ---------------------------------------------------------------------------
-TO_LETTER = {"0": "O", "1": "I", "2": "Z", "5": "S", "6": "G", "8": "B", "4": "A", "7": "T"}
-TO_DIGIT = {"O": "0", "D": "0", "Q": "0", "U": "0", "I": "1", "L": "1", "T": "1",
-            "Z": "2", "S": "5", "G": "6", "B": "8", "A": "4", "E": "8"}
 # Confusion pairs used to spread probability mass in beam decode.
 CONFUSABLE: dict[str, tuple[str, ...]] = {
     "0": ("O", "D", "Q", "U"), "O": ("0", "D", "Q"), "D": ("0", "O"), "Q": ("0", "O"),
@@ -125,15 +120,6 @@ CONFUSABLE: dict[str, tuple[str, ...]] = {
     "Y": ("V",), "W": ("V", "M"), "C": ("G", "0"), "J": ("1", "U"), "U": ("V", "0"),
 }
 RARE_SERIES_LETTERS = {"I", "O"}
-
-
-def coerce(ch: str, slot: str) -> str:
-    """Map a character into the slot class using the confusion map."""
-    if slot == "A" and ch in DIGITS:
-        return TO_LETTER.get(ch, ch)
-    if slot == "D" and ch in LETTERS:
-        return TO_DIGIT.get(ch, ch)
-    return ch
 
 
 def fits_slot(ch: str, slot: str) -> bool:
@@ -206,13 +192,6 @@ def score_string(s: str, preferred_state: str = "GJ") -> GrammarScore:
     return best
 
 
-def slot_types(length: int) -> list[str] | None:
-    fmts = FORMATS_BY_LEN.get(length)
-    if not fmts:
-        return None
-    return list(max(fmts, key=lambda f: f.prior).template)
-
-
 # ---------------------------------------------------------------------------
 # Colour / class rules (spec 5.2) and geometry (spec 5.3)
 # ---------------------------------------------------------------------------
@@ -231,7 +210,6 @@ def plate_class(ground: str, text: str) -> str:
     return PLATE_CLASSES.get((ground, text), "unknown")
 
 
-ASPECT_SINGLE_ROW = (2.6, 5.5)
 ASPECT_TWO_ROW = (1.2, 2.6)
 ASPECT_ANY = (1.0, 6.0)
 PLATE_H_FRAC_OF_VEHICLE = (0.04, 0.25)

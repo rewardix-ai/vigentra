@@ -126,7 +126,6 @@ def build(engine_module, records=(), vehicles=()):
     """An AnprEngine wrapping a fake pipeline, without touching real weights."""
     engine = engine_module.AnprEngine.__new__(engine_module.AnprEngine)
     engine.camera_id = "cam01"
-    engine.min_score = 0.55
     engine._pipeline = FakePipeline(records, vehicles)
     engine._Frame = FakeFrame
     engine._emitted = set()
@@ -272,7 +271,6 @@ def test_a_sighting_payload_carries_the_vote_count(worker_module, engine_module)
     sighting = engine_module.PlateSighting(
         track_id=7,
         text="GJ01AB1234",
-        score=0.82,
         confidence=0.79,
         observations=11,
         confirmed=True,
@@ -294,7 +292,7 @@ def test_a_sighting_payload_carries_the_vote_count(worker_module, engine_module)
     )
 
     assert payload["plate_text"] == "GJ01AB1234"
-    assert payload["plate_confidence"] == 0.82
+    assert payload["plate_confidence"] == 0.79
     assert payload["provenance"]["plate_observations"] == 11
     assert payload["provenance"]["plate_confirmed"] is True
     assert payload["provenance"]["captured_at_pts"] == 1234.5
@@ -306,7 +304,7 @@ def test_replaying_one_pass_collapses_to_one_row(worker_module, engine_module):
     """The detection ID is derived from the track and the text, not the frame."""
     def make(**overrides):
         base = dict(
-            track_id=7, text="GJ01AB1234", score=0.82, confidence=0.79,
+            track_id=7, text="GJ01AB1234", confidence=0.79,
             observations=11, confirmed=True, state="GJ", plate_format="standard",
             plate_bbox=[1.0, 2.0, 3.0, 4.0], vehicle_bbox=[0.0, 0.0, 9.0, 9.0],
             captured_at=1234.5, frame_index=12,

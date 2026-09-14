@@ -375,11 +375,6 @@ class DemoUser(BaseModel):
             return False
         return any(z.strip().lower() == str(zone).strip().lower() for z in self.zones)
 
-    def may_access_source(self, source_system: str | None) -> bool:
-        if self.is_statewide:
-            return True
-        return SOURCE_BY_DEPARTMENT.get(self.department) == source_system
-
 
 #: Roles that oversee the federation rather than operate a unit's cameras.
 #: They never *own* a camera, so footage always needs the owning operator's
@@ -602,11 +597,6 @@ class SourceSettings(BaseModel):
     default_district: str
     department_code: str
     default_city: str = "Ahmedabad"
-    #: A source Vigentra may only read. The grid is consume-only by its own
-    #: rules ("do not push streams to any path, and do not call the gateway's
-    #: control API"), so its adapter refuses every write rather than
-    #: attempting one and being rejected upstream.
-    read_only: bool = False
     #: Per-source transport budget. A department system on the same network as
     #: Vigentra and a shared gateway reached over the public internet do not
     #: deserve the same deadline, and one number for both means either the
@@ -629,7 +619,6 @@ class Settings(BaseSettings):
     environment_label: str = "DEMO / PHASE 2"
     service_name: str = "vigentra-central-api"
     service_version: str = "0.3.0"
-    display_timezone: str = "Asia/Kolkata"
 
     # --- storage --------------------------------------------------------
     database_url: str = "postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel"
@@ -659,24 +648,20 @@ class Settings(BaseSettings):
     traffic_vms_base_url: str = "http://traffic-vms:8001"
     traffic_vms_api_key: str = "traffic-demo-key"
     traffic_vms_department: str = TRAFFIC_DEPARTMENT
-    traffic_vms_district: str = "Ahmedabad"
     traffic_vms_city: str = "Ahmedabad"
 
     municipal_vms_base_url: str = "http://municipal-vms:8002"
     municipal_vms_token: str = "municipal-demo-token"
     municipal_vms_department: str = MUNICIPAL_DEPARTMENT
-    municipal_vms_district: str = "Ahmedabad"
     municipal_vms_city: str = "Ahmedabad"
 
     # --- Sentinel sandbox camera grid ------------------------------------
-    #: The live grid described at https://sentinel.gujarat.gov.in/resource.
-    #: Unlike the two demo departments this is a real upstream, so every rule
-    #: from that guide is enforced in code - see docs/sentinel-grid.md.
-    #: Retained for the edge worker, which reads SENTINEL_GRID_ENABLED from the
-    #: environment to decide whether to open grid captures. It no longer gates
-    #: a source here: the grid is not a source of its own, it is the upstream
-    #: both department systems federate.
-    sentinel_grid_enabled: bool = True
+    # The live grid described at https://sentinel.gujarat.gov.in/resource.
+    # Unlike the two demo departments this is a real upstream, so every rule
+    # from that guide is enforced in code - see docs/sentinel-grid.md. The
+    # grid is not a source of its own: it is the upstream both department
+    # systems federate. (SENTINEL_GRID_ENABLED is read by the edge worker from
+    # its own environment; this service does not use it.)
     #: The gateway has moved host once already. Keep this configurable and
     #: never hard-code it: a deployment pinned to an old host reports an
     #: outage that is really a migration.
@@ -693,33 +678,13 @@ class Settings(BaseSettings):
     #: the earlier form wanted - so an older deployment keeps working and a
     #: current one needs this set.
     sentinel_grid_email: str = ""
-    #: RTSP and WHEP are served on the public gateway rather than the CDN,
-    #: because a CDN cannot proxy them. The guide recommends RTSP for
-    #: inference, so the edge worker wants this and the browser wants HLS.
-    sentinel_grid_rtsp_host: str = "103.250.160.189"
-    sentinel_grid_department: str = GRID_DEPARTMENT
     sentinel_grid_district: str = "Gujarat"
-    sentinel_grid_city: str = "Gujarat"
-    #: The catalogue is the contract, so it is re-read rather than cached
-    #: forever - but "pace your load" means not re-reading it per request.
-    sentinel_grid_catalogue_ttl_seconds: int = 30
-    #: rtsp | hls. Which transport the EDGE WORKER prefers. Browser preview is
-    #: always HLS; RTSP is not a browser protocol.
-    sentinel_grid_capture_protocol: str = "rtsp"
     #: Where the edge worker serves live still frames for the wall.
     #: The grid HLS CDN delivers a 6 s segment in 15-80 s and 403s under
     #: concurrency, so a browser HLS wall blacks out; the edge worker
     #: decodes over the fast RTSP gateway and serves JPEG snapshots, which
     #: this API proxies behind the same permission gate. Empty disables it.
     edge_snapshot_url: str = ""
-    #: UDP is accepted upstream but fails across NAT and most corporate
-    #: firewalls, and partial delivery produces corrupt frames that look like
-    #: model bugs. Never change this without a very specific reason.
-    sentinel_grid_rtsp_transport: str = "tcp"
-    #: Seconds to wait for RTSP before falling back to HLS. The guide sanctions
-    #: HLS explicitly when port 8554 is blocked on the client's network.
-    sentinel_grid_rtsp_probe_seconds: float = 8.0
-    sentinel_grid_hls_fallback: bool = True
 
     upstream_timeout_seconds: float = 6.0
     upstream_retries: int = 1
@@ -764,7 +729,6 @@ class Settings(BaseSettings):
     yolo_confidence_threshold: float = 0.45
     yolo_device: str = "auto"
     yolo_frame_sample_interval: int = 5
-    detection_retention_hours: int = 168
 
     # --- vehicle reference registry --------------------------------------
     vehicle_registry_enabled: bool = True
@@ -829,7 +793,6 @@ class Settings(BaseSettings):
                     default_district=self.sentinel_grid_district,
                     department_code="TRAFFIC",
                     default_city=self.traffic_vms_city,
-                    read_only=True,
                     timeout_seconds=(self.grid_upstream_timeout_seconds
                                      if self.traffic_vms_adapter == "grid_adapter"
                                      else None),
@@ -857,7 +820,6 @@ class Settings(BaseSettings):
                     default_district=self.sentinel_grid_district,
                     department_code="MUNICIPAL",
                     default_city=self.municipal_vms_city,
-                    read_only=True,
                     timeout_seconds=(self.grid_upstream_timeout_seconds
                                      if self.municipal_vms_adapter == "grid_adapter"
                                      else None),

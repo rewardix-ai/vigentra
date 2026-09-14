@@ -240,6 +240,47 @@ export function Card({
   );
 }
 
+export function Stat({
+  label,
+  value,
+  hint,
+  tone = "plain",
+  href,
+}: {
+  label: string;
+  value: number | string;
+  hint?: string;
+  tone?: "plain" | "ok" | "warn" | "bad";
+  href?: string;
+}) {
+  const colour = {
+    plain: "text-ink-900",
+    ok: "text-ok",
+    warn: "text-warn",
+    bad: "text-bad",
+  }[tone];
+
+  const body = (
+    <>
+      <div className="field-label">{label}</div>
+      <div className={`tabular mt-1 text-[26px] font-semibold leading-none ${colour}`}>{value}</div>
+      {hint && <div className="mt-1.5 text-2xs text-ink-500">{hint}</div>}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="card block px-4 py-3 transition hover:border-brand-500 hover:shadow-raised"
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className="card px-4 py-3">{body}</div>;
+}
+
 export function Field({
   label,
   children,
@@ -303,12 +344,12 @@ export function PageHeader({
   );
 }
 
-export function Spinner({ className = "" }: { className?: string }) {
+export function Spinner() {
   return (
     <span
       role="status"
       aria-label="Loading"
-      className={`inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-60 ${className}`}
+      className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-60"
     />
   );
 }
@@ -317,18 +358,10 @@ export function Spinner({ className = "" }: { className?: string }) {
  * An empty table should read as "nothing matched", not as "this broke". The
  * icon is what separates those two readings before the sentence is read.
  */
-export function EmptyState({
-  message,
-  hint,
-  icon: Icon = Inbox,
-}: {
-  message: string;
-  hint?: string;
-  icon?: LucideIcon;
-}) {
+export function EmptyState({ message, hint }: { message: string; hint?: string }) {
   return (
     <div className="px-4 py-10 text-center">
-      <Icon
+      <Inbox
         className="mx-auto mb-2 h-7 w-7 text-ink-300"
         strokeWidth={1.4}
         aria-hidden
@@ -374,12 +407,6 @@ export function Notice({
   );
 }
 
-/**
- * The Module 1 boundary, stated wherever a camera is on screen.
- *
- * Deliberately not dismissible: an operator should never be in doubt about
- * where footage lives or why there is no player on the page.
- */
 /**
  * What happens to this camera's footage, said plainly.
  *

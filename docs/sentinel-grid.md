@@ -218,8 +218,6 @@ all thirty cameras) or `traffic.state` / `municipal.state` for one department's
 share. **Fit all on screen** puts every feed on one screen at once; Esc leaves.
 The grid cameras offer live only, **not** playback, whoever is watching.
 
-Regenerate the reference data after re-surveying:
-
-```bash
-python scripts/compile_grid_reference.py
-```
+After re-surveying, edit `data/reference/grid_cameras.json` directly. Each
+camera carries its own evidence in `geo_source`, `geo_confidence` and
+`facing_basis`, so a changed coordinate says where it came from.

@@ -16,9 +16,6 @@
 
 export const PRODUCT_NAME = "Vigentra";
 
-/** The logo's own line, set under the wordmark with red separators. */
-export const LOGO_TAGLINE = ["Vigilance", "Intelligence", "Safer Roads"] as const;
-
 /**
  * The mark alone. `tone` picks the cut: the reversed white one for the navy
  * chrome, the original colours on light surfaces. `labelled` when it stands
@@ -34,7 +31,6 @@ export function VigentraMark({
   labelled?: boolean;
 }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={tone === "onDark" ? "/brand/vigentra-mark-light.png" : "/brand/vigentra-mark.png"}
       alt={labelled ? PRODUCT_NAME : ""}
@@ -83,24 +79,20 @@ function LogoTagline({ width, dark }: { width: number; dark: boolean }) {
  * `tone` picks the two places this appears: `onDark` in the navy header,
  * `onLight` on light surfaces. `size="lg"` on a light surface is the full
  * approved lockup image, exactly as drawn. Otherwise it is the mark beside the
- * wordmark cut from the same artwork, with the tagline justified under it;
- * pass `subtitle` as a string to replace the tagline, or null to drop it.
+ * wordmark cut from the same artwork, with the tagline justified under it.
  */
 export function BrandLockup({
   tone = "onLight",
   size = "sm",
-  subtitle,
 }: {
   tone?: "onDark" | "onLight";
   size?: "sm" | "lg";
-  subtitle?: string | null;
 }) {
   const dark = tone === "onDark";
   const large = size === "lg";
 
   if (large && !dark) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img
         src="/brand/vigentra-logo.png"
         alt="Vigentra - Vigilance, Intelligence, Safer Roads"
@@ -121,26 +113,13 @@ export function BrandLockup({
     >
       <VigentraMark tone={tone} className={(large ? "h-12" : "h-9") + " w-auto shrink-0"} />
       <span className="flex flex-col gap-[5px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={dark ? "/brand/vigentra-wordmark-light.png" : "/brand/vigentra-wordmark.png"}
           alt=""
           style={{ height: wordHeight, width: wordWidth }}
           draggable={false}
         />
-        {subtitle === undefined ? (
-          <LogoTagline width={wordWidth} dark={dark} />
-        ) : (
-          subtitle && (
-            <span
-              className={
-                "block text-2xs uppercase tracking-wider " + (dark ? "text-white/60" : "text-ink-500")
-              }
-            >
-              {subtitle}
-            </span>
-          )
-        )}
+        <LogoTagline width={wordWidth} dark={dark} />
       </span>
     </span>
   );

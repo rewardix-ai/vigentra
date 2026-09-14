@@ -49,7 +49,6 @@ class Pipeline:
 def drain(records):
     eng = engine.AnprEngine.__new__(engine.AnprEngine)
     eng.camera_id = "cam01"
-    eng.min_score = 0.55
     eng._pipeline = Pipeline(records)
     eng._emitted = set()
     eng._pending = []

@@ -25,7 +25,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.anpr_engine import _track_number  # noqa: E402
-from app.worker import _incident_track_id  # noqa: E402
 
 #: Exactly as `anpr.pipeline` writes them (reports/pipeline_cam06_*.json).
 ENGINE_KEYS = ["cam06_s0_t1", "cam06_s0_t12", "cam06_s0_t132", "cam01_s0_t7"]
@@ -41,7 +40,6 @@ ENGINE_KEYS = ["cam06_s0_t1", "cam06_s0_t12", "cam06_s0_t132", "cam01_s0_t7"]
 ])
 def test_the_trailing_number_is_the_tracker_id(key, expected):
     assert _track_number(key) == expected
-    assert _incident_track_id(key) == expected
 
 
 @pytest.mark.parametrize("raw", ENGINE_KEYS + ["no_digits", "", None, object()])
@@ -51,7 +49,6 @@ def test_no_track_id_can_abort_a_camera_pass(raw):
     `int("s0_t1")` raised and cost the whole cycle.
     """
     assert isinstance(_track_number(raw), int)
-    assert isinstance(_incident_track_id(raw), int)
 
 
 def test_two_different_keys_do_not_collide_into_one_track():

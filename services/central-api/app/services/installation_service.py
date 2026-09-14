@@ -278,8 +278,9 @@ async def decommission_request(
 def _assert_editable(record: InstallationRequestOut, user: DemoUser) -> None:
     """A record leaves the operator's hands the moment it is submitted.
 
-    After submission only the approval path can move it, so an operator cannot
-    quietly alter a form that an approver has already started reading.
+    After submission only the department system's own validation moves it -
+    there is no approval step - and it is editable again only if that
+    validation fails (see EDITABLE_STATUSES).
     """
     status = record.status if isinstance(record.status, str) else record.status.value
     if status not in EDITABLE_STATUSES:

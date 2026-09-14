@@ -35,10 +35,3 @@ def suppress_glare(img: np.ndarray, clip: float = 2.0, grid=(4, 2), retinex: boo
     out = L.copy()
     out[y0:y1] = clahe.apply(L[y0:y1])
     return out
-
-
-def bloom_mask(gray: np.ndarray, thr: int = 250, dilate: int = 3) -> np.ndarray:
-    m = (gray >= thr).astype(np.uint8) * 255
-    if dilate > 0:
-        m = cv2.dilate(m, np.ones((dilate, dilate), np.uint8))
-    return m

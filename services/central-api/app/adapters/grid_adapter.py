@@ -2,7 +2,7 @@
 
 Unlike the two demo department systems, this one is a REAL upstream: the live
 grid documented at https://sentinel.gujarat.gov.in/resource and served from
-`live.corp8.cloud`. Everything the integrator's guide asks of a client is
+`cctv.corp8.cloud`. Everything the integrator's guide asks of a client is
 enforced here or in the video adapter beside it. See docs/sentinel-grid.md.
 
 Two things make this adapter different from the department adapters:
@@ -19,7 +19,7 @@ cameras advertise the `live` capability and never `playback`. A playback
 request is refused by capability, independently of any role check.
 
 The catalogue is the contract, the URL pattern is not: camera ids and the set
-of cameras change, so `/api/ingest` is re-read (behind a short TTL, because
+of cameras change, so `/cameras.json` is re-read (behind a short TTL, because
 "pace your load" applies to the control plane too) rather than hard-coded.
 Per-camera codec, resolution and frame rate come from the catalogue as well -
 the grid is deliberately not uniform.
@@ -60,7 +60,6 @@ from .base import (
     SourceAuthError,
     ResourceNotFoundError,
     SourceConflictError,
-    SourceUnavailableError,
     SurveillanceAdapter,
     UpstreamProtocolError,
 )
@@ -268,6 +267,10 @@ class _GridGate:
             await self._login(source_system, credential, identity)
 
     async def _login(self, source_system: str, credential: str, identity: str) -> None:
+        # Only a refusal caches a backoff. Any other error - a transport error
+        # or a 5xx - is the gateway being unwell, not a refusal, so it
+        # propagates uncached: the old session (still in the jar) keeps
+        # working, and the next pass may well succeed.
         try:
             await self._login_once(source_system, credential, identity)
         except SourceAuthError as exc:
@@ -275,11 +278,6 @@ class _GridGate:
             # so one bad credential does not become a login storm.
             self._failed_at = time.monotonic()
             self._failure = exc
-            raise
-        except Exception:
-            # A transport error or a 5xx is the gateway being unwell, not a
-            # refusal. Do not cache a backoff - the old session (still in the
-            # jar) keeps working, and the next pass may well succeed.
             raise
         self._failed_at = None
         self._failure = None

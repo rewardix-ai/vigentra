@@ -11,7 +11,7 @@ import dataclasses
 import json
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -22,9 +22,8 @@ import yaml
 from anpr.detect.corners import estimate_corners
 from anpr.detect.overlay_mask import OverlayMasker, ROIConfig
 from anpr.detect.plate import PlateDetector
-from anpr.detect.static_text import StaticTextMap
+from anpr.detect.static_text import StaticTextMap, _iou
 from anpr.detect.vehicle import VehicleTracker
-from anpr.enhance.binarize import binarise
 from anpr.enhance.deblur import Deblurrer
 from anpr.enhance.denoise import Denoiser
 from anpr.enhance.fuse import fuse
@@ -41,8 +40,6 @@ from anpr.sources import Frame, FrameSource
 from anpr.track.crop_bank import CropBankStore, TrackBank
 
 log = logging.getLogger("anpr.pipeline")
-
-STAGE_B_MODULES = ("rectify", "register", "fuse", "glare", "denoise", "deblur", "sr", "binarize", "mfsr")
 
 
 @dataclass
@@ -135,23 +132,6 @@ class Timings:
                 "total_ms_per_frame": (self.mask_ms + self.vehicle_ms + self.plate_ms) / n}
 
 
-
-def _iou(a, b) -> float:
-    """Intersection over union of two boxes; 0.0 if either is missing.
-
-    Inlined from the upstream project's eval/metrics.py rather than imported:
-    `eval` is that project's evaluation harness and is not shipped here, and a
-    lazy import of it inside _merge_fragments crashed every pass that had a
-    fragmented track. The local copies in anpr/detect/ drop the None guard,
-    which this caller relies on.
-    """
-    if a is None or b is None:
-        return 0.0
-    x1, y1 = max(a[0], b[0]), max(a[1], b[1])
-    x2, y2 = min(a[2], b[2]), min(a[3], b[3])
-    inter = max(0, x2 - x1) * max(0, y2 - y1)
-    ua = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
-    return inter / ua if ua > 0 else 0.0
 
 class ANPRPipeline:
     def __init__(self, camera_id: str, thresholds: str | Path = "config/thresholds.yaml",

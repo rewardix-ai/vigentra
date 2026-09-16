@@ -232,6 +232,7 @@ frame
   ├─ vehicle detector (YOLO11 + ByteTrack) ──► stable track id per vehicle
   ├─ plate detector        inside each vehicle box ≥96 px wide: crop → upscale
   │                        ≥640 px → CNN (+ retro-reflective proposer) → geometry prior
+  │                        (a box wider than 0.60 of its vehicle is demoted)
   ├─ crop bank             every crop stamped with track, frame, PTS, quality
   │                        (a verdict is produced when the track closes)
   ├─ legibility gate       width · sharpness · contrast ──► UNREADABLE

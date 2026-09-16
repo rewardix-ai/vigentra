@@ -13,7 +13,8 @@ import cv2
 import numpy as np
 
 from anpr.detect.tiling import make_tiles, merge_tile_dets, nms
-from anpr.plate_grammar import ASPECT_ANY, ASPECT_TWO_ROW, PLATE_H_FRAC_OF_VEHICLE
+from anpr.plate_grammar import (ASPECT_ANY, ASPECT_TWO_ROW, PLATE_H_FRAC_OF_VEHICLE,
+                                PLATE_W_FRAC_OF_VEHICLE_MAX)
 
 log = logging.getLogger("anpr.detect.plate")
 
@@ -102,9 +103,13 @@ def geometry_prior(box, vehicle_box, vehicle_type: str) -> tuple[float, bool, li
     if rel_y < 0.25:
         p *= 0.5
         reasons.append(f"plate_too_high:{rel_y:.2f}")
-    if w > 0.9 * vw:
-        p *= 0.3
-        reasons.append("plate_wider_than_vehicle")
+    # The old knee was 0.9 of the vehicle box, which caught 2 of those 44 junk boxes; 0.60 catches
+    # 37 and costs none of the 279. Steep rather than hard, so a vehicle box cropped tight by the
+    # frame edge can still recover on detector confidence.
+    w_frac = w / vw
+    if w_frac > PLATE_W_FRAC_OF_VEHICLE_MAX:
+        p *= max(0.05, (PLATE_W_FRAC_OF_VEHICLE_MAX / w_frac) ** 6)
+        reasons.append(f"plate_w_frac_high:{w_frac:.2f}")
     return float(np.clip(p, 0, 1)), two_row, reasons
 
 

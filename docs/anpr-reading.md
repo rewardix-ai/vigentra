@@ -67,6 +67,9 @@ The design rule of the vendored engine, preserved here:
 - CONFIRMED needs fused confidence **and** several agreeing frames, not one
   good look;
 - a super-resolved hypothesis can never confirm on its own;
+- a proposed plate box wider than 0.60 of its vehicle is demoted in the geometry
+  prior (`PLATE_W_FRAC_OF_VEHICLE_MAX` in `anpr/plate_grammar.py`), since a
+  registration never spans the vehicle carrying it;
 - confidence is temperature-calibrated, so the number is comparable between
   cameras rather than being a raw softmax.
 

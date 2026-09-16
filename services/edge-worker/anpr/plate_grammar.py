@@ -213,6 +213,12 @@ def plate_class(ground: str, text: str) -> str:
 ASPECT_TWO_ROW = (1.2, 2.6)
 ASPECT_ANY = (1.0, 6.0)
 PLATE_H_FRAC_OF_VEHICLE = (0.04, 0.25)
+# A registration never fills the vehicle carrying it. Measured in the ANPR research repo on the
+# 323 proposed boxes of data/det/grid, every one looked at by eye (reports/review/grid/by_eye.csv):
+# of the 279 that are plates the widest is 0.57 of the vehicle box and the 95th percentile is 0.36,
+# while 37 of the 44 that are not - a night hoarding's phone number, a light bar, a delivery bag -
+# are above 0.60.
+PLATE_W_FRAC_OF_VEHICLE_MAX = 0.60
 
 # Strings that must never be emitted as a plate (overlay regression, spec 6.2.1)
 FORBIDDEN_SUBSTRINGS = ("CSITMS", "PTZ", "LIVE", "REC", "CAM0", "CAM1", "CAM2", "CAM3", "BRIDGE", "CHIMAN", "CCTV", "IPC")

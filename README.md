@@ -327,14 +327,15 @@ services ship an `app` package, and one interpreter can import only one of them.
 pytest services/edge-worker/tests
 ```
 
-305 tests (196 in the platform suite, 109 in the edge worker's) cover installation onboarding and validation, ownership and
+309 tests (196 in the platform suite, 113 in the edge worker's) cover installation onboarding and validation, ownership and
 permission, registration-gated sync, source-outage isolation, canonical
 normalisation, redaction depth, the full video permission matrix, cross-unit
 grants, recorded-playback windows and retention, detection ingestion and
 scoping, the vehicle registry, every rule in the sandbox grid's integrator
 guide, the plate matcher and its thresholds, watchlist permissions and
 alerting, cross-camera route reconstruction, and the edge-worker's detector,
-consensus ANPR engine and frame-quality routing.
+consensus ANPR engine, its guards against confirming a plate that is not there,
+and frame-quality routing.
 
 Nine of those run **real YOLO inference** over the bundled CCTV clip. They skip
 automatically unless the analytics extras and weights are installed — see

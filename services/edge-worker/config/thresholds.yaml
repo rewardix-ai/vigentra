@@ -78,6 +78,13 @@ reading:
   # 0 wrong; cam06: 3 confirmed, 0 wrong.
   read_filter: true
   string_vote: true
+  # H16: a confirmation asserts a registration exists, so the pixels must show a row of glyphs.
+  # DL11AB3684 was confirmed at 0.45 off a truck windscreen (alternates DL11AB9684 / DL01AB3684 /
+  # DL11AB3634 - one-character variants of an invention). Over the 182 graded tracks of the
+  # before_det baseline the hallucination scores 2, the lowest correct confirmation (DL3CCN5712)
+  # scores 5 and the other 14 score 9-11, so a floor of 3 blocks it and costs none of them.
+  confirm_min_glyphs: 3
+  glyph_crops: 8
   vote_confirm: {min_crops: 4, min_share: 0.4}
   # H12 second reader as a fallback (reports/LOOP_LOG.md H12). The primary reader votes alone and
   # decides every confirm; the second CRNN only supplies a shown, never-confirmed read on tracks the

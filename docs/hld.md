@@ -243,7 +243,8 @@ frame
   │                        second CRNN fills in a shown, never-confirmed read
   │                        only where the first cannot decide
   ├─ grammar engine        Indian plate formats + confusion-aware repair
-  └─ ROVER vote            across the track's crops ──► CONFIRMED | CANDIDATE
+  ├─ ROVER vote            across the track's crops
+  └─ glyph check           the crops must show a row of characters ──► CONFIRMED | CANDIDATE
 ```
 
 The two layers carrying the accuracy are the **grammar engine** and the
@@ -266,6 +267,17 @@ The two layers carrying the accuracy are the **grammar engine** and the
   meanwhile. On the labelled Delhi clip this gave the same 36 readings and the
   same 4 of 12 plates read exactly, in 586 s instead of 878 s — time that goes
   back into more frames per vehicle on busy junctions.
+- **A confirmation needs characters in the pixels.** Agreement between crops is
+  not enough on its own: on the Delhi clip a truck windscreen was confirmed as
+  `DL11AB3684`, because every crop of the same pane of glass was "read" as a
+  one-character variant of the same invented string. A confirmed reading now
+  also needs glyph-shaped marks in the track's best crops — the windscreen shows
+  2, the weakest correct confirmation shows 5 and the rest 9–11, so the floor
+  is 3. It blocks inventions read off blank surfaces; it does not recognise
+  advertising text, which is as glyph-rich as a plate. Hoardings are handled by
+  the overlay mask and by demoting boxes that span most of their vehicle.
+  Measured on 182 hand-graded tracks from the Delhi clip and CAM06 in the ANPR
+  research project (16 Sep).
 
 Everything that does not parse as a plausible Indian registration is dropped at
 the edge and never transmitted, then checked again centrally. Half-read text is

@@ -19,6 +19,7 @@ import cv2
 import numpy as np
 import yaml
 
+from anpr.detect.char_evidence import track_glyphs
 from anpr.detect.corners import estimate_corners
 from anpr.detect.overlay_mask import OverlayMasker, ROIConfig
 from anpr.detect.plate import PlateDetector
@@ -407,15 +408,17 @@ class ANPRPipeline:
                 fallback = self.rcfg.get("second_reader_mode") == "fallback"
                 prim = [e for e in entries if "crnn" in e[3]] if fallback else entries
                 sv = self._vote_entries(prim, fused) if prim else None
+                glyphs = max((int(m.get("glyphs", 0)) for m in members), default=0)
                 if fallback and entries:
-                    ok1 = sv is not None and self._decide(sv[0], n_used, sv[1], best_w, sv[2])[0]
+                    ok1 = sv is not None and self._decide(sv[0], n_used, sv[1], best_w, sv[2], glyphs)[0]
                     if not ok1:
                         sv2 = self._vote_entries(entries, fused)
                         if sv2 is not None and (sv is None or sv2[0].plate != sv[0].plate):
                             sv = (dataclasses.replace(sv2[0], reason="string_vote_secondary"), sv2[1], sv2[2])
                 if sv is not None:
                     fused, n_agree, readers = sv
-            confirm_ok, why = self._decide(fused, n_used, n_agree, best_w, readers)
+            confirm_ok, why = self._decide(fused, n_used, n_agree, best_w, readers,
+                                           max((int(m.get("glyphs", 0)) for m in members), default=0))
             ids = [m["track_id"] for m in members]
             for m in members:
                 m.update(plate=fused.plate, confidence=round(float(fused.confidence), 4), alternates=fused.alternates,
@@ -590,7 +593,10 @@ class ANPRPipeline:
         rec["_n_used"] = int(n_used)
         rec["_n_agree"] = int(lr.n_agree)
         best_w = best.quality.width_px if best is not None else 0.0
-        confirm_ok, why = self._decide(fused, n_used, lr.n_agree, best_w, _readers_supporting(hyps, fused.plate))
+        if self.rcfg.get("confirm_min_glyphs") or self.rcfg.get("secondary_confirm_min_glyphs"):
+            rec["glyphs"] = track_glyphs(b.top_k(int(self.rcfg.get("glyph_crops", 8))))
+        confirm_ok, why = self._decide(fused, n_used, lr.n_agree, best_w,
+                                       _readers_supporting(hyps, fused.plate), rec.get("glyphs", 0))
         if not fused.plate:
             rec["status"] = "CANDIDATE"
             rec["reason"] = fused.reason or "no_valid_hypothesis"
@@ -768,8 +774,11 @@ class ANPRPipeline:
                                    reason="string_vote"), n, readers_for[win]
 
     def _decide(self, fused, n_used: int, n_agree: int, best_w: float,
-                readers: Optional[set] = None) -> tuple[bool, str]:
-        """(confirm?, reason if not). One rule set for fresh tracks and merged fragments."""
+                readers: Optional[set] = None, glyphs: int = 0) -> tuple[bool, str]:
+        """(confirm?, reason if not). One rule set for fresh tracks and merged fragments.
+
+        `glyphs` is how many glyph-shaped components the track's best crop holds
+        (anpr/detect/char_evidence.py): evidence from the pixels rather than from the reader."""
         ccfg, fcfg = self.cfg["confidence"], self.cfg["fusion"]
         # with several fast readers, a confirm needs the string from more than one of them: the v4
         # snapshot alone confirmed UP14DK7400 (true UP14DM7400) and DL11T1087 (true DL1LT1087) on the
@@ -784,10 +793,21 @@ class ANPRPipeline:
         # reader's own confirms on the Delhi clip from 9 to 5
         if self.rcfg.get("confirm_require_primary") and readers is not None and n_fast >= 2 and "crnn" not in readers:
             return False, "primary_reader_disagrees"
+        # a confirmation asserts a registration exists, so the pixels must show a row of glyphs.
+        # delhi_1080p s0_t10 was CONFIRMED as DL11AB3684 off a truck windscreen: 12 crops of glass,
+        # alternates one character apart, nothing to read (reports/LOOP_LOG.md H16)
+        min_glyphs = int(self.rcfg.get("confirm_min_glyphs", 0))
+        if min_glyphs and glyphs < min_glyphs:
+            return False, f"no_glyph_evidence:{glyphs}"
         if getattr(fused, "reason", "") == "string_vote_secondary":
-            return False, "second_reader_only"          # shown as a read, never confirmed
+            # normally never confirmed: the fallback reader's misreads were the confident ones
+            # (UP14DK7400, DL11T1087). reading.secondary_confirm_min_glyphs lets a legible crop
+            # speak for it - the string still has to pass the same vote evidence rule below.
+            need = int(self.rcfg.get("secondary_confirm_min_glyphs", 0))
+            if not need or glyphs < need:
+                return False, "second_reader_only"
         vc = self.rcfg.get("vote_confirm")
-        if vc and getattr(fused, "reason", "") == "string_vote":
+        if vc and getattr(fused, "reason", "") in ("string_vote", "string_vote_secondary"):
             # evidence rule for a temporal string vote (reading.vote_confirm): enough distinct crops
             # read EXACTLY this string, it holds enough of the vote, and the runner-up is well behind
             top_alt = fused.alternates[0]["confidence"] if fused.alternates else 0.0

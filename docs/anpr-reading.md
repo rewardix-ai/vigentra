@@ -53,6 +53,9 @@ that decide whether a reading is allowed out:
 | `confidence.confirm_min_char_vote` | weakest character's share of its vote |
 | `reading.vote_confirm` | crops and vote share a string vote needs |
 | `reading.vote_reject` | grammar rules that bar a crop from voting |
+| `reading.confirm_min_glyphs` | glyph-shaped marks a track's best crops must show to confirm (3) |
+| `reading.glyph_crops` | how many of a track's best crops are searched for glyphs (8) |
+| `reading.secondary_confirm_min_glyphs` | lets a second-reader string confirm on glyph evidence; unset, and inert here (see Readers) |
 | `legibility_gate` | width, height, sharpness and contrast floors |
 
 The file carries its own provenance: each block records the replay that chose
@@ -67,6 +70,10 @@ The design rule of the vendored engine, preserved here:
 - CONFIRMED needs fused confidence **and** several agreeing frames, not one
   good look;
 - a super-resolved hypothesis can never confirm on its own;
+- CONFIRMED needs glyph-shaped marks in the pixels, not only agreement between
+  reads: crops that all show the same pane of glass can "agree" on an invented
+  string (`anpr/detect/char_evidence.py`, `reading.confirm_min_glyphs`). The
+  check does not tell a plate from advertising text, which has glyphs too;
 - a proposed plate box wider than 0.60 of its vehicle is demoted in the geometry
   prior (`PLATE_W_FRAC_OF_VEHICLE_MAX` in `anpr/plate_grammar.py`), since a
   registration never spans the vehicle carrying it;

@@ -1,0 +1,2 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+ALL,,,unreadable,,front,"night clip (median luma 9): vehicles appear only as headlight pairs with bloom (a car near f46 and f889, a truck near f983, single-lamp two-wheelers near f327/f515/f608); checked by eye on 12 contrast-boosted frames, no plate is legible, so any plate the engine confirms here is a false read. The independent YOLO tracker found no vehicle at conf 0.2"

@@ -1,0 +1,32 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+V001,s0_t2,DL1CQ5334,readable,,,"by eye, clear"
+V002,s0_t3,DL14CE5987,readable,,,"by eye, clear"
+V003,s0_t75,DL6SBE6415,readable,,,"by eye, clear; two-row scooter"
+V004,s0_t7+s0_t55,DL5SBW7737,readable,,,"by eye, clear; same bike as s0_t7 (fragment)"
+V005,s0_t9,DL11SD3385,readable,,,"by eye, clear; two-row scooter"
+V006,s0_t219+s0_t196+s0_t114,DL6SAS6524,readable,,,"by eye, clear; 4K by eye: the digit after DL could be 5 or 6 (reports/review/labels/delhi4k_t220_DL6SAS6524_ambiguous.jpg); label kept; bank also holds DL1?SM?179 crops"
+V007,s0_t189+s0_t141+s0_t366,DL13CA2927,readable,,,"by eye, clear; fragment"
+V008,s0_t300,UP14DM7400,readable,,,"by eye, clear"
+V009,s0_t396+s0_t408,HR26CC2083,readable,,,"by eye, clear; fragment"
+V010,s0_t172,DL1LT1087,readable,,,"by eye, clear; yellow commercial"
+V011,s0_t244+s0_t345,DL1CW0942,readable,,,"by eye, clear; fragment"
+V012,s0_t373,DL1RTA5056,readable,,,"by eye, clear; yellow commercial"
+V013,s0_t429,DL8CAP4175,readable,,,"by eye, clear"
+V014,s0_t435,UP78FH9291,readable,,,"by eye, clear"
+V015,s0_t105,UP13AY3893,readable,,,"by eye, likely; bank also holds DL5SBW7737 crops"
+V016,s0_t346+s0_t367,DL5SAR5109,readable,,,"by eye, likely; sticker over one glyph gap; fragment"
+V017,s0_t117+s0_t122,DL1LAB9684,readable,,,"by eye, likely; yellow; bank mixed with an advert board; fragment"
+V018,s0_t10,DL7CR3761,readable,,,string from the labelled ground_truth.csv; occluded in these crops; string from data/eval/ground_truth.csv
+V019,s0_t6,UP14EC6398,readable,,,"by eye, clear; corrected 2026-09-16 from UP14EC6778 (ground_truth.csv): the 4K crops read UP 14EC 6398 by eye (reports/review/labels/delhi4k_t6_UP14EC6398.jpg)"
+V020,-,DL3CCN5712,readable,,,string from the labelled ground_truth.csv; in ground_truth.csv; not captured as a plate crop in this run
+V021,s0_t175,DL5SB?3166,partial,,,by eye; 6th char D/Q/0 not decidable by eye
+V022,s0_t253,?P14CD6915,partial,,,by eye; 1st char U/H not decidable
+V023,s0_t62,DL1?SM?179,partial,,,by eye; occluded
+V024,s0_t337+s0_t309,DL7?C?555?,partial,,,by eye; same bike as s0_t337
+V025,s0_t398,?DJ1457,partial,,,by eye
+V026,s0_t433,DL5SBM????,partial,,,by eye; occluded by a mirror
+V027,s0_t35+s0_t116,DL?S?C72??,partial,,,by eye; bike with green bag; same bike as s0_t116 and the widest s0_t7 crop; same bike as s0_t35
+V028,s0_t7,DL?7SAL????,partial,,,by eye; second bike in the s0_t7 bank (crops 2-3)
+V029,s0_t241,??????????,partial,,,by eye; blurred
+V030,s0_t184,??????????,partial,,,by eye; blurred
+V031,s0_t158,??????????,partial,,,by eye; blurred

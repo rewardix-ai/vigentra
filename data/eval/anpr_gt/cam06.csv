@@ -1,0 +1,3 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+V001,119,GJ32??????,partial,car,front,"green EV plate, 57-58 px; state and district visible, the rest not glyph-by-glyph at 720p"
+REST,,,unreadable,,,"49 vehicle tracks; 28 had a plate proposal >= 22 px and none of the 27 not listed above is legible; the others are narrower than 22 px. checked by eye on the plate detector's best proposal (conf >= 0.05, >= 22 px wide) in the 4 widest frames of every track of an independent YOLO11s+ByteTrack pass (tools/anpr_gt_plates.py)"

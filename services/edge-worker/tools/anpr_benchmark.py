@@ -364,17 +364,26 @@ def score_clip(d: Path) -> dict:
     if gt is None:
         return m
     readable = {r["plate"] for r in gt if r["legibility"] == "readable" and r["plate"]}
-    all_plates = {r["plate"] for r in gt if r["plate"]}
+    partial = [r["plate"] for r in gt if r["legibility"] != "readable" and r["plate"]]
+
+    def unverifiable(t: str) -> bool:
+        # a partly legible plate with the same glyphs wherever it is legible: neither right nor wrong
+        return any(len(p) == len(t) and all(a in ("?", b) for a, b in zip(p, t)) for p in partial)
+
+    def false(ts: set) -> set:
+        return {t for t in ts - readable if not unverifiable(t)}
+
     confirmed = {t["OCR_result"] for t in tracks if t["status"] == "CONFIRMED"}
     emitted = {e["plate"] for e in s["emitted"]}
     shown = {t["OCR_result"] for t in tracks if t["OCR_result"] and t["valid_format"] == "1"}
     m.update(
         gt_vehicles=len(gt), gt_readable=len(readable),
-        correct_confirmed=len(confirmed & readable), false_confirmed=len(confirmed - all_plates),
-        correct_emitted=len(emitted & readable), false_emitted=len(emitted - all_plates),
-        correct_read=len(shown & readable), false_read=len(shown - all_plates),
+        correct_confirmed=len(confirmed & readable), false_confirmed=len(false(confirmed)),
+        correct_emitted=len(emitted & readable), false_emitted=len(false(emitted)),
+        correct_read=len(shown & readable), false_read=len(false(shown)),
         missed=sorted(readable - confirmed),
-        false_list=sorted((confirmed | emitted) - all_plates),
+        false_list=sorted(false(confirmed | emitted)),
+        unverifiable=sorted({t for t in confirmed | emitted if t not in readable and unverifiable(t)}),
     )
     return m
 
@@ -384,7 +393,8 @@ def cmd_report(a) -> int:
     rows = [score_clip(d) for d in sorted(root.iterdir()) if (d / "summary.json").exists()]
     lines = [f"# ANPR benchmark `{a.tag}`", "",
              "- **correct** = readable ground-truth plates the engine confirmed (exact string);",
-             "- **false** = confirmed or emitted strings that are not any ground-truth plate on that clip;",
+             "- **false** = confirmed or emitted strings that are not a readable ground-truth plate on that clip and do not",
+             "  fit any partly legible one (those are counted as unverifiable);",
              "- **read** = any valid-format reading shown (confirmed or not).",
              "",
              "| camera | tracks | with plate cand. | plate dets | OCR images | GT readable | correct confirmed | "

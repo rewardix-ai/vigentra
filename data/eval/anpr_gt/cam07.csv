@@ -1,0 +1,5 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+V001,98,GJ32AG0416,readable,car,rear,"white plate, 73-78 px; every glyph legible at f842/f844"
+V002,89,?J?Z?Z????,partial,car,rear,"72-76 px, blurred"
+V003,102,,unreadable,car,rear,"36-37 px, blurred"
+REST,,,unreadable,,,"12 vehicle tracks; 4 had a plate proposal >= 22 px and none of the 1 not listed above is legible; the others are narrower than 22 px. checked by eye on the plate detector's best proposal (conf >= 0.05, >= 22 px wide) in the 4 widest frames of every track of an independent YOLO11s+ByteTrack pass (tools/anpr_gt_plates.py)"

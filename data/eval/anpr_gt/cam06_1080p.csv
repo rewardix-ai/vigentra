@@ -1,0 +1,22 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+V001,s0_t1+s0_t19,GJ18X6705,readable,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); yellow auto; two-row; same auto as s0_t1 (plate not in the widest crops)
+V002,s0_t39+s0_t29,GJ32AG2883,readable,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); green EV plate; same vehicle as s0_t39
+V003,s0_t87+s0_t82,GJ23H1546,readable,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); same vehicle as s0_t87
+V004,s0_t44,GJ11CK1044,readable,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); two-row
+V005,s0_t93,GJ03KS7334,readable,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); two-row
+V006,s0_t48,GJ11?J7578,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); C vs E after 11 not decidable by eye at 109 px (every reader says E)
+V007,s0_t41,GJ07A?8951,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); 5th-6th chars AE/AF and 7th 8/0 not decidable
+V008,s0_t64,GJ11C?2317,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); H/N not decidable; last digit 7/2
+V009,s0_t100,GJ11CP3??3,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V010,s0_t75,GJ?1CB6038,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V011,s0_t63,GJ22?2154,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V012,s0_t102,GJ03?C0487,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); two-row; heavily blurred
+V013,s0_t85,GJ11SN????,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V014,s0_t81,??BD4430,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); left end cut
+V015,s0_t30,?1AE4???,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V016,s0_t55,??????5501,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V017,s0_t53,????5?591,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4)
+V018,s0_t57,GJ??AB????,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); arched plate
+V019,s0_t67,??????????,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); motion blur
+V020,s0_t46,??????????,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); motion blur
+V021,s0_t45,??????????,partial,,,by eye on the 1080p recording of grid cam06 (ANPR research repo data/sandbox/cam06.mp4); motion blur

@@ -199,7 +199,7 @@ class ANPRPipeline:
             self.vehicles = RTDETRVehicleTracker(device=device, conf=max(d["vehicle_conf"], 0.3), imgsz=640)
         else:
             self.vehicles = VehicleTracker(vehicle_weights, device, d["vehicle_imgsz"], d["vehicle_conf"],
-                                           tuple(d["vehicle_classes"]))
+                                           tuple(d["vehicle_classes"]), upscale=bool(d.get("vehicle_upscale", True)))
         self.plates = PlateDetector(plate_weights, device, d["plate_imgsz"], d["plate_conf"],
                                     d["vehicle_crop_upscale_min_px"], tile=d.get("tile_size", 0),
                                     overlap=d.get("tile_overlap", 0.2), use_retro=d.get("retro_proposer", True),

@@ -83,3 +83,8 @@ services/edge-worker/reports/hard_first_stdout.log
 services/edge-worker/dataset/*/plates/
 services/edge-worker/dataset/*/plates.csv
 services/edge-worker/reports/build_*.log
+
+# ANPR research assets linked in for local runs (weights and third-party code are never committed)
+*.safetensors
+services/edge-worker/third_party/
+services/edge-worker/models/awiros

@@ -27,8 +27,11 @@ class VehicleDet:
 class VehicleTracker:
     def __init__(self, weights: str | Path = "models/yolo11s.pt", device: str = "auto", imgsz: int = 1280,
                  conf: float = 0.25, classes=(2, 3, 5, 7), tracker_cfg: str | Path = "config/bytetrack.yaml",
-                 half: bool = True, agnostic_nms: bool = True):
+                 half: bool = True, agnostic_nms: bool = True, upscale: bool = True):
         self.agnostic_nms = agnostic_nms
+        # False: a frame smaller than imgsz is detected at its own size instead of being enlarged to it.
+        # On the 720p grid clip rec_cam07, enlarging to 1920 halved the tracked detections (27 vs 41).
+        self.upscale = upscale
         from ultralytics import YOLO
         self.model = YOLO(str(weights))
         self.device = _resolve_device(device)
@@ -70,7 +73,10 @@ class VehicleTracker:
         # class-agnostic NMS: one vehicle, one box. Per-class NMS kept a car AND a truck box on
         # the same van (Delhi clip), so its plate was banked by two tracks that each fused half
         # the frames and neither reached the confirm floor.
-        res = self.model.track(img, persist=True, imgsz=self.imgsz, conf=self.conf, classes=self.classes,
+        imgsz = self.imgsz
+        if not self.upscale:
+            imgsz = min(imgsz, -(-max(img.shape[:2]) // 32) * 32)
+        res = self.model.track(img, persist=True, imgsz=imgsz, conf=self.conf, classes=self.classes,
                                tracker=self.tracker_cfg, device=self.device, verbose=False,
                                agnostic_nms=self.agnostic_nms)[0]
         out: list[VehicleDet] = []

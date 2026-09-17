@@ -36,7 +36,8 @@ from typing import Any, Iterator
 import httpx
 
 from . import grid
-from .anpr_engine import EngineCache, _track_number, build_engine
+from .anpr_engine import (EngineCache, _track_number, build_engine, load_camera_profile, router_settings,
+                          sampler_settings)
 from .detectors import DetectorError, build_detector
 
 try:
@@ -544,7 +545,6 @@ def run(
     # a one-shot run builds its own.
     built_here = detector is None
     detector = detector or build_detector()
-    router = FrameQualityRouter()
 
     # ANPR is off unless ANPR_ENABLE is set. The consensus engine is stateful
     # per camera - it votes a plate across every frame a vehicle appears in -
@@ -555,7 +555,14 @@ def run(
     # learned about itself: its overlays, its plate votes - survives from one
     # cycle to the next. A one-shot run builds its own and throws it away,
     # which is right for a single pass.
-    anpr = anpr_cache.get(camera_id) if anpr_cache is not None else build_engine()
+    # a grid camera's profile is also found by its grid id (GRID-cam06 -> cam06)
+    ext = (external_camera_id or "").strip()
+    profile_key = ext[len(GRID_EXTERNAL_PREFIX):] if ext.upper().startswith(GRID_EXTERNAL_PREFIX) else (ext or None)
+    anpr = (anpr_cache.get(camera_id, profile_key) if anpr_cache is not None
+            else build_engine(camera_id=camera_id, profile_key=profile_key))
+    # per-camera sampling and low-light handling (config/camera_profiles.yaml)
+    profile = anpr.profile if anpr is not None else load_camera_profile(camera_id, profile_key)
+    router = FrameQualityRouter(**router_settings(profile))
     plates_read = 0
 
     # Incident detection rides on the same tracker the ANPR engine already
@@ -624,7 +631,7 @@ def run(
     # Synthetic frames are excluded because there is nothing in them to bunch
     # around, and a burst there would only distort the wiring test.
     sampler = (
-        AdaptiveSampler(stride=max(1, sample_interval))
+        AdaptiveSampler(**sampler_settings(profile, sample_interval))
         if AdaptiveSampler is not None and not synthetic
         else None
     )

@@ -162,9 +162,15 @@ class ANPRPipeline:
                  ablate: Iterable[str] = (), evidence_dir: Optional[str | Path] = "evidence",
                  frame_stride: int = 1, write_candidates: bool = True, keep_frames: bool = True,
                  reader_weights: Optional[list[str]] = None, vehicle_backend: str = "yolo",
-                 preferred_state: Optional[str] = None, bank_dump_dir: Optional[str | Path] = None):
+                 preferred_state: Optional[str] = None, bank_dump_dir: Optional[str | Path] = None,
+                 camera_profile=None):
         with open(thresholds, "r", encoding="utf-8") as fh:
             self.cfg = yaml.safe_load(fh)
+        # per-camera overrides (config/camera_profiles.yaml, anpr/camera/profile.py) over the global file
+        self.camera_profile = camera_profile
+        if camera_profile is not None and camera_profile.thresholds:
+            from anpr.camera import deep_merge
+            self.cfg = deep_merge(self.cfg, camera_profile.thresholds)
         # reading / decision options; an absent key keeps the frozen 2026-09-10 behaviour
         self.rcfg = self.cfg.get("reading") or {}
         # grammar tie-break state (a plate from this state gets no 0.7 prior penalty). Was

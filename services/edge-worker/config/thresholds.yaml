@@ -23,7 +23,11 @@ detector:
   - 0.04
   - 0.25
   max_masked_frac: 0.15
-  retro_proposer: true
+  # The retro-reflective proposer boxed bumper edges, hoardings and lamps; with it off and a score floor
+  # after the geometry prior, a vehicle whose only proposal the prior demoted banks nothing
+  # (research repo H17, reports/LOOP_LOG.md).
+  retro_proposer: false
+  plate_min_conf_after_prior: 0.2
   plates_per_vehicle: 1   # was 2: the second box was a bumper edge / neighbour's plate and diluted the bank
   plate_search_min_vehicle_px: 96   # narrower vehicle => plate < 40 px, never read; Delhi clip: same 36 reads, 1.5x faster
 tracker:
@@ -86,6 +90,17 @@ reading:
   confirm_min_glyphs: 3
   glyph_crops: 8
   vote_confirm: {min_crops: 4, min_share: 0.4}
+  # Research repo H17: the CRNNs fail on different glyphs. When the primary cannot decide, another
+  # reader's own vote may confirm under the rule above if a second reader produced the string (or one
+  # substitution from it on vote_near_backing crops) and no reader's own vote says otherwise; a primary
+  # vote another reader contradicts is never confirmed (anpr/pipeline.py _vote_pick).
+  vote_any_reader: true
+  vote_unopposed: true
+  # Near backing (a second reader's string one substitution away) is off: without the text reader both
+  # readers are CRNNs that share their confusions. Delhi replay of the baseline banks: with it, v6's
+  # DL6SAS6522 (true DL6SAS6524) was "backed" by the primary's DL4SAS6522 and confirmed; without it,
+  # 9 of 20 correct and none wrong (baseline 7 and none).
+  vote_near_backing: 0
   # H12 second reader as a fallback (reports/LOOP_LOG.md H12). The primary reader votes alone and
   # decides every confirm; the second CRNN only supplies a shown, never-confirmed read on tracks the
   # primary cannot decide. Pooling both readers in one vote had cut Delhi 4K confirms 9 -> 5.

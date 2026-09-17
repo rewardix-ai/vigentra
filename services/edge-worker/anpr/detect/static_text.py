@@ -8,8 +8,9 @@ detector proposes it again and again. The map remembers every plate-sized
 candidate (frame box, a 96x32 thumbnail, the vehicle box, track id, frame). A new
 candidate is static scene text when an earlier candidate from a DIFFERENT track
 sits at the same frame position (IoU >= 0.6) with the same appearance (NCC of the
-thumbnails >= 0.85). A tracker re-id of the same parked car (near-identical
-vehicle box) is excluded; vehicles queuing at a stop line put
+thumbnails >= 0.85) at least a second earlier. A tracker re-id of the same parked car
+(near-identical vehicle box) is excluded, and so is the same plate boxed by two
+overlapping vehicle boxes in the same moment; vehicles queuing at a stop line put
 different plates at similar positions, but different plates have different
 pixels, so the appearance test keeps them. Learned locations demote any track
 already read there (retroactive check at flush).
@@ -56,11 +57,16 @@ class _Entry:
 
 class StaticTextMap:
     def __init__(self, box_iou: float = 0.6, vehicle_iou_max: float = 0.7, ncc_min: float = 0.85, history: int = 800,
-                 min_w: float = 20.0, min_h: float = 8.0):
+                 min_w: float = 20.0, min_h: float = 8.0, min_gap_frames: int = 30):
         self.min_w, self.min_h = min_w, min_h
         self.box_iou = box_iou
         self.vehicle_iou_max = vehicle_iou_max
         self.ncc_min = ncc_min
+        # A sign is seen by different vehicles seconds apart. The same pixels at the same box under
+        # two vehicle boxes within a second are one plate boxed twice (a car inside a bus's box, a
+        # duplicate vehicle detection): delhi_1080p t221 held DL1LT1087 read exactly on 45 crops and
+        # was demoted as scene text because its box also covered the neighbour's plate for one frame.
+        self.min_gap_frames = min_gap_frames
         self._hist: deque[_Entry] = deque(maxlen=history)
         self.static_boxes: list[tuple] = []      # confirmed static text locations (frame coords)
         self._static_thumbs: list[np.ndarray] = []
@@ -89,6 +95,8 @@ class StaticTextMap:
             # gap demoted a CORRECT confirmed read (two fragments of one bike with different box sizes)
             # and still missed a phone-number board inside a static mis-detected "vehicle"; kept strict.
             if e.track_id == track_id or _iou(e.vehicle_box, vehicle_box) >= self.vehicle_iou_max:
+                continue
+            if abs(frame_idx - e.frame_idx) < self.min_gap_frames:
                 continue
             if _iou(e.box, box) >= self.box_iou and ncc(e.thumb, thumb) >= self.ncc_min:
                 self.static_boxes.append(box)

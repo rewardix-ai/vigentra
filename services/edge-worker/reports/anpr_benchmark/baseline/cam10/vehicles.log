@@ -1,0 +1,567 @@
+[CAM10] Vehicle ID: cam10_s0_t8 (motorcycle)
+Track duration: 0.3 s  frames 2-9
+Plate candidates: 2  best frame: 9  plate size: 17x6  quality: 0.459
+OCR (per candidate, first 40):
+  f    8 14x4 q=0.45 det=0.29 -> - 0.00
+  f    9 13x4 q=0.46 det=0.30 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:17<22  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t18 (motorcycle)
+Track duration: 1.2 s  frames 11-40
+Plate candidates: 11  best frame: 34  plate size: 15x6  quality: 0.452
+OCR (per candidate, first 40):
+  f   23 10x8 q=0.34 det=0.30 -> - 0.00
+  f   24 10x8 q=0.35 det=0.29 -> - 0.00
+  f   27 11x8 q=0.31 det=0.32 -> - 0.00
+  f   28 11x9 q=0.32 det=0.29 -> - 0.00
+  f   29 11x9 q=0.33 det=0.30 -> - 0.00
+  f   30 11x9 q=0.34 det=0.31 -> - 0.00
+  f   31 10x9 q=0.33 det=0.31 -> - 0.00
+  f   34 12x4 q=0.45 det=0.30 -> - 0.00
+  f   35 10x9 q=0.34 det=0.29 -> - 0.00
+  f   36 10x8 q=0.35 det=0.28 -> - 0.00
+  f   37 9x9 q=0.33 det=0.29 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:15<22  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t37 (car)
+Track duration: 0.4 s  frames 39-49
+Plate candidates: 1  best frame: 45  plate size: 16x6  quality: 0.412
+OCR (per candidate, first 40):
+  f   45 13x4 q=0.41 det=0.26 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:16<22  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t5 (motorcycle)
+Track duration: 2.0 s  frames 0-50
+Plate candidates: 1  best frame: 19  plate size: 19x13  quality: 0.339
+OCR (per candidate, first 40):
+  f   19 15x8 q=0.34 det=0.36 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:19<22  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t2 (car)
+Track duration: 2.0 s  frames 0-51
+Plate candidates: 50  best frame: 42  plate size: 54x12  quality: 0.519
+OCR (per candidate, first 40):
+  f    0 13x6 q=0.42 det=0.39 -> - 0.00
+  f    1 19x7 q=0.45 det=0.39 -> - 0.00
+  f    2 12x7 q=0.41 det=0.41 -> - 0.00
+  f    3 12x7 q=0.40 det=0.44 -> - 0.00
+  f    4 12x6 q=0.41 det=0.39 -> - 0.00
+  f    5 12x6 q=0.45 det=0.44 -> - 0.00
+  f    6 12x6 q=0.46 det=0.40 -> - 0.00
+  f    7 11x5 q=0.45 det=0.35 -> - 0.00
+  f    8 11x6 q=0.45 det=0.36 -> - 0.00
+  f    9 13x4 q=0.45 det=0.34 -> - 0.00
+  f   10 12x4 q=0.46 det=0.34 -> - 0.00
+  f   11 10x4 q=0.45 det=0.34 -> - 0.00
+  f   12 23x5 q=0.42 det=0.38 -> - 0.00
+  f   13 24x5 q=0.41 det=0.33 -> - 0.00
+  f   14 17x7 q=0.45 det=0.43 -> - 0.00
+  f   15 14x5 q=0.43 det=0.29 -> - 0.00
+  f   16 12x4 q=0.41 det=0.23 -> - 0.00
+  f   17 13x6 q=0.33 det=0.30 -> - 0.00
+  f   18 9x5 q=0.45 det=0.27 -> - 0.00
+  f   19 23x5 q=0.41 det=0.24 -> - 0.00
+  f   20 23x4 q=0.35 det=0.22 -> - 0.00
+  f   21 28x9 q=0.39 det=0.35 -> - 0.00
+  f   22 32x12 q=0.45 det=0.32 -> - 0.00
+  f   23 31x11 q=0.41 det=0.35 -> - 0.00
+  f   24 31x9 q=0.43 det=0.38 -> - 0.00
+  f   25 30x8 q=0.42 det=0.39 -> - 0.00
+  f   26 14x6 q=0.31 det=0.27 -> - 0.00
+  f   27 14x7 q=0.36 det=0.22 -> - 0.00
+  f   28 14x7 q=0.35 det=0.23 -> - 0.00
+  f   29 20x6 q=0.49 det=0.25 -> - 0.00
+  f   30 18x6 q=0.36 det=0.23 -> - 0.00
+  f   31 34x10 q=0.49 det=0.30 -> - 0.00
+  f   32 22x4 q=0.47 det=0.32 -> - 0.00
+  f   33 18x4 q=0.46 det=0.32 -> - 0.00
+  f   34 11x8 q=0.39 det=0.40 -> - 0.00
+  f   35 9x7 q=0.39 det=0.37 -> - 0.00
+  f   36 13x3 q=0.46 det=0.23 -> - 0.00
+  f   37 12x6 q=0.34 det=0.23 -> - 0.00
+  f   38 14x3 q=0.45 det=0.10 -> - 0.00
+  f   39 17x5 q=0.41 det=0.19 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:6.4<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t3 (car)
+Track duration: 2.0 s  frames 0-51
+Plate candidates: 52  best frame: 20  plate size: 73x29  quality: 0.684
+OCR (per candidate, first 40):
+  f    0 12x4 q=0.45 det=0.44 -> - 0.00
+  f    1 10x3 q=0.43 det=0.39 -> - 0.00
+  f    2 12x5 q=0.37 det=0.27 -> - 0.00
+  f    3 18x5 q=0.47 det=0.22 -> - 0.00
+  f    4 18x5 q=0.47 det=0.22 -> - 0.00
+  f    5 11x4 q=0.38 det=0.26 -> - 0.00
+  f    6 12x4 q=0.37 det=0.28 -> - 0.00
+  f    7 27x18 q=0.51 det=0.28 -> - 0.00
+  f    8 26x18 q=0.50 det=0.29 -> - 0.00
+  f    9 31x18 q=0.53 det=0.28 -> - 0.00
+  f   10 31x17 q=0.55 det=0.28 -> - 0.00
+  f   11 34x16 q=0.55 det=0.30 -> - 0.00
+  f   12 36x16 q=0.56 det=0.30 -> - 0.00
+  f   13 11x5 q=0.45 det=0.33 -> - 0.00
+  f   14 40x17 q=0.58 det=0.30 -> - 0.00
+  f   15 12x5 q=0.46 det=0.35 -> - 0.00
+  f   16 9x5 q=0.45 det=0.33 -> - 0.00
+  f   17 48x20 q=0.64 det=0.30 -> - 0.00
+  f   18 13x12 q=0.43 det=0.32 -> - 0.00
+  f   19 58x20 q=0.68 det=0.29 -> - 0.00
+  f   20 59x20 q=0.68 det=0.30 -> - 0.00
+  f   21 9x4 q=0.45 det=0.50 -> - 0.00
+  f   22 58x19 q=0.68 det=0.29 -> - 0.00
+  f   23 13x4 q=0.45 det=0.52 -> - 0.00
+  f   24 16x4 q=0.46 det=0.51 -> - 0.00
+  f   25 16x4 q=0.46 det=0.50 -> - 0.00
+  f   26 17x4 q=0.46 det=0.53 -> - 0.00
+  f   27 18x4 q=0.41 det=0.31 -> - 0.00
+  f   28 10x4 q=0.44 det=0.37 -> - 0.00
+  f   29 13x4 q=0.46 det=0.45 -> - 0.00
+  f   30 14x4 q=0.45 det=0.44 -> - 0.00
+  f   31 18x4 q=0.46 det=0.50 -> - 0.00
+  f   32 19x4 q=0.46 det=0.43 -> - 0.00
+  f   33 11x5 q=0.45 det=0.48 -> - 0.00
+  f   34 17x4 q=0.46 det=0.53 -> - 0.00
+  f   35 21x4 q=0.47 det=0.49 -> - 0.00
+  f   36 17x4 q=0.46 det=0.53 -> - 0.00
+  f   37 14x4 q=0.46 det=0.52 -> - 0.00
+  f   38 11x3 q=0.45 det=0.46 -> - 0.00
+  f   39 25x5 q=0.49 det=0.37 -> - 0.00
+FINAL: MH014499  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t51 (car)
+Track duration: 1.4 s  frames 57-91
+Plate candidates: 24  best frame: 90  plate size: 31x30  quality: 0.507
+OCR (per candidate, first 40):
+  f   57 11x4 q=0.41 det=0.14 -> - 0.00
+  f   58 10x4 q=0.42 det=0.14 -> - 0.00
+  f   59 8x4 q=0.44 det=0.13 -> - 0.00
+  f   61 14x5 q=0.43 det=0.13 -> - 0.00
+  f   62 14x5 q=0.45 det=0.12 -> - 0.00
+  f   63 13x4 q=0.44 det=0.12 -> - 0.00
+  f   64 12x4 q=0.43 det=0.13 -> - 0.00
+  f   66 13x4 q=0.44 det=0.13 -> - 0.00
+  f   69 9x3 q=0.45 det=0.13 -> - 0.00
+  f   70 8x4 q=0.44 det=0.13 -> - 0.00
+  f   71 10x7 q=0.40 det=0.24 -> - 0.00
+  f   75 10x4 q=0.45 det=0.13 -> - 0.00
+  f   76 9x3 q=0.41 det=0.26 -> - 0.00
+  f   77 9x4 q=0.44 det=0.26 -> - 0.00
+  f   78 9x5 q=0.43 det=0.10 -> - 0.00
+  f   79 16x4 q=0.46 det=0.28 -> - 0.00
+  f   80 9x4 q=0.44 det=0.11 -> - 0.00
+  f   85 20x19 q=0.46 det=0.21 -> - 0.00
+  f   86 21x20 q=0.47 det=0.20 -> - 0.00
+  f   87 22x20 q=0.48 det=0.20 -> - 0.00
+  f   88 22x19 q=0.48 det=0.20 -> - 0.00
+  f   89 23x19 q=0.49 det=0.21 -> - 0.00
+  f   90 24x20 q=0.51 det=0.20 -> - 0.00
+  f   91 24x20 q=0.51 det=0.20 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:3.5<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t47 (car)
+Track duration: 1.6 s  frames 53-93
+Plate candidates: 30  best frame: 76  plate size: 42x17  quality: 0.546
+OCR (per candidate, first 40):
+  f   53 22x6 q=0.42 det=0.33 -> - 0.00
+  f   54 8x4 q=0.42 det=0.30 -> - 0.00
+  f   55 22x11 q=0.41 det=0.27 -> - 0.00
+  f   56 22x9 q=0.41 det=0.27 -> - 0.00
+  f   57 14x5 q=0.31 det=0.26 -> - 0.00
+  f   58 24x6 q=0.48 det=0.30 -> - 0.00
+  f   59 49x21 q=0.61 det=0.25 -> - 0.00
+  f   60 19x5 q=0.38 det=0.30 -> - 0.00
+  f   61 21x12 q=0.42 det=0.25 -> - 0.00
+  f   62 16x4 q=0.35 det=0.28 -> - 0.00
+  f   63 15x4 q=0.33 det=0.25 -> - 0.00
+  f   64 24x12 q=0.44 det=0.25 -> - 0.00
+  f   65 14x5 q=0.36 det=0.25 -> - 0.00
+  f   66 40x27 q=0.55 det=0.19 -> - 0.00
+  f   75 20x6 q=0.46 det=0.31 -> - 0.00
+  f   76 34x12 q=0.55 det=0.43 -> - 0.00
+  f   77 9x9 q=0.33 det=0.39 -> - 0.00
+  f   78 35x8 q=0.53 det=0.15 -> - 0.00
+  f   79 14x4 q=0.37 det=0.12 -> - 0.00
+  f   80 11x8 q=0.42 det=0.34 -> - 0.00
+  f   81 11x8 q=0.41 det=0.35 -> - 0.00
+  f   82 9x7 q=0.40 det=0.39 -> - 0.00
+  f   83 10x8 q=0.40 det=0.35 -> - 0.00
+  f   84 10x8 q=0.40 det=0.32 -> - 0.00
+  f   85 10x8 q=0.38 det=0.32 -> - 0.00
+  f   86 8x7 q=0.40 det=0.42 -> - 0.00
+  f   87 9x6 q=0.41 det=0.38 -> - 0.00
+  f   88 11x4 q=0.41 det=0.14 -> - 0.00
+  f   91 12x4 q=0.43 det=0.34 -> - 0.00
+  f   93 13x4 q=0.42 det=0.32 -> - 0.00
+FINAL: MH0275  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t25 (car)
+Track duration: 3.3 s  frames 14-97
+Plate candidates: 20  best frame: 42  plate size: 24x13  quality: 0.397
+OCR (per candidate, first 40):
+  f   14 14x10 q=0.36 det=0.22 -> - 0.00
+  f   15 17x10 q=0.39 det=0.23 -> - 0.00
+  f   16 18x10 q=0.39 det=0.23 -> - 0.00
+  f   17 18x10 q=0.40 det=0.25 -> - 0.00
+  f   18 18x10 q=0.39 det=0.25 -> - 0.00
+  f   19 18x10 q=0.40 det=0.25 -> - 0.00
+  f   20 18x10 q=0.40 det=0.25 -> - 0.00
+  f   21 18x10 q=0.40 det=0.24 -> - 0.00
+  f   22 18x10 q=0.40 det=0.25 -> - 0.00
+  f   23 18x10 q=0.40 det=0.25 -> - 0.00
+  f   41 18x10 q=0.40 det=0.25 -> - 0.00
+  f   42 19x9 q=0.40 det=0.26 -> - 0.00
+  f   44 18x9 q=0.38 det=0.27 -> - 0.00
+  f   45 18x9 q=0.38 det=0.27 -> - 0.00
+  f   46 18x9 q=0.38 det=0.27 -> - 0.00
+  f   47 18x8 q=0.36 det=0.27 -> - 0.00
+  f   48 18x8 q=0.38 det=0.27 -> - 0.00
+  f   49 18x9 q=0.38 det=0.27 -> - 0.00
+  f   50 18x9 q=0.36 det=0.27 -> - 0.00
+  f   51 18x9 q=0.38 det=0.27 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:2.2<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t82 (car)
+Track duration: 0.0 s  frames 153-154
+Plate candidates: 2  best frame: 154  plate size: 27x6  quality: 0.463
+OCR (per candidate, first 40):
+  f  153 14x4 q=0.45 det=0.22 -> - 0.00
+  f  154 22x4 q=0.46 det=0.27 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  height_below_gate:6<8  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t67 (car)
+Track duration: 1.4 s  frames 130-164
+Plate candidates: 26  best frame: 143  plate size: 37x9  quality: 0.564
+OCR (per candidate, first 40):
+  f  130 28x22 q=0.50 det=0.22 -> - 0.00
+  f  131 30x21 q=0.52 det=0.23 -> - 0.00
+  f  132 32x22 q=0.53 det=0.21 -> - 0.00
+  f  133 14x4 q=0.46 det=0.38 -> - 0.00
+  f  134 10x4 q=0.45 det=0.41 -> - 0.00
+  f  135 30x25 q=0.54 det=0.18 -> - 0.00
+  f  136 11x4 q=0.43 det=0.35 -> - 0.00
+  f  137 16x6 q=0.47 det=0.46 -> - 0.00
+  f  143 30x6 q=0.56 det=0.50 -> - 0.00
+  f  144 8x6 q=0.45 det=0.20 -> - 0.00
+  f  145 26x6 q=0.54 det=0.50 -> - 0.00
+  f  146 10x8 q=0.35 det=0.15 -> - 0.00
+  f  147 10x8 q=0.35 det=0.14 -> - 0.00
+  f  148 11x9 q=0.37 det=0.25 -> - 0.00
+  f  149 12x10 q=0.36 det=0.24 -> - 0.00
+  f  150 8x4 q=0.45 det=0.36 -> - 0.00
+  f  151 8x5 q=0.45 det=0.33 -> - 0.00
+  f  152 9x5 q=0.44 det=0.44 -> - 0.00
+  f  153 14x3 q=0.45 det=0.30 -> - 0.00
+  f  154 13x3 q=0.45 det=0.30 -> - 0.00
+  f  155 11x3 q=0.45 det=0.26 -> - 0.00
+  f  156 12x3 q=0.46 det=0.30 -> - 0.00
+  f  157 9x5 q=0.43 det=0.34 -> - 0.00
+  f  158 9x4 q=0.44 det=0.34 -> - 0.00
+  f  159 8x4 q=0.44 det=0.36 -> - 0.00
+  f  160 8x4 q=0.42 det=0.35 -> - 0.00
+FINAL: GJ12GJ7  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t186 (car)
+Track duration: 1.6 s  frames 400-440
+Plate candidates: 41  best frame: 412  plate size: 14x5  quality: 0.443
+OCR (per candidate, first 40):
+  f  400 17x12 q=0.41 det=0.20 -> - 0.00
+  f  401 17x11 q=0.46 det=0.21 -> - 0.00
+  f  402 9x4 q=0.45 det=0.31 -> - 0.00
+  f  403 15x4 q=0.36 det=0.21 -> - 0.00
+  f  404 15x11 q=0.40 det=0.21 -> - 0.00
+  f  405 17x11 q=0.32 det=0.13 -> - 0.00
+  f  406 16x7 q=0.34 det=0.17 -> - 0.00
+  f  407 17x13 q=0.34 det=0.13 -> - 0.00
+  f  408 9x5 q=0.41 det=0.29 -> - 0.00
+  f  409 9x5 q=0.45 det=0.29 -> - 0.00
+  f  410 9x5 q=0.45 det=0.27 -> - 0.00
+  f  411 8x5 q=0.43 det=0.22 -> - 0.00
+  f  412 11x4 q=0.44 det=0.38 -> - 0.00
+  f  413 12x4 q=0.41 det=0.34 -> - 0.00
+  f  414 11x4 q=0.44 det=0.34 -> - 0.00
+  f  415 11x3 q=0.44 det=0.34 -> - 0.00
+  f  416 17x9 q=0.31 det=0.14 -> - 0.00
+  f  417 16x6 q=0.38 det=0.20 -> - 0.00
+  f  418 15x5 q=0.36 det=0.22 -> - 0.00
+  f  419 16x8 q=0.33 det=0.18 -> - 0.00
+  f  420 17x10 q=0.32 det=0.14 -> - 0.00
+  f  421 17x12 q=0.33 det=0.14 -> - 0.00
+  f  422 17x13 q=0.34 det=0.16 -> - 0.00
+  f  423 17x13 q=0.34 det=0.16 -> - 0.00
+  f  424 17x13 q=0.35 det=0.16 -> - 0.00
+  f  425 17x13 q=0.35 det=0.16 -> - 0.00
+  f  426 16x12 q=0.33 det=0.17 -> - 0.00
+  f  427 17x12 q=0.35 det=0.17 -> - 0.00
+  f  428 16x12 q=0.35 det=0.17 -> - 0.00
+  f  429 16x12 q=0.34 det=0.17 -> - 0.00
+  f  430 16x12 q=0.34 det=0.18 -> - 0.00
+  f  431 16x12 q=0.34 det=0.18 -> - 0.00
+  f  432 17x12 q=0.34 det=0.18 -> - 0.00
+  f  433 16x12 q=0.36 det=0.17 -> - 0.00
+  f  434 16x12 q=0.34 det=0.17 -> - 0.00
+  f  435 16x12 q=0.34 det=0.16 -> - 0.00
+  f  436 9x3 q=0.44 det=0.30 -> - 0.00
+  f  437 10x3 q=0.43 det=0.32 -> - 0.00
+  f  438 10x3 q=0.43 det=0.31 -> - 0.00
+  f  439 10x4 q=0.45 det=0.32 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:14<22  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t216 (motorcycle)
+Track duration: 0.0 s  frames 459-460
+Plate candidates: 2  best frame: 459  plate size: 24x19  quality: 0.459
+OCR (per candidate, first 40):
+  f  459 19x12 q=0.46 det=0.27 -> - 0.00
+  f  460 19x13 q=0.46 det=0.27 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.1<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t190 (motorcycle)
+Track duration: 2.0 s  frames 414-464
+Plate candidates: 46  best frame: 416  plate size: 29x8  quality: 0.505
+OCR (per candidate, first 40):
+  f  414 20x16 q=0.32 det=0.21 -> - 0.00
+  f  415 21x15 q=0.33 det=0.23 -> - 0.00
+  f  416 23x6 q=0.51 det=0.30 -> - 0.00
+  f  417 24x5 q=0.51 det=0.29 -> - 0.00
+  f  418 21x15 q=0.37 det=0.24 -> - 0.00
+  f  419 21x15 q=0.35 det=0.24 -> - 0.00
+  f  420 21x15 q=0.34 det=0.25 -> - 0.00
+  f  421 21x15 q=0.37 det=0.25 -> - 0.00
+  f  422 21x15 q=0.38 det=0.26 -> - 0.00
+  f  423 21x15 q=0.37 det=0.27 -> - 0.00
+  f  429 22x15 q=0.34 det=0.27 -> - 0.00
+  f  430 21x15 q=0.35 det=0.27 -> - 0.00
+  f  431 21x15 q=0.33 det=0.28 -> - 0.00
+  f  432 21x15 q=0.35 det=0.28 -> - 0.00
+  f  433 22x15 q=0.35 det=0.27 -> - 0.00
+  f  434 22x14 q=0.35 det=0.30 -> - 0.00
+  f  435 22x14 q=0.35 det=0.28 -> - 0.00
+  f  436 19x4 q=0.41 det=0.29 -> - 0.00
+  f  437 22x14 q=0.36 det=0.28 -> - 0.00
+  f  438 20x4 q=0.42 det=0.31 -> - 0.00
+  f  439 19x4 q=0.42 det=0.32 -> - 0.00
+  f  440 20x4 q=0.42 det=0.32 -> - 0.00
+  f  441 22x14 q=0.36 det=0.30 -> - 0.00
+  f  442 18x4 q=0.42 det=0.30 -> - 0.00
+  f  443 17x3 q=0.38 det=0.31 -> - 0.00
+  f  444 21x14 q=0.36 det=0.30 -> - 0.00
+  f  445 17x3 q=0.38 det=0.30 -> - 0.00
+  f  446 19x3 q=0.38 det=0.33 -> - 0.00
+  f  447 19x4 q=0.40 det=0.28 -> - 0.00
+  f  448 19x4 q=0.40 det=0.29 -> - 0.00
+  f  449 19x4 q=0.38 det=0.30 -> - 0.00
+  f  450 21x14 q=0.37 det=0.13 -> - 0.00
+  f  451 20x14 q=0.37 det=0.14 -> - 0.00
+  f  452 16x4 q=0.37 det=0.17 -> - 0.00
+  f  453 20x14 q=0.37 det=0.14 -> - 0.00
+  f  454 16x3 q=0.38 det=0.17 -> - 0.00
+  f  455 15x3 q=0.37 det=0.14 -> - 0.00
+  f  456 15x3 q=0.38 det=0.15 -> - 0.00
+  f  457 10x3 q=0.45 det=0.19 -> - 0.00
+  f  458 15x3 q=0.37 det=0.33 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:3.5<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t173 (car)
+Track duration: 5.4 s  frames 370-505
+Plate candidates: 118  best frame: 394  plate size: 24x6  quality: 0.467
+OCR (per candidate, first 40):
+  f  370 9x4 q=0.41 det=0.22 -> - 0.00
+  f  371 9x4 q=0.45 det=0.22 -> - 0.00
+  f  372 9x5 q=0.45 det=0.21 -> - 0.00
+  f  373 19x4 q=0.46 det=0.41 -> - 0.00
+  f  374 9x5 q=0.45 det=0.21 -> - 0.00
+  f  375 25x10 q=0.51 det=0.18 -> - 0.00
+  f  376 10x4 q=0.41 det=0.22 -> - 0.00
+  f  377 12x5 q=0.38 det=0.28 -> - 0.00
+  f  378 23x5 q=0.47 det=0.39 -> - 0.00
+  f  379 14x9 q=0.42 det=0.36 -> - 0.00
+  f  380 16x9 q=0.44 det=0.38 -> - 0.00
+  f  381 18x4 q=0.44 det=0.24 -> - 0.00
+  f  382 28x6 q=0.48 det=0.42 -> - 0.00
+  f  383 17x3 q=0.43 det=0.21 -> - 0.00
+  f  384 17x4 q=0.43 det=0.24 -> - 0.00
+  f  385 17x3 q=0.42 det=0.21 -> - 0.00
+  f  386 22x4 q=0.39 det=0.37 -> - 0.00
+  f  387 10x7 q=0.40 det=0.44 -> - 0.00
+  f  388 12x7 q=0.39 det=0.44 -> - 0.00
+  f  389 12x8 q=0.37 det=0.43 -> - 0.00
+  f  390 19x4 q=0.44 det=0.43 -> - 0.00
+  f  391 13x6 q=0.38 det=0.29 -> - 0.00
+  f  392 21x6 q=0.40 det=0.36 -> - 0.00
+  f  393 16x4 q=0.46 det=0.54 -> - 0.00
+  f  394 19x4 q=0.47 det=0.55 -> - 0.00
+  f  395 16x7 q=0.42 det=0.22 -> - 0.00
+  f  396 16x4 q=0.46 det=0.54 -> - 0.00
+  f  397 12x11 q=0.35 det=0.42 -> - 0.00
+  f  398 12x11 q=0.34 det=0.43 -> - 0.00
+  f  399 17x6 q=0.48 det=0.44 -> - 0.00
+  f  400 11x10 q=0.35 det=0.44 -> - 0.00
+  f  401 8x5 q=0.45 det=0.46 -> - 0.00
+  f  402 11x11 q=0.36 det=0.43 -> - 0.00
+  f  403 9x5 q=0.45 det=0.46 -> - 0.00
+  f  404 9x5 q=0.45 det=0.45 -> - 0.00
+  f  405 8x4 q=0.45 det=0.47 -> - 0.00
+  f  406 10x5 q=0.45 det=0.46 -> - 0.00
+  f  407 10x5 q=0.45 det=0.46 -> - 0.00
+  f  408 9x5 q=0.45 det=0.47 -> - 0.00
+  f  409 10x5 q=0.45 det=0.47 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  height_below_gate:6<8  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t1 (car)
+Track duration: 44.9 s  frames 0-1123
+Plate candidates: 211  best frame: 600  plate size: 19x6  quality: 0.461
+OCR (per candidate, first 40):
+  f    4 8x4 q=0.44 det=0.20 -> - 0.00
+  f    5 8x4 q=0.44 det=0.20 -> - 0.00
+  f    6 14x4 q=0.45 det=0.28 -> - 0.00
+  f    7 12x4 q=0.43 det=0.25 -> - 0.00
+  f    8 8x4 q=0.40 det=0.21 -> - 0.00
+  f    9 9x4 q=0.40 det=0.21 -> - 0.00
+  f   10 8x3 q=0.43 det=0.20 -> - 0.00
+  f   11 11x6 q=0.38 det=0.17 -> - 0.00
+  f   22 11x5 q=0.42 det=0.23 -> - 0.00
+  f   23 11x5 q=0.42 det=0.22 -> - 0.00
+  f   24 10x5 q=0.41 det=0.23 -> - 0.00
+  f   25 9x4 q=0.44 det=0.23 -> - 0.00
+  f   26 11x6 q=0.42 det=0.27 -> - 0.00
+  f   27 12x6 q=0.43 det=0.27 -> - 0.00
+  f   28 14x7 q=0.37 det=0.23 -> - 0.00
+  f   29 10x5 q=0.40 det=0.21 -> - 0.00
+  f   30 8x6 q=0.45 det=0.22 -> - 0.00
+  f   31 10x4 q=0.42 det=0.21 -> - 0.00
+  f   32 10x4 q=0.42 det=0.21 -> - 0.00
+  f   33 8x6 q=0.43 det=0.26 -> - 0.00
+  f   34 10x4 q=0.42 det=0.21 -> - 0.00
+  f   35 10x4 q=0.42 det=0.21 -> - 0.00
+  f   36 10x4 q=0.42 det=0.21 -> - 0.00
+  f   37 10x4 q=0.42 det=0.21 -> - 0.00
+  f   38 10x4 q=0.42 det=0.21 -> - 0.00
+  f   39 12x4 q=0.43 det=0.23 -> - 0.00
+  f   40 12x4 q=0.43 det=0.23 -> - 0.00
+  f   41 12x4 q=0.43 det=0.23 -> - 0.00
+  f   58 8x3 q=0.45 det=0.11 -> - 0.00
+  f   70 8x3 q=0.45 det=0.11 -> - 0.00
+  f  103 8x3 q=0.44 det=0.12 -> - 0.00
+  f  104 8x3 q=0.44 det=0.12 -> - 0.00
+  f  105 8x3 q=0.44 det=0.12 -> - 0.00
+  f  106 8x3 q=0.44 det=0.12 -> - 0.00
+  f  107 8x3 q=0.44 det=0.12 -> - 0.00
+  f  108 8x3 q=0.44 det=0.12 -> - 0.00
+  f  109 8x3 q=0.44 det=0.12 -> - 0.00
+  f  110 8x3 q=0.44 det=0.12 -> - 0.00
+  f  111 8x3 q=0.44 det=0.12 -> - 0.00
+  f  120 9x3 q=0.43 det=0.12 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:19<22  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t4 (car)
+Track duration: 44.9 s  frames 0-1123
+Plate candidates: 417  best frame: 23  plate size: 89x101  quality: 0.743
+OCR (per candidate, first 40):
+  f    0 13x12 q=0.41 det=0.22 -> - 0.00
+  f    1 13x12 q=0.41 det=0.22 -> - 0.00
+  f    2 13x12 q=0.41 det=0.23 -> - 0.00
+  f    3 13x12 q=0.41 det=0.22 -> - 0.00
+  f    4 13x12 q=0.41 det=0.23 -> - 0.00
+  f    5 13x13 q=0.41 det=0.22 -> - 0.00
+  f    6 13x12 q=0.42 det=0.22 -> - 0.00
+  f    7 13x13 q=0.41 det=0.22 -> - 0.00
+  f    8 13x12 q=0.41 det=0.22 -> - 0.00
+  f    9 13x12 q=0.42 det=0.22 -> - 0.00
+  f   10 13x12 q=0.41 det=0.22 -> - 0.00
+  f   11 13x12 q=0.41 det=0.22 -> - 0.00
+  f   12 8x6 q=0.38 det=0.23 -> - 0.00
+  f   13 8x6 q=0.38 det=0.23 -> - 0.00
+  f   14 8x6 q=0.38 det=0.23 -> - 0.00
+  f   15 13x12 q=0.40 det=0.21 -> - 0.00
+  f   16 13x12 q=0.40 det=0.19 -> - 0.00
+  f   19 12x12 q=0.39 det=0.19 -> - 0.00
+  f   20 10x5 q=0.45 det=0.23 -> - 0.00
+  f   22 12x12 q=0.37 det=0.19 -> - 0.00
+  f   23 72x68 q=0.74 det=0.02 -> - 0.00
+  f   24 11x10 q=0.38 det=0.22 -> - 0.00
+  f   25 11x10 q=0.38 det=0.22 -> - 0.00
+  f   26 11x10 q=0.38 det=0.22 -> - 0.00
+  f   43 10x10 q=0.37 det=0.21 -> - 0.00
+  f   52 11x10 q=0.38 det=0.22 -> - 0.00
+  f   53 10x10 q=0.38 det=0.24 -> - 0.00
+  f   54 11x10 q=0.39 det=0.23 -> - 0.00
+  f   55 10x10 q=0.38 det=0.24 -> - 0.00
+  f   56 11x10 q=0.39 det=0.23 -> - 0.00
+  f   57 11x10 q=0.39 det=0.23 -> - 0.00
+  f   58 11x10 q=0.39 det=0.23 -> - 0.00
+  f   60 11x10 q=0.39 det=0.23 -> - 0.00
+  f   61 11x10 q=0.39 det=0.23 -> - 0.00
+  f   67 11x10 q=0.39 det=0.23 -> - 0.00
+  f   68 11x10 q=0.39 det=0.23 -> - 0.00
+  f   69 11x10 q=0.39 det=0.23 -> - 0.00
+  f   70 11x10 q=0.39 det=0.23 -> - 0.00
+  f   71 11x10 q=0.39 det=0.23 -> - 0.00
+  f   72 10x10 q=0.37 det=0.25 -> - 0.00
+FINAL: GJ12GJ3  status CANDIDATE  confidence 0.0001  no_glyph_evidence:1  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t6 (car)
+Track duration: 44.9 s  frames 0-1123
+Plate candidates: 372  best frame: 1106  plate size: 40x12  quality: 0.492
+OCR (per candidate, first 40):
+  f    1 12x5 q=0.43 det=0.29 -> - 0.00
+  f    2 12x5 q=0.41 det=0.28 -> - 0.00
+  f    3 11x5 q=0.43 det=0.28 -> - 0.00
+  f    4 11x5 q=0.42 det=0.28 -> - 0.00
+  f    5 11x5 q=0.43 det=0.28 -> - 0.00
+  f    6 11x5 q=0.42 det=0.28 -> - 0.00
+  f    7 11x5 q=0.41 det=0.27 -> - 0.00
+  f    8 11x5 q=0.42 det=0.27 -> - 0.00
+  f    9 11x5 q=0.42 det=0.27 -> - 0.00
+  f   10 11x5 q=0.42 det=0.26 -> - 0.00
+  f   11 11x5 q=0.42 det=0.26 -> - 0.00
+  f   12 11x5 q=0.42 det=0.26 -> - 0.00
+  f   13 11x5 q=0.42 det=0.26 -> - 0.00
+  f   14 11x5 q=0.42 det=0.26 -> - 0.00
+  f   15 11x5 q=0.39 det=0.26 -> - 0.00
+  f   16 11x5 q=0.42 det=0.26 -> - 0.00
+  f   17 11x5 q=0.42 det=0.26 -> - 0.00
+  f   18 11x4 q=0.39 det=0.25 -> - 0.00
+  f   19 11x5 q=0.39 det=0.25 -> - 0.00
+  f   20 8x6 q=0.45 det=0.25 -> - 0.00
+  f   21 8x6 q=0.45 det=0.25 -> - 0.00
+  f   22 11x4 q=0.39 det=0.21 -> - 0.00
+  f   23 8x6 q=0.45 det=0.26 -> - 0.00
+  f   24 8x6 q=0.45 det=0.25 -> - 0.00
+  f   25 18x10 q=0.39 det=0.25 -> - 0.00
+  f   26 8x6 q=0.45 det=0.24 -> - 0.00
+  f   27 8x6 q=0.45 det=0.24 -> - 0.00
+  f   28 8x6 q=0.45 det=0.23 -> - 0.00
+  f   29 18x11 q=0.39 det=0.24 -> - 0.00
+  f   30 8x6 q=0.45 det=0.24 -> - 0.00
+  f   31 8x6 q=0.45 det=0.24 -> - 0.00
+  f   32 8x6 q=0.45 det=0.25 -> - 0.00
+  f   33 8x6 q=0.45 det=0.24 -> - 0.00
+  f   34 8x6 q=0.45 det=0.24 -> - 0.00
+  f   35 8x6 q=0.45 det=0.24 -> - 0.00
+  f   36 11x4 q=0.39 det=0.19 -> - 0.00
+  f   37 8x6 q=0.45 det=0.26 -> - 0.00
+  f   38 11x4 q=0.39 det=0.19 -> - 0.00
+  f   39 8x6 q=0.45 det=0.24 -> - 0.00
+  f   40 8x6 q=0.45 det=0.25 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:6.2<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t300 (car)
+Track duration: 0.7 s  frames 1105-1123
+Plate candidates: 15  best frame: 1108  plate size: 19x15  quality: 0.431
+OCR (per candidate, first 40):
+  f 1107 13x13 q=0.36 det=0.39 -> - 0.00
+  f 1108 15x10 q=0.43 det=0.40 -> - 0.00
+  f 1109 9x9 q=0.35 det=0.38 -> - 0.00
+  f 1110 10x8 q=0.40 det=0.31 -> - 0.00
+  f 1111 13x9 q=0.41 det=0.39 -> - 0.00
+  f 1112 11x11 q=0.40 det=0.40 -> - 0.00
+  f 1113 13x8 q=0.42 det=0.33 -> - 0.00
+  f 1114 10x8 q=0.40 det=0.34 -> - 0.00
+  f 1115 11x9 q=0.42 det=0.32 -> - 0.00
+  f 1116 14x9 q=0.41 det=0.40 -> - 0.00
+  f 1117 12x12 q=0.36 det=0.40 -> - 0.00
+  f 1118 12x7 q=0.41 det=0.31 -> - 0.00
+  f 1119 10x9 q=0.41 det=0.40 -> - 0.00
+  f 1121 13x7 q=0.42 det=0.34 -> - 0.00
+  f 1122 8x4 q=0.44 det=0.18 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:19<22  emitted: no

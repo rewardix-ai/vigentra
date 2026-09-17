@@ -1,0 +1,1516 @@
+[
+ {
+  "camera": "cam06_1080p",
+  "clip": "cam06_1080p.mp4",
+  "resolution": "1920x1080",
+  "fps": 23.21,
+  "frames": 1546,
+  "duration_s": 66.6,
+  "bitrate_kbps": 1854,
+  "bits_per_pixel_frame": 0.0385,
+  "luma_p10_p50_p90": [
+   89.8,
+   92.8,
+   94.9
+  ],
+  "contrast_std": 33.8,
+  "sharpness_lap": 593.7,
+  "blockiness": 1.051,
+  "dark_pixel_frac": 0.077,
+  "lighting": "day",
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "delhi_1080p",
+  "clip": "delhi_1080p.mp4",
+  "resolution": "1920x1080",
+  "fps": 29.74,
+  "frames": 797,
+  "duration_s": 26.8,
+  "bitrate_kbps": 25660,
+  "bits_per_pixel_frame": 0.4161,
+  "luma_p10_p50_p90": [
+   104.4,
+   107.3,
+   110.1
+  ],
+  "contrast_std": 60.5,
+  "sharpness_lap": 486.3,
+  "blockiness": 1.031,
+  "dark_pixel_frac": 0.121,
+  "lighting": "day",
+  "vehicle_tracks": 194,
+  "tracks_per_min": 434.3,
+  "vehicles_per_frame_mean": 11.37,
+  "vehicle_width_p50_p90": [
+   141,
+   564
+  ],
+  "classes": {
+   "car": 94,
+   "motorcycle": 75,
+   "truck": 17,
+   "bus": 8
+  },
+  "direction": {
+   "left": 112,
+   "down": 7,
+   "up": 3,
+   "right": 2
+  },
+  "motion": {
+   "receding": 25,
+   "approaching": 83,
+   "steady": 52
+  },
+  "approach_share": 0.52,
+  "plate_side_guess": "front",
+  "occlusion_rate": 0.394,
+  "plate_candidates": 6558,
+  "tracks_with_candidates": 144,
+  "track_max_plate_width_p25_p50_p90": [
+   31,
+   64,
+   133
+  ],
+  "tracks_max_plate_ge_40px": 96,
+  "tracks_max_plate_ge_60px": 76,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 106.6,
+  "plate_sharpness_p50": 14.4,
+  "two_row_share": 0.54,
+  "difficulty": "GOOD",
+  "difficulty_reasons": []
+ },
+ {
+  "camera": "cam01",
+  "clip": "rec_cam01.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 516,
+  "bits_per_pixel_frame": 0.0224,
+  "luma_p10_p50_p90": [
+   89.7,
+   96.2,
+   98.9
+  ],
+  "contrast_std": 64.7,
+  "sharpness_lap": 419.0,
+  "blockiness": 1.158,
+  "dark_pixel_frac": 0.233,
+  "lighting": "day",
+  "vehicle_tracks": 194,
+  "tracks_per_min": 258.7,
+  "vehicles_per_frame_mean": 7.88,
+  "vehicle_width_p50_p90": [
+   76,
+   181
+  ],
+  "classes": {
+   "truck": 101,
+   "bus": 27,
+   "motorcycle": 1,
+   "car": 65
+  },
+  "direction": {
+   "right": 32,
+   "up": 29,
+   "left": 1,
+   "down": 1
+  },
+  "motion": {
+   "steady": 75,
+   "receding": 49,
+   "approaching": 11
+  },
+  "approach_share": 0.08,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.185,
+  "plate_candidates": 886,
+  "tracks_with_candidates": 26,
+  "track_max_plate_width_p25_p50_p90": [
+   20,
+   24,
+   69
+  ],
+  "tracks_max_plate_ge_40px": 5,
+  "tracks_max_plate_ge_60px": 4,
+  "plate_skew_deg_p50": 1.0,
+  "plate_brightness_p50": 106.9,
+  "plate_sharpness_p50": 5.1,
+  "two_row_share": 0.41,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 24px < 40"
+  ]
+ },
+ {
+  "camera": "cam02",
+  "clip": "rec_cam02.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 1089,
+  "bits_per_pixel_frame": 0.0473,
+  "luma_p10_p50_p90": [
+   84.0,
+   89.7,
+   94.6
+  ],
+  "contrast_std": 58.9,
+  "sharpness_lap": 458.4,
+  "blockiness": 1.163,
+  "dark_pixel_frac": 0.141,
+  "lighting": "day",
+  "vehicle_tracks": 129,
+  "tracks_per_min": 172.0,
+  "vehicles_per_frame_mean": 3.23,
+  "vehicle_width_p50_p90": [
+   81,
+   171
+  ],
+  "classes": {
+   "car": 88,
+   "truck": 24,
+   "motorcycle": 10,
+   "bus": 7
+  },
+  "direction": {
+   "right": 27,
+   "left": 20,
+   "down": 2
+  },
+  "motion": {
+   "receding": 15,
+   "steady": 46,
+   "approaching": 22
+  },
+  "approach_share": 0.27,
+  "plate_side_guess": "both",
+  "occlusion_rate": 0.047,
+  "plate_candidates": 267,
+  "tracks_with_candidates": 24,
+  "track_max_plate_width_p25_p50_p90": [
+   14,
+   22,
+   42
+  ],
+  "tracks_max_plate_ge_40px": 4,
+  "tracks_max_plate_ge_60px": 1,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 143.0,
+  "plate_sharpness_p50": 2.9,
+  "two_row_share": 0.54,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 22px < 40"
+  ]
+ },
+ {
+  "camera": "cam04",
+  "clip": "rec_cam04.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 1209,
+  "bits_per_pixel_frame": 0.0525,
+  "luma_p10_p50_p90": [
+   74.3,
+   81.5,
+   88.0
+  ],
+  "contrast_std": 58.6,
+  "sharpness_lap": 559.2,
+  "blockiness": 1.092,
+  "dark_pixel_frac": 0.263,
+  "lighting": "day",
+  "vehicle_tracks": 206,
+  "tracks_per_min": 274.7,
+  "vehicles_per_frame_mean": 11.67,
+  "vehicle_width_p50_p90": [
+   71,
+   208
+  ],
+  "classes": {
+   "car": 78,
+   "truck": 39,
+   "motorcycle": 71,
+   "bus": 18
+  },
+  "direction": {
+   "right": 69,
+   "down": 5,
+   "up": 3,
+   "left": 20
+  },
+  "motion": {
+   "receding": 55,
+   "steady": 75,
+   "approaching": 31
+  },
+  "approach_share": 0.19,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.145,
+  "plate_candidates": 1555,
+  "tracks_with_candidates": 47,
+  "track_max_plate_width_p25_p50_p90": [
+   16,
+   27,
+   95
+  ],
+  "tracks_max_plate_ge_40px": 13,
+  "tracks_max_plate_ge_60px": 8,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 113.2,
+  "plate_sharpness_p50": 3.0,
+  "two_row_share": 0.49,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 27px < 40"
+  ]
+ },
+ {
+  "camera": "cam05",
+  "clip": "rec_cam05.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1125,
+  "duration_s": 45.0,
+  "bitrate_kbps": 824,
+  "bits_per_pixel_frame": 0.0358,
+  "luma_p10_p50_p90": [
+   84.4,
+   92.5,
+   98.0
+  ],
+  "contrast_std": 47.4,
+  "sharpness_lap": 453.4,
+  "blockiness": 1.14,
+  "dark_pixel_frac": 0.047,
+  "lighting": "day",
+  "vehicle_tracks": 221,
+  "tracks_per_min": 294.7,
+  "vehicles_per_frame_mean": 7.37,
+  "vehicle_width_p50_p90": [
+   43,
+   105
+  ],
+  "classes": {
+   "car": 201,
+   "truck": 14,
+   "bus": 2,
+   "motorcycle": 4
+  },
+  "direction": {
+   "right": 48,
+   "down": 4,
+   "left": 5,
+   "up": 2
+  },
+  "motion": {
+   "receding": 27,
+   "approaching": 33,
+   "steady": 85
+  },
+  "approach_share": 0.23,
+  "plate_side_guess": "both",
+  "occlusion_rate": 0.051,
+  "plate_candidates": 103,
+  "tracks_with_candidates": 10,
+  "track_max_plate_width_p25_p50_p90": [
+   18,
+   20,
+   30
+  ],
+  "tracks_max_plate_ge_40px": 0,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 176.3,
+  "plate_sharpness_p50": 2.1,
+  "two_row_share": 0.67,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 20px < 40"
+  ]
+ },
+ {
+  "camera": "cam06",
+  "clip": "rec_cam06.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 624,
+  "bits_per_pixel_frame": 0.0271,
+  "luma_p10_p50_p90": [
+   87.7,
+   91.1,
+   93.0
+  ],
+  "contrast_std": 32.4,
+  "sharpness_lap": 278.8,
+  "blockiness": 0.953,
+  "dark_pixel_frac": 0.083,
+  "lighting": "day",
+  "vehicle_tracks": 49,
+  "tracks_per_min": 65.3,
+  "vehicles_per_frame_mean": 2.7,
+  "vehicle_width_p50_p90": [
+   129,
+   263
+  ],
+  "classes": {
+   "motorcycle": 22,
+   "truck": 7,
+   "car": 20
+  },
+  "direction": {
+   "left": 1,
+   "right": 4,
+   "down": 17,
+   "up": 4
+  },
+  "motion": {
+   "approaching": 14,
+   "receding": 9,
+   "steady": 12
+  },
+  "approach_share": 0.4,
+  "plate_side_guess": "front",
+  "occlusion_rate": 0.063,
+  "plate_candidates": 637,
+  "tracks_with_candidates": 19,
+  "track_max_plate_width_p25_p50_p90": [
+   35,
+   46,
+   159
+  ],
+  "tracks_max_plate_ge_40px": 13,
+  "tracks_max_plate_ge_60px": 3,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 106.3,
+  "plate_sharpness_p50": 10.6,
+  "two_row_share": 0.59,
+  "difficulty": "MEDIUM",
+  "difficulty_reasons": [
+   "median widest plate 46px < 60"
+  ]
+ },
+ {
+  "camera": "cam07",
+  "clip": "rec_cam07.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 499,
+  "bits_per_pixel_frame": 0.0216,
+  "luma_p10_p50_p90": [
+   32.0,
+   40.8,
+   47.7
+  ],
+  "contrast_std": 29.1,
+  "sharpness_lap": 174.6,
+  "blockiness": 0.938,
+  "dark_pixel_frac": 0.58,
+  "lighting": "night/dark",
+  "vehicle_tracks": 12,
+  "tracks_per_min": 16.0,
+  "vehicles_per_frame_mean": 1.17,
+  "vehicle_width_p50_p90": [
+   116,
+   504
+  ],
+  "classes": {
+   "car": 9,
+   "motorcycle": 3
+  },
+  "direction": {
+   "up": 6,
+   "right": 1
+  },
+  "motion": {
+   "steady": 2,
+   "receding": 4,
+   "approaching": 1
+  },
+  "approach_share": 0.14,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.014,
+  "plate_candidates": 24,
+  "tracks_with_candidates": 1,
+  "track_max_plate_width_p25_p50_p90": [
+   54,
+   54,
+   54
+  ],
+  "tracks_max_plate_ge_40px": 1,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 3.8,
+  "plate_brightness_p50": 152.5,
+  "plate_sharpness_p50": 132.3,
+  "two_row_share": 0.0,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 54px < 60",
+   "dark (luma 40.8)"
+  ]
+ },
+ {
+  "camera": "cam08",
+  "clip": "rec_cam08.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 1089,
+  "bits_per_pixel_frame": 0.0473,
+  "luma_p10_p50_p90": [
+   64.2,
+   79.6,
+   93.4
+  ],
+  "contrast_std": 66.7,
+  "sharpness_lap": 249.9,
+  "blockiness": 1.022,
+  "dark_pixel_frac": 0.34,
+  "lighting": "dim",
+  "vehicle_tracks": 134,
+  "tracks_per_min": 178.7,
+  "vehicles_per_frame_mean": 7.25,
+  "vehicle_width_p50_p90": [
+   71,
+   216
+  ],
+  "classes": {
+   "truck": 21,
+   "motorcycle": 61,
+   "car": 49,
+   "bus": 3
+  },
+  "direction": {
+   "up": 23,
+   "down": 13,
+   "right": 22,
+   "left": 4
+  },
+  "motion": {
+   "steady": 48,
+   "receding": 41,
+   "approaching": 18
+  },
+  "approach_share": 0.17,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.128,
+  "plate_candidates": 733,
+  "tracks_with_candidates": 20,
+  "track_max_plate_width_p25_p50_p90": [
+   18,
+   31,
+   195
+  ],
+  "tracks_max_plate_ge_40px": 6,
+  "tracks_max_plate_ge_60px": 4,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 153.2,
+  "plate_sharpness_p50": 4.6,
+  "two_row_share": 0.45,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 31px < 40"
+  ]
+ },
+ {
+  "camera": "cam09",
+  "clip": "rec_cam09.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 249,
+  "bits_per_pixel_frame": 0.0108,
+  "luma_p10_p50_p90": [
+   1.7,
+   8.3,
+   31.7
+  ],
+  "contrast_std": 22.9,
+  "sharpness_lap": 568.9,
+  "blockiness": 0.957,
+  "dark_pixel_frac": 0.961,
+  "lighting": "night/dark",
+  "vehicle_tracks": 0,
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "very dark (luma 8.3)",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "cam10",
+  "clip": "rec_cam10.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 635,
+  "bits_per_pixel_frame": 0.0276,
+  "luma_p10_p50_p90": [
+   68.1,
+   73.8,
+   84.5
+  ],
+  "contrast_std": 49.7,
+  "sharpness_lap": 327.0,
+  "blockiness": 1.069,
+  "dark_pixel_frac": 0.202,
+  "lighting": "dim",
+  "vehicle_tracks": 156,
+  "tracks_per_min": 208.0,
+  "vehicles_per_frame_mean": 9.11,
+  "vehicle_width_p50_p90": [
+   63,
+   197
+  ],
+  "classes": {
+   "car": 43,
+   "motorcycle": 105,
+   "truck": 8
+  },
+  "direction": {
+   "right": 23,
+   "left": 12,
+   "up": 17,
+   "down": 14
+  },
+  "motion": {
+   "steady": 72,
+   "receding": 40,
+   "approaching": 15
+  },
+  "approach_share": 0.12,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.069,
+  "plate_candidates": 1441,
+  "tracks_with_candidates": 19,
+  "track_max_plate_width_p25_p50_p90": [
+   16,
+   23,
+   64
+  ],
+  "tracks_max_plate_ge_40px": 5,
+  "tracks_max_plate_ge_60px": 3,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 113.6,
+  "plate_sharpness_p50": 2.0,
+  "two_row_share": 0.79,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 23px < 40"
+  ]
+ },
+ {
+  "camera": "cam11",
+  "clip": "rec_cam11.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1124,
+  "duration_s": 45.0,
+  "bitrate_kbps": 685,
+  "bits_per_pixel_frame": 0.0297,
+  "luma_p10_p50_p90": [
+   92.8,
+   98.3,
+   104.1
+  ],
+  "contrast_std": 44.4,
+  "sharpness_lap": 135.7,
+  "blockiness": 1.056,
+  "dark_pixel_frac": 0.041,
+  "lighting": "day",
+  "vehicle_tracks": 238,
+  "tracks_per_min": 317.3,
+  "vehicles_per_frame_mean": 16.5,
+  "vehicle_width_p50_p90": [
+   61,
+   137
+  ],
+  "classes": {
+   "car": 86,
+   "motorcycle": 117,
+   "truck": 34,
+   "bus": 1
+  },
+  "direction": {
+   "up": 29,
+   "left": 22,
+   "right": 27,
+   "down": 2
+  },
+  "motion": {
+   "steady": 107,
+   "receding": 58,
+   "approaching": 25
+  },
+  "approach_share": 0.13,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.104,
+  "plate_candidates": 4088,
+  "tracks_with_candidates": 48,
+  "track_max_plate_width_p25_p50_p90": [
+   12,
+   17,
+   51
+  ],
+  "tracks_max_plate_ge_40px": 6,
+  "tracks_max_plate_ge_60px": 4,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 124.4,
+  "plate_sharpness_p50": 2.2,
+  "two_row_share": 0.53,
+  "difficulty": "VERY_DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 17px < 20"
+  ]
+ },
+ {
+  "camera": "cam12",
+  "clip": "rec_cam12.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 886,
+  "duration_s": 35.4,
+  "bitrate_kbps": 749,
+  "bits_per_pixel_frame": 0.0325,
+  "luma_p10_p50_p90": [
+   113.3,
+   116.7,
+   123.7
+  ],
+  "contrast_std": 61.4,
+  "sharpness_lap": 2195.6,
+  "blockiness": 1.006,
+  "dark_pixel_frac": 0.124,
+  "lighting": "day",
+  "vehicle_tracks": 5,
+  "tracks_per_min": 8.5,
+  "vehicles_per_frame_mean": 1.1,
+  "vehicle_width_p50_p90": [
+   114,
+   165
+  ],
+  "classes": {
+   "car": 3,
+   "truck": 2
+  },
+  "direction": {
+   "down": 3
+  },
+  "motion": {
+   "approaching": 3,
+   "steady": 2
+  },
+  "approach_share": 0.6,
+  "plate_side_guess": "front",
+  "occlusion_rate": 0.034,
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "cam13",
+  "clip": "rec_cam13.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 605,
+  "duration_s": 24.2,
+  "bitrate_kbps": 689,
+  "bits_per_pixel_frame": 0.0299,
+  "luma_p10_p50_p90": [
+   78.1,
+   84.8,
+   90.4
+  ],
+  "contrast_std": 50.4,
+  "sharpness_lap": 145.7,
+  "blockiness": 1.19,
+  "dark_pixel_frac": 0.129,
+  "lighting": "day",
+  "vehicle_tracks": 155,
+  "tracks_per_min": 384.3,
+  "vehicles_per_frame_mean": 4.93,
+  "vehicle_width_p50_p90": [
+   91,
+   221
+  ],
+  "classes": {
+   "truck": 40,
+   "car": 103,
+   "motorcycle": 8,
+   "bus": 4
+  },
+  "direction": {
+   "right": 30,
+   "up": 12,
+   "left": 17,
+   "down": 1
+  },
+  "motion": {
+   "receding": 24,
+   "approaching": 9,
+   "steady": 57
+  },
+  "approach_share": 0.1,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.134,
+  "plate_candidates": 1130,
+  "tracks_with_candidates": 57,
+  "track_max_plate_width_p25_p50_p90": [
+   16,
+   20,
+   41
+  ],
+  "tracks_max_plate_ge_40px": 7,
+  "tracks_max_plate_ge_60px": 1,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 143.6,
+  "plate_sharpness_p50": 2.7,
+  "two_row_share": 0.47,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 20px < 40"
+  ]
+ },
+ {
+  "camera": "cam14",
+  "clip": "rec_cam14.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 671,
+  "duration_s": 26.8,
+  "bitrate_kbps": 505,
+  "bits_per_pixel_frame": 0.0219,
+  "luma_p10_p50_p90": [
+   92.5,
+   95.4,
+   102.6
+  ],
+  "contrast_std": 42.1,
+  "sharpness_lap": 139.1,
+  "blockiness": 1.22,
+  "dark_pixel_frac": 0.001,
+  "lighting": "day",
+  "vehicle_tracks": 87,
+  "tracks_per_min": 194.8,
+  "vehicles_per_frame_mean": 2.74,
+  "vehicle_width_p50_p90": [
+   65,
+   134
+  ],
+  "classes": {
+   "car": 67,
+   "truck": 13,
+   "motorcycle": 5,
+   "bus": 2
+  },
+  "direction": {
+   "left": 6,
+   "up": 1,
+   "right": 5,
+   "down": 1
+  },
+  "motion": {
+   "steady": 35,
+   "receding": 7,
+   "approaching": 7
+  },
+  "approach_share": 0.14,
+  "plate_side_guess": "both",
+  "occlusion_rate": 0.14,
+  "plate_candidates": 422,
+  "tracks_with_candidates": 17,
+  "track_max_plate_width_p25_p50_p90": [
+   11,
+   14,
+   28
+  ],
+  "tracks_max_plate_ge_40px": 1,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 145.3,
+  "plate_sharpness_p50": 2.1,
+  "two_row_share": 0.73,
+  "difficulty": "VERY_DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 14px < 20"
+  ]
+ },
+ {
+  "camera": "cam15",
+  "clip": "rec_cam15.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 1122,
+  "duration_s": 44.9,
+  "bitrate_kbps": 399,
+  "bits_per_pixel_frame": 0.0173,
+  "luma_p10_p50_p90": [
+   84.5,
+   90.1,
+   97.4
+  ],
+  "contrast_std": 46.8,
+  "sharpness_lap": 97.2,
+  "blockiness": 1.196,
+  "dark_pixel_frac": 0.02,
+  "lighting": "day",
+  "vehicle_tracks": 109,
+  "tracks_per_min": 145.7,
+  "vehicles_per_frame_mean": 4.74,
+  "vehicle_width_p50_p90": [
+   102,
+   215
+  ],
+  "classes": {
+   "car": 54,
+   "motorcycle": 50,
+   "bus": 1,
+   "truck": 4
+  },
+  "direction": {
+   "up": 9,
+   "down": 5,
+   "left": 12,
+   "right": 3
+  },
+  "motion": {
+   "steady": 51,
+   "receding": 13,
+   "approaching": 6
+  },
+  "approach_share": 0.09,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.315,
+  "plate_candidates": 2156,
+  "tracks_with_candidates": 35,
+  "track_max_plate_width_p25_p50_p90": [
+   15,
+   19,
+   34
+  ],
+  "tracks_max_plate_ge_40px": 0,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 151.3,
+  "plate_sharpness_p50": 3.6,
+  "two_row_share": 0.34,
+  "difficulty": "VERY_DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 19px < 20"
+  ]
+ },
+ {
+  "camera": "cam16",
+  "clip": "rec_cam16.mp4",
+  "resolution": "1280x720",
+  "fps": 25.0,
+  "frames": 575,
+  "duration_s": 23.0,
+  "bitrate_kbps": 671,
+  "bits_per_pixel_frame": 0.0291,
+  "luma_p10_p50_p90": [
+   88.4,
+   93.8,
+   102.3
+  ],
+  "contrast_std": 40.6,
+  "sharpness_lap": 133.5,
+  "blockiness": 1.166,
+  "dark_pixel_frac": 0.024,
+  "lighting": "day",
+  "vehicle_tracks": 166,
+  "tracks_per_min": 433.0,
+  "vehicles_per_frame_mean": 8.49,
+  "vehicle_width_p50_p90": [
+   41,
+   143
+  ],
+  "classes": {
+   "car": 132,
+   "truck": 28,
+   "motorcycle": 4,
+   "bus": 2
+  },
+  "direction": {
+   "left": 13,
+   "right": 6,
+   "up": 33
+  },
+  "motion": {
+   "receding": 40,
+   "approaching": 8,
+   "steady": 63
+  },
+  "approach_share": 0.07,
+  "plate_side_guess": "rear",
+  "occlusion_rate": 0.198,
+  "plate_candidates": 349,
+  "tracks_with_candidates": 14,
+  "track_max_plate_width_p25_p50_p90": [
+   14,
+   20,
+   64
+  ],
+  "tracks_max_plate_ge_40px": 3,
+  "tracks_max_plate_ge_60px": 2,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 200.0,
+  "plate_sharpness_p50": 2.2,
+  "two_row_share": 0.42,
+  "difficulty": "DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 20px < 40"
+  ]
+ },
+ {
+  "camera": "tfl_01",
+  "clip": "tfl_01.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 271,
+  "duration_s": 10.8,
+  "bitrate_kbps": 184,
+  "bits_per_pixel_frame": 0.0726,
+  "luma_p10_p50_p90": [
+   94.0,
+   98.8,
+   100.6
+  ],
+  "contrast_std": 42.5,
+  "sharpness_lap": 1266.0,
+  "blockiness": 1.058,
+  "dark_pixel_frac": 0.042,
+  "lighting": "day",
+  "plate_candidates": 2,
+  "tracks_with_candidates": 1,
+  "track_max_plate_width_p25_p50_p90": [
+   14,
+   14,
+   14
+  ],
+  "tracks_max_plate_ge_40px": 0,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 118.9,
+  "plate_sharpness_p50": 2.0,
+  "two_row_share": 0.5,
+  "difficulty": "VERY_DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 14px < 20"
+  ]
+ },
+ {
+  "camera": "tfl_02",
+  "clip": "tfl_02.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 277,
+  "duration_s": 11.1,
+  "bitrate_kbps": 102,
+  "bits_per_pixel_frame": 0.0403,
+  "luma_p10_p50_p90": [
+   92.7,
+   96.4,
+   98.0
+  ],
+  "contrast_std": 41.6,
+  "sharpness_lap": 1121.4,
+  "blockiness": 1.198,
+  "dark_pixel_frac": 0.031,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_03",
+  "clip": "tfl_03.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 259,
+  "duration_s": 10.4,
+  "bitrate_kbps": 85,
+  "bits_per_pixel_frame": 0.0334,
+  "luma_p10_p50_p90": [
+   91.5,
+   93.0,
+   93.6
+  ],
+  "contrast_std": 38.5,
+  "sharpness_lap": 1195.4,
+  "blockiness": 0.992,
+  "dark_pixel_frac": 0.048,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_04",
+  "clip": "tfl_04.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 248,
+  "duration_s": 9.9,
+  "bitrate_kbps": 144,
+  "bits_per_pixel_frame": 0.057,
+  "luma_p10_p50_p90": [
+   107.7,
+   109.1,
+   109.5
+  ],
+  "contrast_std": 30.8,
+  "sharpness_lap": 1030.6,
+  "blockiness": 1.047,
+  "dark_pixel_frac": 0.015,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_05",
+  "clip": "tfl_05.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 264,
+  "duration_s": 10.6,
+  "bitrate_kbps": 53,
+  "bits_per_pixel_frame": 0.0209,
+  "luma_p10_p50_p90": [
+   97.0,
+   97.9,
+   98.1
+  ],
+  "contrast_std": 27.5,
+  "sharpness_lap": 860.5,
+  "blockiness": 1.041,
+  "dark_pixel_frac": 0.029,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_06",
+  "clip": "tfl_06.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 272,
+  "duration_s": 10.9,
+  "bitrate_kbps": 41,
+  "bits_per_pixel_frame": 0.0164,
+  "luma_p10_p50_p90": [
+   89.0,
+   89.8,
+   90.2
+  ],
+  "contrast_std": 37.3,
+  "sharpness_lap": 810.6,
+  "blockiness": 1.145,
+  "dark_pixel_frac": 0.03,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_07",
+  "clip": "tfl_07.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 230,
+  "duration_s": 9.2,
+  "bitrate_kbps": 71,
+  "bits_per_pixel_frame": 0.0278,
+  "luma_p10_p50_p90": [
+   107.0,
+   107.5,
+   108.7
+  ],
+  "contrast_std": 26.7,
+  "sharpness_lap": 763.2,
+  "blockiness": 1.045,
+  "dark_pixel_frac": 0.019,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_08",
+  "clip": "tfl_08.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 240,
+  "duration_s": 9.6,
+  "bitrate_kbps": 70,
+  "bits_per_pixel_frame": 0.0277,
+  "luma_p10_p50_p90": [
+   100.2,
+   100.4,
+   100.7
+  ],
+  "contrast_std": 36.3,
+  "sharpness_lap": 1072.2,
+  "blockiness": 1.019,
+  "dark_pixel_frac": 0.024,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_09",
+  "clip": "tfl_09.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 266,
+  "duration_s": 10.6,
+  "bitrate_kbps": 137,
+  "bits_per_pixel_frame": 0.0541,
+  "luma_p10_p50_p90": [
+   103.8,
+   105.1,
+   106.8
+  ],
+  "contrast_std": 40.9,
+  "sharpness_lap": 1085.2,
+  "blockiness": 1.053,
+  "dark_pixel_frac": 0.052,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_10",
+  "clip": "tfl_10.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 277,
+  "duration_s": 11.1,
+  "bitrate_kbps": 90,
+  "bits_per_pixel_frame": 0.0353,
+  "luma_p10_p50_p90": [
+   80.6,
+   80.9,
+   81.2
+  ],
+  "contrast_std": 51.7,
+  "sharpness_lap": 1266.6,
+  "blockiness": 1.075,
+  "dark_pixel_frac": 0.152,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_11",
+  "clip": "tfl_11.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 247,
+  "duration_s": 9.9,
+  "bitrate_kbps": 129,
+  "bits_per_pixel_frame": 0.0511,
+  "luma_p10_p50_p90": [
+   114.7,
+   115.2,
+   116.0
+  ],
+  "contrast_std": 39.6,
+  "sharpness_lap": 1007.7,
+  "blockiness": 1.042,
+  "dark_pixel_frac": 0.018,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_12",
+  "clip": "tfl_12.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 273,
+  "duration_s": 10.9,
+  "bitrate_kbps": 88,
+  "bits_per_pixel_frame": 0.0349,
+  "luma_p10_p50_p90": [
+   99.9,
+   100.6,
+   101.1
+  ],
+  "contrast_std": 31.8,
+  "sharpness_lap": 994.7,
+  "blockiness": 1.081,
+  "dark_pixel_frac": 0.027,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_13",
+  "clip": "tfl_13.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 261,
+  "duration_s": 10.4,
+  "bitrate_kbps": 118,
+  "bits_per_pixel_frame": 0.0464,
+  "luma_p10_p50_p90": [
+   83.3,
+   84.1,
+   89.9
+  ],
+  "contrast_std": 45.3,
+  "sharpness_lap": 1055.2,
+  "blockiness": 1.018,
+  "dark_pixel_frac": 0.084,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_14",
+  "clip": "tfl_14.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 272,
+  "duration_s": 10.9,
+  "bitrate_kbps": 93,
+  "bits_per_pixel_frame": 0.0368,
+  "luma_p10_p50_p90": [
+   91.8,
+   92.3,
+   93.1
+  ],
+  "contrast_std": 38.3,
+  "sharpness_lap": 936.9,
+  "blockiness": 1.022,
+  "dark_pixel_frac": 0.045,
+  "lighting": "day",
+  "plate_candidates": 3,
+  "tracks_with_candidates": 1,
+  "track_max_plate_width_p25_p50_p90": [
+   11,
+   11,
+   11
+  ],
+  "tracks_max_plate_ge_40px": 0,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 105.3,
+  "plate_sharpness_p50": 1.8,
+  "two_row_share": 0.67,
+  "difficulty": "VERY_DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 11px < 20"
+  ]
+ },
+ {
+  "camera": "tfl_15",
+  "clip": "tfl_15.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 242,
+  "duration_s": 9.7,
+  "bitrate_kbps": 67,
+  "bits_per_pixel_frame": 0.0266,
+  "luma_p10_p50_p90": [
+   102.4,
+   104.5,
+   105.4
+  ],
+  "contrast_std": 32.9,
+  "sharpness_lap": 1032.2,
+  "blockiness": 1.073,
+  "dark_pixel_frac": 0.024,
+  "lighting": "day",
+  "plate_candidates": 1,
+  "tracks_with_candidates": 1,
+  "track_max_plate_width_p25_p50_p90": [
+   9,
+   9,
+   9
+  ],
+  "tracks_max_plate_ge_40px": 0,
+  "tracks_max_plate_ge_60px": 0,
+  "plate_skew_deg_p50": 0.0,
+  "plate_brightness_p50": 152.5,
+  "plate_sharpness_p50": 1.9,
+  "two_row_share": 1.0,
+  "difficulty": "VERY_DIFFICULT",
+  "difficulty_reasons": [
+   "median widest plate 9px < 20"
+  ]
+ },
+ {
+  "camera": "tfl_16",
+  "clip": "tfl_16.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 241,
+  "duration_s": 9.6,
+  "bitrate_kbps": 55,
+  "bits_per_pixel_frame": 0.0218,
+  "luma_p10_p50_p90": [
+   102.0,
+   102.7,
+   103.6
+  ],
+  "contrast_std": 29.2,
+  "sharpness_lap": 790.3,
+  "blockiness": 1.073,
+  "dark_pixel_frac": 0.016,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_17",
+  "clip": "tfl_17.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 242,
+  "duration_s": 9.7,
+  "bitrate_kbps": 58,
+  "bits_per_pixel_frame": 0.0227,
+  "luma_p10_p50_p90": [
+   102.9,
+   103.1,
+   103.6
+  ],
+  "contrast_std": 33.8,
+  "sharpness_lap": 876.6,
+  "blockiness": 1.106,
+  "dark_pixel_frac": 0.019,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_18",
+  "clip": "tfl_18.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 240,
+  "duration_s": 9.6,
+  "bitrate_kbps": 49,
+  "bits_per_pixel_frame": 0.0192,
+  "luma_p10_p50_p90": [
+   105.6,
+   105.8,
+   105.9
+  ],
+  "contrast_std": 33.2,
+  "sharpness_lap": 954.8,
+  "blockiness": 1.051,
+  "dark_pixel_frac": 0.014,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ },
+ {
+  "camera": "tfl_19",
+  "clip": "tfl_19.mp4",
+  "resolution": "352x288",
+  "fps": 25.0,
+  "frames": 238,
+  "duration_s": 9.5,
+  "bitrate_kbps": 113,
+  "bits_per_pixel_frame": 0.0445,
+  "luma_p10_p50_p90": [
+   106.8,
+   108.2,
+   109.4
+  ],
+  "contrast_std": 36.9,
+  "sharpness_lap": 1392.9,
+  "blockiness": 1.122,
+  "dark_pixel_frac": 0.023,
+  "lighting": "day",
+  "plate_candidates": 0,
+  "difficulty": "EXTREME",
+  "difficulty_reasons": [
+   "median widest plate 0px < 20",
+   "the engine banked no plate candidate"
+  ]
+ }
+]

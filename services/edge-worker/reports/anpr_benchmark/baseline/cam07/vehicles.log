@@ -1,0 +1,29 @@
+[CAM07] Vehicle ID: cam07_s0_t12 (car)
+Track duration: 1.0 s  frames 775-801
+Plate candidates: 24  best frame: 778  plate size: 65x26  quality: 0.806
+OCR (per candidate, first 40):
+  f  775 54x18 q=0.76 det=0.64 -> GJ32E7545 0.75
+  f  777 53x18 q=0.79 det=0.67 -> GJ32E7545 0.68
+  f  778 52x18 q=0.81 det=0.77 -> GJ32E7845 0.81
+  f  779 52x17 q=0.77 det=0.74 -> GJ03ZL7545 0.68
+  f  780 50x16 q=0.79 det=0.75 -> GJ32L7043 0.64
+  f  781 50x16 q=0.74 det=0.78 -> GJ32A7545 0.68
+  f  782 50x17 q=0.74 det=0.76 -> GJ32E7543 0.68
+  f  783 49x16 q=0.77 det=0.77 -> GJ32L7343 0.69
+  f  784 49x17 q=0.75 det=0.78 -> GJ32E7141 0.66
+  f  785 48x16 q=0.73 det=0.70 -> GJ32C7341 0.57
+  f  786 47x16 q=0.69 det=0.64 -> GJ32A7541 0.81
+  f  787 47x15 q=0.73 det=0.71 -> GJ32C7141 0.77
+  f  788 45x15 q=0.68 det=0.62 -> JH12L752 0.56
+  f  789 46x15 q=0.71 det=0.60 -> GJ02C7541 0.67
+  f  790 46x15 q=0.69 det=0.70 -> GJ32C7545 0.58
+  f  791 44x15 q=0.68 det=0.74 -> GJ32C7122 0.60
+  f  792 44x15 q=0.65 det=0.71 -> GJ32C7142 0.65
+  f  793 44x14 q=0.69 det=0.57 -> GA30A7532 0.67
+  f  794 43x14 q=0.65 det=0.70 -> GJ03CC7541 0.57
+  f  795 44x15 q=0.70 det=0.63 -> BR03A711 0.56
+  f  796 44x14 q=0.66 det=0.50 -> GJ03CC7541 0.60
+  f  797 43x14 q=0.68 det=0.65 -> GJ02A733 0.61
+  f  800 41x14 q=0.61 det=0.73 -> GA32A7920 0.63
+  f  801 41x13 q=0.65 det=0.68 -> KA022871 0.56
+FINAL: GJ32L7043  status CANDIDATE  confidence 0.101  too_few_agreeing_frames  emitted: no

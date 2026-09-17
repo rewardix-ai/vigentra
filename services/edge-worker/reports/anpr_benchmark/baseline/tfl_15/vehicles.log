@@ -1,0 +1,6 @@
+[TFL_15] Vehicle ID: tfl_15_s0_t2 (truck)
+Track duration: 5.6 s  frames 0-140
+Plate candidates: 1  best frame: 125  plate size: 11x11  quality: 0.399
+OCR (per candidate, first 40):
+  f  125 9x7 q=0.40 det=0.20 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:11<22  emitted: no

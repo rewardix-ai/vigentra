@@ -1,0 +1,7 @@
+[TFL_01] Vehicle ID: tfl_01_s0_t8 (bus)
+Track duration: 4.0 s  frames 10-110
+Plate candidates: 2  best frame: 25  plate size: 17x7  quality: 0.454
+OCR (per candidate, first 40):
+  f   15 10x4 q=0.45 det=0.23 -> - 0.00
+  f   25 14x5 q=0.45 det=0.25 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:17<22  emitted: no

@@ -51,6 +51,14 @@ def test_sampling_and_night_mode_become_worker_arguments():
     assert sampler_settings(None, 5) == {"stride": 5}
 
 
+def test_pass_budget_comes_from_the_profile_then_the_worker():
+    from app.anpr_engine import pass_budget
+    dense = resolve({"cameras": {"cam06": {"sampling": {"max_frames": 150}}}}, ["cam06"])
+    assert pass_budget(dense, 25) == 150
+    assert pass_budget(resolve({}, ["cam01"]), 25) == 25
+    assert pass_budget(None, 25) == 25
+
+
 def test_shipped_profiles_parse_and_only_override_known_threshold_sections():
     doc = yaml.safe_load((CONFIG / "camera_profiles.yaml").read_text())
     known = set(yaml.safe_load((CONFIG / "thresholds.yaml").read_text()))
@@ -58,3 +66,5 @@ def test_shipped_profiles_parse_and_only_override_known_threshold_sections():
         assert set((block or {}).get("thresholds") or {}) <= known, name
     assert profile_for(CONFIG, "GRID-cam06").key == "cam06"
     assert profile_for(CONFIG, "traffic_01").thresholds["reading"]["preferred_state"] == "DL"
+    # every camera the repository has a clip for carries a sampling decision
+    assert all((block or {}).get("sampling") for block in doc["cameras"].values())

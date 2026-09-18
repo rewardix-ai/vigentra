@@ -23,6 +23,7 @@ defaults:
 
 cameras:
   cam01:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam01]
     site: Chimanbhai Patel Bridge, RTO Circle (PTZ)
     lighting: bright
@@ -30,6 +31,7 @@ cameras:
     plate_width_p50_px: 24
     difficulty: DIFFICULT
   cam02:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam02]
     site: Janpath T-Junction (PTZ)
     lighting: bright
@@ -37,6 +39,7 @@ cameras:
     plate_width_p50_px: 22
     difficulty: DIFFICULT
   cam04:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam04]
     site: Paldi Junction (fixed)
     lighting: bright
@@ -44,6 +47,7 @@ cameras:
     plate_width_p50_px: 27
     difficulty: DIFFICULT
   cam05:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam05]
     site: Visat Three-Way Junction (PTZ)
     lighting: bright
@@ -51,6 +55,9 @@ cameras:
     plate_width_p50_px: 20
     difficulty: DIFFICULT
   cam06:
+    # readable plates live here: a dense pass (measured: 150 processed frames at stride 2 confirmed 4
+    # Delhi plates where the deployed 25 at stride 20 confirmed 2)
+    sampling: {stride: 2, max_frames: 150}
     aliases: [GRID-cam06, cam06_1080p]
     site: Madhuram Bypass Road (fixed)
     lighting: bright
@@ -58,6 +65,9 @@ cameras:
     plate_width_p50_px: 46
     difficulty: MEDIUM
   cam07:
+    # readable plates live here: a dense pass (measured: 150 processed frames at stride 2 confirmed 4
+    # Delhi plates where the deployed 25 at stride 20 confirmed 2)
+    sampling: {stride: 2, max_frames: 150}
     aliases: [GRID-cam07]
     site: Hero Showroom, Bhavani Char Rasta (fixed)
     lighting: dark
@@ -65,6 +75,7 @@ cameras:
     plate_width_p50_px: 54
     difficulty: DIFFICULT
   cam08:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam08]
     site: Majevadi Gate (PTZ)
     lighting: dim
@@ -72,6 +83,7 @@ cameras:
     plate_width_p50_px: 31
     difficulty: DIFFICULT
   cam09:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam09]
     site: New Bypass, 66KV Substation (fixed)
     lighting: dark
@@ -79,6 +91,7 @@ cameras:
     difficulty: EXTREME
     notes: headlight glare only; no plate legible in the recording
   cam10:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam10]
     site: Char Chowk (fixed)
     lighting: dim
@@ -86,6 +99,7 @@ cameras:
     plate_width_p50_px: 23
     difficulty: DIFFICULT
   cam11:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam11]
     site: Dolatpara Gate (PTZ)
     lighting: bright
@@ -93,6 +107,9 @@ cameras:
     plate_width_p50_px: 17
     difficulty: VERY_DIFFICULT
   cam12:
+    # a toll lane pointed at plates: the recording holds one vehicle, so the size is unproven here,
+    # but this is what the camera is for
+    sampling: {stride: 2, max_frames: 150}
     aliases: [GRID-cam12]
     site: Adalaj Toll Plaza lane 9 (ANPR-capable)
     lighting: bright
@@ -100,6 +117,7 @@ cameras:
     difficulty: EXTREME
     notes: one vehicle in the recording
   cam13:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam13]
     site: C.N. Vidyalaya Junction (RLVD)
     lighting: bright
@@ -107,6 +125,7 @@ cameras:
     plate_width_p50_px: 20
     difficulty: DIFFICULT
   cam14:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam14]
     site: Delight Circle (RLVD)
     lighting: bright
@@ -114,6 +133,7 @@ cameras:
     plate_width_p50_px: 14
     difficulty: VERY_DIFFICULT
   cam15:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam15]
     site: Suvidha Park Junction (RLVD)
     lighting: bright
@@ -121,6 +141,7 @@ cameras:
     plate_width_p50_px: 19
     difficulty: VERY_DIFFICULT
   cam16:
+    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
     aliases: [GRID-cam16]
     site: Visat T-Junction (RLVD)
     lighting: bright
@@ -128,6 +149,9 @@ cameras:
     plate_width_p50_px: 20
     difficulty: DIFFICULT
   delhi_1080p:
+    # readable plates live here: a dense pass (measured: 150 processed frames at stride 2 confirmed 4
+    # Delhi plates where the deployed 25 at stride 20 confirmed 2)
+    sampling: {stride: 2, max_frames: 150}
     aliases: [traffic_01, TRF-AHM-0001]   # the traffic VMS serves this clip as TRF-AHM-0001
     site: Delhi street clip, handheld 1080p (the sample traffic camera)
     lighting: bright

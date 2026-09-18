@@ -431,6 +431,17 @@ def load_camera_profile(camera_id: str, profile_key: str | None = None):
     return profile_for(CONFIG_DIR, camera_id, profile_key)
 
 
+def pass_budget(profile, max_frames: int) -> int:
+    """Processed frames this camera gets per pass: its profile's `sampling.max_frames`, or the worker's.
+
+    A plate needs many frames of the same vehicle: on the Delhi clip 25 processed frames confirmed 2
+    plates and 150 confirmed 4, while 100 spread thinly over the same footage still confirmed 2
+    (docs/anpr-optimisation.md). Cameras whose plates are too small to read keep the cheap budget.
+    """
+    value = (getattr(profile, "sampling", None) or {}).get("max_frames")
+    return max(1, int(value)) if value else max_frames
+
+
 def sampler_settings(profile, stride: int) -> dict:
     """AdaptiveSampler arguments: the profile's `sampling` block over the worker's stride."""
     s = dict(getattr(profile, "sampling", None) or {})

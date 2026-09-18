@@ -36,8 +36,8 @@ from typing import Any, Iterator
 import httpx
 
 from . import grid
-from .anpr_engine import (EngineCache, _track_number, build_engine, load_camera_profile, router_settings,
-                          sampler_settings)
+from .anpr_engine import (EngineCache, _track_number, build_engine, load_camera_profile, pass_budget,
+                          router_settings, sampler_settings)
 from .detectors import DetectorError, build_detector
 
 try:
@@ -577,6 +577,7 @@ def run(
     # per-camera sampling and low-light handling (config/camera_profiles.yaml)
     profile = anpr.profile if anpr is not None else load_camera_profile(camera_id, profile_key)
     router = FrameQualityRouter(**router_settings(profile))
+    max_frames = pass_budget(profile, max_frames)
     plates_read = 0
 
     # Incident detection rides on the same tracker the ANPR engine already

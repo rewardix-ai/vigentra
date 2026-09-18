@@ -1,0 +1,10 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam06_s0_t2,bus,402,429,21,3,46.3,SMALL,409,57x35,0.497,0.519,,0.0,UNREADABLE,sharpness_below_gate:4.2<8.0,0,0,0,UNREADABLE
+cam06_s0_t13,car,820,820,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam06_s0_t9,bus,806,837,30,16,67.7,MEDIUM,818,75x29,0.788,0.674,MH18P1821,0.0,CANDIDATE,readers_disagree,1,0,0,UNREADABLE
+cam06_s0_t20,car,834,847,10,2,52.4,SMALL,836,65x30,0.535,0.538,,0.0,UNREADABLE,sharpness_below_gate:4.1<8.0,0,0,0,UNREADABLE
+cam06_s0_t24,car,851,851,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam06_s0_t18,car,828,862,30,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam06_s0_t27,car,2204,2322,13,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam06_s0_t28,car,2370,2411,30,3,59.9,SMALL,2390,75x62,0.266,0.661,GJ077310,0.0,CANDIDATE,readers_disagree,1,0,0,UNREADABLE
+cam06_s0_t33,car,2878,2894,12,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

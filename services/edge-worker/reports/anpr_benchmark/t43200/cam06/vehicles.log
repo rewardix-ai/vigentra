@@ -1,0 +1,26 @@
+[CAM06] Vehicle ID: cam06_s0_t3 (car)
+Track duration: 0.9 s  frames 1992-2015
+Plate candidates: 12  best frame: 2009  plate size: 35x30  quality: 0.534
+OCR (per candidate, first 40):
+  f 1992 27x25 q=0.47 det=0.26 -> GJ225000 0.53
+  f 1996 26x20 q=0.46 det=0.32 -> GJ232580 0.52
+  f 1998 27x20 q=0.48 det=0.28 -> - 0.00
+  f 2000 26x19 q=0.49 det=0.51 -> GJ337530 0.64
+  f 2004 28x21 q=0.51 det=0.27 -> - 0.00
+  f 2006 28x19 q=0.51 det=0.54 -> - 0.00
+  f 2008 28x19 q=0.52 det=0.33 -> AS110751 0.63
+  f 2009 28x20 q=0.53 det=0.56 -> GJ19G333 0.68
+  f 2012 29x20 q=0.54 det=0.32 -> GJ11DG3712 0.55
+  f 2013 28x20 q=0.53 det=0.27 -> - 0.00
+  f 2014 29x21 q=0.53 det=0.33 -> - 0.00
+  f 2015 29x19 q=0.53 det=0.68 -> - 0.00
+FINAL: GJ10GJ0173  status CANDIDATE  confidence 0.0004  readers_disagree  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t7 (car)
+Track duration: 0.4 s  frames 2020-2030
+Plate candidates: 3  best frame: 2021  plate size: 52x20  quality: 0.515
+OCR (per candidate, first 40):
+  f 2021 42x13 q=0.52 det=0.31 -> - 0.00
+  f 2023 44x13 q=0.52 det=0.25 -> JH03U8828 0.63
+  f 2028 48x15 q=0.54 det=0.26 -> - 0.00
+FINAL: DL03C8008  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

@@ -1,0 +1,3 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam06_s0_t3,car,1992,2015,16,12,29.0,VERY_SMALL,2009,35x30,0.564,0.534,GJ10GJ0173,0.0004,CANDIDATE,readers_disagree,1,0,0,UNREADABLE
+cam06_s0_t7,car,2020,2030,10,3,48.0,SMALL,2021,52x20,0.311,0.515,DL03C8008,0.0,CANDIDATE,readers_disagree,1,0,0,UNREADABLE

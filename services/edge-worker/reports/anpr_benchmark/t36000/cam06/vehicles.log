@@ -1,0 +1,19 @@
+[CAM06] Vehicle ID: cam06_s0_t3 (car)
+Track duration: 0.8 s  frames 886-907
+Plate candidates: 6  best frame: 888  plate size: 62x28  quality: 0.547
+OCR (per candidate, first 40):
+  f  886 47x16 q=0.52 det=0.76 -> - 0.00
+  f  887 48x18 q=0.53 det=0.72 -> - 0.00
+  f  888 50x19 q=0.55 det=0.73 -> - 0.00
+  f  889 50x22 q=0.54 det=0.49 -> - 0.00
+  f  890 49x24 q=0.52 det=0.42 -> - 0.00
+  f  891 42x25 q=0.49 det=0.49 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.6<8.0  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t5 (car)
+Track duration: 0.8 s  frames 2476-2496
+Plate candidates: 2  best frame: 2476  plate size: 48x22  quality: 0.459
+OCR (per candidate, first 40):
+  f 2476 38x15 q=0.46 det=0.74 -> - 0.00
+  f 2478 41x17 q=0.47 det=0.66 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:5.8<8.0  emitted: no

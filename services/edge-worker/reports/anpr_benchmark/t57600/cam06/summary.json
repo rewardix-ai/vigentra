@@ -1,0 +1,171 @@
+{
+ "camera": "cam06",
+ "clip": "cam06.mp4",
+ "resolution": "854x480",
+ "fps": 25.0,
+ "frames": 3000,
+ "duration_s": 120.0,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_mix_n/reader_crnn",
+  "camera": "cam06",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_mix_n.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "cam06"
+ },
+ "frames_processed": 1822,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 1822
+ },
+ "realtime": false,
+ "frames_dropped_late": 0,
+ "frames_the_sampler_wanted": 1822,
+ "sampler": {
+  "looked": 3000,
+  "processed": 1822,
+  "bursts": 9,
+  "stride": 2,
+  "paced_stride": 11,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 4226,
+ "unique_vehicle_tracks": 91,
+ "tracks_with_plate_candidates": 31,
+ "tracks_by_size_band": {
+  "SMALL": 3,
+  "VERY_SMALL": 11,
+  "MEDIUM": 14,
+  "LARGE": 3
+ },
+ "plate_detections": 1023,
+ "plate_candidates_banked": 1023,
+ "ocr_calls": 2540,
+ "ocr_images": 2630,
+ "tracks_with_ocr_result": 31,
+ "unique_ocr_results": 31,
+ "status_counts": {
+  "UNREADABLE": 60,
+  "CANDIDATE": 18,
+  "CONFIRMED": 13
+ },
+ "confirmed_plates": [
+  "GJ01FT9586",
+  "GJ01KT5416",
+  "GJ03BZ1623",
+  "GJ09BG5799",
+  "GJ11BR0273",
+  "GJ11CD2583",
+  "GJ11CH5518",
+  "GJ11S7945",
+  "GJ14BD9910",
+  "GJ18ZT2028",
+  "GJ18ZT2267",
+  "GJ24BF2220",
+  "MH18CE8645"
+ ],
+ "emitted": [
+  {
+   "plate": "GJ11S7945",
+   "confirmed": true,
+   "score": 0.712,
+   "track": 25
+  },
+  {
+   "plate": "GJ01KT5416",
+   "confirmed": true,
+   "score": 0.603,
+   "track": 39
+  },
+  {
+   "plate": "GJ11BR0273",
+   "confirmed": true,
+   "score": 0.718,
+   "track": 64
+  },
+  {
+   "plate": "GJ01FT9586",
+   "confirmed": true,
+   "score": 0.49,
+   "track": 74
+  },
+  {
+   "plate": "MH18CE8645",
+   "confirmed": true,
+   "score": 0.611,
+   "track": 100
+  },
+  {
+   "plate": "GJ03BZ1623",
+   "confirmed": true,
+   "score": 0.444,
+   "track": 109
+  },
+  {
+   "plate": "GJ14BD9910",
+   "confirmed": true,
+   "score": 0.661,
+   "track": 118
+  },
+  {
+   "plate": "GJ24BF2220",
+   "confirmed": true,
+   "score": 0.709,
+   "track": 124
+  },
+  {
+   "plate": "GJ11CD2583",
+   "confirmed": true,
+   "score": 0.56,
+   "track": 130
+  },
+  {
+   "plate": "GJ09BG5799",
+   "confirmed": true,
+   "score": 0.551,
+   "track": 131
+  },
+  {
+   "plate": "GJ18ZT2267",
+   "confirmed": true,
+   "score": 0.807,
+   "track": 199
+  },
+  {
+   "plate": "GJ18ZT2028",
+   "confirmed": true,
+   "score": 0.67,
+   "track": 209
+  },
+  {
+   "plate": "GJ11CH5518",
+   "confirmed": true,
+   "score": 0.493,
+   "track": 238
+  }
+ ],
+ "unreadable_reasons": {
+  "no_plate_detected": 60
+ },
+ "wall_s": 250.1,
+ "finish_s": 7.7,
+ "processed_fps": 7.29,
+ "clip_seconds_per_wall_second": 0.48,
+ "frame_latency_ms_p50": 58.1,
+ "frame_latency_ms_p95": 86.4,
+ "cpu_percent_mean": 137.3,
+ "cpu_cores": 8,
+ "rss_max_mb": 3449,
+ "gpu_mem_max_mb": 1121
+}

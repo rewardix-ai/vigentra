@@ -1,0 +1,47 @@
+[CAM06] Vehicle ID: cam06_s0_t2 (bus)
+Track duration: 1.1 s  frames 402-429
+Plate candidates: 3  best frame: 409  plate size: 57x35  quality: 0.519
+OCR (per candidate, first 40):
+  f  407 29x18 q=0.40 det=0.43 -> - 0.00
+  f  408 37x20 q=0.45 det=0.34 -> - 0.00
+  f  409 46x24 q=0.52 det=0.50 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.2<8.0  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t9 (bus)
+Track duration: 1.2 s  frames 806-837
+Plate candidates: 16  best frame: 818  plate size: 75x29  quality: 0.674
+OCR (per candidate, first 40):
+  f  806 47x16 q=0.53 det=0.78 -> - 0.00
+  f  808 51x16 q=0.56 det=0.79 -> GJ23ED1511 0.56
+  f  809 47x15 q=0.54 det=0.79 -> GJ33P1911 0.67
+  f  810 52x17 q=0.55 det=0.78 -> MP19P1978 0.78
+  f  811 54x18 q=0.56 det=0.78 -> UP339192 0.64
+  f  812 55x18 q=0.57 det=0.78 -> MP33P1916 0.53
+  f  813 53x17 q=0.55 det=0.77 -> GJ31DD1813 0.52
+  f  814 56x18 q=0.57 det=0.78 -> UP18P1828 0.57
+  f  815 55x18 q=0.56 det=0.79 -> GJ189482 0.60
+  f  816 59x19 q=0.65 det=0.79 -> GJ22TB0482 0.71
+  f  817 60x19 q=0.65 det=0.79 -> GJ21DD4028 0.51
+  f  818 61x19 q=0.67 det=0.79 -> GJ12TDD4621 0.62
+  f  820 61x19 q=0.65 det=0.79 -> - 0.00
+  f  821 61x20 q=0.65 det=0.79 -> MH18U1873 0.53
+  f  822 66x19 q=0.68 det=0.77 -> - 0.00
+  f  823 68x23 q=0.65 det=0.35 -> - 0.00
+FINAL: MH18P1821  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t20 (car)
+Track duration: 0.5 s  frames 834-847
+Plate candidates: 2  best frame: 836  plate size: 65x30  quality: 0.538
+OCR (per candidate, first 40):
+  f  834 49x21 q=0.51 det=0.23 -> - 0.00
+  f  836 52x20 q=0.54 det=0.54 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.1<8.0  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t28 (car)
+Track duration: 1.6 s  frames 2370-2411
+Plate candidates: 3  best frame: 2390  plate size: 75x62  quality: 0.661
+OCR (per candidate, first 40):
+  f 2386 59x44 q=0.66 det=0.22 -> - 0.00
+  f 2390 60x42 q=0.66 det=0.27 -> GJ108822 0.54
+  f 2407 48x29 q=0.55 det=0.28 -> - 0.00
+FINAL: GJ077310  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

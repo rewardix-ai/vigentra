@@ -10,17 +10,24 @@ Every number here comes from `services/edge-worker/tools/anpr_benchmark.py` over
 
 Over all 36 clips (15 grid cameras, the Delhi clip, the 1080p cam06 recording, 19 TfL clips):
 
-| | Before | After |
+| | Before (`baseline`) | After (`final`) |
 |---|---|---|
-| Correct plates, of the 26 readable by eye | 9 | **13** |
+| Correct plates, of the 26 readable by eye | 9 | **16** |
 | False plates confirmed or sent | 0 | **0** |
-| Wrong unconfirmed readings held in records | ~104 | **70** |
-| Vehicle tracks | 1 524 | **1 854** |
-| Plate candidates banked | 22 279 | **3 309** |
-| OCR images | 36 727 | **14 604** |
-| Total processing time (Apple M1, MPS) | 5 784 s | **2 389 s** |
+| Vehicle tracks | 1 524 | **1 868** |
+| Plate candidates banked | 22 279 | **3 409** |
+| OCR images | 36 727 | **14 915** |
+| Total processing time (Apple M1, MPS) | 5 784 s | **2 779 s** |
 
-Per camera, only the two clips that carry readable plates change: Delhi 7 → 11 of 20, cam06 1080p 2 → 2 of 5. No camera confirms a false plate, before or after.
+Per clip: Delhi 7 → **13** of 20, cam06 1080p 2 → **3** of 5 (a fourth reading matches a plate only
+partly legible by eye, so it is counted neither right nor wrong), cam07 0 of 1 — its one readable plate
+is still never detected, though the clip now yields 10 vehicle tracks instead of 2. Every other camera
+has no readable plate and confirms none, before and after.
+
+Without the optional whole-crop text reader (the Docker image's configuration) the same run reads 13.
+
+Sightings: 18 for 16 plates, against 15 sightings for 9 before — one vehicle is no longer reported
+several times.
 
 ## Changes, in the order they were measured
 
@@ -112,6 +119,40 @@ between the two namings.
 | Keep 20 best crops per vehicle instead of 12 | no change, more reading |
 | Confirm a vote on 3 crops instead of 4 | a false confirm on Delhi (DL01AP4173 for DL8CAP4175) |
 | 32 px reading floor instead of 24 | same plates, no further saving |
+
+## What still misses, and why
+
+`tools/anpr_failures.py --tag final` pairs every missed readable plate with the nearest reading the run
+produced (`reports/anpr_benchmark/final/FAILURES.md`). On the Delhi clip:
+
+| Missed | Nearest reading | Why it was not confirmed |
+|---|---|---|
+| DL5SAR5109, UP13AY3893 | the same string, exactly | only the text reader read them; no reader of the other kind read them at all |
+| DL6SAS6524 | DL6SAS6522 | last glyph read wrong by both CRNNs |
+| DL6SBE6415 | DL6SRE6415 | one glyph wrong; the true string never appears |
+| DL11SD3385 | DL11SD385 | the text reader drops a glyph on this two-row scooter plate |
+| DL1LAB9684 | DL11AR9684 | 5 crops of a 45 px yellow plate; readers disagree |
+| UP14EC6398 | MP14EC6396 | readers disagree on the state and the last glyph |
+
+On cam06 1080p, GJ18X6705 (a two-row auto plate) and GJ03KS7334 are read only in part. On cam07 the one
+readable plate is never proposed by the plate detector on the two frames where it is wide enough.
+
+The pattern: what remains is not decision logic but glyph-level recognition on 45–100 px plates, and
+plate detection on dark 720p footage. Both are model work — a reader trained on more Indian two-row
+plates, and a plate detector trained on dark low-bitrate frames — not tuning.
+
+## The dataset the evaluation produced
+
+`tools/anpr_export_dataset.py --tag final` writes every tracked vehicle's plate crops with their
+measurements, readings and the by-eye plate: 175 vehicles and 932 observations from the final run, as
+
+    <camera>/vehicle_<track>/<frame>.png
+    <camera>/vehicle_<track>/meta.json
+
+Each observation carries frame, timestamp, box, size band, sharpness, brightness, contrast, blur, skew,
+detector score, layout and its own reading; each vehicle carries the engine's verdict, the reason, and
+the ground-truth plate where the clip has one. That is the training and regression set for the model
+work above.
 
 ## What the grid footage can give
 

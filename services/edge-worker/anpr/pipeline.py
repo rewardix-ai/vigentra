@@ -11,6 +11,7 @@ import dataclasses
 import json
 import logging
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Optional
@@ -255,7 +256,8 @@ class ANPRPipeline:
         self._best_imgs: dict[str, tuple] = {}   # track_id -> (best box, best crop) for the retroactive check at flush
         self.frame_cache: dict[int, np.ndarray] = {}   # frame_idx -> image (for evidence)
         self._last_frame: Optional[np.ndarray] = None
-        self.gate_log: list[dict] = []
+        # bounded: a 24/7 reader closes tracks for days, and nothing ever read the whole log
+        self.gate_log: deque = deque(maxlen=2000)
 
     # ------------------------------------------------------------------
     def run(self, source: FrameSource, max_frames: Optional[int] = None) -> list[dict]:
@@ -473,6 +475,8 @@ class ANPRPipeline:
 
     def _finalise_track(self, b: TrackBank) -> None:
         self.timings.tracks_closed += 1
+        # the bank has served its purpose; keeping it held every crop of every vehicle ever seen
+        self.bank.banks.pop(b.track_id, None)
         if self.bank_dump_dir:
             import pickle
             with open(self.bank_dump_dir / f"{self._n_dumped:05d}_{b.track_id}.pkl", "wb") as fh:

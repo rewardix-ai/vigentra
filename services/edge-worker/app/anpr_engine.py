@@ -335,6 +335,11 @@ class AnprEngine:
                 continue
 
             self._emitted.add(key)
+            # _merge_fragments gives every fragment of one vehicle the same reading; emitting each of
+            # them reported one vehicle several times. The group's first track speaks for it.
+            group = rec.get("merged_from") or []
+            if group and str(min(group)) != str(rec.get("track_id")):
+                continue
             out.append(
                 PlateSighting(
                     track_id=_track_number(key),
@@ -390,12 +395,30 @@ class AnprEngine:
     def stats(self) -> dict:
         elapsed = time.perf_counter() - self._started
         records = list(getattr(self._pipeline, "records", []))
+        gate = list(getattr(self._pipeline, "gate_log", []))
+        floor = float(((getattr(self._pipeline, "cfg", None) or {}).get("confidence")
+                       or {}).get("confirm_min_width_px", 40))
+        widths = [float(g.get("w") or 0.0) for g in gate]
         return {
             "frames": self._frames,
             "fps": round(self._frames / elapsed, 2) if elapsed else 0.0,
             "tracks": len(records),
             "confirmed": sum(1 for r in records if r.get("status") == "CONFIRMED"),
+            "candidates": sum(1 for r in records if r.get("status") == "CANDIDATE"),
+            "unreadable": sum(1 for r in records if r.get("status") == "UNREADABLE"),
             "emitted": len(self._emitted),
+            # why a camera produced no plate: how many closed tracks even had a plate wide enough to read
+            "readability": {
+                "tracks_with_a_plate": len(widths),
+                "tracks_at_readable_width": sum(1 for w in widths if w >= floor),
+                "tracks_below_floor": sum(1 for w in widths if 0 < w < floor),
+                "readable_width_px": floor,
+                "widest_plate_px": round(max(widths), 1) if widths else 0.0,
+            },
+            "timings_ms": {k: round(v, 1) for k, v in
+                           (getattr(self._pipeline, "timings", None).as_dict() if
+                            getattr(self._pipeline, "timings", None) else {}).items()
+                           if k.endswith("_ms_per_frame") or k.endswith("_ms_per_track")},
         }
 
 

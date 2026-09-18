@@ -188,7 +188,7 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
         quality = Counter()
         lat = []
         t0 = time.perf_counter()
-        for frame_index, frame in iter_clip_frames(str(path), 1):
+        for frame_index, frame, pts_seconds in iter_clip_frames(str(path), 1):
             if max_frames is not None and processed >= max_frames:
                 break          # the worker's pass budget (--max-frames)
             if not sampler.should_process(frame_index):
@@ -201,7 +201,7 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
                 continue
             vframe[engine._frames] = frame_index
             t1 = time.perf_counter()
-            dets, _ = engine.process(img, captured_at=time.time(), discontinuity=False)
+            dets, _ = engine.process(img, captured_at=pts_seconds, discontinuity=False)
             lat.append((time.perf_counter() - t1) * 1000)
             sampler.note(d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name in PLATE_BEARING_CLASSES)
             veh += len(dets)

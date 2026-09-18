@@ -111,6 +111,11 @@ reading:
   # reader's own vote may confirm under the rule above if a second reader produced the string (or one
   # substitution from it on vote_near_backing crops) and no reader's own vote says otherwise; a primary
   # vote another reader contradicts is never confirmed (anpr/pipeline.py _vote_pick).
+  # A long track's reads scatter across blur variants, so no single reader's vote reaches min_share even
+  # when the readers agree (cam06 noon t121, GJ11VV7988 on 64 crops: primary 5, text reader 11, every
+  # share 0.11-0.29). A string that readers of BOTH kinds read on their own crops may confirm on the crop
+  # count alone. Two CRNNs cannot do this between themselves: they share their confusions.
+  cross_reader_confirm: {min_crops_each: 2, min_total: 6}
   vote_any_reader: true
   vote_unopposed: true
   # Near backing (a second reader's string one substitution away) is off: without the text reader both

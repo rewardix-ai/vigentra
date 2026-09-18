@@ -874,6 +874,42 @@ class ANPRPipeline:
             return any(o != n and votes[o] is not None and votes[o][1] >= min_crops and rival(votes[o][0].plate)
                        and support(o) < min_crops for o in names)
 
+        cross = self.rcfg.get("cross_reader_confirm") or {}
+        if cross and text_readers:
+            # A long track's reads scatter across blur variants, so no single reader's vote reaches
+            # vote_confirm.min_share even when the readers agree: cam06 noon t121 (GJ11VV7988, 64 crops)
+            # was read exactly by the primary on 5 crops and by the text reader on 11, and every reader's
+            # own share sat at 0.11-0.29. Readers of both kinds reading the SAME string on their own
+            # crops is the evidence a share cannot express - and two CRNNs, which share their
+            # confusions, still cannot do it between themselves.
+            per_string: dict[str, dict[str, set]] = {}
+            for wt, t, pr, rs, key in entries:
+                for r in rs:
+                    per_string.setdefault(t, {}).setdefault(r, set()).add(key)
+            each = int(cross.get("min_crops_each", 2))
+            total_min = int(cross.get("min_total", 6))
+            best_cross = None
+            for t, by_reader in per_string.items():
+                kinds = {("text" if r in text_readers else "crnn") for r, ks in by_reader.items() if len(ks) >= each}
+                if len(kinds) < 2:
+                    continue
+                total = len({k for ks in by_reader.values() for k in ks})
+                if total < total_min:
+                    continue
+                # a rival reading of the same glyphs with more crops behind it wins instead
+                import editdistance
+                rival = max((len({k for ks in by_reader2.values() for k in ks})
+                             for t2, by_reader2 in per_string.items()
+                             if t2 != t and editdistance.eval(t2, t) <= 2), default=0)
+                if rival >= total:
+                    continue
+                if best_cross is None or total > best_cross[1]:
+                    best_cross = (t, total, {r for r, ks in by_reader.items() if len(ks) >= each})
+            if best_cross is not None:
+                t, total, readers_for = best_cross
+                v = self._vote_entries([e for e in entries if e[1] == t], fused)
+                if v is not None:
+                    return dataclasses.replace(v[0], reason="string_vote_cross_reader"), total, readers_for
         sv = votes.get("crnn")
         if sv is not None and self._decide(sv[0], n_used, sv[1], best_w, sv[2], glyphs)[0]:
             # reading.vote_unopposed: delhi_1080p t10, a 55 px yellow plate DL1LAB9684, was CONFIRMED
@@ -988,6 +1024,17 @@ class ANPRPipeline:
             need = int(self.rcfg.get("secondary_confirm_min_glyphs", 0))
             if not need or glyphs < need:
                 return False, "second_reader_only"
+        cross = self.rcfg.get("cross_reader_confirm") or {}
+        if cross and getattr(fused, "reason", "") == "string_vote_cross_reader":
+            # readers of both kinds read this string on their own crops (_vote_pick). The share test is
+            # dropped - it is what a scattered long track fails - and the evidence is the crop count,
+            # the plate's width, and no rival reading of the same glyphs with more crops behind it.
+            for ok, why in ((n_agree >= int(cross.get("min_total", 6)), "too_few_agreeing_frames"),
+                            (best_w >= ccfg.get("confirm_min_width_px", 40), "below_confirm_width"),
+                            (glyphs >= int(self.rcfg.get("confirm_min_glyphs", 0)), f"no_glyph_evidence:{glyphs}")):
+                if not ok:
+                    return False, why
+            return True, ""
         vc = self.rcfg.get("vote_confirm")
         if vc and getattr(fused, "reason", "") in ("string_vote", "string_vote_secondary"):
             # evidence rule for a temporal string vote (reading.vote_confirm): enough distinct crops

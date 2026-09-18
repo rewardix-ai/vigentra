@@ -1,0 +1,20 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+V001,85+89+91,GJ13AW0739,readable,bus,front,"yellow commercial plate, 63 px on the labelling sheet"
+V002,97,GJ14BA3377,readable,car,front,"67 px"
+V003,99,GJ11CD3844,readable,car,front,
+V004,107,GJ1KR6061,readable,car,front,"78 px on the engine's own crops; every reader misreads the K (GJ18R6061 / GJ11R6061), so it is not confirmed"
+V005,121,GJ11DB3063,readable,car,front,
+V006,137,RJ24TA3407,readable,car,front,"Rajasthan, yellow plate"
+V007,154+159,GJ11VV7988,readable,car,front,"yellow plate, 66-84 px; read on 64 crops"
+V008,166,GJ05CS1117,readable,car,front,
+V009,222,GJ03EL4466,readable,car,front,
+V010,239,GJ18EC0510,readable,car,front,
+V011,246,GJ11BH6725,readable,car,front,
+V012,247+258+264,GJ11CD1448,readable,car,front,
+V013,259,GJ11BR5399,readable,car,front,
+V014,265,GJ11CH7598,readable,car,front,
+V015,281,GJ11CH3002,readable,car,front,
+V016,453+461+465+468+470,GJ37T9052,readable,truck,front,"orange commercial plate"
+V017,1+262,GJ16DC4S16,partial,car,front,"36-58 px; 0/D and S/5 not decidable"
+V018,346,GJ11?7924,partial,motorcycle,rear,"two-row, blurred"
+REST,,,unreadable,,,"141 vehicle tracks in the independent pass, 102 with a plate proposal >= 20 px; the rest are too small, blurred, or painted text on vehicles and signs. Checked by eye on tools/anpr_gt_plates.py sheets plus native-resolution zooms"

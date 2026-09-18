@@ -7,10 +7,15 @@
 # OpenCV, numpy, torch and ultralytics come from requirements-yolo.txt. The
 # engine calls only core OpenCV, so the headless build installed there serves.
 #
-# NOT here on purpose: paddlepaddle / paddleocr. Only anpr/read/awiros.py
-# imports them, lazily, as an alternative reader. The shipped reader is the ONNX
-# CRNN, so pulling ~1 GB of Paddle for a path the pipeline does not take is a
-# poor trade.
+# NOT here on purpose: paddlepaddle / paddleocr. Only anpr/read/awiros.py imports
+# them, lazily. config/thresholds.yaml does ask for that reader
+# (reading.readers: [crnn, awiros]) because it is what lifts the plate count -
+# Delhi 11 -> 12 of 20 and cam06 1080p 2 -> 3 of 5, none wrong - but it needs
+# ~1 GB of Paddle plus models/awiros and third_party/PaddleOCR, which this image
+# does not carry. Without them the engine logs that the reader is unavailable and
+# reads with the CRNNs alone: 13 of the 26 readable plates instead of 15
+# (docs/anpr-optimisation.md). To turn it on, install paddlepaddle and paddleocr
+# in the image, mount those two directories, and re-measure.
 
 PyYAML>=6.0
 # Levenshtein over plate strings, used by the track-level fusion (ROVER).

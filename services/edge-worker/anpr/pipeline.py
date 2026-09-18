@@ -726,8 +726,14 @@ class ANPRPipeline:
         One entry per (crop, reader) read that qualifies, the strongest per crop first."""
         thr = float(self.rcfg.get("read_filter_min", 0.5))
         reject = tuple(self.rcfg.get("vote_reject") or ())
+        # A plate too narrow to carry glyphs cannot be read, only guessed at: reading it spends OCR on
+        # noise and lets that guess vote. The vehicle is still tracked, and its wider crops are read when
+        # it comes closer (reading.crop_read_min_width_px; 0 = read every crop).
+        floor = float(self.rcfg.get("crop_read_min_width_px", 0))
         out = []
         for c in (crops if self.filter_ensemble is not None else []):
+            if floor and c.quality.width_px < floor:
+                continue
             best: dict[str, list] = {}
             for two in ((True, False) if c.two_row else (False,)):
                 g = cv2.cvtColor(rectify(c.image, c.corners, two), cv2.COLOR_BGR2GRAY)
@@ -799,6 +805,7 @@ class ANPRPipeline:
         if self.rcfg.get("second_reader_mode") != "fallback":
             return self._vote_entries(entries, fused)
         names = sorted({n for e in entries for n in e[3]})
+        text_readers = {r.name for r in self.ensemble.readers if hasattr(r, "read_batch")}
         votes = {n: self._vote_entries([e for e in entries if n in e[3]], fused) for n in names}
         min_crops = int((self.rcfg.get("vote_confirm") or {}).get("min_crops", 4))
 
@@ -843,9 +850,12 @@ class ANPRPipeline:
                 win = v[0].plate
                 backed = any(e[1] == win and (e[3] - {n}) for e in entries)
                 near = int(self.rcfg.get("vote_near_backing", 0))
-                if not backed and near:
-                    # reading.vote_near_backing: readers that fail on different characters never
-                    # produce each other's exact string. Delhi t448 (DL1CW0942, 69 px): the text
+                if not backed and near and text_readers:
+                    # reading.vote_near_backing: only a reader of a different kind may back a string it
+                    # did not produce exactly. Two CRNNs share their confusions: on delhi_1080p the
+                    # primary's DL4SAS6522 "backed" v6's DL6SAS6522 against the true DL6SAS6524. The
+                    # whole-crop text reader is independent, which is what makes near backing evidence.
+                    # Delhi t448 (DL1CW0942, 69 px): the text
                     # reader reads it on 8 of 8 crops, the primary reads DL1CW0542 - one glyph off,
                     # the 9/5 confusion it makes everywhere. Another reader's string one SUBSTITUTION
                     # away on `near` distinct crops backs the winner. Not an insertion: Delhi 4K t9
@@ -853,7 +863,8 @@ class ANPRPipeline:
                     # "backed" by v6's DL11SD9385, which only says a glyph is there.
                     def one_sub(s: str) -> bool:
                         return len(s) == len(win) and sum(x != y for x, y in zip(s, win)) == 1
-                    backed = len({e[4] for e in entries if (e[3] - {n}) and one_sub(e[1])}) >= near
+                    backers = {e[4] for e in entries if (e[3] - {n}) & text_readers and one_sub(e[1])}
+                    backed = len(backers) >= near
                 if backed and not opposed(n, win):
                     return v
         sv2 = self._vote_entries(entries, fused)

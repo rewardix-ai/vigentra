@@ -23,7 +23,9 @@ defaults:
 
 cameras:
   cam01:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam01]
     site: Chimanbhai Patel Bridge, RTO Circle (PTZ)
     lighting: bright
@@ -31,7 +33,9 @@ cameras:
     plate_width_p50_px: 24
     difficulty: DIFFICULT
   cam02:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam02]
     site: Janpath T-Junction (PTZ)
     lighting: bright
@@ -39,7 +43,9 @@ cameras:
     plate_width_p50_px: 22
     difficulty: DIFFICULT
   cam04:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam04]
     site: Paldi Junction (fixed)
     lighting: bright
@@ -47,7 +53,9 @@ cameras:
     plate_width_p50_px: 27
     difficulty: DIFFICULT
   cam05:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam05]
     site: Visat Three-Way Junction (PTZ)
     lighting: bright
@@ -75,7 +83,9 @@ cameras:
     plate_width_p50_px: 54
     difficulty: DIFFICULT
   cam08:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam08]
     site: Majevadi Gate (PTZ)
     lighting: dim
@@ -83,7 +93,9 @@ cameras:
     plate_width_p50_px: 31
     difficulty: DIFFICULT
   cam09:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam09]
     site: New Bypass, 66KV Substation (fixed)
     lighting: dark
@@ -91,7 +103,9 @@ cameras:
     difficulty: EXTREME
     notes: headlight glare only; no plate legible in the recording
   cam10:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam10]
     site: Char Chowk (fixed)
     lighting: dim
@@ -99,7 +113,9 @@ cameras:
     plate_width_p50_px: 23
     difficulty: DIFFICULT
   cam11:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam11]
     site: Dolatpara Gate (PTZ)
     lighting: bright
@@ -117,7 +133,9 @@ cameras:
     difficulty: EXTREME
     notes: one vehicle in the recording
   cam13:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam13]
     site: C.N. Vidyalaya Junction (RLVD)
     lighting: bright
@@ -125,7 +143,9 @@ cameras:
     plate_width_p50_px: 20
     difficulty: DIFFICULT
   cam14:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam14]
     site: Delight Circle (RLVD)
     lighting: bright
@@ -133,7 +153,9 @@ cameras:
     plate_width_p50_px: 14
     difficulty: VERY_DIFFICULT
   cam15:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam15]
     site: Suvidha Park Junction (RLVD)
     lighting: bright
@@ -141,7 +163,9 @@ cameras:
     plate_width_p50_px: 19
     difficulty: VERY_DIFFICULT
   cam16:
-    sampling: {stride: 20}   # no plate here is wide enough to read; spend the frames elsewhere
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
     aliases: [GRID-cam16]
     site: Visat T-Junction (RLVD)
     lighting: bright

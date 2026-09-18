@@ -1,0 +1,308 @@
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t1 (car)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 9  plate size: 38x8  quality: 0.593
+OCR (per candidate, first 40):
+  f    0 17x6 q=0.48 det=0.52 -> - 0.00
+  f    1 11x5 q=0.46 det=0.44 -> - 0.00
+  f    2 14x8 q=0.44 det=0.38 -> - 0.00
+  f    3 23x5 q=0.52 det=0.55 -> - 0.00
+  f    4 29x6 q=0.56 det=0.52 -> - 0.00
+  f    5 27x5 q=0.55 det=0.49 -> - 0.00
+  f    6 13x5 q=0.46 det=0.45 -> - 0.00
+  f    7 30x11 q=0.52 det=0.43 -> - 0.00
+  f    8 30x7 q=0.53 det=0.50 -> - 0.00
+  f    9 30x5 q=0.59 det=0.55 -> - 0.00
+  f   10 24x6 q=0.53 det=0.46 -> - 0.00
+  f   11 16x3 q=0.47 det=0.42 -> - 0.00
+  f   12 30x5 q=0.58 det=0.52 -> - 0.00
+  f   13 19x5 q=0.47 det=0.52 -> - 0.00
+  f   14 19x5 q=0.50 det=0.51 -> - 0.00
+  f   15 19x4 q=0.47 det=0.48 -> - 0.00
+  f   16 14x5 q=0.48 det=0.42 -> - 0.00
+  f   17 13x5 q=0.47 det=0.44 -> - 0.00
+  f   18 19x8 q=0.44 det=0.42 -> - 0.00
+  f   19 19x8 q=0.45 det=0.44 -> - 0.00
+  f   20 19x8 q=0.46 det=0.45 -> - 0.00
+  f   21 15x4 q=0.46 det=0.51 -> - 0.00
+  f   22 19x9 q=0.46 det=0.44 -> - 0.00
+  f   23 19x9 q=0.46 det=0.45 -> - 0.00
+  f   24 19x8 q=0.44 det=0.46 -> - 0.00
+FINAL: DL04B66  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t2 (car)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 16  plate size: 166x99  quality: 0.958
+OCR (per candidate, first 40):
+  f    0 108x50 q=0.95 det=0.79 -> DL1AFF4490 0.72
+  f    1 111x49 q=0.95 det=0.80 -> MH214850 0.59
+  f    2 111x50 q=0.95 det=0.80 -> MH214856 0.50
+  f    3 112x51 q=0.95 det=0.79 -> DL4JAF3990 0.56
+  f    4 113x52 q=0.95 det=0.79 -> ML44AE5399 0.55
+  f    5 114x52 q=0.95 det=0.79 -> ML22LAE5007 0.59
+  f    6 115x53 q=0.95 det=0.79 -> MH21E5907 0.76
+  f    7 116x55 q=0.95 det=0.80 -> MH21E5907 0.71
+  f    8 120x57 q=0.95 det=0.80 -> DL14CE5987 0.70
+  f    9 120x58 q=0.95 det=0.80 -> MH02DL1405 0.63
+  f   10 122x60 q=0.95 det=0.80 -> ML21E6007 0.66
+  f   11 125x60 q=0.95 det=0.79 -> DL14AFF4490 0.62
+  f   12 126x62 q=0.96 det=0.80 -> DL14CE5987 0.70
+  f   13 127x64 q=0.95 det=0.80 -> MH02DL1055 0.77
+  f   14 128x65 q=0.96 det=0.80 -> MH02DL1055 0.74
+  f   15 132x67 q=0.95 det=0.80 -> DL11AFF4690 0.55
+  f   16 134x66 q=0.96 det=0.80 -> MH02DL1055 0.82
+  f   17 136x68 q=0.95 det=0.80 -> DL11AF4091 0.66
+  f   18 134x71 q=0.96 det=0.79 -> MH02ML1059 0.64
+  f   19 139x73 q=0.94 det=0.80 -> DL11EE0075 0.79
+  f   20 140x74 q=0.94 det=0.81 -> DL10EE0078 0.71
+  f   21 138x75 q=0.94 det=0.79 -> DL1CE0967 0.51
+  f   22 144x77 q=0.94 det=0.80 -> DL1AEE0015 0.75
+  f   23 144x80 q=0.94 det=0.79 -> DL1CFE0078 0.71
+  f   24 146x82 q=0.94 det=0.81 -> DL1CE7367 0.58
+FINAL: DL14CE5987  status CONFIRMED  confidence 0.727    emitted: DL14CE5987
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t3 (car)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 20  plate size: 90x51  quality: 0.96
+OCR (per candidate, first 40):
+  f    0 68x28 q=0.94 det=0.77 -> DL4AK2687 0.60
+  f    1 68x29 q=0.94 det=0.77 -> MH46D5537 0.50
+  f    2 67x30 q=0.93 det=0.77 -> ML04CE2666 0.59
+  f    3 66x29 q=0.93 det=0.77 -> DL5CE2665 0.59
+  f    4 67x29 q=0.94 det=0.77 -> MH46A5324 0.54
+  f    5 68x29 q=0.94 det=0.78 -> ML46K2668 0.58
+  f    6 67x29 q=0.94 det=0.78 -> ML46E2665 0.53
+  f    7 68x30 q=0.94 det=0.78 -> MH465336 0.59
+  f    8 67x30 q=0.94 det=0.77 -> MH245324 0.57
+  f    9 70x32 q=0.94 det=0.76 -> ML46K2665 0.51
+  f   10 69x31 q=0.95 det=0.76 -> DL4AE2666 0.67
+  f   11 69x31 q=0.94 det=0.75 -> DL1CQ5334 0.89
+  f   12 70x32 q=0.95 det=0.74 -> DL1AE2688 0.64
+  f   13 71x33 q=0.95 det=0.74 -> DL1CQ5334 0.78
+  f   14 70x32 q=0.95 det=0.75 -> ML11AE6688 0.68
+  f   15 71x32 q=0.94 det=0.76 -> DL11HE2686 0.56
+  f   16 71x33 q=0.95 det=0.73 -> MH41A5334 0.52
+  f   17 72x33 q=0.95 det=0.72 -> MH46C5334 0.52
+  f   18 71x33 q=0.95 det=0.76 -> DL1AK7666 0.57
+  f   19 72x34 q=0.95 det=0.77 -> MH065334 0.54
+  f   20 72x34 q=0.96 det=0.78 -> ML04AK7668 0.52
+  f   21 73x34 q=0.96 det=0.77 -> MH06T5334 0.56
+  f   22 73x35 q=0.96 det=0.76 -> MH015334 0.54
+  f   23 73x35 q=0.96 det=0.77 -> DL1CQ5334 0.89
+  f   24 74x36 q=0.96 det=0.76 -> DL11CS3363 0.59
+FINAL: DL1CQ5334  status CONFIRMED  confidence 0.6896    emitted: DL1CQ5334
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t4 (motorcycle)
+Track duration: 0.3 s  frames 0-9
+Plate candidates: 8  best frame: 4  plate size: 65x16  quality: 0.705
+OCR (per candidate, first 40):
+  f    0 15x12 q=0.42 det=0.30 -> - 0.00
+  f    1 24x18 q=0.41 det=0.19 -> - 0.00
+  f    2 30x17 q=0.51 det=0.38 -> - 0.00
+  f    3 23x16 q=0.50 det=0.38 -> - 0.00
+  f    4 52x10 q=0.70 det=0.31 -> - 0.00
+  f    5 31x8 q=0.48 det=0.28 -> - 0.00
+  f    6 24x24 q=0.49 det=0.29 -> - 0.00
+  f    9 19x8 q=0.38 det=0.26 -> - 0.00
+FINAL: GP1777  status CANDIDATE  confidence 0.0  no_glyph_evidence:2  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t5 (motorcycle)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 15  plate size: 78x25  quality: 0.889
+OCR (per candidate, first 40):
+  f    0 25x13 q=0.48 det=0.34 -> - 0.00
+  f    1 27x13 q=0.49 det=0.36 -> - 0.00
+  f    2 21x11 q=0.45 det=0.42 -> - 0.00
+  f    3 24x7 q=0.46 det=0.28 -> - 0.00
+  f    4 31x12 q=0.56 det=0.40 -> - 0.00
+  f    5 14x9 q=0.41 det=0.31 -> - 0.00
+  f    6 15x10 q=0.42 det=0.34 -> - 0.00
+  f    7 36x27 q=0.56 det=0.36 -> - 0.00
+  f    8 34x9 q=0.51 det=0.35 -> - 0.00
+  f    9 40x28 q=0.58 det=0.41 -> - 0.00
+  f   10 40x28 q=0.59 det=0.42 -> - 0.00
+  f   11 58x29 q=0.73 det=0.39 -> - 0.00
+  f   12 57x28 q=0.75 det=0.39 -> - 0.00
+  f   13 40x28 q=0.61 det=0.39 -> - 0.00
+  f   14 65x17 q=0.93 det=0.52 -> UP10ET6398 0.72
+  f   15 63x17 q=0.89 det=0.69 -> MH01EF6338 0.74
+  f   16 62x17 q=0.82 det=0.68 -> MP14EC6398 0.74
+  f   17 43x15 q=0.60 det=0.65 -> UK206390 0.71
+  f   18 25x15 q=0.50 det=0.53 -> - 0.00
+  f   19 216x114 q=0.98 det=0.29 -> UA03M0042 0.60
+  f   20 15x15 q=0.43 det=0.28 -> - 0.00
+  f   21 25x24 q=0.46 det=0.32 -> - 0.00
+  f   22 34x8 q=0.51 det=0.30 -> - 0.00
+  f   23 16x15 q=0.47 det=0.38 -> - 0.00
+  f   24 27x26 q=0.52 det=0.32 -> MH02AA0677 0.51
+FINAL: WP11ET6398  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t6 (car)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 15  plate size: 78x28  quality: 0.887
+OCR (per candidate, first 40):
+  f    0 20x10 q=0.45 det=0.45 -> - 0.00
+  f    1 10x9 q=0.39 det=0.41 -> - 0.00
+  f    2 21x6 q=0.51 det=0.43 -> - 0.00
+  f    3 32x9 q=0.54 det=0.45 -> - 0.00
+  f    4 38x10 q=0.60 det=0.48 -> - 0.00
+  f    5 48x16 q=0.71 det=0.42 -> - 0.00
+  f    6 41x16 q=0.59 det=0.40 -> - 0.00
+  f    7 32x7 q=0.55 det=0.41 -> - 0.00
+  f    8 29x11 q=0.54 det=0.42 -> - 0.00
+  f    9 33x13 q=0.56 det=0.40 -> GJ33GJ20 0.64
+  f   10 21x9 q=0.43 det=0.40 -> - 0.00
+  f   11 41x10 q=0.59 det=0.45 -> HR42FY4506 0.62
+  f   12 18x9 q=0.43 det=0.37 -> - 0.00
+  f   13 65x18 q=0.87 det=0.37 -> UP10FT6398 0.72
+  f   14 18x12 q=0.41 det=0.38 -> - 0.00
+  f   15 63x18 q=0.89 det=0.75 -> AP11EEE6338 0.90
+  f   16 58x11 q=0.77 det=0.47 -> UP14EC6398 0.86
+  f   17 19x6 q=0.49 det=0.34 -> - 0.00
+  f   18 16x6 q=0.48 det=0.35 -> - 0.00
+  f   19 11x5 q=0.45 det=0.30 -> - 0.00
+  f   20 10x7 q=0.36 det=0.34 -> - 0.00
+  f   21 16x5 q=0.46 det=0.27 -> - 0.00
+  f   22 16x6 q=0.46 det=0.31 -> - 0.00
+  f   23 17x6 q=0.49 det=0.35 -> - 0.00
+  f   24 11x4 q=0.42 det=0.23 -> - 0.00
+FINAL: MP31EF2633  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t10 (truck)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 9  plate size: 35x9  quality: 0.575
+OCR (per candidate, first 40):
+  f    0 24x9 q=0.48 det=0.46 -> - 0.00
+  f    1 24x9 q=0.48 det=0.46 -> - 0.00
+  f    2 17x4 q=0.46 det=0.48 -> - 0.00
+  f    3 18x4 q=0.46 det=0.49 -> - 0.00
+  f    4 23x5 q=0.53 det=0.47 -> - 0.00
+  f    5 18x5 q=0.46 det=0.49 -> - 0.00
+  f    6 18x4 q=0.46 det=0.50 -> - 0.00
+  f    7 18x4 q=0.46 det=0.50 -> - 0.00
+  f    8 19x4 q=0.46 det=0.50 -> - 0.00
+  f    9 28x6 q=0.57 det=0.48 -> - 0.00
+  f   10 18x5 q=0.46 det=0.50 -> - 0.00
+  f   11 19x5 q=0.46 det=0.51 -> - 0.00
+  f   12 19x5 q=0.46 det=0.51 -> - 0.00
+  f   13 19x5 q=0.46 det=0.52 -> - 0.00
+  f   14 19x5 q=0.46 det=0.52 -> - 0.00
+  f   15 19x5 q=0.51 det=0.51 -> - 0.00
+  f   16 19x5 q=0.46 det=0.54 -> - 0.00
+  f   17 20x5 q=0.51 det=0.50 -> - 0.00
+  f   18 20x5 q=0.47 det=0.52 -> - 0.00
+  f   19 20x5 q=0.46 det=0.52 -> - 0.00
+  f   20 19x5 q=0.50 det=0.51 -> - 0.00
+  f   21 20x5 q=0.50 det=0.51 -> - 0.00
+  f   22 20x5 q=0.51 det=0.51 -> - 0.00
+  f   23 20x5 q=0.51 det=0.52 -> - 0.00
+  f   24 21x5 q=0.51 det=0.52 -> - 0.00
+FINAL: MH06668  status CANDIDATE  confidence 0.0004  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t11 (car)
+Track duration: 0.3 s  frames 0-8
+Plate candidates: 9  best frame: 8  plate size: 48x17  quality: 0.617
+OCR (per candidate, first 40):
+  f    0 18x4 q=0.47 det=0.38 -> - 0.00
+  f    1 36x10 q=0.58 det=0.34 -> - 0.00
+  f    2 36x11 q=0.58 det=0.34 -> - 0.00
+  f    3 37x12 q=0.59 det=0.31 -> - 0.00
+  f    4 37x11 q=0.60 det=0.33 -> - 0.00
+  f    5 37x11 q=0.60 det=0.34 -> - 0.00
+  f    6 37x11 q=0.60 det=0.34 -> - 0.00
+  f    7 38x11 q=0.60 det=0.34 -> - 0.00
+  f    8 38x11 q=0.62 det=0.36 -> - 0.00
+FINAL: DL4MH1112  status CANDIDATE  confidence 0.0032  no_glyph_evidence:2  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t12 (motorcycle)
+Track duration: 0.0 s  frames 0-0
+Plate candidates: 1  best frame: 0  plate size: 29x9  quality: 0.499
+OCR (per candidate, first 40):
+  f    0 24x6 q=0.50 det=0.35 -> - 0.00
+FINAL: PL12277  status CANDIDATE  confidence 0.0007  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t13 (motorcycle)
+Track duration: 0.7 s  frames 0-21
+Plate candidates: 6  best frame: 0  plate size: 29x9  quality: 0.499
+OCR (per candidate, first 40):
+  f    0 24x6 q=0.50 det=0.39 -> - 0.00
+  f    1 24x6 q=0.48 det=0.36 -> - 0.00
+  f    2 23x6 q=0.49 det=0.37 -> - 0.00
+  f    3 23x6 q=0.49 det=0.40 -> - 0.00
+  f    4 23x5 q=0.49 det=0.38 -> - 0.00
+  f    5 22x6 q=0.46 det=0.40 -> - 0.00
+FINAL: DL12217  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t14 (car)
+Track duration: 0.8 s  frames 0-24
+Plate candidates: 25  best frame: 14  plate size: 42x8  quality: 0.615
+OCR (per candidate, first 40):
+  f    0 9x4 q=0.45 det=0.47 -> - 0.00
+  f    1 10x8 q=0.39 det=0.31 -> - 0.00
+  f    2 15x4 q=0.46 det=0.41 -> - 0.00
+  f    3 11x4 q=0.45 det=0.38 -> - 0.00
+  f    4 11x4 q=0.45 det=0.36 -> - 0.00
+  f    5 12x3 q=0.46 det=0.47 -> - 0.00
+  f    6 16x6 q=0.48 det=0.28 -> - 0.00
+  f    7 9x7 q=0.40 det=0.37 -> - 0.00
+  f    8 12x5 q=0.46 det=0.36 -> - 0.00
+  f    9 21x7 q=0.46 det=0.37 -> - 0.00
+  f   10 10x6 q=0.39 det=0.41 -> - 0.00
+  f   11 18x4 q=0.47 det=0.43 -> - 0.00
+  f   12 10x7 q=0.37 det=0.36 -> - 0.00
+  f   13 11x6 q=0.46 det=0.38 -> - 0.00
+  f   14 34x6 q=0.61 det=0.38 -> - 0.00
+  f   15 14x4 q=0.46 det=0.39 -> - 0.00
+  f   16 14x4 q=0.46 det=0.41 -> - 0.00
+  f   17 15x4 q=0.46 det=0.38 -> - 0.00
+  f   18 9x3 q=0.45 det=0.44 -> - 0.00
+  f   19 11x6 q=0.46 det=0.41 -> - 0.00
+  f   20 9x4 q=0.45 det=0.39 -> - 0.00
+  f   21 11x6 q=0.45 det=0.38 -> - 0.00
+  f   22 11x6 q=0.44 det=0.40 -> - 0.00
+  f   23 11x6 q=0.44 det=0.39 -> - 0.00
+  f   24 10x3 q=0.45 det=0.45 -> - 0.00
+FINAL: GJ01C16  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t25 (motorcycle)
+Track duration: 0.0 s  frames 8-8
+Plate candidates: 1  best frame: 8  plate size: 51x41  quality: 0.602
+OCR (per candidate, first 40):
+  f    8 41x27 q=0.60 det=0.42 -> - 0.00
+FINAL: GJ1747  status CANDIDATE  confidence 0.0008  readers_disagree  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t28 (car)
+Track duration: 0.1 s  frames 9-13
+Plate candidates: 5  best frame: 10  plate size: 37x8  quality: 0.586
+OCR (per candidate, first 40):
+  f    9 34x6 q=0.58 det=0.51 -> - 0.00
+  f   10 30x5 q=0.59 det=0.55 -> - 0.00
+  f   11 12x4 q=0.45 det=0.48 -> - 0.00
+  f   12 30x5 q=0.51 det=0.57 -> - 0.00
+  f   13 23x5 q=0.48 det=0.56 -> - 0.00
+FINAL: DL1888  status CANDIDATE  confidence 0.0002  no_glyph_evidence:0  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t38 (car)
+Track duration: 0.3 s  frames 15-24
+Plate candidates: 10  best frame: 18  plate size: 16x7  quality: 0.452
+OCR (per candidate, first 40):
+  f   15 10x3 q=0.45 det=0.30 -> - 0.00
+  f   16 14x5 q=0.45 det=0.29 -> - 0.00
+  f   17 14x5 q=0.46 det=0.38 -> - 0.00
+  f   18 13x5 q=0.45 det=0.40 -> - 0.00
+  f   19 12x5 q=0.46 det=0.34 -> - 0.00
+  f   20 10x4 q=0.45 det=0.28 -> - 0.00
+  f   21 9x9 q=0.42 det=0.31 -> - 0.00
+  f   22 9x9 q=0.43 det=0.31 -> - 0.00
+  f   23 9x9 q=0.41 det=0.30 -> - 0.00
+  f   24 10x9 q=0.42 det=0.32 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:16<22  emitted: no
+
+[DELHI_1080P] Vehicle ID: delhi_1080p_s0_t39 (car)
+Track duration: 0.1 s  frames 16-19
+Plate candidates: 4  best frame: 16  plate size: 39x9  quality: 0.605
+OCR (per candidate, first 40):
+  f   16 32x6 q=0.60 det=0.49 -> - 0.00
+  f   17 32x6 q=0.60 det=0.47 -> - 0.00
+  f   18 9x4 q=0.45 det=0.43 -> - 0.00
+  f   19 8x4 q=0.45 det=0.40 -> - 0.00
+FINAL: MH04222  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

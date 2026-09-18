@@ -1,0 +1,6 @@
+[CAM05] Vehicle ID: cam05_s0_t1 (car)
+Track duration: 19.2 s  frames 0-480
+Plate candidates: 1  best frame: 180  plate size: 11x8  quality: 0.433
+OCR (per candidate, first 40):
+  f  180 9x6 q=0.43 det=0.27 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:11<22  emitted: no

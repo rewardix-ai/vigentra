@@ -1,0 +1,2 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam06_1080p_s0_t1,truck,0,24,25,25,33.2,VERY_SMALL,2,41x16,0.358,0.577,GJ17GJ17,0.0,CANDIDATE,readers_disagree,1,0,0,UNREADABLE

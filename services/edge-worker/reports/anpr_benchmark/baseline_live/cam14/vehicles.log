@@ -1,0 +1,18 @@
+[CAM14] Vehicle ID: cam14_s0_t26 (car)
+Track duration: 0.2 s  frames 400-404
+Plate candidates: 5  best frame: 404  plate size: 56x19  quality: 0.614
+OCR (per candidate, first 40):
+  f  400 45x12 q=0.62 det=0.69 -> GJ11MK38 0.50
+  f  401 46x13 q=0.62 det=0.70 -> - 0.00
+  f  402 45x13 q=0.61 det=0.68 -> GJ01MK308 0.50
+  f  403 44x14 q=0.61 det=0.68 -> GJ01MK38 0.51
+  f  404 45x13 q=0.61 det=0.71 -> GJ01MK308 0.52
+FINAL: GJ01MK308  status CANDIDATE  confidence 0.3832  no_glyph_evidence:2  emitted: no
+
+[CAM14] Vehicle ID: cam14_s0_t29 (car)
+Track duration: 0.0 s  frames 403-404
+Plate candidates: 2  best frame: 404  plate size: 17x5  quality: 0.458
+OCR (per candidate, first 40):
+  f  403 9x5 q=0.45 det=0.36 -> - 0.00
+  f  404 13x3 q=0.46 det=0.48 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:17<22  emitted: no

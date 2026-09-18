@@ -1,0 +1,14 @@
+[CAM02] Vehicle ID: cam02_s0_t1 (truck)
+Track duration: 1.0 s  frames 0-24
+Plate candidates: 9  best frame: 12  plate size: 30x17  quality: 0.49
+OCR (per candidate, first 40):
+  f    0 26x9 q=0.38 det=0.33 -> - 0.00
+  f    1 17x8 q=0.42 det=0.48 -> - 0.00
+  f    2 18x8 q=0.44 det=0.41 -> - 0.00
+  f   12 24x11 q=0.49 det=0.46 -> - 0.00
+  f   13 22x12 q=0.45 det=0.45 -> - 0.00
+  f   14 22x11 q=0.45 det=0.47 -> - 0.00
+  f   15 23x12 q=0.46 det=0.45 -> - 0.00
+  f   23 15x8 q=0.41 det=0.45 -> - 0.00
+  f   24 11x8 q=0.36 det=0.44 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:7.9<8.0  emitted: no

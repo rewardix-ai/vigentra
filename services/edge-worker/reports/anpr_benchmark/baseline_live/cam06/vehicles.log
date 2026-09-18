@@ -1,0 +1,49 @@
+[CAM06] Vehicle ID: cam06_s0_t2 (truck)
+Track duration: 1.6 s  frames 0-40
+Plate candidates: 3  best frame: 0  plate size: 17x14  quality: 0.443
+OCR (per candidate, first 40):
+  f    0 14x9 q=0.44 det=0.39 -> - 0.00
+  f   20 12x8 q=0.39 det=0.39 -> - 0.00
+  f   40 22x5 q=0.47 det=0.21 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:17<22  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t7 (truck)
+Track duration: 8.4 s  frames 100-309
+Plate candidates: 20  best frame: 303  plate size: 147x37  quality: 0.987
+OCR (per candidate, first 40):
+  f  100 14x13 q=0.45 det=0.37 -> - 0.00
+  f  120 12x6 q=0.40 det=0.32 -> - 0.00
+  f  140 12x6 q=0.41 det=0.32 -> - 0.00
+  f  160 12x6 q=0.44 det=0.31 -> - 0.00
+  f  180 12x6 q=0.44 det=0.31 -> - 0.00
+  f  200 12x6 q=0.39 det=0.32 -> - 0.00
+  f  220 14x8 q=0.45 det=0.38 -> - 0.00
+  f  240 14x11 q=0.45 det=0.38 -> - 0.00
+  f  260 14x8 q=0.45 det=0.34 -> - 0.00
+  f  280 15x11 q=0.46 det=0.37 -> - 0.00
+  f  300 117x24 q=0.99 det=0.33 -> - 0.00
+  f  301 119x23 q=0.99 det=0.38 -> - 0.00
+  f  302 117x24 q=0.98 det=0.43 -> - 0.00
+  f  303 118x24 q=0.99 det=0.45 -> - 0.00
+  f  304 119x25 q=0.98 det=0.40 -> - 0.00
+  f  305 119x25 q=0.98 det=0.40 -> - 0.00
+  f  306 119x25 q=0.99 det=0.41 -> - 0.00
+  f  307 119x25 q=0.99 det=0.39 -> - 0.00
+  f  308 119x26 q=0.99 det=0.36 -> - 0.00
+  f  309 14x11 q=0.45 det=0.34 -> - 0.00
+FINAL: DL116  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06] Vehicle ID: cam06_s0_t15 (motorcycle)
+Track duration: 0.3 s  frames 301-309
+Plate candidates: 9  best frame: 307  plate size: 45x38  quality: 0.593
+OCR (per candidate, first 40):
+  f  301 8x8 q=0.35 det=0.32 -> - 0.00
+  f  302 15x8 q=0.43 det=0.35 -> - 0.00
+  f  303 15x8 q=0.43 det=0.34 -> - 0.00
+  f  304 10x6 q=0.36 det=0.25 -> - 0.00
+  f  305 11x6 q=0.36 det=0.25 -> - 0.00
+  f  306 15x9 q=0.44 det=0.34 -> - 0.00
+  f  307 36x25 q=0.59 det=0.20 -> - 0.00
+  f  308 8x8 q=0.38 det=0.30 -> - 0.00
+  f  309 8x8 q=0.36 det=0.29 -> - 0.00
+FINAL: GJ14GJ34  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

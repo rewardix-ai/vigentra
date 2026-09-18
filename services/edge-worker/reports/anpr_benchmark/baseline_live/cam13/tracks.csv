@@ -1,0 +1,12 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam13_s0_t1,truck,0,24,25,25,33.1,VERY_SMALL,10,27x8,0.377,0.511,,0.0,UNREADABLE,sharpness_below_gate:4.1<8.0,0,0,0,UNREADABLE
+cam13_s0_t2,truck,0,14,15,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam13_s0_t3,truck,0,19,20,20,21.8,VERY_SMALL,16,26x7,0.163,0.471,,0.0,UNREADABLE,height_below_gate:7<8,0,0,0,UNREADABLE
+cam13_s0_t4,car,0,24,25,23,25.7,VERY_SMALL,18,32x6,0.417,0.485,,0.0,UNREADABLE,height_below_gate:6<8,0,0,0,UNREADABLE
+cam13_s0_t5,car,4,24,21,20,15.8,EXTREMELY_TINY,23,15x12,0.352,0.416,,0.0,UNREADABLE,width_below_gate:15<22,0,0,0,UNREADABLE
+cam13_s0_t6,car,6,19,12,12,10.2,EXTREMELY_TINY,17,13x9,0.419,0.446,,0.0,UNREADABLE,width_below_gate:13<22,0,0,0,UNREADABLE
+cam13_s0_t7,car,6,9,3,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam13_s0_t8,car,6,9,4,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam13_s0_t11,truck,12,24,11,11,29.9,VERY_SMALL,12,27x9,0.348,0.507,,0.0,UNREADABLE,sharpness_below_gate:3.5<8.0,0,0,0,UNREADABLE
+cam13_s0_t12,car,14,16,3,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam13_s0_t13,car,14,14,1,1,14.8,EXTREMELY_TINY,14,19x8,0.271,0.454,,0.0,UNREADABLE,width_below_gate:19<22,0,0,0,UNREADABLE

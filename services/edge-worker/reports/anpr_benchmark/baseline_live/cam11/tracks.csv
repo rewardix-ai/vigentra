@@ -1,0 +1,17 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam11_s0_t1,car,0,24,25,25,13.0,EXTREMELY_TINY,0,12x7,0.177,0.451,,0.0,UNREADABLE,width_below_gate:12<22,0,0,0,UNREADABLE
+cam11_s0_t2,car,0,24,25,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t3,car,0,24,25,25,10.3,EXTREMELY_TINY,3,12x6,0.377,0.449,,0.0,UNREADABLE,width_below_gate:12<22,0,0,0,UNREADABLE
+cam11_s0_t4,truck,0,23,24,24,10.9,EXTREMELY_TINY,13,14x6,0.416,0.454,,0.0,UNREADABLE,width_below_gate:14<22,0,0,0,UNREADABLE
+cam11_s0_t5,motorcycle,0,24,25,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t6,car,0,8,9,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t7,car,0,24,24,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t8,truck,0,24,25,9,39.3,VERY_SMALL,0,47x15,0.299,0.533,,0.0,UNREADABLE,sharpness_below_gate:6.8<8.0,0,0,0,UNREADABLE
+cam11_s0_t9,truck,0,24,25,5,9.2,EXTREMELY_TINY,19,11x6,0.232,0.452,,0.0,UNREADABLE,width_below_gate:11<22,0,0,0,UNREADABLE
+cam11_s0_t10,motorcycle,0,3,4,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t11,motorcycle,0,24,25,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t12,car,2,5,4,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t13,car,2,17,16,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t16,car,9,24,16,3,11.7,EXTREMELY_TINY,10,10x7,0.2,0.451,,0.0,UNREADABLE,width_below_gate:10<22,0,0,0,UNREADABLE
+cam11_s0_t18,car,11,24,14,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam11_s0_t19,motorcycle,13,24,12,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

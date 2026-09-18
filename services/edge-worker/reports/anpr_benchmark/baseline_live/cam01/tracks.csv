@@ -1,0 +1,7 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam01_s0_t1,truck,0,380,4,1,13.0,EXTREMELY_TINY,0,17x6,0.283,0.457,,0.0,UNREADABLE,width_below_gate:17<22,0,0,0,UNREADABLE
+cam01_s0_t2,truck,0,120,6,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam01_s0_t3,car,0,440,7,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam01_s0_t9,truck,100,220,7,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam01_s0_t35,truck,280,480,11,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam01_s0_t41,truck,320,480,9,9,23.2,VERY_SMALL,460,25x14,0.453,0.427,MH09410,0.0002,CANDIDATE,readers_disagree,0,0,0,UNREADABLE

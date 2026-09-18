@@ -1,0 +1,62 @@
+[CAM08] Vehicle ID: cam08_s0_t1 (motorcycle)
+Track duration: 10.0 s  frames 0-251
+Plate candidates: 1  best frame: 251  plate size: 14x6  quality: 0.446
+OCR (per candidate, first 40):
+  f  251 11x4 q=0.45 det=0.13 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:14<22  emitted: no
+
+[CAM08] Vehicle ID: cam08_s0_t2 (truck)
+Track duration: 10.1 s  frames 0-252
+Plate candidates: 24  best frame: 251  plate size: 41x19  quality: 0.557
+OCR (per candidate, first 40):
+  f    0 12x7 q=0.40 det=0.47 -> - 0.00
+  f   20 18x6 q=0.48 det=0.43 -> - 0.00
+  f   40 18x6 q=0.42 det=0.42 -> - 0.00
+  f   60 18x6 q=0.49 det=0.44 -> - 0.00
+  f   80 13x7 q=0.41 det=0.48 -> - 0.00
+  f  100 17x5 q=0.48 det=0.41 -> - 0.00
+  f  120 18x6 q=0.41 det=0.39 -> - 0.00
+  f  140 20x5 q=0.46 det=0.50 -> - 0.00
+  f  160 13x7 q=0.42 det=0.47 -> - 0.00
+  f  180 11x7 q=0.39 det=0.45 -> - 0.00
+  f  200 18x4 q=0.46 det=0.40 -> - 0.00
+  f  220 19x5 q=0.47 det=0.40 -> - 0.00
+  f  240 18x4 q=0.45 det=0.41 -> - 0.00
+  f  241 18x5 q=0.45 det=0.42 -> - 0.00
+  f  242 18x4 q=0.45 det=0.42 -> - 0.00
+  f  243 18x4 q=0.45 det=0.43 -> - 0.00
+  f  245 18x4 q=0.45 det=0.42 -> - 0.00
+  f  246 18x6 q=0.46 det=0.40 -> - 0.00
+  f  247 19x6 q=0.47 det=0.42 -> - 0.00
+  f  248 19x6 q=0.46 det=0.43 -> - 0.00
+  f  249 19x6 q=0.47 det=0.40 -> - 0.00
+  f  250 18x4 q=0.45 det=0.40 -> - 0.00
+  f  251 33x12 q=0.56 det=0.48 -> - 0.00
+  f  252 18x4 q=0.45 det=0.39 -> - 0.00
+FINAL: GJ112238  status CANDIDATE  confidence 0.0  no_glyph_evidence:1  emitted: no
+
+[CAM08] Vehicle ID: cam08_s0_t33 (bus)
+Track duration: 0.5 s  frames 240-252
+Plate candidates: 13  best frame: 245  plate size: 12x14  quality: 0.417
+OCR (per candidate, first 40):
+  f  240 10x10 q=0.41 det=0.39 -> - 0.00
+  f  241 8x7 q=0.38 det=0.28 -> - 0.00
+  f  242 9x7 q=0.40 det=0.29 -> - 0.00
+  f  243 16x14 q=0.43 det=0.30 -> - 0.00
+  f  244 9x6 q=0.39 det=0.28 -> - 0.00
+  f  245 10x9 q=0.42 det=0.40 -> - 0.00
+  f  246 9x9 q=0.41 det=0.41 -> - 0.00
+  f  247 10x9 q=0.41 det=0.40 -> - 0.00
+  f  248 13x8 q=0.43 det=0.32 -> - 0.00
+  f  249 9x9 q=0.41 det=0.40 -> - 0.00
+  f  250 12x8 q=0.42 det=0.38 -> - 0.00
+  f  251 9x9 q=0.39 det=0.38 -> - 0.00
+  f  252 13x8 q=0.37 det=0.36 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:12<22  emitted: no
+
+[CAM08] Vehicle ID: cam08_s0_t37 (motorcycle)
+Track duration: 0.0 s  frames 251-252
+Plate candidates: 1  best frame: 252  plate size: 14x18  quality: 0.398
+OCR (per candidate, first 40):
+  f  252 12x12 q=0.40 det=0.20 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:14<22  emitted: no

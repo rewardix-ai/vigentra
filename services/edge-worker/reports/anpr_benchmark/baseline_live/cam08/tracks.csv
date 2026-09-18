@@ -1,0 +1,12 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam08_s0_t1,motorcycle,0,251,8,1,11.2,EXTREMELY_TINY,251,14x6,0.131,0.446,,0.0,UNREADABLE,width_below_gate:14<22,0,0,0,UNREADABLE
+cam08_s0_t2,truck,0,252,24,24,33.1,VERY_SMALL,251,41x19,0.48,0.557,GJ112238,0.0,CANDIDATE,no_glyph_evidence:1,1,0,0,UNREADABLE
+cam08_s0_t3,motorcycle,0,0,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t4,motorcycle,0,252,21,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t15,motorcycle,100,252,20,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t16,motorcycle,100,120,2,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t18,motorcycle,100,252,20,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t24,car,140,140,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t29,motorcycle,160,252,17,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam08_s0_t33,bus,240,252,13,13,16.0,EXTREMELY_TINY,245,12x14,0.403,0.417,,0.0,UNREADABLE,width_below_gate:12<22,0,0,0,UNREADABLE
+cam08_s0_t37,motorcycle,251,252,2,1,11.8,EXTREMELY_TINY,252,14x18,0.203,0.398,,0.0,UNREADABLE,width_below_gate:14<22,0,0,0,UNREADABLE

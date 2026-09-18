@@ -1,0 +1,7 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam15_s0_t1,motorcycle,0,0,1,1,17.1,EXTREMELY_TINY,0,22x5,0.199,0.433,,0.0,UNREADABLE,height_below_gate:5<8,0,0,0,UNREADABLE
+cam15_s0_t2,motorcycle,0,80,5,2,12.5,EXTREMELY_TINY,60,15x17,0.168,0.363,,0.0,UNREADABLE,width_below_gate:15<22,0,0,0,UNREADABLE
+cam15_s0_t3,motorcycle,0,40,3,2,16.6,EXTREMELY_TINY,40,21x13,0.231,0.447,,0.0,UNREADABLE,width_below_gate:21<22,0,0,0,UNREADABLE
+cam15_s0_t9,car,120,138,19,19,17.9,EXTREMELY_TINY,129,22x8,0.507,0.492,,0.0,UNREADABLE,sharpness_below_gate:3.8<8.0,0,0,0,UNREADABLE
+cam15_s0_t10,car,121,129,9,9,16.5,EXTREMELY_TINY,126,21x8,0.395,0.475,,0.0,UNREADABLE,width_below_gate:21<22,0,0,0,UNREADABLE
+cam15_s0_t12,car,121,138,18,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

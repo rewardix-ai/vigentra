@@ -1,0 +1,30 @@
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t1 (truck)
+Track duration: 1.0 s  frames 0-24
+Plate candidates: 25  best frame: 2  plate size: 41x16  quality: 0.577
+OCR (per candidate, first 40):
+  f    0 20x10 q=0.45 det=0.34 -> - 0.00
+  f    1 20x10 q=0.45 det=0.34 -> - 0.00
+  f    2 33x11 q=0.58 det=0.36 -> - 0.00
+  f    3 20x11 q=0.46 det=0.35 -> - 0.00
+  f    4 20x11 q=0.46 det=0.34 -> - 0.00
+  f    5 20x11 q=0.46 det=0.34 -> - 0.00
+  f    6 20x10 q=0.46 det=0.33 -> - 0.00
+  f    7 12x12 q=0.38 det=0.33 -> - 0.00
+  f    8 20x11 q=0.45 det=0.35 -> - 0.00
+  f    9 19x10 q=0.45 det=0.34 -> - 0.00
+  f   10 19x10 q=0.45 det=0.34 -> - 0.00
+  f   11 18x11 q=0.44 det=0.35 -> - 0.00
+  f   12 19x10 q=0.44 det=0.34 -> - 0.00
+  f   13 19x10 q=0.45 det=0.35 -> - 0.00
+  f   14 19x10 q=0.45 det=0.34 -> - 0.00
+  f   15 19x10 q=0.45 det=0.34 -> - 0.00
+  f   16 18x11 q=0.44 det=0.35 -> - 0.00
+  f   17 13x12 q=0.40 det=0.34 -> - 0.00
+  f   18 14x12 q=0.44 det=0.34 -> - 0.00
+  f   19 19x10 q=0.46 det=0.34 -> - 0.00
+  f   20 19x10 q=0.45 det=0.34 -> - 0.00
+  f   21 20x10 q=0.46 det=0.33 -> - 0.00
+  f   22 13x12 q=0.41 det=0.34 -> - 0.00
+  f   23 13x12 q=0.43 det=0.34 -> - 0.00
+  f   24 20x10 q=0.47 det=0.32 -> - 0.00
+FINAL: GJ17GJ17  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

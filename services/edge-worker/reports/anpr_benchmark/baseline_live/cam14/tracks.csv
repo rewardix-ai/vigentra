@@ -1,0 +1,4 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam14_s0_t26,car,400,404,5,5,46.0,SMALL,404,56x19,0.709,0.614,GJ01MK308,0.3832,CANDIDATE,no_glyph_evidence:2,1,0,0,UNREADABLE
+cam14_s0_t28,car,400,404,5,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam14_s0_t29,car,403,404,2,2,13.4,EXTREMELY_TINY,404,17x5,0.48,0.458,,0.0,UNREADABLE,width_below_gate:17<22,0,0,0,UNREADABLE

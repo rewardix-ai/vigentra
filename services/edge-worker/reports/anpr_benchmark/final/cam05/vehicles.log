@@ -1,0 +1,6 @@
+[CAM05] Vehicle ID: cam05_s0_t372 (car)
+Track duration: 1.8 s  frames 675-720
+Plate candidates: 1  best frame: 689  plate size: 68x34  quality: 0.613
+OCR (per candidate, first 40):
+  f  689 55x23 q=0.61 det=0.44 -> - 0.00
+FINAL: GJ142468  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no

@@ -1,0 +1,46 @@
+[CAM14] Vehicle ID: cam14_s0_t69 (car)
+Track duration: 11.6 s  frames 380-670
+Plate candidates: 31  best frame: 405  plate size: 56x20  quality: 0.612
+OCR (per candidate, first 40):
+  f  380 45x13 q=0.62 det=0.68 -> - 0.00
+  f  381 46x13 q=0.63 det=0.69 -> - 0.00
+  f  382 46x13 q=0.63 det=0.70 -> - 0.00
+  f  383 46x13 q=0.62 det=0.70 -> - 0.00
+  f  384 46x13 q=0.62 det=0.70 -> - 0.00
+  f  385 46x13 q=0.62 det=0.70 -> - 0.00
+  f  386 46x13 q=0.62 det=0.69 -> - 0.00
+  f  387 46x13 q=0.62 det=0.69 -> - 0.00
+  f  388 46x14 q=0.63 det=0.70 -> - 0.00
+  f  389 46x13 q=0.62 det=0.66 -> - 0.00
+  f  390 46x13 q=0.62 det=0.69 -> - 0.00
+  f  391 46x13 q=0.62 det=0.69 -> - 0.00
+  f  392 46x13 q=0.62 det=0.63 -> - 0.00
+  f  393 46x13 q=0.62 det=0.57 -> - 0.00
+  f  394 46x13 q=0.62 det=0.57 -> - 0.00
+  f  395 46x13 q=0.62 det=0.58 -> GJ07LMK38 0.55
+  f  396 46x15 q=0.63 det=0.63 -> GJ03UMA3082 0.52
+  f  397 45x14 q=0.61 det=0.63 -> - 0.00
+  f  398 46x14 q=0.62 det=0.64 -> - 0.00
+  f  399 46x14 q=0.61 det=0.67 -> GJ01MK308 0.52
+  f  400 45x14 q=0.61 det=0.66 -> - 0.00
+  f  401 45x14 q=0.61 det=0.66 -> GJ01MK308 0.52
+  f  402 45x13 q=0.61 det=0.69 -> GJ01MK308 0.53
+  f  403 45x13 q=0.62 det=0.73 -> - 0.00
+  f  404 46x13 q=0.62 det=0.69 -> - 0.00
+  f  405 46x13 q=0.61 det=0.72 -> GJ01MK308 0.53
+  f  406 45x13 q=0.61 det=0.67 -> GJ01MK38 0.51
+  f  407 44x13 q=0.61 det=0.69 -> GJ07UMK318 0.63
+  f  408 45x13 q=0.61 det=0.62 -> GJ07LMK308 0.63
+  f  412 46x20 q=0.59 det=0.27 -> GJ11GJ23 0.52
+  f  526 112x67 q=0.93 det=0.21 -> - 0.00
+FINAL: GJ01MK308  status CANDIDATE  confidence 0.3827  no_glyph_evidence:2  emitted: no
+
+[CAM14] Vehicle ID: cam14_s0_t157 (car)
+Track duration: 0.7 s  frames 631-649
+Plate candidates: 4  best frame: 648  plate size: 104x65  quality: 0.84
+OCR (per candidate, first 40):
+  f  639 78x43 q=0.81 det=0.25 -> - 0.00
+  f  640 80x40 q=0.80 det=0.22 -> - 0.00
+  f  645 82x41 q=0.84 det=0.25 -> - 0.00
+  f  648 84x43 q=0.84 det=0.27 -> - 0.00
+FINAL: GJ00GJ9  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

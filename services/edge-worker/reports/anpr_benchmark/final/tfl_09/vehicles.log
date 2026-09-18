@@ -1,0 +1,6 @@
+[TFL_09] Vehicle ID: tfl_09_s0_t37 (car)
+Track duration: 0.2 s  frames 175-180
+Plate candidates: 1  best frame: 180  plate size: 19x9  quality: 0.445
+OCR (per candidate, first 40):
+  f  180 15x6 q=0.45 det=0.35 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:19<22  emitted: no

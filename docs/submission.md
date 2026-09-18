@@ -71,7 +71,11 @@ labelled as an estimate.
 | Plate readings on the government feed | 236 from 12 cameras, 9 with confidence ≥ 0.5 | 14 Sep, 00:00–16:30 IST |
 | Vehicle/object detections on the government feed | 95,287 from 20 cameras | 14 Sep, 00:00–16:30 IST |
 | Labelled Delhi clip, 300 frames | 4 of 12 plates read exactly, 1 wrong confirmation | 14 Sep |
-| Automated tests | 192 passed, 5 skipped (platform); 103 passed (edge worker) | 14 Sep, commit 5bb6a2c |
+| Plates read across all 36 recorded clips | 16 of the 26 a person can read, none wrong (was 9) | 18 Sep, `docs/anpr-optimisation.md` |
+| Delhi clip, whole clip | 13 of 20 plates, none wrong (was 7) | 18 Sep |
+| Grid cam06, 1080p recording | 3 of 5 plates, none wrong (was 2) | 18 Sep |
+| Vehicle tracks across all clips | 1 868 (was 1 524), whole set processed in 2 779 s (was 5 784 s) | 18 Sep |
+| Automated tests | 192 passed, 5 skipped (platform); 123 passed (edge worker) | 18 Sep |
 
 ## Links
 
@@ -88,6 +92,7 @@ labelled as an estimate.
 | Date | Change (commit) | Deliverables updated |
 |---|---|---|
 | 14 Sep | Tracker created | this file |
+| 18 Sep | ANPR optimised across the whole estate and measured on every recorded clip: 16 of 26 readable plates against 9, none wrong, 1 868 vehicle tracks against 1 524, 2.1x the speed. Audit, baseline, per-camera configuration, failure analysis and a per-vehicle dataset: `docs/anpr-audit.md`, `docs/anpr-baseline.md`, `docs/anpr-optimisation.md` | HLD, scalability plan, tracker |
 | 14 Sep | HLD brought up to date: readers and runtime, the catalogue read once centrally, RTSP-backed liveness, the 96 px plate-search floor, 295 tests, 14 Sep measurements, and a new section on dispersed sites and thin links (FAQ 30) | HLD |
 | 14 Sep | Scalability plan reorganised around FAQ 35's list: per-tier hardware and software, monitoring and health checks, HA/backup/DR, cost-benefit; measured ANPR throughput replaces "not yet measured"; stale HLS-fallback claim corrected | scalability plan |
 | 14 Sep | Output report covers vehicles as well as plates (FAQ 33): per camera and class, first and last sighting, counted in the database | output report |

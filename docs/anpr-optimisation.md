@@ -72,6 +72,38 @@ So the budget is now per camera: cam06, cam07, cam12 and the Delhi camera take a
 
 From the audit: a pass whose every frame was skipped crashed and dropped the plates the engine held; a failed final upload dropped its payloads silently; clips carried wall-clock timestamps, so the 3 s fragment-merge window depended on replay speed; closed crop banks and the gate log grew without limit; the live wall never settled its tracks; and the pass-end diagnostics read keys the engine never returned, so the line that explains "why no plates" never printed.
 
+## The architecture, stage by stage
+
+The pipeline is vehicle-centric: nothing is read per frame, and a plate is decided once per vehicle.
+
+```
+video / RTSP -> frame sampling (per camera) -> vehicle detection -> ByteTrack -> vehicle id
+  -> plate detection inside the vehicle box -> candidate bank (quality, size, angle, detector score)
+  -> best crops -> perspective correction -> enhancement -> OCR (CRNN x2, optional text reader)
+  -> per-crop reads -> weighted string vote -> Indian format validation -> one plate per vehicle
+```
+
+| Stage | Where it lives |
+|---|---|
+| Frame sampling, low-light routing | `app/worker.py`, `anpr/sampling.py`, `app/frame_quality.py`, per camera in `config/camera_profiles.yaml` |
+| Vehicle detection and tracking | `anpr/detect/vehicle.py`, `config/bytetrack.yaml` |
+| Overlay and sign masking | `anpr/detect/overlay_mask.py`, `anpr/detect/static_text.py`, `config/roi.yaml` |
+| Plate detection in the vehicle box | `anpr/detect/plate.py` (geometry prior, score floor, one plate per track per frame) |
+| Candidate bank, quality scoring, best-frame selection | `anpr/track/crop_bank.py`, `anpr/enhance/quality.py` |
+| Perspective correction | `anpr/detect/corners.py`, `anpr/enhance/rectify.py` |
+| Enhancement and super-resolution | `anpr/enhance/` (glare, denoise, deblur, fuse, sr) |
+| OCR | `anpr/read/` (crnn, awiros, parseq, rows, beam_grammar, ensemble) |
+| Temporal fusion and the confirm decision | `anpr/pipeline.py` (`_crop_reads`, `_string_vote`, `_vote_pick`, `_decide`), `anpr/fuse/rover.py` |
+| Indian format validation | `anpr/plate_grammar.py`, `config/india_codes.yaml` |
+| Per-camera configuration | `anpr/camera/profile.py`, `config/camera_profiles.yaml` |
+| Evaluation | `tools/anpr_benchmark.py`, `anpr_replay.py`, `anpr_profile_cameras.py`, `anpr_gt_sheets.py`, `anpr_gt_plates.py` |
+
+Every stage the target architecture asks for exists and is separately configurable. The package keeps
+its present names rather than being renamed into `detection/`, `tracking/`, `plate_detection/` and so
+on: `services/edge-worker/anpr/` is a vendored copy of the research repository's package, changes are
+carried across by hand, and a rename would break that for no measured gain. The table above is the map
+between the two namings.
+
 ## What was tested and rejected
 
 | Change | Result |

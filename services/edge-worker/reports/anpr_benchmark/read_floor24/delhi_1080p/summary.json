@@ -1,0 +1,190 @@
+{
+ "camera": "delhi_1080p",
+ "clip": "delhi_1080p.mp4",
+ "resolution": "1920x1080",
+ "fps": 29.74,
+ "frames": 797,
+ "duration_s": 26.8,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_mix_n/reader_crnn",
+  "camera": "delhi_1080p",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_mix_n.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false
+ },
+ "frames_processed": 797,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 797
+ },
+ "sampler": {
+  "looked": 797,
+  "processed": 797,
+  "bursts": 1,
+  "stride": 5,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 10804,
+ "unique_vehicle_tracks": 254,
+ "tracks_with_plate_candidates": 74,
+ "tracks_by_size_band": {
+  "MEDIUM": 36,
+  "LARGE": 22,
+  "SMALL": 14,
+  "VERY_SMALL": 2
+ },
+ "plate_detections": 1892,
+ "plate_candidates_banked": 1892,
+ "ocr_calls": 7210,
+ "ocr_images": 8533,
+ "tracks_with_ocr_result": 74,
+ "unique_ocr_results": 65,
+ "status_counts": {
+  "UNREADABLE": 180,
+  "CANDIDATE": 57,
+  "CONFIRMED": 17
+ },
+ "confirmed_plates": [
+  "DL13CA2927",
+  "DL14CE5987",
+  "DL1CQ5334",
+  "DL1LT1087",
+  "DL1RTA5056",
+  "DL3CCN5712",
+  "DL5SBW7737",
+  "DL7CR3761",
+  "HR26CC2083",
+  "UP14DM7400",
+  "UP78FH9291"
+ ],
+ "emitted": [
+  {
+   "plate": "DL1CQ5334",
+   "confirmed": true,
+   "score": 0.693,
+   "track": 3
+  },
+  {
+   "plate": "DL14CE5987",
+   "confirmed": true,
+   "score": 0.665,
+   "track": 2
+  },
+  {
+   "plate": "DL5SBW7737",
+   "confirmed": true,
+   "score": 0.479,
+   "track": 65
+  },
+  {
+   "plate": "DL7CR3761",
+   "confirmed": true,
+   "score": 0.616,
+   "track": 100
+  },
+  {
+   "plate": "DL13CA2927",
+   "confirmed": true,
+   "score": 0.692,
+   "track": 339
+  },
+  {
+   "plate": "DL13CA2927",
+   "confirmed": true,
+   "score": 0.66,
+   "track": 491
+  },
+  {
+   "plate": "DL13CA2927",
+   "confirmed": true,
+   "score": 0.523,
+   "track": 549
+  },
+  {
+   "plate": "UP14DM7400",
+   "confirmed": true,
+   "score": 0.663,
+   "track": 532
+  },
+  {
+   "plate": "UP14DM7400",
+   "confirmed": true,
+   "score": 0.456,
+   "track": 569
+  },
+  {
+   "plate": "HR26CC2083",
+   "confirmed": true,
+   "score": 0.979,
+   "track": 581
+  },
+  {
+   "plate": "DL1LT1087",
+   "confirmed": true,
+   "score": 0.709,
+   "track": 512
+  },
+  {
+   "plate": "DL3CCN5712",
+   "confirmed": true,
+   "score": 0.548,
+   "track": 640
+  },
+  {
+   "plate": "HR26CC2083",
+   "confirmed": true,
+   "score": 0.623,
+   "track": 627
+  },
+  {
+   "plate": "DL1RTA5056",
+   "confirmed": true,
+   "score": 0.732,
+   "track": 579
+  },
+  {
+   "plate": "UP78FH9291",
+   "confirmed": true,
+   "score": 0.646,
+   "track": 671
+  },
+  {
+   "plate": "HR26CC2083",
+   "confirmed": true,
+   "score": 0.728,
+   "track": 691
+  },
+  {
+   "plate": "HR26CC2083",
+   "confirmed": true,
+   "score": 0.54,
+   "track": 699
+  }
+ ],
+ "unreadable_reasons": {
+  "no_plate_detected": 180
+ },
+ "wall_s": 508.9,
+ "finish_s": 43.0,
+ "processed_fps": 1.57,
+ "clip_seconds_per_wall_second": 0.053,
+ "frame_latency_ms_p50": 276.4,
+ "frame_latency_ms_p95": 2252.8,
+ "cpu_percent_mean": 171.2,
+ "cpu_cores": 8,
+ "rss_max_mb": 5049,
+ "gpu_mem_max_mb": 1214,
+ "replayed_from": "port",
+ "replay_wall_s": 419.0
+}

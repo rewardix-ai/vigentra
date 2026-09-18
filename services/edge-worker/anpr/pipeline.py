@@ -422,6 +422,14 @@ class ANPRPipeline:
                 if by_hyp and gap <= 3000 and any(editdistance.eval(x, y) <= 1 for x in tops[id(a)] for y in tops[id(b)]):
                     parent[find(id(a))] = find(id(b))
                     continue
+                # The same registration, read twice within seconds, is one vehicle wherever its box sits:
+                # the tracker splits a car crossing the frame into fragments far apart in space, and
+                # delhi_1080p reported HR26CC2083 four times and DL13CA2927 three times. Two vehicles
+                # carrying one registration through the same junction inside the window do not happen.
+                same_plate_s = float(self.rcfg.get("merge_same_plate_seconds", 0))
+                if same_plate_s and a["plate"] == b["plate"] and gap <= same_plate_s * 1000:
+                    parent[find(id(a))] = find(id(b))
+                    continue
                 if editdistance.eval(a["plate"], b["plate"]) > 1:
                     continue
                 iou = _iou(tuple(a["vehicle_box"]), tuple(b["vehicle_box"]))

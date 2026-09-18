@@ -16,7 +16,10 @@
 defaults:
   thresholds: {}
   sampling: {stride: null}
-  frame_quality: {night_mode: auto}
+  # off: never CLAHE a whole dark frame before detection. On rec_cam07 (median luma 41) the enhanced frame
+  # cost a third of the tracked detections; no camera measured better with it on. A camera may set
+  # night_mode: auto or on for itself.
+  frame_quality: {night_mode: off}
 
 cameras:
   cam01:

@@ -11,6 +11,9 @@ detector:
   - 5
   - 7
   vehicle_imgsz: 1920
+  # Never enlarge a frame to vehicle_imgsz: a 720p grid frame detected at 1280 tracks about twice as many
+  # vehicles as the same frame stretched to 1920, and runs 1.5-9x faster (docs/anpr-optimisation.md).
+  vehicle_upscale: false
   plate_conf: 0.2
   plate_imgsz: 640
   vehicle_crop_upscale_min_px: 640

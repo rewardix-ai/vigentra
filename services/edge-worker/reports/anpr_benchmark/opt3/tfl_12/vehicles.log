@@ -1,0 +1,6 @@
+[TFL_12] Vehicle ID: tfl_12_s0_t31 (car)
+Track duration: 4.8 s  frames 150-270
+Plate candidates: 1  best frame: 160  plate size: 23x14  quality: 0.465
+OCR (per candidate, first 40):
+  f  160 18x9 q=0.47 det=0.27 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.4<8.0  emitted: no

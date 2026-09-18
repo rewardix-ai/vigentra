@@ -1,0 +1,13 @@
+[TFL_01] Vehicle ID: tfl_01_s0_t2 (car)
+Track duration: 0.4 s  frames 0-10
+Plate candidates: 1  best frame:   plate size:   quality: 
+OCR (per candidate, first 40):
+  f  245 64x16 q=0.94 det=0.43 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  no_plate_detected  emitted: no
+
+[TFL_01] Vehicle ID: tfl_01_s0_t2 (truck)
+Track duration: 0.4 s  frames 245-255
+Plate candidates: 1  best frame: 245  plate size: 79x21  quality: 0.938
+OCR (per candidate, first 40):
+  f  245 64x16 q=0.94 det=0.43 -> - 0.00
+FINAL: GG04R0  status CANDIDATE  confidence 0.0093  readers_disagree  emitted: no

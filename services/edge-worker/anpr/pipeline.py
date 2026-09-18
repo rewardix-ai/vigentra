@@ -862,6 +862,15 @@ class ANPRPipeline:
                 # text reader's unanimous DL1CW0942 (3 edits, 5 of 46 v6 reads) does not
                 import editdistance
                 return s != win and editdistance.eval(s, win) <= 2 and not dropped_one(s)
+            # Corroboration outranks a minority objection: when readers of both kinds read `win` exactly,
+            # on their own crops, a third reader's smaller vote for something else is that reader
+            # failing, not a disagreement about the glyphs. delhi_1080p t534 (DL1CW0942): the text
+            # reader read it on 25 crops and v6 on 6, while the primary's own vote went to DL1CN6942 on
+            # 4. Without this the track fell back to a never-confirmed pooled read. The rule still needs
+            # two kinds: two CRNNs agreeing is the case that produced DL11AB3684.
+            kinds = {("text" if o in text_readers else "crnn") for o in names if support(o) >= 2}
+            if len(kinds) >= 2:
+                return False
             return any(o != n and votes[o] is not None and votes[o][1] >= min_crops and rival(votes[o][0].plate)
                        and support(o) < min_crops for o in names)
 
@@ -883,7 +892,7 @@ class ANPRPipeline:
                 win = v[0].plate
                 backed = any(e[1] == win and (e[3] - {n}) for e in entries)
                 near = int(self.rcfg.get("vote_near_backing", 0))
-                if not backed and near and text_readers:
+                if not backed and near and text_readers:  # near backing needs two kinds of reader
                     # reading.vote_near_backing: only a reader of a different kind may back a string it
                     # did not produce exactly. Two CRNNs share their confusions: on delhi_1080p the
                     # primary's DL4SAS6522 "backed" v6's DL6SAS6522 against the true DL6SAS6524. The
@@ -896,7 +905,13 @@ class ANPRPipeline:
                     # "backed" by v6's DL11SD9385, which only says a glyph is there.
                     def one_sub(s: str) -> bool:
                         return len(s) == len(win) and sum(x != y for x, y in zip(s, win)) == 1
-                    backers = {e[4] for e in entries if (e[3] - {n}) & text_readers and one_sub(e[1])}
+                    # a reader of the other kind: the whole-crop text reader backing a CRNN, or a CRNN
+                    # backing the text reader. Two CRNNs may not back each other - they share their
+                    # confusions - which is what let DL4SAS6522 "back" DL6SAS6522 over DL6SAS6524.
+                    def other_kind(readers: set) -> bool:
+                        return bool(readers & text_readers) if n not in text_readers else bool(readers - text_readers)
+
+                    backers = {e[4] for e in entries if other_kind(e[3] - {n}) and one_sub(e[1])}
                     backed = len(backers) >= near
                 if backed and not opposed(n, win):
                     return v

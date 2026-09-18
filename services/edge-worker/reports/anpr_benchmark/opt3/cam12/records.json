@@ -1,0 +1,179 @@
+[
+ {
+  "track_id": "cam12_s0_t1",
+  "camera_id": "cam12",
+  "first_seen_pts_ms": 2240.0,
+  "last_seen_pts_ms": 2960.0,
+  "first_frame": 28,
+  "last_frame": 37,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   59.9,
+   241.2,
+   170.1,
+   450.7
+  ],
+  "n_frames_seen": 8,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam12_s0_t7",
+  "camera_id": "cam12",
+  "first_seen_pts_ms": 7920.0,
+  "last_seen_pts_ms": 8480.0,
+  "first_frame": 99,
+  "last_frame": 106,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "truck",
+  "frames_fused": 0,
+  "vehicle_box": [
+   70.5,
+   207.4,
+   168.0,
+   379.4
+  ],
+  "n_frames_seen": 8,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam12_s0_t5",
+  "camera_id": "cam12",
+  "first_seen_pts_ms": 4080.0,
+  "last_seen_pts_ms": 8560.0,
+  "first_frame": 51,
+  "last_frame": 107,
+  "status": "CANDIDATE",
+  "plate": "GJ02TS3825",
+  "confidence": 0.0955,
+  "alternates": [
+   {
+    "plate": "GJ13EX3815",
+    "confidence": 0.0619
+   },
+   {
+    "plate": "GJ12EX3825",
+    "confidence": 0.0613
+   },
+   {
+    "plate": "GJ12EX3815",
+    "confidence": 0.0611
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 12,
+  "vehicle_box": [
+   0.0,
+   343.0,
+   132.5,
+   545.1
+  ],
+  "n_frames_seen": 57,
+  "n_plate_hits": 40,
+  "bbox": [
+   10.5,
+   489.7,
+   46.3,
+   502.0
+  ],
+  "reason": "too_few_agreeing_frames",
+  "best_frame": 78,
+  "quality": {
+   "width_px": 44,
+   "height_px": 19,
+   "sharpness_lap": 106.4513931274414,
+   "tenengrad": 20187.69140625,
+   "skew_deg": 0.0,
+   "local_contrast": 63.27764573149189,
+   "bloom_frac": 0.145933014354067,
+   "blur_extent": 1.7683716291901566,
+   "blur_angle_deg": 40.0,
+   "dark_frac": 0.0,
+   "quality_score": 0.5886767813649129
+  },
+  "gate": {
+   "w": 44,
+   "sharp": 106.4513931274414,
+   "contrast": 63.27764573149189,
+   "q": 0.5886767813649129,
+   "n_crops": 40
+  },
+  "glyphs": 6,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.969,
+   0.988,
+   0.684,
+   0.766,
+   0.958,
+   0.956,
+   0.958,
+   0.964,
+   0.952,
+   0.939,
+   0.948
+  ],
+  "det_conf": 0.776,
+  "valid_format": true,
+  "agreement": 0.123,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 16,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.123,
+   0.123,
+   0.123,
+   0.123,
+   0.123,
+   0.123,
+   0.123,
+   0.123,
+   0.123,
+   0.123
+  ]
+ },
+ {
+  "track_id": "cam12_s0_t9",
+  "camera_id": "cam12",
+  "first_seen_pts_ms": 11440.0,
+  "last_seen_pts_ms": 11520.0,
+  "first_frame": 143,
+  "last_frame": 144,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   0.0,
+   439.4,
+   62.9,
+   538.1
+  ],
+  "n_frames_seen": 2,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ }
+]

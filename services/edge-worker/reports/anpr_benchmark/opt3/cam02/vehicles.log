@@ -1,0 +1,24 @@
+[CAM02] Vehicle ID: cam02_s0_t3 (truck)
+Track duration: 5.8 s  frames 0-145
+Plate candidates: 2  best frame: 105  plate size: 28x17  quality: 0.436
+OCR (per candidate, first 40):
+  f  105 23x11 q=0.44 det=0.28 -> - 0.00
+  f  130 23x11 q=0.45 det=0.22 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:2.8<8.0  emitted: no
+
+[CAM02] Vehicle ID: cam02_s0_t422 (bus)
+Track duration: 0.2 s  frames 931-935
+Plate candidates: 1  best frame: 932  plate size: 80x35  quality: 0.729
+OCR (per candidate, first 40):
+  f  932 64x24 q=0.73 det=0.36 -> - 0.00
+FINAL: KL429  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM02] Vehicle ID: cam02_s0_t344 (truck)
+Track duration: 9.8 s  frames 705-949
+Plate candidates: 4  best frame: 880  plate size: 30x18  quality: 0.462
+OCR (per candidate, first 40):
+  f  850 23x12 q=0.46 det=0.32 -> - 0.00
+  f  875 25x12 q=0.47 det=0.31 -> - 0.00
+  f  880 24x12 q=0.46 det=0.46 -> - 0.00
+  f  885 24x12 q=0.46 det=0.30 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.6<8.0  emitted: no

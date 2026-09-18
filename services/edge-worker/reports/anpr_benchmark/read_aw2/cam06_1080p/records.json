@@ -1,0 +1,3099 @@
+[
+ {
+  "track_id": "cam06_1080p_s0_t2",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644365658.02,
+  "last_seen_pts_ms": 1789644366367.4119,
+  "first_frame": 39,
+  "last_frame": 43,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   17.2,
+   63.3,
+   53.1,
+   241.9
+  ],
+  "n_frames_seen": 5,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t8",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644368326.957,
+  "last_seen_pts_ms": 1789644370203.686,
+  "first_frame": 54,
+  "last_frame": 61,
+  "status": "CANDIDATE",
+  "plate": "SS77D45",
+  "confidence": 0.0001,
+  "alternates": [
+   {
+    "plate": "SJ77D45",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "truck",
+  "frames_fused": 2,
+  "vehicle_box": [
+   23.5,
+   0.0,
+   130.4,
+   124.8
+  ],
+  "n_frames_seen": 8,
+  "n_plate_hits": 2,
+  "bbox": [
+   18.0,
+   87.9,
+   57.9,
+   105.7
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 61,
+  "quality": {
+   "width_px": 49,
+   "height_px": 27,
+   "sharpness_lap": 379.8345642089844,
+   "tenengrad": 49871.11328125,
+   "skew_deg": 5.346319198608398,
+   "local_contrast": 81.94953839134001,
+   "bloom_frac": 0.0,
+   "blur_extent": 2.4954669349042646,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.29327286470143615,
+   "quality_score": 0.7832743160489991
+  },
+  "gate": {
+   "w": 49,
+   "sharp": 379.8345642089844,
+   "contrast": 81.94953839134001,
+   "q": 0.7832743160489991,
+   "n_crops": 2
+  },
+  "glyphs": 7,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.517
+  ],
+  "det_conf": 0.667,
+  "valid_format": false,
+  "agreement": 0.189,
+  "grammar_prior": 0.004,
+  "n_hypotheses": 14,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.499,
+   0.402,
+   0.259,
+   0.218,
+   0.758,
+   0.726,
+   0.787
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t12",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644369863.033,
+  "last_seen_pts_ms": 1789644379167.8027,
+  "first_frame": 60,
+  "last_frame": 104,
+  "status": "CANDIDATE",
+  "plate": "HP087555",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "HP084557",
+    "confidence": 0.0
+   },
+   {
+    "plate": "HP084559",
+    "confidence": 0.0
+   },
+   {
+    "plate": "HP084552",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 5,
+  "vehicle_box": [
+   251.1,
+   845.9,
+   401.3,
+   1080.0
+  ],
+  "n_frames_seen": 45,
+  "n_plate_hits": 24,
+  "bbox": [
+   342.1,
+   906.1,
+   413.8,
+   966.9
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 101,
+  "quality": {
+   "width_px": 89,
+   "height_px": 92,
+   "sharpness_lap": 752.080810546875,
+   "tenengrad": 29774.53125,
+   "skew_deg": 0.0,
+   "local_contrast": 67.6060757730065,
+   "bloom_frac": 0.020884220810942843,
+   "blur_extent": 0.0,
+   "blur_angle_deg": 120.0,
+   "dark_frac": 0.061187103077674644,
+   "quality_score": 0.9816814475217016
+  },
+  "gate": {
+   "w": 89,
+   "sharp": 752.080810546875,
+   "contrast": 67.6060757730065,
+   "q": 0.9816814475217016,
+   "n_crops": 24
+  },
+  "glyphs": 5,
+  "frames_agreeing": 0,
+  "two_row": true,
+  "reg_cc": [
+   1.0,
+   0.789,
+   0.808,
+   0.883,
+   0.587
+  ],
+  "det_conf": 0.353,
+  "valid_format": true,
+  "agreement": 0.0,
+  "grammar_prior": 0.105,
+  "n_hypotheses": 49,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.6,
+   0.374,
+   0.239,
+   0.117,
+   0.207,
+   0.626,
+   0.439,
+   0.305
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t1",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644356680.354,
+  "last_seen_pts_ms": 1789644426404.845,
+  "first_frame": 0,
+  "last_frame": 310,
+  "status": "CANDIDATE",
+  "plate": "GJ18X6705",
+  "confidence": 0.2515,
+  "alternates": [
+   {
+    "plate": "GJ18X705",
+    "confidence": 0.1239
+   },
+   {
+    "plate": "GJ13X705",
+    "confidence": 0.0612
+   },
+   {
+    "plate": "GJ183705",
+    "confidence": 0.0438
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "truck",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1371.1,
+   846.9,
+   1705.6,
+   1074.9
+  ],
+  "n_frames_seen": 295,
+  "n_plate_hits": 68,
+  "bbox": [
+   1411.5,
+   988.7,
+   1471.0,
+   1030.3
+  ],
+  "reason": "second_reader_only",
+  "best_frame": 285,
+  "quality": {
+   "width_px": 74,
+   "height_px": 62,
+   "sharpness_lap": 768.1197509765625,
+   "tenengrad": 55682.2890625,
+   "skew_deg": 2.1354007720947266,
+   "local_contrast": 68.53871831253103,
+   "bloom_frac": 0.0,
+   "blur_extent": 0.7557027464877876,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.05536181342632956,
+   "quality_score": 0.9230688329446827
+  },
+  "gate": {
+   "w": 74,
+   "sharp": 768.1197509765625,
+   "contrast": 68.53871831253103,
+   "q": 0.9230688329446827,
+   "n_crops": 64
+  },
+  "glyphs": 10,
+  "frames_agreeing": 51,
+  "two_row": true,
+  "reg_cc": [
+   1.0,
+   0.799,
+   0.925,
+   0.741,
+   0.81,
+   0.843,
+   0.912,
+   0.758,
+   0.756,
+   0.93,
+   0.735,
+   0.881
+  ],
+  "det_conf": 0.58,
+  "valid_format": true,
+  "agreement": 0.252,
+  "grammar_prior": 0.5,
+  "n_hypotheses": 216,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.252,
+   0.252,
+   0.252,
+   0.252,
+   0.252,
+   0.252,
+   0.252,
+   0.252,
+   0.252
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t19",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644419804.117,
+  "last_seen_pts_ms": 1789644426977.4521,
+  "first_frame": 284,
+  "last_frame": 313,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   42.6,
+   77.5,
+   117.9,
+   127.2
+  ],
+  "n_frames_seen": 19,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t23",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644423969.978,
+  "last_seen_pts_ms": 1789644435377.0627,
+  "first_frame": 303,
+  "last_frame": 353,
+  "status": "CANDIDATE",
+  "plate": "DN04TA1195",
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 4,
+  "vehicle_box": [
+   277.8,
+   921.8,
+   403.8,
+   1080.0
+  ],
+  "n_frames_seen": 51,
+  "n_plate_hits": 18,
+  "bbox": [
+   333.5,
+   914.0,
+   413.1,
+   933.1
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 349,
+  "quality": {
+   "width_px": 99,
+   "height_px": 28,
+   "sharpness_lap": 1610.8759765625,
+   "tenengrad": 68612.9453125,
+   "skew_deg": 0.0,
+   "local_contrast": 75.86806867987904,
+   "bloom_frac": 0.002886002886002886,
+   "blur_extent": 1.7347371806594398,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.20274170274170275,
+   "quality_score": 0.9641152853992667
+  },
+  "gate": {
+   "w": 103,
+   "sharp": 3030.95263671875,
+   "contrast": 78.20565184731142,
+   "q": 0.9705857345009766,
+   "n_crops": 18
+  },
+  "glyphs": 12,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.0,
+   0.685,
+   0.751,
+   0.0,
+   0.091,
+   0.0,
+   0.581,
+   0.0
+  ],
+  "det_conf": 0.627,
+  "valid_format": true,
+  "agreement": 0.0,
+  "grammar_prior": 0.7,
+  "n_hypotheses": 54,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.225,
+   0.358,
+   0.225,
+   0.219,
+   0.336,
+   0.387,
+   0.39,
+   0.546,
+   0.241,
+   0.334
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t26",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644426593.354,
+  "last_seen_pts_ms": 1789644448260.9092,
+  "first_frame": 311,
+  "last_frame": 363,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "truck",
+  "frames_fused": 0,
+  "vehicle_box": [
+   630.9,
+   859.8,
+   854.4,
+   1080.0
+  ],
+  "n_frames_seen": 50,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t37",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644435776.178,
+  "last_seen_pts_ms": 1789644449533.834,
+  "first_frame": 355,
+  "last_frame": 367,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "truck",
+  "frames_fused": 0,
+  "vehicle_box": [
+   583.2,
+   670.2,
+   923.4,
+   1076.7
+  ],
+  "n_frames_seen": 13,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t39",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644435992.1082,
+  "last_seen_pts_ms": 1789644452830.635,
+  "first_frame": 356,
+  "last_frame": 379,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   45.0,
+   76.8,
+   122.4,
+   126.9
+  ],
+  "n_frames_seen": 21,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t44",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644453229.769,
+  "last_seen_pts_ms": 1789644453439.786,
+  "first_frame": 381,
+  "last_frame": 382,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   12.0,
+   77.9,
+   155.8,
+   114.1
+  ],
+  "n_frames_seen": 2,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t32",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644432565.325,
+  "last_seen_pts_ms": 1789644459513.128,
+  "first_frame": 342,
+  "last_frame": 401,
+  "status": "CANDIDATE",
+  "plate": "DL1AE4315",
+  "confidence": 0.2253,
+  "alternates": [
+   {
+    "plate": "GJ14L3222",
+    "confidence": 0.1243
+   },
+   {
+    "plate": "LA16C423",
+    "confidence": 0.0861
+   },
+   {
+    "plate": "LA165822",
+    "confidence": 0.0742
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1529.2,
+   940.5,
+   1631.6,
+   1080.0
+  ],
+  "n_frames_seen": 60,
+  "n_plate_hits": 23,
+  "bbox": [
+   1569.2,
+   1032.7,
+   1619.0,
+   1048.8
+  ],
+  "reason": "second_reader_only",
+  "best_frame": 400,
+  "quality": {
+   "width_px": 62,
+   "height_px": 24,
+   "sharpness_lap": 604.0016479492188,
+   "tenengrad": 43212.55078125,
+   "skew_deg": 0.7080826163291931,
+   "local_contrast": 74.21062137783915,
+   "bloom_frac": 0.002688172043010753,
+   "blur_extent": 1.2474972558526414,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.13844086021505375,
+   "quality_score": 0.865812389309662
+  },
+  "gate": {
+   "w": 62,
+   "sharp": 604.0016479492188,
+   "contrast": 74.21062137783915,
+   "q": 0.865812389309662,
+   "n_crops": 23
+  },
+  "glyphs": 11,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.884,
+   0.924,
+   0.941,
+   0.911,
+   0.879,
+   0.518,
+   0.559,
+   0.906,
+   0.719,
+   0.327,
+   0.545
+  ],
+  "det_conf": 0.723,
+  "valid_format": true,
+  "agreement": 0.234,
+  "grammar_prior": 0.35,
+  "n_hypotheses": 13,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.234,
+   0.234,
+   0.234,
+   0.234,
+   0.234,
+   0.234,
+   0.234,
+   0.234,
+   0.234
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t34",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644432970.098,
+  "last_seen_pts_ms": 1789644466307.0981,
+  "first_frame": 344,
+  "last_frame": 437,
+  "status": "CONFIRMED",
+  "plate": "GJ32AG2883",
+  "confidence": 0.959,
+  "alternates": [
+   {
+    "plate": "GJ32AG2803",
+    "confidence": 0.041
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 11,
+  "vehicle_box": [
+   305.8,
+   1019.9,
+   485.1,
+   1079.5
+  ],
+  "n_frames_seen": 86,
+  "n_plate_hits": 68,
+  "bbox": [
+   420.9,
+   1031.5,
+   564.9,
+   1069.6
+  ],
+  "reason": "",
+  "best_frame": 413,
+  "quality": {
+   "width_px": 179,
+   "height_px": 58,
+   "sharpness_lap": 3215.3095703125,
+   "tenengrad": 63373.66015625,
+   "skew_deg": 0.0,
+   "local_contrast": 71.06804756343395,
+   "bloom_frac": 0.0,
+   "blur_extent": 1.5805659985095257,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.05008668849932576,
+   "quality_score": 0.9818199478291547
+  },
+  "gate": {
+   "w": 179,
+   "sharp": 3215.3095703125,
+   "contrast": 71.06804756343395,
+   "q": 0.9818199478291547,
+   "n_crops": 64
+  },
+  "glyphs": 9,
+  "frames_agreeing": 55,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.892,
+   0.952,
+   0.876,
+   0.899,
+   0.835,
+   0.901,
+   0.0,
+   0.92,
+   0.932,
+   0.915,
+   0.947
+  ],
+  "det_conf": 0.791,
+  "valid_format": true,
+  "agreement": 0.959,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 58,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.959,
+   0.959,
+   0.959,
+   0.959,
+   0.959,
+   0.959,
+   0.959,
+   0.959,
+   0.959,
+   0.959
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t46",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644464368.292,
+  "last_seen_pts_ms": 1789644485119.643,
+  "first_frame": 427,
+  "last_frame": 502,
+  "status": "CANDIDATE",
+  "plate": "GJ07AE0461",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "RJ07AE0461",
+    "confidence": 0.0
+   },
+   {
+    "plate": "GJ03AU0461",
+    "confidence": 0.0
+   },
+   {
+    "plate": "GJ07AE3061",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1572.1,
+   955.8,
+   1691.7,
+   1079.6
+  ],
+  "n_frames_seen": 76,
+  "n_plate_hits": 40,
+  "bbox": [
+   1567.4,
+   957.8,
+   1647.9,
+   976.3
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 496,
+  "quality": {
+   "width_px": 100,
+   "height_px": 27,
+   "sharpness_lap": 2002.0477294921875,
+   "tenengrad": 70478.8515625,
+   "skew_deg": 0.0,
+   "local_contrast": 77.37274453609902,
+   "bloom_frac": 0.0007407407407407407,
+   "blur_extent": 2.2878429449976676,
+   "blur_angle_deg": 120.0,
+   "dark_frac": 0.23925925925925925,
+   "quality_score": 0.9567124199027973
+  },
+  "gate": {
+   "w": 100,
+   "sharp": 2002.0477294921875,
+   "contrast": 77.37274453609902,
+   "q": 0.9567124199027973,
+   "n_crops": 40
+  },
+  "glyphs": 9,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.957,
+   0.958,
+   0.935,
+   0.927,
+   0.967,
+   0.935,
+   0.741,
+   0.445,
+   0.942,
+   0.938,
+   0.951
+  ],
+  "det_conf": 0.729,
+  "valid_format": true,
+  "agreement": 0.074,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 55,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.557,
+   0.839,
+   0.746,
+   0.828,
+   0.855,
+   0.614,
+   0.493,
+   0.356,
+   0.477,
+   0.702
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t47",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644476785.394,
+  "last_seen_pts_ms": 1789644497741.054,
+  "first_frame": 481,
+  "last_frame": 549,
+  "status": "CONFIRMED",
+  "plate": "GJ11CK1044",
+  "confidence": 0.5223,
+  "alternates": [
+   {
+    "plate": "GJ11CX1044",
+    "confidence": 0.1533
+   },
+   {
+    "plate": "GJ11CX1644",
+    "confidence": 0.03
+   },
+   {
+    "plate": "GJ11CE1044",
+    "confidence": 0.0235
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   227.3,
+   970.5,
+   344.4,
+   1080.0
+  ],
+  "n_frames_seen": 68,
+  "n_plate_hits": 58,
+  "bbox": [
+   282.2,
+   962.4,
+   343.3,
+   999.7
+  ],
+  "reason": "",
+  "best_frame": 545,
+  "quality": {
+   "width_px": 76,
+   "height_px": 55,
+   "sharpness_lap": 613.3698120117188,
+   "tenengrad": 42343.390625,
+   "skew_deg": 4.763640880584717,
+   "local_contrast": 77.37744297213038,
+   "bloom_frac": 0.003110047846889952,
+   "blur_extent": 1.2228922701022564,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.18301435406698566,
+   "quality_score": 0.9084782212232316
+  },
+  "gate": {
+   "w": 76,
+   "sharp": 613.3698120117188,
+   "contrast": 77.37744297213038,
+   "q": 0.9084782212232316,
+   "n_crops": 58
+  },
+  "glyphs": 11,
+  "frames_agreeing": 21,
+  "two_row": true,
+  "reg_cc": [
+   1.0,
+   0.968,
+   0.951,
+   0.937,
+   0.957,
+   0.934,
+   0.939,
+   0.929,
+   0.911,
+   0.921,
+   0.902,
+   0.923
+  ],
+  "det_conf": 0.809,
+  "valid_format": true,
+  "agreement": 0.522,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 50,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.522,
+   0.522,
+   0.522,
+   0.522,
+   0.522,
+   0.522,
+   0.522,
+   0.522,
+   0.522,
+   0.522
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t52",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644489427.4392,
+  "last_seen_pts_ms": 1789644503105.8472,
+  "first_frame": 525,
+  "last_frame": 576,
+  "status": "CANDIDATE",
+  "plate": "GJ34EA1923",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "GJ34ES1921",
+    "confidence": 0.0
+   },
+   {
+    "plate": "GJ34AS1923",
+    "confidence": 0.0
+   },
+   {
+    "plate": "GJ34ES1923",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 10,
+  "vehicle_box": [
+   1095.4,
+   760.1,
+   1295.4,
+   1042.3
+  ],
+  "n_frames_seen": 52,
+  "n_plate_hits": 30,
+  "bbox": [
+   1175.2,
+   819.1,
+   1249.8,
+   835.9
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 571,
+  "quality": {
+   "width_px": 92,
+   "height_px": 26,
+   "sharpness_lap": 1230.4837646484375,
+   "tenengrad": 71461.390625,
+   "skew_deg": 0.0,
+   "local_contrast": 79.77340043579592,
+   "bloom_frac": 0.023411371237458192,
+   "blur_extent": 2.4555365042095434,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.14088628762541805,
+   "quality_score": 0.9560840185407289
+  },
+  "gate": {
+   "w": 92,
+   "sharp": 1230.4837646484375,
+   "contrast": 79.77340043579592,
+   "q": 0.9560840185407289,
+   "n_crops": 30
+  },
+  "glyphs": 5,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.951,
+   0.422,
+   0.956,
+   0.987,
+   0.924,
+   0.974,
+   0.467,
+   0.82,
+   0.417
+  ],
+  "det_conf": 0.681,
+  "valid_format": true,
+  "agreement": 0.011,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 57,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.64,
+   0.512,
+   0.519,
+   0.714,
+   0.553,
+   0.522,
+   0.336,
+   0.334,
+   0.561,
+   0.328
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t56",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644493990.4338,
+  "last_seen_pts_ms": 1789644529625.8152,
+  "first_frame": 548,
+  "last_frame": 655,
+  "status": "CANDIDATE",
+  "plate": "AR28H1337",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "PR28H1337",
+    "confidence": 0.0
+   },
+   {
+    "plate": "PR25H1337",
+    "confidence": 0.0
+   },
+   {
+    "plate": "PR28H1331",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 1,
+  "vehicle_box": [
+   1822.3,
+   306.5,
+   1920.0,
+   469.5
+  ],
+  "n_frames_seen": 108,
+  "n_plate_hits": 11,
+  "bbox": [
+   1460.6,
+   214.8,
+   1551.3,
+   283.8
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 581,
+  "quality": {
+   "width_px": 113,
+   "height_px": 104,
+   "sharpness_lap": 844.924560546875,
+   "tenengrad": 20930.76953125,
+   "skew_deg": 0.0,
+   "local_contrast": 49.720751801100334,
+   "bloom_frac": 8.509189925119128e-05,
+   "blur_extent": 0.0,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.05003403675970047,
+   "quality_score": 0.9949625595643296
+  },
+  "gate": {
+   "w": 113,
+   "sharp": 844.924560546875,
+   "contrast": 49.720751801100334,
+   "q": 0.9949625595643296,
+   "n_crops": 11
+  },
+  "glyphs": 5,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "det_conf": 0.241,
+  "valid_format": true,
+  "agreement": 0.087,
+  "grammar_prior": 0.35,
+  "n_hypotheses": 45,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.27,
+   0.315,
+   0.784,
+   0.098,
+   0.354,
+   0.672,
+   0.827,
+   0.722,
+   0.509
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t61",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644541038.5332,
+  "last_seen_pts_ms": 1789644541832.761,
+  "first_frame": 707,
+  "last_frame": 711,
+  "status": "CANDIDATE",
+  "plate": "GJ17CJ7578",
+  "confidence": 0.9935,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 2,
+  "vehicle_box": [
+   1133.5,
+   775.4,
+   1305.9,
+   976.4
+  ],
+  "n_frames_seen": 5,
+  "n_plate_hits": 2,
+  "bbox": [
+   1220.0,
+   787.8,
+   1298.1,
+   806.1
+  ],
+  "reason": "too_few_agreeing_frames",
+  "best_frame": 707,
+  "quality": {
+   "width_px": 97,
+   "height_px": 27,
+   "sharpness_lap": 2165.69482421875,
+   "tenengrad": 82041.46875,
+   "skew_deg": 0.0,
+   "local_contrast": 82.11190291303691,
+   "bloom_frac": 0.03436426116838488,
+   "blur_extent": 0.7558251085504385,
+   "blur_angle_deg": 30.0,
+   "dark_frac": 0.15998472699503627,
+   "quality_score": 0.9639572802618889
+  },
+  "gate": {
+   "w": 97,
+   "sharp": 2165.69482421875,
+   "contrast": 82.11190291303691,
+   "q": 0.9639572802618889,
+   "n_crops": 2
+  },
+  "glyphs": 9,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.966
+  ],
+  "det_conf": 0.722,
+  "valid_format": true,
+  "agreement": 1.0,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 2,
+  "sr_disagree": false,
+  "per_char_conf": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t60",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644535539.436,
+  "last_seen_pts_ms": 1789644542742.0051,
+  "first_frame": 690,
+  "last_frame": 716,
+  "status": "CONFIRMED",
+  "plate": "GJ11CJ7578",
+  "confidence": 0.421,
+  "alternates": [
+   {
+    "plate": "GJ11CJ3578",
+    "confidence": 0.1837
+   },
+   {
+    "plate": "GJ11CJ7978",
+    "confidence": 0.1078
+   },
+   {
+    "plate": "KA11MJ7379",
+    "confidence": 0.0771
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1226.5,
+   922.4,
+   1352.9,
+   1080.0
+  ],
+  "n_frames_seen": 26,
+  "n_plate_hits": 24,
+  "bbox": [
+   1234.0,
+   963.4,
+   1319.0,
+   981.6
+  ],
+  "reason": "",
+  "best_frame": 713,
+  "quality": {
+   "width_px": 106,
+   "height_px": 28,
+   "sharpness_lap": 2538.199462890625,
+   "tenengrad": 84237.0625,
+   "skew_deg": 0.0,
+   "local_contrast": 78.90083597943081,
+   "bloom_frac": 0.02358490566037736,
+   "blur_extent": 0.48363802292286595,
+   "blur_angle_deg": 40.0,
+   "dark_frac": 0.13847708894878707,
+   "quality_score": 0.9726880119832799
+  },
+  "gate": {
+   "w": 106,
+   "sharp": 2538.199462890625,
+   "contrast": 78.90083597943081,
+   "q": 0.9726880119832799,
+   "n_crops": 24
+  },
+  "glyphs": 9,
+  "frames_agreeing": 4,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.928,
+   0.963,
+   0.967,
+   0.942,
+   0.94,
+   0.959,
+   0.93,
+   0.929,
+   0.911,
+   0.905,
+   0.949
+  ],
+  "det_conf": 0.76,
+  "valid_format": true,
+  "agreement": 0.421,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 11,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.421,
+   0.421,
+   0.421,
+   0.421,
+   0.421,
+   0.421,
+   0.421,
+   0.421,
+   0.421,
+   0.421
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t66",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644543586.799,
+  "last_seen_pts_ms": 1789644544330.22,
+  "first_frame": 721,
+  "last_frame": 725,
+  "status": "CANDIDATE",
+  "plate": "KB40AA4609",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "KB00AA4609",
+    "confidence": 0.0
+   },
+   {
+    "plate": "KB00AA4689",
+    "confidence": 0.0
+   },
+   {
+    "plate": "KB00AA4699",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 4,
+  "vehicle_box": [
+   42.5,
+   77.2,
+   152.2,
+   122.2
+  ],
+  "n_frames_seen": 5,
+  "n_plate_hits": 4,
+  "bbox": [
+   32.3,
+   98.3,
+   94.9,
+   114.9
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 723,
+  "quality": {
+   "width_px": 78,
+   "height_px": 25,
+   "sharpness_lap": 134.5713348388672,
+   "tenengrad": 7901.30810546875,
+   "skew_deg": 3.918248414993286,
+   "local_contrast": 50.71569945055405,
+   "bloom_frac": 0.0,
+   "blur_extent": 3.5104347007513015,
+   "blur_angle_deg": 30.0,
+   "dark_frac": 0.5733333333333334,
+   "quality_score": 0.7302048963472935
+  },
+  "gate": {
+   "w": 78,
+   "sharp": 134.5713348388672,
+   "contrast": 50.71569945055405,
+   "q": 0.7302048963472935,
+   "n_crops": 4
+  },
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.925,
+   0.936,
+   0.885
+  ],
+  "det_conf": 0.433,
+  "valid_format": false,
+  "agreement": 0.083,
+  "grammar_prior": 0.05,
+  "n_hypotheses": 39,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.422,
+   0.386,
+   0.313,
+   0.521,
+   0.431,
+   0.735,
+   0.59,
+   0.322,
+   0.299,
+   0.684
+  ],
+  "glyphs": 2
+ },
+ {
+  "track_id": "cam06_1080p_s0_t67",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644546041.413,
+  "last_seen_pts_ms": 1789644556100.527,
+  "first_frame": 735,
+  "last_frame": 772,
+  "status": "CANDIDATE",
+  "plate": "TN103591",
+  "confidence": 0.1618,
+  "alternates": [
+   {
+    "plate": "MH03MH8581",
+    "confidence": 0.1147
+   },
+   {
+    "plate": "TS31TT5351",
+    "confidence": 0.0968
+   },
+   {
+    "plate": "GJ11XS3591",
+    "confidence": 0.0944
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 9,
+  "vehicle_box": [
+   752.7,
+   896.2,
+   884.0,
+   1080.0
+  ],
+  "n_frames_seen": 38,
+  "n_plate_hits": 12,
+  "bbox": [
+   806.9,
+   811.0,
+   873.9,
+   831.1
+  ],
+  "reason": "too_few_agreeing_frames",
+  "best_frame": 765,
+  "quality": {
+   "width_px": 83,
+   "height_px": 31,
+   "sharpness_lap": 907.6585083007812,
+   "tenengrad": 51890.671875,
+   "skew_deg": 0.0,
+   "local_contrast": 77.37387385577267,
+   "bloom_frac": 0.004663816556548776,
+   "blur_extent": 1.138118615939662,
+   "blur_angle_deg": 40.0,
+   "dark_frac": 0.150408083948698,
+   "quality_score": 0.9466862662599365
+  },
+  "gate": {
+   "w": 83,
+   "sharp": 907.6585083007812,
+   "contrast": 77.37387385577267,
+   "q": 0.9466862662599365,
+   "n_crops": 12
+  },
+  "glyphs": 9,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.691,
+   0.399,
+   0.533,
+   0.454,
+   0.0,
+   0.456,
+   0.401,
+   0.64,
+   0.0,
+   0.433
+  ],
+  "det_conf": 0.675,
+  "valid_format": true,
+  "agreement": 0.178,
+  "grammar_prior": 0.35,
+  "n_hypotheses": 11,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.178,
+   0.178,
+   0.178,
+   0.178,
+   0.178,
+   0.178,
+   0.178,
+   0.178
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t58",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644561536.9202,
+  "last_seen_pts_ms": 1789644561536.9202,
+  "first_frame": 802,
+  "last_frame": 802,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 0,
+  "vehicle_box": [
+   947.0,
+   78.5,
+   1386.9,
+   198.4
+  ],
+  "n_frames_seen": 1,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t69",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644557604.762,
+  "last_seen_pts_ms": 1789644569958.6382,
+  "first_frame": 781,
+  "last_frame": 833,
+  "status": "CANDIDATE",
+  "plate": "DL020226",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "DL027229",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL010226",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL050246",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 4,
+  "vehicle_box": [
+   897.7,
+   974.4,
+   1007.7,
+   1080.0
+  ],
+  "n_frames_seen": 53,
+  "n_plate_hits": 4,
+  "bbox": [
+   948.4,
+   804.4,
+   1018.7,
+   851.4
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 825,
+  "quality": {
+   "width_px": 87,
+   "height_px": 71,
+   "sharpness_lap": 697.936767578125,
+   "tenengrad": 34945.5234375,
+   "skew_deg": 0.0,
+   "local_contrast": 71.2628378820054,
+   "bloom_frac": 0.0173223247531164,
+   "blur_extent": 0.0,
+   "blur_angle_deg": 30.0,
+   "dark_frac": 0.05552857374129837,
+   "quality_score": 0.9759797511861621
+  },
+  "gate": {
+   "w": 87,
+   "sharp": 697.936767578125,
+   "contrast": 71.2628378820054,
+   "q": 0.9759797511861621,
+   "n_crops": 4
+  },
+  "glyphs": 5,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.962,
+   0.281,
+   0.882
+  ],
+  "det_conf": 0.506,
+  "valid_format": true,
+  "agreement": 0.106,
+  "grammar_prior": 0.105,
+  "n_hypotheses": 42,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.333,
+   0.741,
+   0.907,
+   0.327,
+   0.385,
+   0.494,
+   0.337,
+   0.441
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t74",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644562312.9758,
+  "last_seen_pts_ms": 1789644574219.517,
+  "first_frame": 806,
+  "last_frame": 855,
+  "status": "CANDIDATE",
+  "plate": "RJ14UA4164",
+  "confidence": 0.1128,
+  "alternates": [
+   {
+    "plate": "GJ11EBA1916",
+    "confidence": 0.0812
+   },
+   {
+    "plate": "RJ14HA8166",
+    "confidence": 0.0555
+   },
+   {
+    "plate": "GJ11ADA7818",
+    "confidence": 0.0551
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 10,
+  "vehicle_box": [
+   1196.2,
+   975.5,
+   1306.6,
+   1080.0
+  ],
+  "n_frames_seen": 49,
+  "n_plate_hits": 13,
+  "bbox": [
+   1195.4,
+   952.9,
+   1276.7,
+   974.2
+  ],
+  "reason": "second_reader_only",
+  "best_frame": 851,
+  "quality": {
+   "width_px": 101,
+   "height_px": 32,
+   "sharpness_lap": 1915.8311767578125,
+   "tenengrad": 57018.0234375,
+   "skew_deg": 0.0,
+   "local_contrast": 73.24324447154,
+   "bloom_frac": 0.002165841584158416,
+   "blur_extent": 0.20154965583568807,
+   "blur_angle_deg": 30.0,
+   "dark_frac": 0.12159653465346534,
+   "quality_score": 0.9852944294356929
+  },
+  "gate": {
+   "w": 101,
+   "sharp": 1915.8311767578125,
+   "contrast": 73.24324447154,
+   "q": 0.9852944294356929,
+   "n_crops": 13
+  },
+  "glyphs": 10,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.915,
+   0.957,
+   0.922,
+   0.825,
+   0.92,
+   0.958,
+   0.335,
+   0.299,
+   0.937
+  ],
+  "det_conf": 0.749,
+  "valid_format": true,
+  "agreement": 0.114,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 23,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.114,
+   0.114,
+   0.114,
+   0.114,
+   0.114,
+   0.114,
+   0.114,
+   0.114,
+   0.114,
+   0.114
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t71",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644558889.521,
+  "last_seen_pts_ms": 1789644582222.504,
+  "first_frame": 788,
+  "last_frame": 886,
+  "status": "CANDIDATE",
+  "plate": "DL016",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "DL092",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DG014",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL012",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 1,
+  "vehicle_box": [
+   1564.3,
+   988.1,
+   1659.2,
+   1080.0
+  ],
+  "n_frames_seen": 98,
+  "n_plate_hits": 1,
+  "bbox": [
+   1306.8,
+   142.6,
+   1386.1,
+   207.9
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 797,
+  "quality": {
+   "width_px": 98,
+   "height_px": 98,
+   "sharpness_lap": 1831.7567138671875,
+   "tenengrad": 64318.3359375,
+   "skew_deg": 0.0,
+   "local_contrast": 66.25665008168247,
+   "bloom_frac": 0.011453561016243232,
+   "blur_extent": 0.4400759265995714,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.10474802165764265,
+   "quality_score": 0.9812764740394088
+  },
+  "gate": {
+   "w": 98,
+   "sharp": 1831.7567138671875,
+   "contrast": 66.25665008168247,
+   "q": 0.9812764740394088,
+   "n_crops": 1
+  },
+  "glyphs": 7,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0
+  ],
+  "det_conf": 0.238,
+  "valid_format": false,
+  "agreement": 0.061,
+  "grammar_prior": 0.021,
+  "n_hypotheses": 11,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.392,
+   0.693,
+   0.09,
+   0.209,
+   0.285
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t83",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644576592.8728,
+  "last_seen_pts_ms": 1789644590846.237,
+  "first_frame": 868,
+  "last_frame": 921,
+  "status": "CANDIDATE",
+  "plate": "GJ03DR0089",
+  "confidence": 0.0882,
+  "alternates": [
+   {
+    "plate": "GJ03DB0080",
+    "confidence": 0.0514
+   },
+   {
+    "plate": "GJ03DBC080",
+    "confidence": 0.0439
+   },
+   {
+    "plate": "GJ01JA5080",
+    "confidence": 0.0405
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 11,
+  "vehicle_box": [
+   1167.3,
+   961.7,
+   1268.3,
+   1080.0
+  ],
+  "n_frames_seen": 54,
+  "n_plate_hits": 23,
+  "bbox": [
+   1175.1,
+   1008.1,
+   1260.9,
+   1028.7
+  ],
+  "reason": "second_reader_only",
+  "best_frame": 918,
+  "quality": {
+   "width_px": 107,
+   "height_px": 30,
+   "sharpness_lap": 2361.3994140625,
+   "tenengrad": 75746.890625,
+   "skew_deg": 0.0,
+   "local_contrast": 74.47122882925892,
+   "bloom_frac": 0.008411214953271028,
+   "blur_extent": 2.122603941787214,
+   "blur_angle_deg": 120.0,
+   "dark_frac": 0.07725856697819315,
+   "quality_score": 0.9712212911393123
+  },
+  "gate": {
+   "w": 107,
+   "sharp": 2361.3994140625,
+   "contrast": 74.47122882925892,
+   "q": 0.9712212911393123,
+   "n_crops": 23
+  },
+  "glyphs": 12,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.405,
+   0.478,
+   0.647,
+   0.207,
+   0.792,
+   0.885,
+   0.908,
+   0.881,
+   0.937,
+   0.728,
+   0.767
+  ],
+  "det_conf": 0.595,
+  "valid_format": true,
+  "agreement": 0.092,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 32,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.092,
+   0.092,
+   0.092,
+   0.092,
+   0.092,
+   0.092,
+   0.092,
+   0.092,
+   0.092,
+   0.092
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t94",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644591244.548,
+  "last_seen_pts_ms": 1789644591626.543,
+  "first_frame": 923,
+  "last_frame": 925,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "bus",
+  "frames_fused": 0,
+  "vehicle_box": [
+   16.6,
+   77.8,
+   46.2,
+   220.1
+  ],
+  "n_frames_seen": 3,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t101",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644596308.3499,
+  "last_seen_pts_ms": 1789644596965.648,
+  "first_frame": 946,
+  "last_frame": 949,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   22.1,
+   77.1,
+   122.5,
+   115.3
+  ],
+  "n_frames_seen": 4,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t89",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644588843.086,
+  "last_seen_pts_ms": 1789644600367.6318,
+  "first_frame": 911,
+  "last_frame": 964,
+  "status": "CANDIDATE",
+  "plate": "DL02AD2154",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "DL21D2154",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL02AD2794",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL23D2154",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   861.4,
+   915.8,
+   994.0,
+   1080.0
+  ],
+  "n_frames_seen": 54,
+  "n_plate_hits": 37,
+  "bbox": [
+   900.4,
+   744.7,
+   977.3,
+   763.6
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 954,
+  "quality": {
+   "width_px": 95,
+   "height_px": 29,
+   "sharpness_lap": 1681.2197265625,
+   "tenengrad": 66769.3359375,
+   "skew_deg": 0.0,
+   "local_contrast": 80.93762442245821,
+   "bloom_frac": 0.014882032667876587,
+   "blur_extent": 1.3191345921220798,
+   "blur_angle_deg": 130.0,
+   "dark_frac": 0.147005444646098,
+   "quality_score": 0.9683538542005556
+  },
+  "gate": {
+   "w": 95,
+   "sharp": 1681.2197265625,
+   "contrast": 80.93762442245821,
+   "q": 0.9683538542005556,
+   "n_crops": 37
+  },
+  "glyphs": 6,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.973,
+   0.95,
+   0.834,
+   0.982,
+   0.824,
+   0.949,
+   0.947,
+   0.951,
+   0.958,
+   0.933,
+   0.967
+  ],
+  "det_conf": 0.728,
+  "valid_format": true,
+  "agreement": 0.0,
+  "grammar_prior": 0.7,
+  "n_hypotheses": 57,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.266,
+   0.328,
+   0.158,
+   0.235,
+   0.551,
+   0.643,
+   0.858,
+   0.435,
+   0.493,
+   0.798
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t93",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644590027.492,
+  "last_seen_pts_ms": 1789644607489.563,
+  "first_frame": 917,
+  "last_frame": 982,
+  "status": "CANDIDATE",
+  "plate": "MH11CB0717",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "MB11CB1717",
+    "confidence": 0.0
+   },
+   {
+    "plate": "MH11CM4717",
+    "confidence": 0.0
+   },
+   {
+    "plate": "MH11TCB1717",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1279.5,
+   942.5,
+   1413.1,
+   1079.7
+  ],
+  "n_frames_seen": 66,
+  "n_plate_hits": 39,
+  "bbox": [
+   1306.7,
+   1038.1,
+   1391.5,
+   1056.7
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 979,
+  "quality": {
+   "width_px": 105,
+   "height_px": 28,
+   "sharpness_lap": 2099.63916015625,
+   "tenengrad": 76522.921875,
+   "skew_deg": 0.0,
+   "local_contrast": 77.06437760930264,
+   "bloom_frac": 0.012585034013605442,
+   "blur_extent": 0.6276038801059557,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.12380952380952381,
+   "quality_score": 0.9773550016793894
+  },
+  "gate": {
+   "w": 105,
+   "sharp": 2099.63916015625,
+   "contrast": 77.06437760930264,
+   "q": 0.9773550016793894,
+   "n_crops": 39
+  },
+  "glyphs": 15,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.891,
+   0.967,
+   0.88,
+   0.784,
+   0.761,
+   0.871,
+   0.76,
+   0.836,
+   0.822,
+   0.55,
+   0.578
+  ],
+  "det_conf": 0.734,
+  "valid_format": true,
+  "agreement": 0.039,
+  "grammar_prior": 0.7,
+  "n_hypotheses": 51,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.762,
+   0.394,
+   0.761,
+   0.73,
+   0.818,
+   0.353,
+   0.316,
+   0.824,
+   0.91,
+   0.51
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t98",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644595474.554,
+  "last_seen_pts_ms": 1789644611193.522,
+  "first_frame": 942,
+  "last_frame": 1000,
+  "status": "CANDIDATE",
+  "plate": "DL2TMA6178",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "DL3TMA6178",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL20TBA6178",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL2CMA6138",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 3,
+  "vehicle_box": [
+   319.3,
+   948.1,
+   451.7,
+   1080.0
+  ],
+  "n_frames_seen": 59,
+  "n_plate_hits": 6,
+  "bbox": [
+   377.4,
+   968.8,
+   462.1,
+   986.7
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 995,
+  "quality": {
+   "width_px": 105,
+   "height_px": 27,
+   "sharpness_lap": 3271.675048828125,
+   "tenengrad": 106274.25,
+   "skew_deg": 0.0,
+   "local_contrast": 77.34759590562658,
+   "bloom_frac": 0.007760141093474427,
+   "blur_extent": 1.1757320269150893,
+   "blur_angle_deg": 90.0,
+   "dark_frac": 0.2,
+   "quality_score": 0.9670981766716513
+  },
+  "gate": {
+   "w": 105,
+   "sharp": 3271.675048828125,
+   "contrast": 77.34759590562658,
+   "q": 0.9670981766716513,
+   "n_crops": 6
+  },
+  "glyphs": 8,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.957,
+   0.583
+  ],
+  "det_conf": 0.48,
+  "valid_format": true,
+  "agreement": 0.1,
+  "grammar_prior": 0.42,
+  "n_hypotheses": 37,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.848,
+   0.787,
+   0.601,
+   0.33,
+   0.362,
+   0.755,
+   0.524,
+   0.862,
+   0.52,
+   0.444
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t105",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644596965.648,
+  "last_seen_pts_ms": 1789644630964.8298,
+  "first_frame": 949,
+  "last_frame": 1063,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 0,
+  "vehicle_box": [
+   1379.4,
+   76.6,
+   1468.2,
+   185.1
+  ],
+  "n_frames_seen": 115,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t110",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644598960.907,
+  "last_seen_pts_ms": 1789644630964.8298,
+  "first_frame": 958,
+  "last_frame": 1063,
+  "status": "CANDIDATE",
+  "plate": "GJ41CB6037",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "GJ41CB5036",
+    "confidence": 0.0
+   },
+   {
+    "plate": "MJ41CB6036",
+    "confidence": 0.0
+   },
+   {
+    "plate": "MJ41CB6038",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1647.7,
+   943.5,
+   1785.2,
+   1077.5
+  ],
+  "n_frames_seen": 106,
+  "n_plate_hits": 50,
+  "bbox": [
+   1612.6,
+   929.5,
+   1693.8,
+   947.3
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 1054,
+  "quality": {
+   "width_px": 101,
+   "height_px": 26,
+   "sharpness_lap": 2883.056396484375,
+   "tenengrad": 78451.53125,
+   "skew_deg": 0.0,
+   "local_contrast": 75.36321766320523,
+   "bloom_frac": 0.002284843869002285,
+   "blur_extent": 1.0341380793650314,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.1431835491241432,
+   "quality_score": 0.976149890211943
+  },
+  "gate": {
+   "w": 101,
+   "sharp": 2883.056396484375,
+   "contrast": 75.36321766320523,
+   "q": 0.976149890211943,
+   "n_crops": 50
+  },
+  "glyphs": 11,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.947,
+   0.75,
+   0.893,
+   0.885,
+   0.396,
+   0.378,
+   0.3,
+   0.785,
+   0.952,
+   0.368,
+   0.883
+  ],
+  "det_conf": 0.636,
+  "valid_format": true,
+  "agreement": 0.0,
+  "grammar_prior": 0.1,
+  "n_hypotheses": 54,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.494,
+   0.45,
+   0.96,
+   0.182,
+   0.888,
+   0.261,
+   0.522,
+   0.913,
+   0.617,
+   0.322
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t117",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644630027.1208,
+  "last_seen_pts_ms": 1789644635427.536,
+  "first_frame": 1058,
+  "last_frame": 1089,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   46.7,
+   77.5,
+   135.3,
+   112.2
+  ],
+  "n_frames_seen": 31,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t129",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644650368.9001,
+  "last_seen_pts_ms": 1789644659572.993,
+  "first_frame": 1152,
+  "last_frame": 1202,
+  "status": "CANDIDATE",
+  "plate": "TL18D4491",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "TN18Z4491",
+    "confidence": 0.0
+   },
+   {
+    "plate": "TN18D1491",
+    "confidence": 0.0
+   },
+   {
+    "plate": "TS18Z4491",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   551.9,
+   1006.1,
+   646.4,
+   1079.5
+  ],
+  "n_frames_seen": 51,
+  "n_plate_hits": 37,
+  "bbox": [
+   606.7,
+   1023.6,
+   666.9,
+   1039.8
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 1199,
+  "quality": {
+   "width_px": 75,
+   "height_px": 24,
+   "sharpness_lap": 1304.582275390625,
+   "tenengrad": 75303.109375,
+   "skew_deg": 0.0,
+   "local_contrast": 74.13748346821784,
+   "bloom_frac": 0.005555555555555556,
+   "blur_extent": 1.3626244101499627,
+   "blur_angle_deg": 40.0,
+   "dark_frac": 0.09722222222222222,
+   "quality_score": 0.9190080444453316
+  },
+  "gate": {
+   "w": 75,
+   "sharp": 1304.582275390625,
+   "contrast": 74.13748346821784,
+   "q": 0.9190080444453316,
+   "n_crops": 37
+  },
+  "glyphs": 8,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.922,
+   0.766,
+   0.952,
+   0.848,
+   0.864,
+   0.897,
+   0.898,
+   0.849,
+   0.822,
+   0.871,
+   0.889
+  ],
+  "det_conf": 0.79,
+  "valid_format": false,
+  "agreement": 0.0,
+  "grammar_prior": 0.025,
+  "n_hypotheses": 57,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.694,
+   0.431,
+   0.864,
+   0.535,
+   0.272,
+   0.841,
+   0.92,
+   0.528,
+   0.283
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t132",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644664609.421,
+  "last_seen_pts_ms": 1789644676734.7388,
+  "first_frame": 1231,
+  "last_frame": 1277,
+  "status": "CANDIDATE",
+  "plate": "GL11AA6166",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "KL11AA8166",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 2,
+  "vehicle_box": [
+   1336.4,
+   969.5,
+   1441.1,
+   1080.0
+  ],
+  "n_frames_seen": 46,
+  "n_plate_hits": 3,
+  "bbox": [
+   1333.1,
+   892.4,
+   1414.3,
+   910.4
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 1271,
+  "quality": {
+   "width_px": 101,
+   "height_px": 27,
+   "sharpness_lap": 2237.1220703125,
+   "tenengrad": 75120.2421875,
+   "skew_deg": 0.0,
+   "local_contrast": 75.34709288056303,
+   "bloom_frac": 0.010634396773010634,
+   "blur_extent": 1.1477490642125971,
+   "blur_angle_deg": 40.0,
+   "dark_frac": 0.11661166116611661,
+   "quality_score": 0.9745204996390793
+  },
+  "gate": {
+   "w": 101,
+   "sharp": 2237.1220703125,
+   "contrast": 75.34709288056303,
+   "q": 0.9745204996390793,
+   "n_crops": 3
+  },
+  "glyphs": 7,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.936,
+   0.0
+  ],
+  "det_conf": 0.555,
+  "valid_format": false,
+  "agreement": 0.0,
+  "grammar_prior": 0.05,
+  "n_hypotheses": 33,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.33,
+   0.4,
+   0.696,
+   0.748,
+   0.535,
+   0.615,
+   0.395,
+   0.292,
+   0.281,
+   0.76
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t131",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644663861.293,
+  "last_seen_pts_ms": 1789644680821.792,
+  "first_frame": 1227,
+  "last_frame": 1299,
+  "status": "CONFIRMED",
+  "plate": "GJ23H1546",
+  "confidence": 0.6514,
+  "alternates": [
+   {
+    "plate": "GJ23H1545",
+    "confidence": 0.0801
+   },
+   {
+    "plate": "CG63ZJH1546",
+    "confidence": 0.0312
+   },
+   {
+    "plate": "GJ32JH1546",
+    "confidence": 0.0281
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 12,
+  "vehicle_box": [
+   387.2,
+   995.2,
+   547.9,
+   1077.5
+  ],
+  "n_frames_seen": 72,
+  "n_plate_hits": 65,
+  "bbox": [
+   549.6,
+   802.0,
+   671.9,
+   834.5
+  ],
+  "reason": "",
+  "best_frame": 1275,
+  "quality": {
+   "width_px": 152,
+   "height_px": 49,
+   "sharpness_lap": 4794.3251953125,
+   "tenengrad": 107870.9140625,
+   "skew_deg": 2.411024808883667,
+   "local_contrast": 77.50582655299655,
+   "bloom_frac": 0.004296455424274973,
+   "blur_extent": 0.9283952354551473,
+   "blur_angle_deg": 90.0,
+   "dark_frac": 0.12177765843179376,
+   "quality_score": 0.9743486503435117
+  },
+  "gate": {
+   "w": 152,
+   "sharp": 4794.3251953125,
+   "contrast": 77.50582655299655,
+   "q": 0.9743486503435117,
+   "n_crops": 64
+  },
+  "glyphs": 10,
+  "frames_agreeing": 39,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.368,
+   0.297,
+   0.434,
+   0.415,
+   0.452,
+   0.623,
+   0.547,
+   0.428,
+   0.621,
+   0.656,
+   0.626
+  ],
+  "det_conf": 0.803,
+  "valid_format": true,
+  "agreement": 0.651,
+  "grammar_prior": 0.5,
+  "n_hypotheses": 65,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.651,
+   0.651,
+   0.651,
+   0.651,
+   0.651,
+   0.651,
+   0.651,
+   0.651,
+   0.651
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t146",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644683910.6108,
+  "last_seen_pts_ms": 1789644686690.656,
+  "first_frame": 1317,
+  "last_frame": 1329,
+  "status": "CANDIDATE",
+  "plate": "KL27F1845",
+  "confidence": 0.0001,
+  "alternates": [
+   {
+    "plate": "DL27F1845",
+    "confidence": 0.0
+   },
+   {
+    "plate": "ML27F1845",
+    "confidence": 0.0
+   },
+   {
+    "plate": "DL2TF1845",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 4,
+  "vehicle_box": [
+   1409.6,
+   441.0,
+   1533.6,
+   597.2
+  ],
+  "n_frames_seen": 10,
+  "n_plate_hits": 4,
+  "bbox": [
+   1497.0,
+   648.8,
+   1544.4,
+   675.2
+  ],
+  "reason": "low_confidence",
+  "best_frame": 1321,
+  "quality": {
+   "width_px": 59,
+   "height_px": 39,
+   "sharpness_lap": 107.69367980957031,
+   "tenengrad": 10374.5634765625,
+   "skew_deg": 0.0,
+   "local_contrast": 62.032936737880846,
+   "bloom_frac": 0.0,
+   "blur_extent": 2.1377187092551186,
+   "blur_angle_deg": 90.0,
+   "dark_frac": 0.04302477183833116,
+   "quality_score": 0.6983971641829136
+  },
+  "gate": {
+   "w": 59,
+   "sharp": 107.69367980957031,
+   "contrast": 62.032936737880846,
+   "q": 0.6983971641829136,
+   "n_crops": 4
+  },
+  "glyphs": 5,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.332,
+   0.938,
+   0.989
+  ],
+  "det_conf": 0.715,
+  "valid_format": true,
+  "agreement": 0.2,
+  "grammar_prior": 0.35,
+  "n_hypotheses": 42,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.382,
+   0.402,
+   0.469,
+   0.372,
+   0.496,
+   0.588,
+   0.542,
+   0.352,
+   0.712
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t151",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644688908.278,
+  "last_seen_pts_ms": 1789644695534.955,
+  "first_frame": 1341,
+  "last_frame": 1348,
+  "status": "CANDIDATE",
+  "plate": "GJ851275",
+  "confidence": 0.0001,
+  "alternates": [
+   {
+    "plate": "GJ851277",
+    "confidence": 0.0
+   },
+   {
+    "plate": "GJ851271",
+    "confidence": 0.0
+   },
+   {
+    "plate": "GJ851217",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 2,
+  "vehicle_box": [
+   1342.6,
+   152.9,
+   1516.3,
+   413.7
+  ],
+  "n_frames_seen": 8,
+  "n_plate_hits": 2,
+  "bbox": [
+   1410.0,
+   364.3,
+   1448.8,
+   388.1
+  ],
+  "reason": "readers_disagree",
+  "best_frame": 1347,
+  "quality": {
+   "width_px": 48,
+   "height_px": 36,
+   "sharpness_lap": 56.921966552734375,
+   "tenengrad": 8930.640625,
+   "skew_deg": 0.0,
+   "local_contrast": 62.535693037043686,
+   "bloom_frac": 0.0,
+   "blur_extent": 2.8708553725189425,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.0798611111111111,
+   "quality_score": 0.6039866047067148
+  },
+  "gate": {
+   "w": 48,
+   "sharp": 56.921966552734375,
+   "contrast": 62.535693037043686,
+   "q": 0.6039866047067148,
+   "n_crops": 2
+  },
+  "glyphs": 5,
+  "frames_agreeing": 0,
+  "two_row": true,
+  "reg_cc": [
+   1.0,
+   0.441
+  ],
+  "det_conf": 0.301,
+  "valid_format": true,
+  "agreement": 0.184,
+  "grammar_prior": 0.015,
+  "n_hypotheses": 27,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.895,
+   0.848,
+   0.394,
+   0.49,
+   0.544,
+   0.478,
+   0.368,
+   0.482
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t156",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644697030.035,
+  "last_seen_pts_ms": 1789644705028.374,
+  "first_frame": 1356,
+  "last_frame": 1389,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 0,
+  "vehicle_box": [
+   1397.0,
+   76.4,
+   1457.6,
+   143.8
+  ],
+  "n_frames_seen": 25,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam06_1080p_s0_t145",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644683737.7632,
+  "last_seen_pts_ms": 1789644708145.619,
+  "first_frame": 1316,
+  "last_frame": 1400,
+  "status": "CANDIDATE",
+  "plate": "GJ03KS334",
+  "confidence": 0.057,
+  "alternates": [
+   {
+    "plate": "GJ03KS7334",
+    "confidence": 0.0356
+   },
+   {
+    "plate": "GJ03XS7134",
+    "confidence": 0.0289
+   },
+   {
+    "plate": "GJ03XS7334",
+    "confidence": 0.0234
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   1585.4,
+   950.7,
+   1681.8,
+   1080.0
+  ],
+  "n_frames_seen": 83,
+  "n_plate_hits": 67,
+  "bbox": [
+   1595.6,
+   958.4,
+   1654.9,
+   992.7
+  ],
+  "reason": "second_reader_only",
+  "best_frame": 1399,
+  "quality": {
+   "width_px": 74,
+   "height_px": 52,
+   "sharpness_lap": 604.5022583007812,
+   "tenengrad": 37039.55078125,
+   "skew_deg": 2.792701244354248,
+   "local_contrast": 75.70801357721719,
+   "bloom_frac": 0.005457380457380458,
+   "blur_extent": 0.4491546219393058,
+   "blur_angle_deg": 0.0,
+   "dark_frac": 0.07354469854469854,
+   "quality_score": 0.9205266591673651
+  },
+  "gate": {
+   "w": 74,
+   "sharp": 604.5022583007812,
+   "contrast": 75.70801357721719,
+   "q": 0.9205266591673651,
+   "n_crops": 64
+  },
+  "glyphs": 10,
+  "frames_agreeing": 6,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.909,
+   0.886,
+   0.892,
+   0.888,
+   0.883,
+   0.871,
+   0.855,
+   0.832,
+   0.805,
+   0.835,
+   0.846
+  ],
+  "det_conf": 0.779,
+  "valid_format": true,
+  "agreement": 0.057,
+  "grammar_prior": 0.105,
+  "n_hypotheses": 156,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.057,
+   0.057,
+   0.057,
+   0.057,
+   0.057,
+   0.057,
+   0.057,
+   0.057,
+   0.057
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t159",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644703865.293,
+  "last_seen_pts_ms": 1789644712006.021,
+  "first_frame": 1383,
+  "last_frame": 1421,
+  "status": "CANDIDATE",
+  "plate": "GJ11CP1111",
+  "confidence": 0.0794,
+  "alternates": [
+   {
+    "plate": "GJ11CPH171",
+    "confidence": 0.0459
+   },
+   {
+    "plate": "GJ11CP1121",
+    "confidence": 0.045
+   },
+   {
+    "plate": "GJ11LPH111",
+    "confidence": 0.042
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 12,
+  "vehicle_box": [
+   639.8,
+   957.9,
+   759.9,
+   1080.0
+  ],
+  "n_frames_seen": 39,
+  "n_plate_hits": 20,
+  "bbox": [
+   672.8,
+   1017.5,
+   761.9,
+   1033.9
+  ],
+  "reason": "second_reader_only",
+  "best_frame": 1418,
+  "quality": {
+   "width_px": 110,
+   "height_px": 24,
+   "sharpness_lap": 3054.14892578125,
+   "tenengrad": 88328.703125,
+   "skew_deg": 0.0,
+   "local_contrast": 80.77100775788938,
+   "bloom_frac": 0.0026515151515151517,
+   "blur_extent": 2.1540497850126865,
+   "blur_angle_deg": 40.0,
+   "dark_frac": 0.20606060606060606,
+   "quality_score": 0.9603829184582278
+  },
+  "gate": {
+   "w": 110,
+   "sharp": 3054.14892578125,
+   "contrast": 80.77100775788938,
+   "q": 0.9603829184582278,
+   "n_crops": 20
+  },
+  "glyphs": 7,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.927,
+   0.876,
+   0.364,
+   0.891,
+   0.878,
+   0.842,
+   0.853,
+   0.939,
+   0.868,
+   0.899,
+   0.388
+  ],
+  "det_conf": 0.688,
+  "valid_format": true,
+  "agreement": 0.087,
+  "grammar_prior": 1.0,
+  "n_hypotheses": 28,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.087,
+   0.087,
+   0.087,
+   0.087,
+   0.087,
+   0.087,
+   0.087,
+   0.087,
+   0.087,
+   0.087
+  ]
+ },
+ {
+  "track_id": "cam06_1080p_s0_t162",
+  "camera_id": "cam06_1080p",
+  "first_seen_pts_ms": 1789644714544.2751,
+  "last_seen_pts_ms": 1789644727064.237,
+  "first_frame": 1436,
+  "last_frame": 1450,
+  "status": "CANDIDATE",
+  "plate": "PB08A19",
+  "confidence": 0.0,
+  "alternates": [
+   {
+    "plate": "PB08439",
+    "confidence": 0.0
+   },
+   {
+    "plate": "PB05A39",
+    "confidence": 0.0
+   },
+   {
+    "plate": "PB08489",
+    "confidence": 0.0
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "motorcycle",
+  "frames_fused": 8,
+  "vehicle_box": [
+   1306.8,
+   288.9,
+   1476.7,
+   531.2
+  ],
+  "n_frames_seen": 15,
+  "n_plate_hits": 15,
+  "bbox": [
+   1376.4,
+   369.3,
+   1417.9,
+   392.5
+  ],
+  "reason": "low_confidence",
+  "best_frame": 1450,
+  "quality": {
+   "width_px": 51,
+   "height_px": 35,
+   "sharpness_lap": 366.2044677734375,
+   "tenengrad": 36033.515625,
+   "skew_deg": 6.263490676879883,
+   "local_contrast": 83.73931754595273,
+   "bloom_frac": 0.05322128851540616,
+   "blur_extent": 1.670066950048915,
+   "blur_angle_deg": 130.0,
+   "dark_frac": 0.16862745098039217,
+   "quality_score": 0.7874923637839242
+  },
+  "gate": {
+   "w": 51,
+   "sharp": 366.2044677734375,
+   "contrast": 83.73931754595273,
+   "q": 0.7874923637839242,
+   "n_crops": 15
+  },
+  "glyphs": 9,
+  "frames_agreeing": 0,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.945,
+   0.956,
+   0.934,
+   0.924,
+   0.934,
+   0.923,
+   0.928
+  ],
+  "det_conf": 0.734,
+  "valid_format": false,
+  "agreement": 0.117,
+  "grammar_prior": 0.056,
+  "n_hypotheses": 52,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.468,
+   0.505,
+   0.751,
+   0.156,
+   0.132,
+   0.308,
+   0.559
+  ]
+ }
+]

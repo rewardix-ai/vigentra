@@ -1,0 +1,70 @@
+[CAM08] Vehicle ID: cam08_s0_t1 (truck)
+Track duration: 7.2 s  frames 0-180
+Plate candidates: 3  best frame: 100  plate size: 42x20  quality: 0.574
+OCR (per candidate, first 40):
+  f   80 34x13 q=0.58 det=0.40 -> - 0.00
+  f  100 34x13 q=0.57 det=0.43 -> - 0.00
+  f  180 34x14 q=0.58 det=0.21 -> - 0.00
+FINAL: MH47S6268  status CANDIDATE  confidence 0.0  low_confidence  emitted: no
+
+[CAM08] Vehicle ID: cam08_s0_t46 (bus)
+Track duration: 4.0 s  frames 220-320
+Plate candidates: 1  best frame: 222  plate size: 218x67  quality: 0.961
+OCR (per candidate, first 40):
+  f  222 176x45 q=0.96 det=0.27 -> KA170454 0.57
+FINAL: KA252455  status CANDIDATE  confidence 0.0002  low_confidence  emitted: no
+
+[CAM08] Vehicle ID: cam08_s0_t51 (truck)
+Track duration: 34.6 s  frames 254-1120
+Plate candidates: 8  best frame: 300  plate size: 41x17  quality: 0.547
+OCR (per candidate, first 40):
+  f  271 27x12 q=0.53 det=0.35 -> - 0.00
+  f  278 33x12 q=0.55 det=0.53 -> - 0.00
+  f  279 33x12 q=0.55 det=0.51 -> - 0.00
+  f  280 33x12 q=0.55 det=0.50 -> - 0.00
+  f  281 33x12 q=0.55 det=0.51 -> - 0.00
+  f  282 33x13 q=0.56 det=0.37 -> - 0.00
+  f  300 33x12 q=0.55 det=0.63 -> - 0.00
+  f  320 33x12 q=0.55 det=0.57 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  static_scene_text  emitted: no
+
+[CAM08] Vehicle ID: cam08_s0_t54 (truck)
+Track duration: 34.3 s  frames 262-1120
+Plate candidates: 35  best frame: 840  plate size: 44x19  quality: 0.585
+OCR (per candidate, first 40):
+  f  262 34x13 q=0.57 det=0.27 -> - 0.00
+  f  265 33x13 q=0.56 det=0.22 -> - 0.00
+  f  266 34x13 q=0.57 det=0.28 -> - 0.00
+  f  267 33x13 q=0.55 det=0.41 -> - 0.00
+  f  275 34x13 q=0.57 det=0.23 -> - 0.00
+  f  340 33x11 q=0.54 det=0.40 -> - 0.00
+  f  360 33x13 q=0.55 det=0.33 -> - 0.00
+  f  380 34x12 q=0.56 det=0.43 -> - 0.00
+  f  400 33x12 q=0.56 det=0.43 -> - 0.00
+  f  440 35x14 q=0.57 det=0.28 -> - 0.00
+  f  460 35x14 q=0.57 det=0.33 -> - 0.00
+  f  480 33x13 q=0.57 det=0.31 -> - 0.00
+  f  500 34x13 q=0.56 det=0.54 -> MH42V6284 0.52
+  f  520 33x13 q=0.56 det=0.47 -> MH42V2049 0.52
+  f  540 33x13 q=0.56 det=0.28 -> - 0.00
+  f  560 33x13 q=0.56 det=0.49 -> - 0.00
+  f  580 34x14 q=0.58 det=0.37 -> - 0.00
+  f  600 34x14 q=0.56 det=0.65 -> - 0.00
+  f  620 32x13 q=0.55 det=0.63 -> - 0.00
+  f  640 33x13 q=0.57 det=0.58 -> - 0.00
+  f  660 33x13 q=0.56 det=0.51 -> - 0.00
+  f  680 33x14 q=0.56 det=0.36 -> - 0.00
+  f  700 33x13 q=0.56 det=0.61 -> MH02VK2965 0.51
+  f  720 34x14 q=0.57 det=0.26 -> KL27A205 0.56
+  f  740 34x14 q=0.57 det=0.46 -> - 0.00
+  f  760 35x14 q=0.57 det=0.58 -> - 0.00
+  f  780 34x13 q=0.60 det=0.76 -> - 0.00
+  f  800 34x14 q=0.60 det=0.58 -> - 0.00
+  f  820 35x13 q=0.57 det=0.60 -> - 0.00
+  f  840 35x13 q=0.58 det=0.73 -> MN02V6269 0.50
+  f  860 34x13 q=0.57 det=0.72 -> - 0.00
+  f  880 35x13 q=0.61 det=0.71 -> - 0.00
+  f  900 34x14 q=0.61 det=0.73 -> - 0.00
+  f  960 35x13 q=0.58 det=0.77 -> - 0.00
+  f 1020 105x42 q=0.97 det=0.29 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  static_scene_text  emitted: no

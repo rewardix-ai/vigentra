@@ -1,0 +1,74 @@
+{
+ "camera": "cam11",
+ "clip": "rec_cam11.mp4",
+ "resolution": "1280x720",
+ "fps": 25.0,
+ "frames": 1124,
+ "duration_s": 45.0,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_mix_n/reader_crnn",
+  "camera": "cam11",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_mix_n.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "cam11"
+ },
+ "frames_processed": 559,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 559
+ },
+ "sampler": {
+  "looked": 1124,
+  "processed": 559,
+  "bursts": 5,
+  "stride": 5,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 6767,
+ "unique_vehicle_tracks": 145,
+ "tracks_with_plate_candidates": 5,
+ "tracks_by_size_band": {
+  "SMALL": 1,
+  "LARGE": 2,
+  "MEDIUM": 2
+ },
+ "plate_detections": 163,
+ "plate_candidates_banked": 163,
+ "ocr_calls": 632,
+ "ocr_images": 790,
+ "tracks_with_ocr_result": 5,
+ "unique_ocr_results": 5,
+ "status_counts": {
+  "UNREADABLE": 140,
+  "CANDIDATE": 5
+ },
+ "confirmed_plates": [],
+ "emitted": [],
+ "unreadable_reasons": {
+  "no_plate_detected": 140
+ },
+ "wall_s": 148.3,
+ "finish_s": 23.5,
+ "processed_fps": 3.77,
+ "clip_seconds_per_wall_second": 0.303,
+ "frame_latency_ms_p50": 164.5,
+ "frame_latency_ms_p95": 222.3,
+ "cpu_percent_mean": 103.5,
+ "cpu_cores": 8,
+ "rss_max_mb": 3200,
+ "gpu_mem_max_mb": 1233,
+ "replayed_from": "opt3",
+ "replay_wall_s": 47.7
+}

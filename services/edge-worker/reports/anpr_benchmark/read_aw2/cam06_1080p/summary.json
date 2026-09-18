@@ -1,0 +1,106 @@
+{
+ "camera": "cam06_1080p",
+ "clip": "cam06_1080p.mp4",
+ "resolution": "1920x1080",
+ "fps": 23.21,
+ "frames": 1546,
+ "duration_s": 66.6,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_mix_n/reader_crnn",
+  "camera": "cam06_1080p",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_mix_n.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false
+ },
+ "frames_processed": 1460,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 1458,
+  "blurred": 2
+ },
+ "sampler": {
+  "looked": 1546,
+  "processed": 1460,
+  "bursts": 7,
+  "stride": 5,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 2925,
+ "unique_vehicle_tracks": 42,
+ "tracks_with_plate_candidates": 30,
+ "tracks_by_size_band": {
+  "VERY_SMALL": 2,
+  "MEDIUM": 22,
+  "SMALL": 4,
+  "LARGE": 2
+ },
+ "plate_detections": 770,
+ "plate_candidates_banked": 770,
+ "ocr_calls": 2664,
+ "ocr_images": 3005,
+ "tracks_with_ocr_result": 30,
+ "unique_ocr_results": 30,
+ "status_counts": {
+  "UNREADABLE": 12,
+  "CANDIDATE": 26,
+  "CONFIRMED": 4
+ },
+ "confirmed_plates": [
+  "GJ11CJ7578",
+  "GJ11CK1044",
+  "GJ23H1546",
+  "GJ32AG2883"
+ ],
+ "emitted": [
+  {
+   "plate": "GJ32AG2883",
+   "confirmed": true,
+   "score": 0.959,
+   "track": 34
+  },
+  {
+   "plate": "GJ11CK1044",
+   "confirmed": true,
+   "score": 0.522,
+   "track": 47
+  },
+  {
+   "plate": "GJ11CJ7578",
+   "confirmed": true,
+   "score": 0.421,
+   "track": 60
+  },
+  {
+   "plate": "GJ23H1546",
+   "confirmed": true,
+   "score": 0.651,
+   "track": 131
+  }
+ ],
+ "unreadable_reasons": {
+  "no_plate_detected": 12
+ },
+ "wall_s": 378.2,
+ "finish_s": 6.0,
+ "processed_fps": 3.86,
+ "clip_seconds_per_wall_second": 0.176,
+ "frame_latency_ms_p50": 173.9,
+ "frame_latency_ms_p95": 227.0,
+ "cpu_percent_mean": 104.3,
+ "cpu_cores": 8,
+ "rss_max_mb": 4584,
+ "gpu_mem_max_mb": 1158,
+ "replayed_from": "port",
+ "replay_wall_s": 156.5
+}

@@ -1,0 +1,2 @@
+vehicle_id,frame,engine_frame,timestamp_s,x1,y1,x2,y2,width,height,area,aspect,band,det_conf,two_row,sharpness_lap,tenengrad,brightness,contrast,blur_extent,skew_deg,dark_frac,bloom_frac,quality,ocr_text,ocr_conf,ocr_readers
+cam05_s0_t372,689,173,27.56,1084.9,450.3,1140.2,473.1,55.3,22.8,1259,2.42,SMALL,0.437,1,10.0,1171.5,210.6,51.4,1.55,0.0,0.0,0.119,0.613,,0.0,

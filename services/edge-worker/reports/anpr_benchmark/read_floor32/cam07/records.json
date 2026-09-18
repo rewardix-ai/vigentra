@@ -1,0 +1,126 @@
+[
+ {
+  "track_id": "cam07_s0_t6",
+  "camera_id": "cam07",
+  "first_seen_pts_ms": 1789644756908.4219,
+  "last_seen_pts_ms": 1789644756908.4219,
+  "first_frame": 123,
+  "last_frame": 123,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   213.7,
+   214.2,
+   234.4,
+   225.1
+  ],
+  "n_frames_seen": 1,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ },
+ {
+  "track_id": "cam07_s0_t12",
+  "camera_id": "cam07",
+  "first_seen_pts_ms": 1789644762653.3042,
+  "last_seen_pts_ms": 1789644767444.627,
+  "first_frame": 155,
+  "last_frame": 181,
+  "status": "CANDIDATE",
+  "plate": "GJ32L7043",
+  "confidence": 0.101,
+  "alternates": [
+   {
+    "plate": "GJ32E7545",
+    "confidence": 0.0895
+   },
+   {
+    "plate": "GJ32E7845",
+    "confidence": 0.0568
+   },
+   {
+    "plate": "KA32E7111",
+    "confidence": 0.0557
+   }
+  ],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 5,
+  "vehicle_box": [
+   376.9,
+   132.1,
+   531.7,
+   252.4
+  ],
+  "n_frames_seen": 24,
+  "n_plate_hits": 24,
+  "bbox": [
+   327.0,
+   316.8,
+   379.0,
+   334.4
+  ],
+  "reason": "too_few_agreeing_frames",
+  "best_frame": 158,
+  "quality": {
+   "width_px": 65,
+   "height_px": 26,
+   "sharpness_lap": 207.80686950683594,
+   "tenengrad": 16027.65234375,
+   "skew_deg": 0.0,
+   "local_contrast": 57.02227783066616,
+   "bloom_frac": 0.0,
+   "blur_extent": 2.4672936399164547,
+   "blur_angle_deg": 90.0,
+   "dark_frac": 0.0,
+   "quality_score": 0.8064577647692134
+  },
+  "gate": {
+   "w": 65,
+   "sharp": 207.80686950683594,
+   "contrast": 57.02227783066616,
+   "q": 0.8064577647692134,
+   "n_crops": 24
+  },
+  "glyphs": 9,
+  "frames_agreeing": 2,
+  "two_row": false,
+  "reg_cc": [
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.09,
+   0.727,
+   0.968,
+   0.0,
+   0.0,
+   0.0,
+   0.938,
+   0.281
+  ],
+  "det_conf": 0.766,
+  "valid_format": true,
+  "agreement": 0.108,
+  "grammar_prior": 0.5,
+  "n_hypotheses": 22,
+  "sr_disagree": false,
+  "per_char_conf": [
+   0.108,
+   0.108,
+   0.108,
+   0.108,
+   0.108,
+   0.108,
+   0.108,
+   0.108,
+   0.108
+  ]
+ }
+]

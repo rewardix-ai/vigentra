@@ -1,0 +1,2 @@
+vehicle_id,frame,engine_frame,timestamp_s,x1,y1,x2,y2,width,height,area,aspect,band,det_conf,two_row,sharpness_lap,tenengrad,brightness,contrast,blur_extent,skew_deg,dark_frac,bloom_frac,quality,ocr_text,ocr_conf,ocr_readers
+tfl_12_s0_t31,160,32,6.4,95.1,232.0,113.3,241.1,18.2,9.1,166,2.01,EXTREMELY_TINY,0.272,1,4.4,1426.8,54.2,52.8,3.75,0.0,0.0,0.0,0.465,,0.0,

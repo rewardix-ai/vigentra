@@ -119,7 +119,8 @@ class PlateDetector:
 
     def __init__(self, weights: Optional[str | Path] = "models/plate_det.pt", device: str = "auto",
                  imgsz: int = 640, conf: float = 0.2, upscale_min_px: int = 640, tile: int = 0,
-                 overlap: float = 0.2, use_retro: bool = True, half: bool = True):
+                 overlap: float = 0.2, use_retro: bool = True, half: bool = True,
+                 min_conf: float = 0.0):
         self.model = None
         if weights and Path(weights).exists():
             from ultralytics import YOLO
@@ -134,6 +135,10 @@ class PlateDetector:
         self.tile = tile
         self.overlap = overlap
         self.use_retro = use_retro
+        # `conf` is the CNN's own threshold, applied to the raw score before the geometry prior; this
+        # one applies after it. Without it the prior only re-ranks: a vehicle whose one proposal was
+        # demoted to 0.01 still banks it (detector.plate_min_conf_after_prior, 0 = off)
+        self.min_conf = min_conf
         self.half = half and self.device != "cpu"
         self.rejection_log: list[dict] = []
 
@@ -192,11 +197,15 @@ class PlateDetector:
             if fb[2] - fb[0] < 8 or fb[3] - fb[1] < 3:
                 continue  # narrower than one character at native resolution: not a plate
             gp, two_row, reasons = geometry_prior(fb, vehicle_box, vehicle_type)
+            if self.min_conf and sc * gp < self.min_conf:
+                reasons = reasons + [f"below_min_conf_after_prior:{sc * gp:.3f}"]
             if reasons:
                 self.rejection_log.append({"frame": frame_idx, "track": track_id, "src": src, "box": fb,
                                            "raw_conf": sc, "geom_prior": gp, "reasons": reasons})
                 if len(self.rejection_log) > 5000:   # bounded: the dev box has ~1 GB of headroom
                     del self.rejection_log[:2500]
+            if self.min_conf and sc * gp < self.min_conf:
+                continue
             out.append(PlateDet(fb, sc * gp, sc, gp, two_row, src, reasons))
         # class-agnostic NMS across CNN + retro candidates
         B = np.array([d.box for d in out], np.float32)

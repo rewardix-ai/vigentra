@@ -1,0 +1,55 @@
+[CAM14] Vehicle ID: cam14_s0_t22 (car)
+Track duration: 10.8 s  frames 400-670
+Plate candidates: 99  best frame: 401  plate size: 57x19  quality: 0.619
+OCR (per candidate, first 40):
+  f  400 46x14 q=0.62 det=0.70 -> - 0.00
+  f  401 46x13 q=0.62 det=0.72 -> GJ01MK308 0.51
+  f  402 45x15 q=0.61 det=0.65 -> - 0.00
+  f  403 46x15 q=0.62 det=0.66 -> - 0.00
+  f  404 46x13 q=0.62 det=0.67 -> GJ01MK308 0.55
+  f  405 46x15 q=0.62 det=0.57 -> - 0.00
+  f  406 45x13 q=0.61 det=0.70 -> GJ01MK308 0.53
+  f  407 46x14 q=0.62 det=0.69 -> GJ02DMK308 0.51
+  f  408 46x14 q=0.62 det=0.69 -> GJ01K308 0.54
+  f  418 74x31 q=0.87 det=0.27 -> GJ10GJ77 0.67
+  f  500 45x15 q=0.62 det=0.24 -> - 0.00
+  f  501 46x14 q=0.62 det=0.34 -> - 0.00
+  f  502 46x15 q=0.62 det=0.35 -> - 0.00
+  f  503 46x15 q=0.62 det=0.24 -> - 0.00
+  f  504 46x14 q=0.62 det=0.23 -> - 0.00
+  f  505 47x14 q=0.62 det=0.43 -> - 0.00
+  f  506 46x15 q=0.62 det=0.49 -> - 0.00
+  f  507 46x15 q=0.62 det=0.45 -> GJ27AK2282 0.51
+  f  508 47x16 q=0.63 det=0.33 -> - 0.00
+  f  509 46x16 q=0.63 det=0.50 -> - 0.00
+  f  510 47x16 q=0.63 det=0.26 -> - 0.00
+  f  511 47x13 q=0.62 det=0.34 -> - 0.00
+  f  512 46x16 q=0.62 det=0.46 -> GJ21AA2282 0.56
+  f  513 45x15 q=0.61 det=0.43 -> GJ21AA2283 0.51
+  f  514 46x15 q=0.62 det=0.28 -> GJ21AA2282 0.56
+  f  515 46x16 q=0.62 det=0.29 -> GJ12AA2282 0.59
+  f  516 46x13 q=0.61 det=0.25 -> - 0.00
+  f  517 46x15 q=0.62 det=0.29 -> GJ11AA2282 0.56
+  f  518 46x14 q=0.61 det=0.39 -> - 0.00
+  f  519 46x14 q=0.61 det=0.48 -> - 0.00
+  f  520 46x13 q=0.61 det=0.42 -> - 0.00
+  f  521 45x12 q=0.60 det=0.27 -> - 0.00
+  f  523 45x12 q=0.60 det=0.22 -> - 0.00
+  f  524 45x12 q=0.60 det=0.20 -> - 0.00
+  f  525 45x12 q=0.60 det=0.22 -> - 0.00
+  f  526 45x12 q=0.60 det=0.21 -> - 0.00
+  f  551 46x12 q=0.61 det=0.23 -> - 0.00
+  f  552 43x12 q=0.59 det=0.31 -> - 0.00
+  f  553 47x13 q=0.61 det=0.39 -> - 0.00
+  f  554 47x13 q=0.60 det=0.39 -> - 0.00
+FINAL: GJ01MK308  status CANDIDATE  confidence 0.2524  too_few_agreeing_frames  emitted: no
+
+[CAM14] Vehicle ID: cam14_s0_t76 (car)
+Track duration: 1.3 s  frames 621-654
+Plate candidates: 4  best frame: 638  plate size: 96x59  quality: 0.807
+OCR (per candidate, first 40):
+  f  638 78x39 q=0.81 det=0.38 -> - 0.00
+  f  641 80x46 q=0.80 det=0.23 -> - 0.00
+  f  642 81x49 q=0.80 det=0.23 -> - 0.00
+  f  643 76x42 q=0.81 det=0.22 -> - 0.00
+FINAL: GJ750777  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

@@ -1,0 +1,33 @@
+[TFL_14] Vehicle ID: tfl_14_s0_t12 (car)
+Track duration: 6.0 s  frames 122-271
+Plate candidates: 2  best frame: 135  plate size: 101x21  quality: 0.966
+OCR (per candidate, first 40):
+  f  135 82x16 q=0.97 det=0.21 -> - 0.00
+  f  140 98x18 q=0.97 det=0.20 -> - 0.00
+FINAL: MH101465  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[TFL_14] Vehicle ID: tfl_14_s0_t15 (car)
+Track duration: 1.6 s  frames 230-271
+Plate candidates: 20  best frame: 259  plate size: 100x22  quality: 0.96
+OCR (per candidate, first 40):
+  f  250 61x16 q=0.89 det=0.47 -> DL11C312 0.54
+  f  251 68x16 q=0.93 det=0.53 -> - 0.00
+  f  252 70x16 q=0.94 det=0.54 -> - 0.00
+  f  253 72x16 q=0.95 det=0.55 -> - 0.00
+  f  254 72x16 q=0.95 det=0.56 -> - 0.00
+  f  255 74x16 q=0.95 det=0.53 -> - 0.00
+  f  256 75x16 q=0.95 det=0.52 -> - 0.00
+  f  257 75x16 q=0.95 det=0.55 -> - 0.00
+  f  258 78x16 q=0.96 det=0.50 -> - 0.00
+  f  259 81x17 q=0.96 det=0.52 -> TN11QQ62 0.63
+  f  260 82x17 q=0.96 det=0.47 -> TN11QTQ2 0.71
+  f  261 82x16 q=0.96 det=0.46 -> TN11QTQ6 0.57
+  f  262 83x16 q=0.96 det=0.47 -> TN11QQ62 0.58
+  f  263 85x17 q=0.96 det=0.47 -> TN11QTQ62 0.57
+  f  264 85x17 q=0.96 det=0.46 -> TN11QDQ61 0.57
+  f  265 88x17 q=0.97 det=0.40 -> - 0.00
+  f  266 89x16 q=0.96 det=0.45 -> MH11QQ62 0.58
+  f  267 89x17 q=0.97 det=0.44 -> MH11QDQ2 0.57
+  f  268 90x16 q=0.97 det=0.36 -> MH11QQ62 0.59
+  f  269 90x16 q=0.96 det=0.34 -> MH11QQG2 0.59
+FINAL: TN11QQ62  status CANDIDATE  confidence 0.1648  second_reader_only  emitted: no

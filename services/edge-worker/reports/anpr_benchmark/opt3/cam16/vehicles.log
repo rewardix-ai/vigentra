@@ -1,0 +1,19 @@
+[CAM16] Vehicle ID: cam16_s0_t105 (car)
+Track duration: 9.0 s  frames 169-395
+Plate candidates: 5  best frame: 169  plate size: 107x48  quality: 0.988
+OCR (per candidate, first 40):
+  f  169 86x32 q=0.99 det=0.79 -> AR31CY3720 0.62
+  f  170 86x32 q=0.99 det=0.79 -> AR31CY3720 0.62
+  f  174 157x38 q=0.99 det=0.29 -> RJ11CC1010 0.85
+  f  175 155x37 q=0.99 det=0.39 -> GJ11CC5999 0.63
+  f  177 199x51 q=0.99 det=0.22 -> GJ13CES90 0.74
+FINAL: AR53TC5620  status CANDIDATE  confidence 0.542  too_few_agreeing_frames  emitted: no
+
+[CAM16] Vehicle ID: cam16_s0_t2 (car)
+Track duration: 20.0 s  frames 0-499
+Plate candidates: 3  best frame: 174  plate size: 58x26  quality: 0.625
+OCR (per candidate, first 40):
+  f  173 47x18 q=0.62 det=0.25 -> - 0.00
+  f  174 47x18 q=0.62 det=0.32 -> - 0.00
+  f  175 46x18 q=0.62 det=0.23 -> - 0.00
+FINAL: GJ2965  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

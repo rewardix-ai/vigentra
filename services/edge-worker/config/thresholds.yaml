@@ -11,6 +11,9 @@ detector:
   - 5
   - 7
   vehicle_imgsz: 1920
+  # Never enlarge a frame to vehicle_imgsz: a 720p grid frame detected at 1280 tracks about twice as many
+  # vehicles as the same frame stretched to 1920, and runs 1.5-9x faster (docs/anpr-optimisation.md).
+  vehicle_upscale: false
   plate_conf: 0.2
   plate_imgsz: 640
   vehicle_crop_upscale_min_px: 640
@@ -23,7 +26,11 @@ detector:
   - 0.04
   - 0.25
   max_masked_frac: 0.15
-  retro_proposer: true
+  # The retro-reflective proposer boxed bumper edges, hoardings and lamps; with it off and a score floor
+  # after the geometry prior, a vehicle whose only proposal the prior demoted banks nothing
+  # (research repo H17, reports/LOOP_LOG.md).
+  retro_proposer: false
+  plate_min_conf_after_prior: 0.2
   plates_per_vehicle: 1   # was 2: the second box was a bumper edge / neighbour's plate and diluted the bank
   plate_search_min_vehicle_px: 96   # narrower vehicle => plate < 40 px, never read; Delhi clip: same 36 reads, 1.5x faster
 tracker:
@@ -68,7 +75,15 @@ reading:
   # Measured (reports/LOOP_LOG.md H10/H11): +1 confirm on Delhi and on cam06, none on the 4K clip, at
   # 2x (cam06 451 s vs 232 s) to 3.7x (4K 959 s vs 257 s) the processing time; limiting it to 3 crops
   # per track lost the cam06 gain. Off by default: not worth the load.
-  readers: [crnn]
+  # Second reader: Awiros-ANPR-OCR (Apache-2.0, PP-OCRv5 fine-tuned on 558k Indian plates, two-row in
+  # one pass), reading whole crops. It is what lifts the plate count: Delhi 11 -> 12 of 20 and cam06
+  # 1080p 2 -> 3 of 5, none wrong, at about 1.6x the reading time. It needs models/awiros,
+  # third_party/PaddleOCR and paddlepaddle, which the Docker image does not carry (see
+  # requirements-anpr.txt): there the engine logs that the reader is unavailable and runs on the CRNNs
+  # alone, which is the measured 13-of-26 configuration.
+  readers: [crnn, awiros]
+  text_vote_crops: 64
+  awiros_crops: 3
   reader_weight: {awiros: 2.0}
   # H11 temporal aggregation (reports/LOOP_LOG.md H11). Every crop of a track is read on its own by
   # the fast reader; crops that do not read as a registration (headlamps, mirrors, bumper panels)
@@ -76,6 +91,12 @@ reading:
   # read is CONFIRMED only with >= 4 crops reading it exactly, >= 40 % of the vote, the runner-up
   # < 0.5 x the winner and a >= 40 px plate. Delhi 4K replay: 6 -> 9 distinct plates, all confirmed,
   # 0 wrong; cam06: 3 confirmed, 0 wrong.
+  # A plate too narrow to carry glyphs is not read at all: the vehicle stays tracked and its wider crops
+  # are read when it comes closer. Same plates on every clip, less OCR spent on noise.
+  crop_read_min_width_px: 24
+  # Two fragments that read the same registration within this many seconds are one vehicle. The tracker
+  # splits a vehicle crossing the frame, and delhi_1080p reported HR26CC2083 four times.
+  merge_same_plate_seconds: 15
   read_filter: true
   string_vote: true
   # H16: a confirmation asserts a registration exists, so the pixels must show a row of glyphs.
@@ -86,6 +107,20 @@ reading:
   confirm_min_glyphs: 3
   glyph_crops: 8
   vote_confirm: {min_crops: 4, min_share: 0.4}
+  # Research repo H17: the CRNNs fail on different glyphs. When the primary cannot decide, another
+  # reader's own vote may confirm under the rule above if a second reader produced the string (or one
+  # substitution from it on vote_near_backing crops) and no reader's own vote says otherwise; a primary
+  # vote another reader contradicts is never confirmed (anpr/pipeline.py _vote_pick).
+  vote_any_reader: true
+  vote_unopposed: true
+  # Near backing (a second reader's string one substitution away) is off: without the text reader both
+  # readers are CRNNs that share their confusions. Delhi replay of the baseline banks: with it, v6's
+  # DL6SAS6522 (true DL6SAS6524) was "backed" by the primary's DL4SAS6522 and confirmed; without it,
+  # 9 of 20 correct and none wrong (baseline 7 and none).
+  # Near backing (a second reader's string one substitution away) counts only from the whole-crop text
+  # reader, which fails on different characters than the CRNNs; between two CRNNs it confirmed
+  # DL6SAS6522 for the true DL6SAS6524 (anpr/pipeline.py _vote_pick).
+  vote_near_backing: 2
   # H12 second reader as a fallback (reports/LOOP_LOG.md H12). The primary reader votes alone and
   # decides every confirm; the second CRNN only supplies a shown, never-confirmed read on tracks the
   # primary cannot decide. Pooling both readers in one vote had cut Delhi 4K confirms 9 -> 5.

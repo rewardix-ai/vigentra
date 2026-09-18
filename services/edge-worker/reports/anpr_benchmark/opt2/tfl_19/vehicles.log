@@ -1,0 +1,9 @@
+[TFL_19] Vehicle ID: tfl_19_s0_t2 (bus)
+Track duration: 7.8 s  frames 0-195
+Plate candidates: 4  best frame: 145  plate size: 86x21  quality: 0.974
+OCR (per candidate, first 40):
+  f  125 70x16 q=0.98 det=0.23 -> - 0.00
+  f  135 69x17 q=0.97 det=0.39 -> - 0.00
+  f  140 69x18 q=0.97 det=0.38 -> - 0.00
+  f  145 69x17 q=0.97 det=0.44 -> - 0.00
+FINAL: OV851  status CANDIDATE  confidence 0.0013  low_confidence  emitted: no

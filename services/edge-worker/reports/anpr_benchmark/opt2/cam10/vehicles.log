@@ -1,0 +1,38 @@
+[CAM10] Vehicle ID: cam10_s0_t54 (car)
+Track duration: 0.2 s  frames 53-57
+Plate candidates: 1  best frame: 54  plate size: 52x34  quality: 0.614
+OCR (per candidate, first 40):
+  f   54 41x22 q=0.61 det=0.36 -> GJ17L7735 0.52
+FINAL: GL46L7735  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t74 (car)
+Track duration: 1.7 s  frames 73-116
+Plate candidates: 2  best frame: 91  plate size: 77x49  quality: 0.692
+OCR (per candidate, first 40):
+  f   91 62x33 q=0.69 det=0.21 -> - 0.00
+  f   92 43x19 q=0.60 det=0.23 -> - 0.00
+FINAL: GJ33GJ26  status CANDIDATE  confidence 0.0025  low_confidence  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t98 (car)
+Track duration: 1.0 s  frames 115-139
+Plate candidates: 1  best frame: 123  plate size: 96x44  quality: 0.786
+OCR (per candidate, first 40):
+  f  123 78x29 q=0.79 det=0.39 -> - 0.00
+FINAL: GJ022070  status CANDIDATE  confidence 0.0011  no_glyph_evidence:0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t6 (car)
+Track duration: 44.8 s  frames 0-1120
+Plate candidates: 4  best frame: 1100  plate size: 40x12  quality: 0.517
+OCR (per candidate, first 40):
+  f  493 32x9 q=0.53 det=0.23 -> - 0.00
+  f 1060 32x8 q=0.54 det=0.27 -> - 0.00
+  f 1080 32x8 q=0.54 det=0.24 -> - 0.00
+  f 1100 32x8 q=0.52 det=0.37 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:7.1<8.0  emitted: no
+
+[CAM10] Vehicle ID: cam10_s0_t201 (car)
+Track duration: 5.6 s  frames 400-540
+Plate candidates: 1  best frame: 455  plate size: 12x9  quality: 0.426
+OCR (per candidate, first 40):
+  f  455 10x6 q=0.43 det=0.34 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  width_below_gate:12<22  emitted: no

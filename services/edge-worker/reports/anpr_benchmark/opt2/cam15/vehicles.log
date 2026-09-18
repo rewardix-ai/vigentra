@@ -1,0 +1,79 @@
+[CAM15] Vehicle ID: cam15_s0_t14 (motorcycle)
+Track duration: 9.8 s  frames 79-325
+Plate candidates: 1  best frame: 131  plate size: 46x36  quality: 0.563
+OCR (per candidate, first 40):
+  f  131 37x24 q=0.56 det=0.25 -> - 0.00
+FINAL: DL06E77  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM15] Vehicle ID: cam15_s0_t63 (motorcycle)
+Track duration: 5.4 s  frames 360-496
+Plate candidates: 7  best frame: 486  plate size: 51x44  quality: 0.591
+OCR (per candidate, first 40):
+  f  365 37x28 q=0.57 det=0.21 -> - 0.00
+  f  448 38x26 q=0.57 det=0.20 -> - 0.00
+  f  451 38x28 q=0.58 det=0.25 -> - 0.00
+  f  452 39x29 q=0.58 det=0.24 -> - 0.00
+  f  455 37x28 q=0.57 det=0.26 -> - 0.00
+  f  476 38x26 q=0.57 det=0.23 -> - 0.00
+  f  486 40x29 q=0.59 det=0.27 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  static_overlay_text  emitted: no
+
+[CAM15] Vehicle ID: cam15_s0_t70 (motorcycle)
+Track duration: 17.4 s  frames 501-936
+Plate candidates: 1  best frame: 910  plate size: 25x19  quality: 0.464
+OCR (per candidate, first 40):
+  f  910 20x12 q=0.46 det=0.20 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:6.0<8.0  emitted: no
+
+[CAM15] Vehicle ID: cam15_s0_t78 (motorcycle)
+Track duration: 16.0 s  frames 588-987
+Plate candidates: 2  best frame: 639  plate size: 26x20  quality: 0.445
+OCR (per candidate, first 40):
+  f  637 20x14 q=0.45 det=0.21 -> - 0.00
+  f  639 20x14 q=0.45 det=0.26 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:4.2<8.0  emitted: no
+
+[CAM15] Vehicle ID: cam15_s0_t54 (motorcycle)
+Track duration: 31.4 s  frames 336-1121
+Plate candidates: 39  best frame: 842  plate size: 35x26  quality: 0.508
+OCR (per candidate, first 40):
+  f  820 28x17 q=0.50 det=0.21 -> - 0.00
+  f  821 28x17 q=0.50 det=0.22 -> - 0.00
+  f  822 28x17 q=0.50 det=0.22 -> - 0.00
+  f  823 28x17 q=0.50 det=0.23 -> - 0.00
+  f  826 28x17 q=0.49 det=0.31 -> - 0.00
+  f  827 28x17 q=0.49 det=0.31 -> - 0.00
+  f  828 28x17 q=0.49 det=0.31 -> - 0.00
+  f  829 28x17 q=0.49 det=0.31 -> - 0.00
+  f  830 28x17 q=0.49 det=0.31 -> - 0.00
+  f  831 28x17 q=0.50 det=0.22 -> - 0.00
+  f  832 28x17 q=0.50 det=0.24 -> - 0.00
+  f  833 28x17 q=0.50 det=0.25 -> - 0.00
+  f  834 28x17 q=0.51 det=0.21 -> - 0.00
+  f  835 28x17 q=0.50 det=0.27 -> - 0.00
+  f  836 28x17 q=0.50 det=0.27 -> - 0.00
+  f  837 28x17 q=0.50 det=0.27 -> - 0.00
+  f  838 28x17 q=0.50 det=0.27 -> - 0.00
+  f  839 28x17 q=0.50 det=0.26 -> - 0.00
+  f  840 28x17 q=0.50 det=0.27 -> - 0.00
+  f  841 28x18 q=0.51 det=0.37 -> - 0.00
+  f  842 28x18 q=0.51 det=0.38 -> - 0.00
+  f  843 28x18 q=0.51 det=0.38 -> - 0.00
+  f  844 28x18 q=0.51 det=0.38 -> - 0.00
+  f  845 27x16 q=0.47 det=0.23 -> - 0.00
+  f  856 28x16 q=0.48 det=0.23 -> - 0.00
+  f  857 28x16 q=0.48 det=0.22 -> - 0.00
+  f  858 28x16 q=0.48 det=0.21 -> - 0.00
+  f  861 27x16 q=0.47 det=0.34 -> - 0.00
+  f  862 27x16 q=0.47 det=0.35 -> - 0.00
+  f  863 27x16 q=0.47 det=0.35 -> - 0.00
+  f  864 27x16 q=0.47 det=0.35 -> - 0.00
+  f  867 27x15 q=0.46 det=0.21 -> - 0.00
+  f  869 27x15 q=0.46 det=0.23 -> - 0.00
+  f  870 27x15 q=0.46 det=0.24 -> - 0.00
+  f  871 27x15 q=0.46 det=0.24 -> - 0.00
+  f  872 27x15 q=0.46 det=0.24 -> - 0.00
+  f  873 27x15 q=0.46 det=0.24 -> - 0.00
+  f  874 27x15 q=0.46 det=0.24 -> - 0.00
+  f  875 28x16 q=0.48 det=0.43 -> - 0.00
+FINAL: GJ123377  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

@@ -1,0 +1,3 @@
+vehicle_id,frame,engine_frame,timestamp_s,x1,y1,x2,y2,width,height,area,aspect,band,det_conf,two_row,sharpness_lap,tenengrad,brightness,contrast,blur_extent,skew_deg,dark_frac,bloom_frac,quality,ocr_text,ocr_conf,ocr_readers
+cam01_s0_t6,54,16,2.16,580.3,457.5,687.3,518.6,107.0,61.1,6538,1.75,MEDIUM,0.346,1,379.2,15658.2,220.1,51.2,2.94,0.0,0.0,0.3,0.876,,0.0,
+cam01_s0_t6,56,18,2.24,587.4,453.9,692.4,512.0,105.0,58.1,6104,1.81,MEDIUM,0.252,1,362.1,15397.8,221.1,52.7,3.08,0.0,0.0,0.291,0.874,,0.0,

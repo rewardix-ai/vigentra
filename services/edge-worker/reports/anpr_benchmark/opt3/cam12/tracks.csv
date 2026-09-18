@@ -1,0 +1,5 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam12_s0_t1,car,56,74,8,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam12_s0_t7,truck,198,212,8,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam12_s0_t5,car,102,214,57,40,37.2,VERY_SMALL,156,44x19,0.776,0.589,GJ02TS3825,0.0955,CANDIDATE,too_few_agreeing_frames,1,0,0,UNREADABLE
+cam12_s0_t9,car,286,288,2,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

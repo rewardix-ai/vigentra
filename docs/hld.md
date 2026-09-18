@@ -227,21 +227,26 @@ determines whether the graded test case works at all, so it is worth being
 precise about what it does:
 
 ```
-frame
+frame (sampled per camera: config/camera_profiles.yaml)
   ├─ overlay mask          OSD strips, static text and hoardings excluded
   ├─ vehicle detector (YOLO11 + ByteTrack) ──► stable track id per vehicle
+  │                        at the frame's own resolution; small frames are never enlarged
   ├─ plate detector        inside each vehicle box ≥96 px wide: crop → upscale
-  │                        ≥640 px → CNN (+ retro-reflective proposer) → geometry prior
-  │                        (a box wider than 0.60 of its vehicle is demoted)
+  │                        ≥640 px → CNN → geometry prior (a box wider than 0.60 of its
+  │                        vehicle is demoted) → 0.2 score floor; one plate per track per frame
   ├─ crop bank             every crop stamped with track, frame, PTS, quality
   │                        (a verdict is produced when the track closes)
   ├─ legibility gate       width · sharpness · contrast ──► UNREADABLE
   ├─ restoration           rectify → ECC register → fuse (weighted median or
   │                        shift-and-add SR) → glare → denoise → deblur →
   │                        deskew → binarise
-  ├─ readers               CRNN-CTC over every variant, read independently; a
-  │                        second CRNN fills in a shown, never-confirmed read
-  │                        only where the first cannot decide
+  ├─ readers               CRNN-CTC over every variant, read independently; a second CRNN,
+  │                        and where installed a whole-crop text reader, vote alongside.
+  │                        Crops under 24 px wide are not read at all
+  ├─ string vote           each crop's own reading votes, weighted by crop quality and read
+  │                        confidence; the primary reader decides, another reader may carry a
+  │                        confirmation only when a second reader produced that string and no
+  │                        reader opposes it
   ├─ grammar engine        Indian plate formats + confusion-aware repair
   ├─ ROVER vote            across the track's crops
   └─ glyph check           the crops must show a row of characters ──► CONFIRMED | CANDIDATE
@@ -260,7 +265,17 @@ The two layers carrying the accuracy are the **grammar engine** and the
   A soft Gujarat prior breaks ties without preventing other states validating.
 - **Consensus.** A plate is emitted **once per vehicle**, with the count of
   frames that agreed. That count travels to the operator's screen, because one
-  frame is a guess and twelve frames agreeing is a reading.
+  frame is a guess and twelve frames agreeing is a reading. Fragments of one
+  vehicle that read the same registration within 15 s are merged first, so a car
+  the tracker split into four is one sighting, not four.
+- **Per camera, not per estate.** Sampling, pass budget, low-light handling and
+  any threshold can be set per camera. The measured policy: a dense pass where
+  plates are large enough to read (cam06, cam07, cam12, the Delhi camera), a
+  cheap one elsewhere — on twelve of the grid cameras the widest plate per
+  vehicle is 14-31 px, which no budget makes readable (docs/anpr-baseline.md).
+- **Measured, on every recorded clip.** 15 of the 26 plates a person can read
+  across the 36 clips, none wrong, against 9 before this work, at 2.4x the speed
+  (docs/anpr-optimisation.md). Without the optional text reader: 13.
 - **Search only where a plate can be read.** A vehicle narrower than 96 px
   carries a plate under 40 px, which never reads exactly even when frames are
   fused, so its plate search waits until it comes closer; it is still tracked

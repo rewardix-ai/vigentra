@@ -1,0 +1,8 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+tfl_08_s0_t1,car,0,50,11,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_08_s0_t2,car,0,45,10,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_08_s0_t5,car,70,120,10,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_08_s0_t8,car,125,190,14,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_08_s0_t9,car,160,230,15,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_08_s0_t10,car,175,205,7,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_08_s0_t13,car,205,235,7,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

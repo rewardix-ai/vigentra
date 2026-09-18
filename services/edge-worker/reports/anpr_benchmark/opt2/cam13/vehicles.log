@@ -1,0 +1,22 @@
+[CAM13] Vehicle ID: cam13_s0_t1 (truck)
+Track duration: 6.1 s  frames 0-152
+Plate candidates: 2  best frame: 113  plate size: 67x42  quality: 0.682
+OCR (per candidate, first 40):
+  f  113 54x28 q=0.68 det=0.22 -> - 0.00
+  f  114 54x27 q=0.68 det=0.20 -> - 0.00
+FINAL: GJ247711  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM13] Vehicle ID: cam13_s0_t64 (car)
+Track duration: 6.4 s  frames 101-260
+Plate candidates: 2  best frame: 260  plate size: 66x25  quality: 0.713
+OCR (per candidate, first 40):
+  f  259 54x17 q=0.72 det=0.31 -> - 0.00
+  f  260 54x17 q=0.71 det=0.53 -> - 0.00
+FINAL: GJ00BE76  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM13] Vehicle ID: cam13_s0_t162 (truck)
+Track duration: 1.0 s  frames 270-295
+Plate candidates: 1  best frame: 287  plate size: 32x23  quality: 0.492
+OCR (per candidate, first 40):
+  f  287 26x16 q=0.49 det=0.24 -> - 0.00
+FINAL: -  status UNREADABLE  confidence 0.0  sharpness_below_gate:2.9<8.0  emitted: no

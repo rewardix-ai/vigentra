@@ -1,0 +1,187 @@
+# Per-camera configuration (anpr/camera/profile.py).
+#
+# One global pipeline, tuned per camera without code changes. For the camera an engine is built for
+# (matched by key or alias, case-insensitively; the worker offers the canonical registry id and the grid
+# id, e.g. cam06):
+#   thresholds     deep-merged over thresholds.yaml (only keys that differ from the global file)
+#   sampling       AdaptiveSampler: stride (null = the worker's --sample-interval), burst_frames, burst_plate_px
+#   frame_quality  FrameQualityRouter: night_mode auto | on | off, plus any router argument
+# Everything else is description for operators, measured by tools/anpr_profile_cameras.py on the recorded
+# clips (docs/anpr-baseline.md): lighting, which plate side the camera mostly sees, the median widest plate
+# per track, and the diagnostic difficulty class. The pipeline does not read it.
+#
+# A value belongs here only when it was measured to help that camera (docs/anpr-optimisation.md);
+# ROI and overlay rectangles stay in roi.yaml.
+
+defaults:
+  thresholds: {}
+  sampling: {stride: null}
+  # off: never CLAHE a whole dark frame before detection. On rec_cam07 (median luma 41) the enhanced frame
+  # cost a third of the tracked detections; no camera measured better with it on. A camera may set
+  # night_mode: auto or on for itself.
+  frame_quality: {night_mode: off}
+
+cameras:
+  cam01:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam01]
+    site: Chimanbhai Patel Bridge, RTO Circle (PTZ)
+    lighting: bright
+    plate_side: rear
+    plate_width_p50_px: 24
+    difficulty: DIFFICULT
+  cam02:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam02]
+    site: Janpath T-Junction (PTZ)
+    lighting: bright
+    plate_side: both
+    plate_width_p50_px: 22
+    difficulty: DIFFICULT
+  cam04:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam04]
+    site: Paldi Junction (fixed)
+    lighting: bright
+    plate_side: rear
+    plate_width_p50_px: 27
+    difficulty: DIFFICULT
+  cam05:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam05]
+    site: Visat Three-Way Junction (PTZ)
+    lighting: bright
+    plate_side: both
+    plate_width_p50_px: 20
+    difficulty: DIFFICULT
+  cam06:
+    # readable plates live here: a dense pass (measured: 150 processed frames at stride 2 confirmed 4
+    # Delhi plates where the deployed 25 at stride 20 confirmed 2)
+    sampling: {stride: 2, max_frames: 150}
+    aliases: [GRID-cam06, cam06_1080p]
+    site: Madhuram Bypass Road (fixed)
+    lighting: bright
+    plate_side: front
+    plate_width_p50_px: 46
+    difficulty: MEDIUM
+  cam07:
+    # readable plates live here: a dense pass (measured: 150 processed frames at stride 2 confirmed 4
+    # Delhi plates where the deployed 25 at stride 20 confirmed 2)
+    sampling: {stride: 2, max_frames: 150}
+    aliases: [GRID-cam07]
+    site: Hero Showroom, Bhavani Char Rasta (fixed)
+    lighting: dark
+    plate_side: rear
+    plate_width_p50_px: 54
+    difficulty: DIFFICULT
+  cam08:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam08]
+    site: Majevadi Gate (PTZ)
+    lighting: dim
+    plate_side: rear
+    plate_width_p50_px: 31
+    difficulty: DIFFICULT
+  cam09:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam09]
+    site: New Bypass, 66KV Substation (fixed)
+    lighting: dark
+    plate_side: front
+    difficulty: EXTREME
+    notes: headlight glare only; no plate legible in the recording
+  cam10:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam10]
+    site: Char Chowk (fixed)
+    lighting: dim
+    plate_side: rear
+    plate_width_p50_px: 23
+    difficulty: DIFFICULT
+  cam11:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam11]
+    site: Dolatpara Gate (PTZ)
+    lighting: bright
+    plate_side: rear
+    plate_width_p50_px: 17
+    difficulty: VERY_DIFFICULT
+  cam12:
+    # a toll lane pointed at plates: the recording holds one vehicle, so the size is unproven here,
+    # but this is what the camera is for
+    sampling: {stride: 2, max_frames: 150}
+    aliases: [GRID-cam12]
+    site: Adalaj Toll Plaza lane 9 (ANPR-capable)
+    lighting: bright
+    plate_side: front
+    difficulty: EXTREME
+    notes: one vehicle in the recording
+  cam13:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam13]
+    site: C.N. Vidyalaya Junction (RLVD)
+    lighting: bright
+    plate_side: rear
+    plate_width_p50_px: 20
+    difficulty: DIFFICULT
+  cam14:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam14]
+    site: Delight Circle (RLVD)
+    lighting: bright
+    plate_side: both
+    plate_width_p50_px: 14
+    difficulty: VERY_DIFFICULT
+  cam15:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam15]
+    site: Suvidha Park Junction (RLVD)
+    lighting: bright
+    plate_side: rear
+    plate_width_p50_px: 19
+    difficulty: VERY_DIFFICULT
+  cam16:
+    # no plate here is wide enough to read, so this camera gets the small pass budget; its stride
+    # stays the worker's own, because the frames still count vehicles and detection is cheap
+    sampling: {max_frames: 25}
+    aliases: [GRID-cam16]
+    site: Visat T-Junction (RLVD)
+    lighting: bright
+    plate_side: rear
+    plate_width_p50_px: 20
+    difficulty: DIFFICULT
+  delhi_1080p:
+    # readable plates live here: a dense pass (measured: 150 processed frames at stride 2 confirmed 4
+    # Delhi plates where the deployed 25 at stride 20 confirmed 2)
+    sampling: {stride: 2, max_frames: 150}
+    aliases: [traffic_01, TRF-AHM-0001]   # the traffic VMS serves this clip as TRF-AHM-0001
+    site: Delhi street clip, handheld 1080p (the sample traffic camera)
+    lighting: bright
+    plate_side: front
+    plate_width_p50_px: 64
+    difficulty: GOOD
+    thresholds:
+      # Delhi plates: the grammar's tie-break state. With GJ every DL string carried a 0.7 prior penalty.
+      reading: {preferred_state: DL}

@@ -1,0 +1,69 @@
+[CAM04] Vehicle ID: cam04_s0_t85 (bus)
+Track duration: 2.3 s  frames 160-218
+Plate candidates: 7  best frame: 162  plate size: 241x176  quality: 0.979
+OCR (per candidate, first 40):
+  f  160 156x113 q=0.97 det=0.24 -> - 0.00
+  f  161 182x114 q=0.98 det=0.24 -> - 0.00
+  f  162 194x117 q=0.98 det=0.23 -> KL41AA9072 0.53
+  f  163 155x126 q=0.97 det=0.20 -> UA48B7663 0.55
+  f  164 153x122 q=0.97 det=0.23 -> MH04PN072 0.51
+  f  165 215x123 q=0.98 det=0.21 -> KA02A8463 0.54
+  f  167 190x127 q=0.98 det=0.22 -> KA01ACK54 0.53
+FINAL: KK01AB6647  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM04] Vehicle ID: cam04_s0_t282 (bus)
+Track duration: 1.4 s  frames 435-471
+Plate candidates: 14  best frame: 438  plate size: 205x141  quality: 0.974
+OCR (per candidate, first 40):
+  f  438 165x94 q=0.97 det=0.45 -> MH51F7107 0.53
+  f  439 165x92 q=0.98 det=0.23 -> MH51R1167 0.57
+  f  440 152x88 q=0.97 det=0.30 -> GJ07GOB5875 0.56
+  f  441 157x82 q=0.98 det=0.43 -> CG01R707 0.71
+  f  442 166x80 q=0.97 det=0.21 -> PY26CG5875 0.55
+  f  444 149x82 q=0.98 det=0.25 -> PB07GB5875 0.52
+  f  445 146x78 q=0.98 det=0.35 -> - 0.00
+  f  447 143x76 q=0.98 det=0.22 -> MH51M1107 0.58
+  f  449 137x76 q=0.98 det=0.26 -> TG31C656 0.56
+  f  453 131x72 q=0.97 det=0.43 -> CG81C658 0.60
+  f  454 131x72 q=0.97 det=0.37 -> UK81C6587 0.58
+  f  455 129x71 q=0.98 det=0.39 -> TG81G6587 0.59
+  f  456 130x69 q=0.97 det=0.21 -> CG21C6587 0.62
+  f  460 121x65 q=0.97 det=0.41 -> - 0.00
+FINAL: MH51F7147  status CANDIDATE  confidence 0.0966  second_reader_only  emitted: no
+
+[CAM04] Vehicle ID: cam04_s0_t258 (bus)
+Track duration: 2.6 s  frames 420-486
+Plate candidates: 6  best frame: 433  plate size: 214x156  quality: 0.971
+OCR (per candidate, first 40):
+  f  433 172x104 q=0.97 det=0.55 -> MH01RR7107 0.53
+  f  434 193x114 q=0.97 det=0.29 -> PB01QG5810 0.56
+  f  435 167x99 q=0.97 det=0.48 -> AP01C6580 0.58
+  f  436 164x97 q=0.97 det=0.31 -> MH26OG5870 0.52
+  f  437 163x93 q=0.98 det=0.48 -> AP11CG5815 0.52
+  f  458 126x68 q=0.97 det=0.27 -> - 0.00
+FINAL: AP01C6581  status CANDIDATE  confidence 0.0004  low_confidence  emitted: no
+
+[CAM04] Vehicle ID: cam04_s0_t294 (bus)
+Track duration: 3.2 s  frames 459-538
+Plate candidates: 4  best frame: 504  plate size: 116x56  quality: 0.965
+OCR (per candidate, first 40):
+  f  502 96x38 q=0.97 det=0.22 -> GA27GGS5170 0.61
+  f  504 94x37 q=0.96 det=0.35 -> CG01C5976 0.67
+  f  514 89x35 q=0.98 det=0.30 -> CG52T9296 0.54
+  f  524 171x84 q=0.96 det=0.29 -> MH41DA152 0.51
+FINAL: CG62T6255  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM04] Vehicle ID: cam04_s0_t323 (car)
+Track duration: 3.3 s  frames 498-580
+Plate candidates: 9  best frame: 580  plate size: 26x9  quality: 0.455
+OCR (per candidate, first 40):
+  f  523 29x9 q=0.42 det=0.22 -> - 0.00
+  f  546 24x8 q=0.40 det=0.33 -> - 0.00
+  f  547 24x8 q=0.39 det=0.23 -> - 0.00
+  f  548 24x8 q=0.40 det=0.30 -> - 0.00
+  f  550 23x7 q=0.35 det=0.28 -> - 0.00
+  f  552 24x8 q=0.41 det=0.22 -> - 0.00
+  f  558 24x6 q=0.44 det=0.23 -> - 0.00
+  f  560 23x6 q=0.38 det=0.30 -> - 0.00
+  f  580 21x6 q=0.46 det=0.21 -> - 0.00
+FINAL: GJ177771  status CANDIDATE  confidence 0.0  no_glyph_evidence:2  emitted: no

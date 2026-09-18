@@ -90,7 +90,7 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
     from anpr.read.crnn import CRNNReader
     from anpr.sampling import AdaptiveSampler
     from anpr.track.crop_bank import CropBankStore
-    from app.anpr_engine import AnprEngine, _track_number
+    from app.anpr_engine import AnprEngine, _track_number, router_settings, sampler_settings
     from app.frame_quality import FrameQualityRouter
     from app.plates import PLATE_BEARING_CLASSES
     from app.worker import iter_clip_frames
@@ -179,15 +179,16 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
         engine = AnprEngine(camera_id=camera)
         pipe = engine._pipeline
         pipe.bank_dump_dir = bank_dir
-        sampler = AdaptiveSampler(stride=max(1, stride))
-        router = FrameQualityRouter()
+        # as the worker does: the camera's profile may set its own sampling and low-light handling
+        sampler = AdaptiveSampler(**sampler_settings(engine.profile, stride))
+        router = FrameQualityRouter(**router_settings(engine.profile))
         threading.Thread(target=monitor, daemon=True).start()
 
         processed = skipped = veh = plates = 0
         quality = Counter()
         lat = []
         t0 = time.perf_counter()
-        for frame_index, frame in iter_clip_frames(str(path), 1):
+        for frame_index, frame, pts_seconds in iter_clip_frames(str(path), 1):
             if max_frames is not None and processed >= max_frames:
                 break          # the worker's pass budget (--max-frames)
             if not sampler.should_process(frame_index):
@@ -200,7 +201,7 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
                 continue
             vframe[engine._frames] = frame_index
             t1 = time.perf_counter()
-            dets, _ = engine.process(img, captured_at=time.time(), discontinuity=False)
+            dets, _ = engine.process(img, captured_at=pts_seconds, discontinuity=False)
             lat.append((time.perf_counter() - t1) * 1000)
             sampler.note(d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name in PLATE_BEARING_CLASSES)
             veh += len(dets)

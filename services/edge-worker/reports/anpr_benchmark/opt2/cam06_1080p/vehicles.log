@@ -1,0 +1,841 @@
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t8 (truck)
+Track duration: 0.3 s  frames 54-61
+Plate candidates: 2  best frame: 61  plate size: 49x27  quality: 0.783
+OCR (per candidate, first 40):
+  f   60 31x18 q=0.61 det=0.43 -> - 0.00
+  f   61 40x18 q=0.78 det=0.67 -> TS11BD45 0.66
+FINAL: SS77D45  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t12 (motorcycle)
+Track duration: 1.9 s  frames 60-104
+Plate candidates: 24  best frame: 101  plate size: 89x92  quality: 0.982
+OCR (per candidate, first 40):
+  f   62 40x36 q=0.66 det=0.24 -> - 0.00
+  f   63 39x35 q=0.66 det=0.56 -> - 0.00
+  f   64 38x36 q=0.63 det=0.63 -> HP777290 0.55
+  f   65 38x37 q=0.64 det=0.51 -> - 0.00
+  f   74 45x40 q=0.71 det=0.21 -> - 0.00
+  f   78 47x31 q=0.81 det=0.51 -> - 0.00
+  f   79 47x31 q=0.82 det=0.21 -> - 0.00
+  f   81 48x45 q=0.76 det=0.30 -> - 0.00
+  f   82 48x39 q=0.78 det=0.39 -> - 0.00
+  f   83 50x40 q=0.82 det=0.24 -> - 0.00
+  f   84 51x38 q=0.85 det=0.25 -> - 0.00
+  f   85 51x45 q=0.81 det=0.35 -> - 0.00
+  f   86 54x46 q=0.87 det=0.40 -> WB560970 0.52
+  f   87 55x50 q=0.88 det=0.28 -> - 0.00
+  f   88 55x50 q=0.89 det=0.22 -> - 0.00
+  f   90 55x47 q=0.87 det=0.21 -> - 0.00
+  f   91 56x35 q=0.90 det=0.30 -> - 0.00
+  f   94 59x54 q=0.90 det=0.29 -> - 0.00
+  f   95 59x57 q=0.91 det=0.40 -> - 0.00
+  f   96 61x56 q=0.93 det=0.34 -> - 0.00
+  f   97 63x60 q=0.94 det=0.34 -> - 0.00
+  f   99 63x58 q=0.94 det=0.27 -> WB07DD707 0.61
+  f  100 66x59 q=0.95 det=0.25 -> GJ21C6119 0.61
+  f  101 72x61 q=0.98 det=0.35 -> GJ32AG2883 1.00
+FINAL: HP087555  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t1 (truck)
+Track duration: 13.4 s  frames 0-310
+Plate candidates: 68  best frame: 285  plate size: 74x62  quality: 0.923
+OCR (per candidate, first 40):
+  f   77 32x15 q=0.65 det=0.30 -> - 0.00
+  f   89 34x18 q=0.61 det=0.45 -> - 0.00
+  f   92 33x20 q=0.62 det=0.34 -> - 0.00
+  f   93 34x24 q=0.65 det=0.31 -> KA12XK705 0.86
+  f   94 34x22 q=0.65 det=0.53 -> GJ18XL6705 0.80
+  f   95 35x22 q=0.66 det=0.21 -> GJ12XK705 0.82
+  f   97 35x24 q=0.66 det=0.40 -> GJ12XK705 0.79
+  f   98 35x25 q=0.68 det=0.33 -> GJ18XK705 0.82
+  f  101 34x25 q=0.67 det=0.21 -> GA12XKA709 0.90
+  f  102 35x27 q=0.68 det=0.42 -> GJ18XTS705 0.73
+  f  103 35x20 q=0.66 det=0.33 -> GA18XKA705 0.85
+  f  104 35x26 q=0.68 det=0.44 -> GA18XKA705 0.86
+  f  106 36x24 q=0.70 det=0.37 -> GJ13XJ705 0.87
+  f  108 35x26 q=0.66 det=0.36 -> GA13XK705 0.86
+  f  110 36x22 q=0.69 det=0.45 -> GA13XKA705 0.83
+  f  111 35x24 q=0.68 det=0.22 -> GA18XK705 0.84
+  f  112 35x26 q=0.67 det=0.41 -> GA13X705 0.97
+  f  113 35x25 q=0.66 det=0.40 -> GA12XK705 0.86
+  f  114 36x26 q=0.68 det=0.34 -> GA12XK705 0.84
+  f  115 36x24 q=0.69 det=0.23 -> GA12XK705 0.83
+  f  119 34x20 q=0.64 det=0.30 -> - 0.00
+  f  129 36x19 q=0.71 det=0.33 -> KA12X705 0.93
+  f  131 35x23 q=0.71 det=0.64 -> GA12X705 0.91
+  f  134 36x26 q=0.72 det=0.33 -> GJ18X705 0.94
+  f  135 38x27 q=0.74 det=0.25 -> GA13X705 0.91
+  f  138 37x28 q=0.73 det=0.24 -> GA12X705 0.96
+  f  139 38x28 q=0.74 det=0.23 -> GJ18X705 0.94
+  f  140 38x22 q=0.74 det=0.34 -> GJ13X705 0.96
+  f  142 39x28 q=0.76 det=0.22 -> KA13X705 0.76
+  f  143 39x29 q=0.76 det=0.33 -> GJ18XKJ705 0.85
+  f  146 37x24 q=0.73 det=0.27 -> GJ18X705 0.97
+  f  150 37x26 q=0.77 det=0.44 -> KA13X705 0.88
+  f  158 38x28 q=0.75 det=0.31 -> GJ18X705 0.95
+  f  176 38x26 q=0.79 det=0.51 -> GJ18X705 0.96
+  f  187 40x28 q=0.79 det=0.33 -> GJ18X705 0.92
+  f  200 41x27 q=0.82 det=0.45 -> KA18X755 0.63
+  f  202 41x27 q=0.83 det=0.24 -> KA18X705 0.71
+  f  211 41x29 q=0.83 det=0.26 -> GJ07AE0651 0.62
+  f  212 41x30 q=0.80 det=0.26 -> GJ13X705 0.96
+  f  217 41x29 q=0.80 det=0.42 -> GJ12X705 0.90
+FINAL: GJ18X6705  status CANDIDATE  confidence 0.2515  second_reader_only  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t23 (motorcycle)
+Track duration: 2.2 s  frames 303-353
+Plate candidates: 18  best frame: 349  plate size: 99x28  quality: 0.964
+OCR (per candidate, first 40):
+  f  325 57x12 q=0.89 det=0.45 -> GJ24HY6413 0.55
+  f  326 58x12 q=0.89 det=0.22 -> GJ14XS1412 0.57
+  f  335 61x13 q=0.91 det=0.29 -> - 0.00
+  f  338 67x15 q=0.93 det=0.24 -> - 0.00
+  f  339 68x16 q=0.94 det=0.37 -> - 0.00
+  f  340 69x15 q=0.95 det=0.48 -> - 0.00
+  f  341 70x15 q=0.95 det=0.45 -> - 0.00
+  f  342 38x12 q=0.61 det=0.23 -> - 0.00
+  f  344 70x16 q=0.94 det=0.52 -> GJ04HH4175 0.62
+  f  345 73x17 q=0.96 det=0.41 -> GJ14TF4875 0.67
+  f  346 77x18 q=0.96 det=0.57 -> GJ14TH4136 0.73
+  f  347 77x18 q=0.97 det=0.48 -> - 0.00
+  f  348 76x18 q=0.97 det=0.42 -> - 0.00
+  f  349 80x19 q=0.96 det=0.63 -> DL14TF1145 0.54
+  f  350 83x18 q=0.97 det=0.68 -> - 0.00
+  f  351 85x17 q=0.97 det=0.52 -> MH41FTY315 0.60
+  f  352 90x22 q=0.97 det=0.29 -> KL40FF1995 0.53
+  f  353 89x19 q=0.97 det=0.20 -> PB54DT1395 0.80
+FINAL: DN04TA1195  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t32 (motorcycle)
+Track duration: 2.5 s  frames 342-401
+Plate candidates: 23  best frame: 400  plate size: 62x24  quality: 0.866
+OCR (per candidate, first 40):
+  f  375 35x12 q=0.70 det=0.34 -> - 0.00
+  f  377 36x12 q=0.65 det=0.59 -> - 0.00
+  f  378 36x12 q=0.67 det=0.28 -> - 0.00
+  f  379 41x12 q=0.76 det=0.24 -> - 0.00
+  f  380 40x13 q=0.72 det=0.22 -> - 0.00
+  f  381 41x13 q=0.74 det=0.28 -> - 0.00
+  f  382 40x13 q=0.73 det=0.46 -> - 0.00
+  f  383 42x13 q=0.77 det=0.43 -> - 0.00
+  f  384 42x14 q=0.77 det=0.63 -> GJ18L4428 0.52
+  f  385 43x13 q=0.78 det=0.24 -> GJ14L3222 0.63
+  f  386 44x13 q=0.79 det=0.55 -> GJ14L3222 0.59
+  f  387 45x14 q=0.81 det=0.43 -> - 0.00
+  f  388 46x13 q=0.81 det=0.45 -> JK74C822 0.52
+  f  392 49x18 q=0.78 det=0.40 -> JK114186 0.67
+  f  393 47x16 q=0.79 det=0.27 -> - 0.00
+  f  394 49x18 q=0.79 det=0.44 -> - 0.00
+  f  395 48x16 q=0.81 det=0.59 -> JK16C8535 0.50
+  f  396 49x16 q=0.86 det=0.69 -> LA16C423 0.61
+  f  397 47x16 q=0.81 det=0.67 -> MH07EE1391 0.52
+  f  398 48x15 q=0.81 det=0.48 -> ML18C823 0.55
+  f  399 49x17 q=0.85 det=0.62 -> AS14E075 0.54
+  f  400 50x16 q=0.87 det=0.72 -> DL1AE4315 0.79
+  f  401 52x17 q=0.86 det=0.60 -> DL1AE4315 0.83
+FINAL: DL1AE4315  status CANDIDATE  confidence 0.2253  second_reader_only  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t34 (car)
+Track duration: 4.0 s  frames 344-437
+Plate candidates: 68  best frame: 413  plate size: 179x58  quality: 0.982
+OCR (per candidate, first 40):
+  f  344 71x20 q=0.94 det=0.29 -> GJ32AG2803 0.90
+  f  345 72x19 q=0.94 det=0.60 -> GJ32AG2803 0.95
+  f  346 75x21 q=0.95 det=0.67 -> GJ32AG2883 0.95
+  f  347 75x20 q=0.95 det=0.76 -> GJ32AG2883 0.95
+  f  348 74x20 q=0.94 det=0.78 -> GJ32AG2803 0.95
+  f  349 77x20 q=0.94 det=0.75 -> GJ32AG2883 0.97
+  f  350 77x21 q=0.94 det=0.79 -> GJ32AG2883 0.99
+  f  351 77x21 q=0.97 det=0.77 -> KA11AK044 0.70
+  f  352 77x20 q=0.97 det=0.77 -> GJ32AG2883 1.00
+  f  355 79x22 q=0.93 det=0.76 -> GJ32AG2883 1.00
+  f  362 83x26 q=0.90 det=0.75 -> - 0.00
+  f  363 83x25 q=0.90 det=0.76 -> - 0.00
+  f  364 84x25 q=0.91 det=0.76 -> GJ32AG2883 1.00
+  f  365 84x25 q=0.90 det=0.78 -> KA12XK705 0.86
+  f  366 87x24 q=0.90 det=0.76 -> - 0.00
+  f  367 86x24 q=0.92 det=0.77 -> GJ32AG2883 1.00
+  f  368 88x25 q=0.92 det=0.79 -> GJ32AG2883 0.99
+  f  369 87x24 q=0.92 det=0.77 -> GJ32AG2883 1.00
+  f  370 91x26 q=0.92 det=0.83 -> GJ32AG2883 1.00
+  f  371 93x25 q=0.91 det=0.78 -> GJ32AG2883 0.99
+  f  372 95x26 q=0.92 det=0.78 -> GJ21ECE1594 0.53
+  f  373 95x26 q=0.93 det=0.82 -> GJ32AG2883 1.00
+  f  374 96x25 q=0.92 det=0.76 -> GJ32AG2883 1.00
+  f  375 95x26 q=0.92 det=0.77 -> GJ32AG2883 1.00
+  f  376 94x26 q=0.93 det=0.81 -> GJ07AE3351 0.55
+  f  377 97x26 q=0.95 det=0.78 -> RJ03SF5351 0.54
+  f  378 100x26 q=0.97 det=0.78 -> GJ32AG2883 1.00
+  f  379 100x27 q=0.96 det=0.80 -> GJ32AG2883 1.00
+  f  380 99x26 q=0.95 det=0.77 -> GJ32AG2883 1.00
+  f  381 102x27 q=0.95 det=0.79 -> GJ32AG2883 1.00
+  f  382 100x26 q=0.95 det=0.78 -> GJ32AG2883 1.00
+  f  383 103x28 q=0.94 det=0.77 -> BR07JF9361 0.55
+  f  384 105x28 q=0.94 det=0.76 -> GJ32AG2883 1.00
+  f  385 104x26 q=0.95 det=0.76 -> GJ32AG2883 0.99
+  f  386 106x27 q=0.94 det=0.75 -> GJ32AG2883 1.00
+  f  387 107x28 q=0.96 det=0.77 -> GJ32AG2883 1.00
+  f  388 106x28 q=0.97 det=0.76 -> GJ32AG2883 1.00
+  f  389 108x28 q=0.97 det=0.77 -> GJ32AG2883 0.99
+  f  390 109x30 q=0.97 det=0.76 -> GJ32AG2883 1.00
+  f  391 111x29 q=0.97 det=0.76 -> GJ32AG2883 1.00
+FINAL: GJ32AG2883  status CONFIRMED  confidence 0.959    emitted: GJ32AG2883
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t46 (motorcycle)
+Track duration: 3.2 s  frames 427-502
+Plate candidates: 40  best frame: 496  plate size: 100x27  quality: 0.957
+OCR (per candidate, first 40):
+  f  447 54x14 q=0.83 det=0.33 -> HR54S7380 0.50
+  f  451 55x14 q=0.84 det=0.32 -> - 0.00
+  f  452 37x11 q=0.74 det=0.22 -> - 0.00
+  f  456 59x16 q=0.87 det=0.29 -> - 0.00
+  f  457 58x14 q=0.86 det=0.46 -> WB02KU3347 0.51
+  f  459 60x15 q=0.88 det=0.42 -> MH03EU1381 0.53
+  f  460 60x15 q=0.87 det=0.41 -> AS14E075 0.54
+  f  461 60x14 q=0.87 det=0.32 -> - 0.00
+  f  462 62x16 q=0.89 det=0.22 -> - 0.00
+  f  463 62x16 q=0.89 det=0.41 -> - 0.00
+  f  464 61x16 q=0.88 det=0.46 -> MH07EE1391 0.52
+  f  467 40x11 q=0.77 det=0.30 -> BR382351 0.59
+  f  470 66x16 q=0.90 det=0.22 -> - 0.00
+  f  471 58x15 q=0.88 det=0.55 -> GJ01EE0951 0.58
+  f  473 41x13 q=0.79 det=0.28 -> - 0.00
+  f  475 61x15 q=0.89 det=0.35 -> GJ01EE0561 0.59
+  f  476 119x104 q=0.98 det=0.22 -> MP04B1051 0.54
+  f  479 70x16 q=0.94 det=0.51 -> MH10FLL5941 0.58
+  f  480 69x16 q=0.94 det=0.26 -> - 0.00
+  f  481 70x16 q=0.95 det=0.31 -> - 0.00
+  f  482 41x13 q=0.80 det=0.55 -> GJ072783 0.58
+  f  483 72x16 q=0.96 det=0.60 -> GJ37EZ3481 0.66
+  f  484 72x16 q=0.96 det=0.57 -> GJ07AL9151 0.63
+  f  485 73x16 q=0.97 det=0.46 -> - 0.00
+  f  486 73x17 q=0.96 det=0.40 -> GJ29BJJ3461 0.67
+  f  487 75x16 q=0.96 det=0.48 -> RJ03SF5351 0.54
+  f  488 75x16 q=0.96 det=0.40 -> GJ38BJF8361 0.56
+  f  489 76x17 q=0.96 det=0.45 -> BR07JF9361 0.55
+  f  490 78x17 q=0.96 det=0.37 -> - 0.00
+  f  491 78x18 q=0.96 det=0.42 -> GJ07AE3351 0.55
+  f  492 79x18 q=0.96 det=0.46 -> RJ03AE0751 0.64
+  f  493 80x18 q=0.96 det=0.37 -> GJ03AB9151 0.60
+  f  494 81x18 q=0.96 det=0.59 -> GJ07AE0651 0.62
+  f  495 81x18 q=0.96 det=0.52 -> - 0.00
+  f  496 80x18 q=0.96 det=0.73 -> GJ07AE3651 0.70
+  f  497 83x18 q=0.96 det=0.69 -> GJ07JF3161 0.58
+  f  498 82x18 q=0.96 det=0.63 -> GJ07AE8667 0.60
+  f  499 83x19 q=0.96 det=0.58 -> GJ03AE0148 0.67
+  f  500 89x22 q=0.97 det=0.50 -> GJ07AF051 0.79
+  f  501 87x20 q=0.96 det=0.34 -> GJ27AT6451 0.71
+FINAL: GJ07AE0461  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t47 (motorcycle)
+Track duration: 2.9 s  frames 481-549
+Plate candidates: 58  best frame: 545  plate size: 76x55  quality: 0.908
+OCR (per candidate, first 40):
+  f  490 33x20 q=0.55 det=0.40 -> GJ17C5184 0.56
+  f  491 33x20 q=0.54 det=0.41 -> GJ17C5184 0.59
+  f  492 34x20 q=0.55 det=0.35 -> GJ13G186 0.57
+  f  493 34x20 q=0.57 det=0.79 -> GJ13C1184 0.53
+  f  494 34x20 q=0.56 det=0.80 -> GJ32AG2883 1.00
+  f  495 35x22 q=0.57 det=0.78 -> GJ115518 0.60
+  f  496 35x22 q=0.59 det=0.81 -> GJ15H5184 0.50
+  f  497 36x23 q=0.61 det=0.78 -> KA01EN84 0.72
+  f  498 36x23 q=0.60 det=0.82 -> KA03EW94 0.64
+  f  499 37x22 q=0.60 det=0.77 -> - 0.00
+  f  500 37x24 q=0.71 det=0.81 -> GJ11CE1044 0.56
+  f  501 36x24 q=0.67 det=0.82 -> GJ11A7544 0.56
+  f  502 38x24 q=0.68 det=0.79 -> GJ11CE1841 0.55
+  f  503 38x24 q=0.65 det=0.81 -> TN446848 0.50
+  f  504 38x25 q=0.67 det=0.81 -> - 0.00
+  f  505 39x24 q=0.66 det=0.79 -> - 0.00
+  f  506 39x26 q=0.66 det=0.83 -> KA15KKA044 0.55
+  f  507 39x25 q=0.64 det=0.79 -> GJ21ECE1044 0.55
+  f  508 40x25 q=0.65 det=0.81 -> GJ11CL1644 0.75
+  f  509 40x26 q=0.64 det=0.82 -> GJ21ECE1046 0.57
+  f  510 40x25 q=0.64 det=0.80 -> KA16CK044 0.68
+  f  511 40x25 q=0.63 det=0.81 -> GJ21ECE1594 0.53
+  f  512 42x25 q=0.68 det=0.81 -> GJ13CR1544 0.64
+  f  513 41x25 q=0.69 det=0.80 -> GJ15CV1044 0.55
+  f  514 42x26 q=0.73 det=0.82 -> GJ15CV1044 0.55
+  f  515 42x26 q=0.71 det=0.81 -> RJ15CWR044 0.81
+  f  516 42x25 q=0.75 det=0.80 -> GJ15CE1844 0.72
+  f  517 44x26 q=0.77 det=0.80 -> KA11CKK044 0.79
+  f  518 44x26 q=0.78 det=0.80 -> GJ11CK044 0.96
+  f  519 44x26 q=0.78 det=0.80 -> GJ11CK044 0.97
+  f  520 43x27 q=0.76 det=0.81 -> GJ11CK044 0.97
+  f  521 45x26 q=0.80 det=0.79 -> GJ11CK044 0.99
+  f  522 44x27 q=0.78 det=0.80 -> GJ11CK044 0.99
+  f  523 45x28 q=0.78 det=0.79 -> KA13AC041 0.54
+  f  524 46x28 q=0.82 det=0.82 -> GJ11CK044 0.98
+  f  525 47x30 q=0.82 det=0.80 -> KA11SK49 0.53
+  f  526 47x30 q=0.82 det=0.80 -> KA11SK49 0.61
+  f  527 48x31 q=0.83 det=0.80 -> KA11SK019 0.61
+  f  528 49x32 q=0.84 det=0.80 -> GA11SK0049 0.64
+  f  529 51x31 q=0.84 det=0.77 -> GJ11SK0019 0.72
+FINAL: GJ11CK1044  status CONFIRMED  confidence 0.5223    emitted: GJ11CK1044
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t52 (motorcycle)
+Track duration: 2.2 s  frames 525-576
+Plate candidates: 30  best frame: 571  plate size: 92x26  quality: 0.956
+OCR (per candidate, first 40):
+  f  528 49x12 q=0.83 det=0.24 -> RJ14UA4164 0.89
+  f  539 56x12 q=0.87 det=0.38 -> - 0.00
+  f  541 56x13 q=0.86 det=0.22 -> - 0.00
+  f  542 55x11 q=0.84 det=0.24 -> DL07TB7262 0.51
+  f  543 56x12 q=0.86 det=0.34 -> - 0.00
+  f  544 58x12 q=0.88 det=0.20 -> - 0.00
+  f  547 59x12 q=0.87 det=0.30 -> - 0.00
+  f  549 59x11 q=0.88 det=0.21 -> - 0.00
+  f  552 61x16 q=0.88 det=0.21 -> GJ27AT6451 0.71
+  f  553 62x14 q=0.89 det=0.28 -> - 0.00
+  f  554 62x14 q=0.89 det=0.65 -> - 0.00
+  f  555 61x12 q=0.89 det=0.43 -> MH18B2164 0.52
+  f  556 64x14 q=0.90 det=0.43 -> - 0.00
+  f  557 65x14 q=0.91 det=0.52 -> - 0.00
+  f  559 65x13 q=0.91 det=0.34 -> - 0.00
+  f  560 65x13 q=0.91 det=0.48 -> - 0.00
+  f  561 67x13 q=0.91 det=0.54 -> GJ34LX1823 0.58
+  f  562 69x15 q=0.93 det=0.57 -> GJ36LF9233 0.56
+  f  563 68x15 q=0.93 det=0.59 -> - 0.00
+  f  564 71x15 q=0.94 det=0.56 -> - 0.00
+  f  565 73x16 q=0.95 det=0.53 -> - 0.00
+  f  566 72x16 q=0.95 det=0.53 -> GJ06LX9213 0.52
+  f  567 74x16 q=0.95 det=0.44 -> - 0.00
+  f  568 73x17 q=0.96 det=0.60 -> CH24AS1821 0.69
+  f  569 73x16 q=0.96 det=0.55 -> GJ34FSY9213 0.59
+  f  570 74x16 q=0.96 det=0.61 -> GJ11E7119 0.66
+  f  571 75x17 q=0.96 det=0.68 -> GJ34EJ1821 0.65
+  f  572 75x19 q=0.97 det=0.48 -> GJ32AL1821 0.52
+  f  573 76x17 q=0.96 det=0.54 -> GJ34EJ1831 0.59
+  f  576 62x16 q=0.91 det=0.52 -> MH11K8230 0.78
+FINAL: GJ34EA1923  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t56 (motorcycle)
+Track duration: 4.6 s  frames 548-655
+Plate candidates: 11  best frame: 581  plate size: 113x104  quality: 0.995
+OCR (per candidate, first 40):
+  f  581 91x69 q=0.99 det=0.24 -> GJ11EJ7328 0.53
+  f  584 45x11 q=0.80 det=0.23 -> - 0.00
+  f  586 38x11 q=0.77 det=0.20 -> KA11CJ3571 0.61
+  f  587 49x11 q=0.81 det=0.36 -> - 0.00
+  f  588 43x11 q=0.79 det=0.21 -> - 0.00
+  f  631 34x39 q=0.59 det=0.34 -> ML07E8242 0.55
+  f  634 42x46 q=0.69 det=0.22 -> DL07TB7262 0.51
+  f  636 53x40 q=0.89 det=0.31 -> - 0.00
+  f  637 57x42 q=0.91 det=0.31 -> MN22EE20 0.57
+  f  638 58x41 q=0.91 det=0.31 -> MH02EE687 0.51
+  f  639 60x40 q=0.93 det=0.21 -> - 0.00
+FINAL: AR28H1337  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t62 (motorcycle)
+Track duration: 0.2 s  frames 717-721
+Plate candidates: 3  best frame: 717  plate size: 97x27  quality: 0.964
+OCR (per candidate, first 40):
+  f  717 78x18 q=0.96 det=0.72 -> GJ01TCJ7578 0.79
+  f  718 78x18 q=0.96 det=0.71 -> GJ11CJ7578 0.85
+  f  719 79x18 q=0.97 det=0.70 -> GJ11CJ7578 0.90
+FINAL: GJ17CJ7578  status CANDIDATE  confidence 0.9995  too_few_agreeing_frames  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t60 (motorcycle)
+Track duration: 1.6 s  frames 690-726
+Plate candidates: 28  best frame: 723  plate size: 106x28  quality: 0.973
+OCR (per candidate, first 40):
+  f  690 55x14 q=0.83 det=0.54 -> - 0.00
+  f  691 55x13 q=0.84 det=0.32 -> GJ15A0194 0.61
+  f  692 56x13 q=0.85 det=0.37 -> GJ176581 0.54
+  f  694 57x13 q=0.86 det=0.72 -> GJ19C7179 0.56
+  f  696 59x14 q=0.86 det=0.68 -> GJ11EJ7879 0.58
+  f  698 60x14 q=0.87 det=0.55 -> GJ17T0741 0.71
+  f  700 61x15 q=0.87 det=0.64 -> KA11J210 0.52
+  f  702 63x15 q=0.88 det=0.69 -> KA11KA7171 0.76
+  f  703 63x15 q=0.89 det=0.64 -> GJ11E7119 0.66
+  f  704 64x15 q=0.89 det=0.68 -> GJ11X7118 0.60
+  f  705 64x16 q=0.90 det=0.73 -> GJ11EE7118 0.64
+  f  706 65x16 q=0.91 det=0.70 -> GJ33H0683 0.65
+  f  707 67x15 q=0.92 det=0.70 -> GJ11J7118 0.67
+  f  708 68x16 q=0.93 det=0.68 -> GJ11EJ7328 0.53
+  f  709 68x15 q=0.92 det=0.66 -> GJ11BJ7118 0.63
+  f  710 70x16 q=0.93 det=0.69 -> GJ11FX7179 0.61
+  f  711 70x16 q=0.93 det=0.70 -> GJ11FT7179 0.65
+  f  712 71x16 q=0.94 det=0.68 -> GJ11FJ7179 0.76
+  f  713 72x16 q=0.94 det=0.63 -> GA11VJ7179 0.61
+  f  714 74x17 q=0.95 det=0.67 -> KA11NJ7378 0.60
+  f  715 75x17 q=0.95 det=0.66 -> GJ17YJ7118 0.58
+  f  716 73x16 q=0.95 det=0.59 -> KA11CJ3571 0.61
+  f  720 81x19 q=0.97 det=0.73 -> GJ11CA3578 0.89
+  f  721 81x19 q=0.97 det=0.75 -> GJ185563 0.54
+  f  723 86x19 q=0.97 det=0.76 -> GJ11CJ7578 0.95
+  f  724 85x18 q=0.97 det=0.73 -> GJ11CJ7578 0.98
+  f  725 90x20 q=0.98 det=0.42 -> WB04LF9711 0.58
+  f  726 70x15 q=0.95 det=0.42 -> GJ11CJ757 0.84
+FINAL: GJ11CJ7578  status CONFIRMED  confidence 0.4599    emitted: GJ11CJ7578
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t67 (car)
+Track duration: 0.2 s  frames 731-735
+Plate candidates: 4  best frame: 733  plate size: 78x25  quality: 0.73
+OCR (per candidate, first 40):
+  f  732 64x18 q=0.75 det=0.25 -> - 0.00
+  f  733 63x17 q=0.73 det=0.43 -> - 0.00
+  f  734 66x16 q=0.76 det=0.38 -> - 0.00
+  f  735 62x15 q=0.71 det=0.45 -> - 0.00
+FINAL: KB40AA4609  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t68 (motorcycle)
+Track duration: 2.1 s  frames 745-794
+Plate candidates: 19  best frame: 784  plate size: 89x24  quality: 0.956
+OCR (per candidate, first 40):
+  f  770 54x11 q=0.87 det=0.21 -> GJ13F7443 0.56
+  f  774 33x11 q=0.58 det=0.20 -> - 0.00
+  f  775 53x14 q=0.86 det=0.39 -> GJ15A0194 0.61
+  f  776 38x12 q=0.69 det=0.51 -> TS501543 0.66
+  f  778 53x14 q=0.87 det=0.67 -> GJ11A0786 0.56
+  f  779 61x13 q=0.91 det=0.40 -> GJ33H0683 0.65
+  f  780 61x16 q=0.91 det=0.50 -> GJ11U7583 0.59
+  f  781 61x15 q=0.91 det=0.44 -> GJ13HU3683 0.67
+  f  782 45x14 q=0.83 det=0.24 -> GJ185563 0.54
+  f  783 63x15 q=0.91 det=0.34 -> GJ37EA1841 0.58
+  f  784 71x16 q=0.96 det=0.65 -> GJ08U7643 0.50
+  f  786 67x16 q=0.95 det=0.59 -> GJ31HU7693 0.54
+  f  787 66x21 q=0.94 det=0.65 -> MH03MH3581 0.72
+  f  788 44x15 q=0.75 det=0.35 -> - 0.00
+  f  789 53x15 q=0.88 det=0.52 -> JK18S0641 0.57
+  f  790 68x17 q=0.95 det=0.59 -> TS31TTS3581 0.71
+  f  791 48x15 q=0.82 det=0.34 -> TN103581 0.66
+  f  792 54x16 q=0.89 det=0.54 -> DL1RS0543 0.62
+  f  793 64x17 q=0.94 det=0.31 -> GJ01AU7581 0.70
+FINAL: GJ11A0543  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t70 (motorcycle)
+Track duration: 2.3 s  frames 803-856
+Plate candidates: 4  best frame: 848  plate size: 87x71  quality: 0.976
+OCR (per candidate, first 40):
+  f  848 70x47 q=0.98 det=0.51 -> - 0.00
+  f  849 71x50 q=0.98 det=0.22 -> - 0.00
+  f  850 66x39 q=0.94 det=0.20 -> - 0.00
+  f  854 96x49 q=0.99 det=0.21 -> KL08K607 0.63
+FINAL: DL020226  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t75 (motorcycle)
+Track duration: 2.1 s  frames 829-878
+Plate candidates: 13  best frame: 874  plate size: 101x32  quality: 0.985
+OCR (per candidate, first 40):
+  f  855 82x106 q=0.99 det=0.22 -> - 0.00
+  f  863 65x18 q=0.93 det=0.31 -> - 0.00
+  f  867 70x18 q=0.96 det=0.21 -> GJ03LBC7976 0.59
+  f  868 66x16 q=0.94 det=0.52 -> - 0.00
+  f  869 72x20 q=0.98 det=0.71 -> GJ01ZDT1972 0.73
+  f  870 73x20 q=0.98 det=0.69 -> GJ11CB1191 0.56
+  f  871 74x20 q=0.98 det=0.75 -> RJ14UA191 0.76
+  f  873 78x21 q=0.98 det=0.75 -> RJ14UX17 0.66
+  f  874 81x21 q=0.98 det=0.75 -> RJ14HA8166 0.81
+  f  875 82x18 q=0.97 det=0.71 -> RJ14UA4164 0.90
+  f  876 85x22 q=0.98 det=0.58 -> RJ14UA4164 0.89
+  f  877 86x17 q=0.97 det=0.30 -> RJ14BA1116 0.70
+  f  878 75x44 q=0.98 det=0.21 -> MH04C1476 0.56
+FINAL: RJ14UA4164  status CANDIDATE  confidence 0.1128  second_reader_only  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t72 (motorcycle)
+Track duration: 4.3 s  frames 810-910
+Plate candidates: 1  best frame: 819  plate size: 98x98  quality: 0.981
+OCR (per candidate, first 40):
+  f  819 79x65 q=0.98 det=0.24 -> TS11F1157 0.52
+FINAL: DL016  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t84 (motorcycle)
+Track duration: 2.3 s  frames 891-945
+Plate candidates: 23  best frame: 942  plate size: 107x30  quality: 0.971
+OCR (per candidate, first 40):
+  f  909 59x16 q=0.88 det=0.25 -> KL87U4941 0.59
+  f  910 111x94 q=0.98 det=0.33 -> AP08J3357 0.52
+  f  911 56x12 q=0.84 det=0.36 -> NL07J1796 0.59
+  f  914 62x13 q=0.88 det=0.23 -> - 0.00
+  f  917 62x13 q=0.87 det=0.33 -> GJ05JV9901 0.54
+  f  918 60x13 q=0.86 det=0.26 -> GJ31TV0033 0.57
+  f  921 65x14 q=0.90 det=0.37 -> GJ31EN0081 0.59
+  f  922 66x17 q=0.92 det=0.35 -> GJ13DT9081 0.53
+  f  923 67x15 q=0.91 det=0.34 -> CH33H0833 0.61
+  f  924 68x19 q=0.94 det=0.27 -> GJ01ER0483 0.57
+  f  926 67x15 q=0.92 det=0.30 -> GJ31W3083 0.74
+  f  929 72x15 q=0.93 det=0.45 -> PY079178 0.58
+  f  930 52x15 q=0.85 det=0.23 -> JH12N0084 0.59
+  f  932 66x16 q=0.91 det=0.22 -> - 0.00
+  f  933 54x14 q=0.84 det=0.21 -> AP91D6008 0.59
+  f  934 47x14 q=0.82 det=0.30 -> GJ363033 0.61
+  f  935 63x34 q=0.93 det=0.34 -> - 0.00
+  f  936 77x20 q=0.96 det=0.26 -> GJ01JN3089 0.59
+  f  938 70x16 q=0.94 det=0.42 -> GA01DN5080 0.72
+  f  939 83x23 q=0.98 det=0.31 -> GJ30TDB6080 0.61
+  f  942 86x21 q=0.97 det=0.59 -> GJ03DB0080 0.89
+  f  943 76x21 q=0.97 det=0.47 -> GJ03DBC080 0.84
+  f  944 69x47 q=0.96 det=0.27 -> - 0.00
+FINAL: GJ03DR0089  status CANDIDATE  confidence 0.0882  second_reader_only  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t90 (motorcycle)
+Track duration: 2.3 s  frames 935-988
+Plate candidates: 37  best frame: 978  plate size: 95x29  quality: 0.968
+OCR (per candidate, first 40):
+  f  950 51x13 q=0.82 det=0.25 -> - 0.00
+  f  951 54x13 q=0.85 det=0.34 -> GJ14B2777 0.51
+  f  952 51x13 q=0.83 det=0.24 -> - 0.00
+  f  953 55x14 q=0.85 det=0.27 -> - 0.00
+  f  954 56x14 q=0.85 det=0.61 -> GJ14D191 0.53
+  f  955 56x14 q=0.85 det=0.47 -> GJ03B0183 0.53
+  f  956 57x14 q=0.85 det=0.31 -> GJ03KS7334 0.70
+  f  957 58x14 q=0.86 det=0.69 -> - 0.00
+  f  958 59x14 q=0.87 det=0.67 -> GJ17CB2211 0.58
+  f  959 59x15 q=0.89 det=0.66 -> GJ22D2293 0.53
+  f  960 58x15 q=0.89 det=0.73 -> - 0.00
+  f  961 60x15 q=0.89 det=0.75 -> GJ21R1793 0.51
+  f  962 61x15 q=0.89 det=0.72 -> GJ34C1113 0.61
+  f  963 63x16 q=0.91 det=0.65 -> GJ21C6119 0.61
+  f  964 63x16 q=0.91 det=0.68 -> GJ01EV111 0.50
+  f  965 64x16 q=0.91 det=0.70 -> UA21EM119 0.59
+  f  966 65x16 q=0.91 det=0.50 -> WB19TC4801 0.53
+  f  967 66x16 q=0.91 det=0.45 -> - 0.00
+  f  968 67x16 q=0.93 det=0.67 -> GJ233379 0.55
+  f  969 67x16 q=0.93 det=0.65 -> GJ22T3119 0.53
+  f  970 69x16 q=0.94 det=0.71 -> GJ233719 0.56
+  f  971 70x17 q=0.94 det=0.73 -> GJ223119 0.61
+  f  972 69x17 q=0.94 det=0.71 -> GJ22L8119 0.53
+  f  973 72x18 q=0.96 det=0.66 -> GJ22Z0319 0.52
+  f  974 73x18 q=0.96 det=0.68 -> GJ22Z3399 0.56
+  f  975 73x18 q=0.96 det=0.72 -> DL2BD2794 0.87
+  f  976 74x19 q=0.96 det=0.71 -> GJ28ED2154 0.67
+  f  977 76x18 q=0.96 det=0.71 -> DL10G2154 0.54
+  f  978 77x19 q=0.97 det=0.73 -> DL01D2194 0.68
+  f  979 78x20 q=0.97 det=0.64 -> GJ20CB2184 0.58
+  f  980 79x20 q=0.97 det=0.70 -> TG20EB2184 0.57
+  f  981 82x20 q=0.97 det=0.69 -> - 0.00
+  f  982 82x22 q=0.97 det=0.65 -> DL7BJ2754 0.60
+  f  983 83x20 q=0.97 det=0.69 -> MH18B2164 0.52
+  f  984 82x19 q=0.96 det=0.49 -> KA12BJ7134 0.60
+  f  985 84x19 q=0.97 det=0.56 -> KA12DD7151 0.61
+  f  986 86x18 q=0.97 det=0.58 -> - 0.00
+FINAL: DL02AD2154  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t94 (motorcycle)
+Track duration: 2.8 s  frames 941-1006
+Plate candidates: 39  best frame: 1003  plate size: 105x28  quality: 0.977
+OCR (per candidate, first 40):
+  f  953 37x10 q=0.67 det=0.35 -> MH15Y7748 0.53
+  f  967 58x14 q=0.88 det=0.63 -> MH10CM1102 0.65
+  f  968 57x12 q=0.86 det=0.26 -> MH01M7111 0.57
+  f  969 59x14 q=0.87 det=0.61 -> PY12UK1183 0.64
+  f  970 60x14 q=0.87 det=0.63 -> PY01UK1183 0.69
+  f  971 60x15 q=0.88 det=0.59 -> PY11UW1113 0.68
+  f  972 60x14 q=0.87 det=0.55 -> PY12CW1110 0.68
+  f  973 61x14 q=0.88 det=0.56 -> PB12UM1978 0.54
+  f  974 60x12 q=0.87 det=0.52 -> MH01M1978 0.59
+  f  975 62x14 q=0.88 det=0.50 -> MH31HTA1710 0.60
+  f  976 61x12 q=0.87 det=0.44 -> GJ11TA4170 0.53
+  f  977 55x12 q=0.83 det=0.42 -> GJ17FZ9411 0.71
+  f  978 64x12 q=0.89 det=0.50 -> GJ13TZY7787 0.70
+  f  979 64x12 q=0.90 det=0.41 -> GJ12CN6149 0.61
+  f  980 65x14 q=0.89 det=0.64 -> GJ21CN4813 0.59
+  f  981 66x15 q=0.91 det=0.44 -> GJ19TN4713 0.53
+  f  982 67x14 q=0.91 det=0.36 -> MH37TX4913 0.60
+  f  983 68x15 q=0.91 det=0.30 -> MH13TN4713 0.54
+  f  984 69x15 q=0.93 det=0.53 -> TN31TN4913 0.78
+  f  985 37x13 q=0.65 det=0.35 -> - 0.00
+  f  986 68x16 q=0.91 det=0.35 -> MH11TN4713 0.52
+  f  987 64x14 q=0.90 det=0.31 -> MH11TN4312 0.51
+  f  988 38x12 q=0.64 det=0.33 -> TG78T7717 0.61
+  f  989 71x16 q=0.94 det=0.37 -> GJ11TB0313 0.59
+  f  990 71x17 q=0.94 det=0.26 -> MH11TN2313 0.58
+  f  991 72x17 q=0.93 det=0.38 -> MH11N0313 0.55
+  f  992 39x12 q=0.69 det=0.25 -> AP08J3357 0.52
+  f  993 75x16 q=0.96 det=0.41 -> MH11TN2317 0.57
+  f  994 73x17 q=0.95 det=0.41 -> MH14TH0717 0.60
+  f  995 77x17 q=0.96 det=0.59 -> MH14TH4712 0.59
+  f  996 76x18 q=0.95 det=0.55 -> MH14TB4712 0.60
+  f  997 77x18 q=0.96 det=0.55 -> AS01FB2712 0.84
+  f  998 44x14 q=0.71 det=0.39 -> - 0.00
+  f  999 80x17 q=0.97 det=0.58 -> KL11UT9171 0.55
+  f 1000 80x18 q=0.96 det=0.66 -> GJ11TC9171 0.74
+  f 1001 84x18 q=0.97 det=0.66 -> GJ11TCR0713 0.67
+  f 1002 84x18 q=0.96 det=0.72 -> GJ11TCD2717 0.70
+  f 1003 85x19 q=0.98 det=0.73 -> MH11TCM0713 0.73
+  f 1004 92x18 q=0.98 det=0.54 -> GJ11TC9271 0.71
+FINAL: MH11CB0717  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t99 (motorcycle)
+Track duration: 2.5 s  frames 966-1024
+Plate candidates: 6  best frame: 1019  plate size: 105x27  quality: 0.967
+OCR (per candidate, first 40):
+  f 1001 65x15 q=0.92 det=0.41 -> - 0.00
+  f 1015 77x17 q=0.97 det=0.43 -> GJ23H1546 1.00
+  f 1017 57x17 q=0.89 det=0.38 -> ML18XK178 0.76
+  f 1018 82x18 q=0.97 det=0.35 -> - 0.00
+  f 1019 85x18 q=0.97 det=0.48 -> DL06TBA6178 0.56
+  f 1020 85x18 q=0.97 det=0.36 -> DL06TBA6179 0.59
+FINAL: DL2TMA6178  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t111 (motorcycle)
+Track duration: 4.5 s  frames 982-1087
+Plate candidates: 50  best frame: 1078  plate size: 101x26  quality: 0.976
+OCR (per candidate, first 40):
+  f 1007 44x11 q=0.74 det=0.23 -> - 0.00
+  f 1008 41x11 q=0.73 det=0.22 -> - 0.00
+  f 1009 46x10 q=0.78 det=0.26 -> - 0.00
+  f 1012 50x13 q=0.81 det=0.25 -> - 0.00
+  f 1013 51x13 q=0.81 det=0.26 -> - 0.00
+  f 1014 50x11 q=0.81 det=0.41 -> - 0.00
+  f 1015 50x12 q=0.81 det=0.25 -> GJ33K7354 0.53
+  f 1016 50x12 q=0.81 det=0.36 -> - 0.00
+  f 1017 51x11 q=0.81 det=0.33 -> - 0.00
+  f 1021 53x14 q=0.82 det=0.43 -> - 0.00
+  f 1022 54x13 q=0.83 det=0.30 -> - 0.00
+  f 1024 55x13 q=0.84 det=0.35 -> - 0.00
+  f 1025 54x12 q=0.83 det=0.22 -> - 0.00
+  f 1026 54x12 q=0.83 det=0.41 -> KA14UC9907 0.74
+  f 1027 55x12 q=0.83 det=0.40 -> KA14TC9901 0.69
+  f 1028 56x13 q=0.85 det=0.53 -> KA41C9034 0.67
+  f 1029 56x12 q=0.85 det=0.43 -> KL18YC9907 0.56
+  f 1030 56x12 q=0.84 det=0.49 -> DL13TC9991 0.52
+  f 1031 56x13 q=0.85 det=0.34 -> KL18TC9101 0.52
+  f 1032 57x13 q=0.86 det=0.58 -> GJ18J4456 0.64
+  f 1033 58x14 q=0.87 det=0.34 -> TN14YC8101 0.66
+  f 1034 58x13 q=0.87 det=0.44 -> TN410101 0.59
+  f 1035 58x13 q=0.86 det=0.40 -> TG418101 0.60
+  f 1036 58x15 q=0.86 det=0.25 -> TS410501 0.51
+  f 1037 59x12 q=0.88 det=0.35 -> - 0.00
+  f 1038 60x14 q=0.87 det=0.29 -> - 0.00
+  f 1041 58x13 q=0.86 det=0.25 -> KL315391 0.60
+  f 1046 64x13 q=0.90 det=0.27 -> - 0.00
+  f 1047 63x15 q=0.89 det=0.23 -> GJ14C8651 0.57
+  f 1048 63x12 q=0.90 det=0.21 -> GJ14ZLB0076 0.64
+  f 1049 64x16 q=0.90 det=0.32 -> DL14TT9807 0.52
+  f 1050 65x14 q=0.91 det=0.25 -> TS54FL9000 0.61
+  f 1052 66x14 q=0.91 det=0.27 -> KL10TT9653 0.57
+  f 1053 66x13 q=0.91 det=0.43 -> MH14TT1651 0.54
+  f 1054 66x13 q=0.90 det=0.45 -> WB19TC4801 0.53
+  f 1055 68x14 q=0.92 det=0.31 -> - 0.00
+  f 1059 67x14 q=0.93 det=0.36 -> GJ14TC6601 0.61
+  f 1060 69x14 q=0.93 det=0.37 -> TS04TC8631 0.57
+  f 1064 72x17 q=0.96 det=0.32 -> TG18TCW9914 0.53
+  f 1066 74x16 q=0.96 det=0.23 -> CG11TGV8514 0.57
+FINAL: GJ41CB6037  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t130 (motorcycle)
+Track duration: 2.2 s  frames 1176-1226
+Plate candidates: 37  best frame: 1223  plate size: 75x24  quality: 0.919
+OCR (per candidate, first 40):
+  f 1183 35x9 q=0.75 det=0.48 -> GJ339439 0.62
+  f 1184 35x9 q=0.76 det=0.37 -> - 0.00
+  f 1185 35x8 q=0.67 det=0.21 -> GJ319634 0.60
+  f 1186 37x9 q=0.78 det=0.52 -> - 0.00
+  f 1188 37x10 q=0.78 det=0.62 -> GJ23H1546 1.00
+  f 1192 40x10 q=0.78 det=0.54 -> GJ238499 0.60
+  f 1193 40x10 q=0.79 det=0.42 -> GJ31TV0033 0.57
+  f 1194 42x10 q=0.79 det=0.40 -> - 0.00
+  f 1196 42x11 q=0.81 det=0.53 -> - 0.00
+  f 1197 42x10 q=0.79 det=0.37 -> - 0.00
+  f 1198 42x12 q=0.81 det=0.59 -> - 0.00
+  f 1199 42x12 q=0.81 det=0.52 -> - 0.00
+  f 1200 44x12 q=0.81 det=0.50 -> GJ034499 0.53
+  f 1201 45x12 q=0.82 det=0.55 -> - 0.00
+  f 1202 45x12 q=0.83 det=0.64 -> GJ16Z4419 0.52
+  f 1203 47x12 q=0.83 det=0.67 -> - 0.00
+  f 1204 46x12 q=0.85 det=0.70 -> WB19TC4801 0.53
+  f 1205 48x13 q=0.85 det=0.59 -> TN18Z4410 0.56
+  f 1206 48x13 q=0.86 det=0.55 -> TN14Q4419 0.66
+  f 1207 49x13 q=0.86 det=0.53 -> SK783441 0.70
+  f 1208 50x14 q=0.86 det=0.57 -> - 0.00
+  f 1209 49x14 q=0.85 det=0.72 -> TR13D4416 0.55
+  f 1210 51x14 q=0.85 det=0.64 -> TN134235 0.53
+  f 1211 50x14 q=0.86 det=0.72 -> TS18J8815 0.51
+  f 1212 52x14 q=0.85 det=0.67 -> GJ18J4456 0.64
+  f 1213 54x15 q=0.86 det=0.68 -> GJ18J4213 0.56
+  f 1214 54x15 q=0.86 det=0.68 -> KA404496 0.63
+  f 1215 55x15 q=0.87 det=0.67 -> TS13D4433 0.77
+  f 1216 55x15 q=0.87 det=0.67 -> DL16D4430 0.56
+  f 1217 56x15 q=0.90 det=0.67 -> KA33ADB3 0.53
+  f 1218 57x16 q=0.90 det=0.72 -> DL1RD1430 0.57
+  f 1219 56x16 q=0.89 det=0.70 -> TS18J4439 0.66
+  f 1220 57x17 q=0.90 det=0.75 -> DL7BQ4439 0.56
+  f 1221 59x16 q=0.91 det=0.77 -> DL1BQ4438 0.64
+  f 1222 58x16 q=0.91 det=0.75 -> TS18Z4433 0.67
+  f 1223 60x16 q=0.92 det=0.79 -> DL7BQ4438 0.66
+  f 1224 63x15 q=0.93 det=0.73 -> TN18D6433 0.70
+FINAL: TL18D4491  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t133 (motorcycle)
+Track duration: 2.0 s  frames 1255-1301
+Plate candidates: 3  best frame: 1295  plate size: 101x27  quality: 0.975
+OCR (per candidate, first 40):
+  f 1283 111x84 q=0.96 det=0.22 -> - 0.00
+  f 1294 69x18 q=0.94 det=0.26 -> GJ11AA1366 0.50
+  f 1295 81x18 q=0.97 det=0.56 -> PB33FA1955 0.51
+FINAL: GL11AA6166  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t132 (car)
+Track duration: 3.1 s  frames 1251-1323
+Plate candidates: 65  best frame: 1299  plate size: 152x49  quality: 0.974
+OCR (per candidate, first 40):
+  f 1251 72x20 q=0.96 det=0.50 -> GJ23H1546 0.98
+  f 1252 73x19 q=0.96 det=0.61 -> GJ23H1546 0.99
+  f 1253 74x20 q=0.95 det=0.66 -> GJ23H1546 0.99
+  f 1254 74x21 q=0.95 det=0.69 -> GJ23H1546 1.00
+  f 1255 76x20 q=0.96 det=0.76 -> GJ23H1546 0.99
+  f 1256 76x20 q=0.96 det=0.77 -> GJ23H1546 1.00
+  f 1257 76x21 q=0.96 det=0.78 -> GJ23H1546 0.99
+  f 1258 78x21 q=0.96 det=0.73 -> GJ23H1546 1.00
+  f 1259 80x21 q=0.96 det=0.78 -> GJ23H1546 0.99
+  f 1260 79x21 q=0.96 det=0.76 -> GJ23H1546 1.00
+  f 1261 79x21 q=0.96 det=0.77 -> GJ23H1546 1.00
+  f 1262 79x21 q=0.96 det=0.77 -> GJ23H1546 1.00
+  f 1263 79x21 q=0.95 det=0.77 -> - 0.00
+  f 1264 82x22 q=0.95 det=0.79 -> GJ23H1546 1.00
+  f 1265 84x22 q=0.95 det=0.75 -> GJ23H1546 1.00
+  f 1266 84x22 q=0.95 det=0.78 -> GJ23H1546 1.00
+  f 1267 85x23 q=0.95 det=0.78 -> TN547974 0.53
+  f 1268 87x23 q=0.95 det=0.75 -> GJ23H1546 1.00
+  f 1269 87x23 q=0.96 det=0.78 -> GJ23H1546 1.00
+  f 1270 88x23 q=0.95 det=0.79 -> GJ23H1546 1.00
+  f 1271 88x23 q=0.95 det=0.76 -> GJ23H1546 1.00
+  f 1272 87x23 q=0.95 det=0.76 -> GJ23H1546 1.00
+  f 1273 90x23 q=0.95 det=0.76 -> GJ23H1546 1.00
+  f 1275 92x24 q=0.95 det=0.77 -> GJ23H1546 0.98
+  f 1276 91x24 q=0.95 det=0.78 -> GJ23H1546 1.00
+  f 1277 94x24 q=0.95 det=0.78 -> GJ23H1546 1.00
+  f 1278 95x25 q=0.95 det=0.76 -> GJ23H1546 1.00
+  f 1279 96x26 q=0.96 det=0.76 -> GJ23H1546 1.00
+  f 1280 97x25 q=0.96 det=0.77 -> GJ23H1546 1.00
+  f 1281 101x26 q=0.96 det=0.76 -> GJ23H1546 1.00
+  f 1282 100x25 q=0.96 det=0.77 -> GJ23H1546 1.00
+  f 1283 100x27 q=0.96 det=0.77 -> GJ23H1546 0.99
+  f 1284 103x28 q=0.96 det=0.76 -> GJ07C737 0.56
+  f 1285 103x28 q=0.96 det=0.79 -> GJ23H1546 1.00
+  f 1286 104x28 q=0.96 det=0.79 -> GJ23H1546 1.00
+  f 1287 105x29 q=0.96 det=0.78 -> GJ23H1546 1.00
+  f 1288 106x29 q=0.96 det=0.80 -> GJ23H1546 0.99
+  f 1289 107x30 q=0.96 det=0.80 -> GJ23H1546 1.00
+  f 1290 108x30 q=0.97 det=0.80 -> GJ23H1546 0.96
+  f 1291 110x29 q=0.96 det=0.80 -> GJ23H1546 0.98
+FINAL: GJ23H1546  status CONFIRMED  confidence 0.6514    emitted: GJ23H1546
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t147 (motorcycle)
+Track duration: 0.5 s  frames 1341-1353
+Plate candidates: 4  best frame: 1345  plate size: 59x39  quality: 0.698
+OCR (per candidate, first 40):
+  f 1343 61x30 q=0.82 det=0.27 -> GJ21R1793 0.51
+  f 1345 47x26 q=0.70 det=0.71 -> - 0.00
+  f 1346 47x26 q=0.68 det=0.33 -> DL3FP1845 0.73
+  f 1348 48x25 q=0.68 det=0.42 -> - 0.00
+FINAL: KL27F1845  status CANDIDATE  confidence 0.0001  low_confidence  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t152 (motorcycle)
+Track duration: 0.3 s  frames 1365-1372
+Plate candidates: 2  best frame: 1371  plate size: 48x36  quality: 0.604
+OCR (per candidate, first 40):
+  f 1370 39x24 q=0.60 det=0.22 -> - 0.00
+  f 1371 39x24 q=0.60 det=0.30 -> MH02AC8895 0.53
+FINAL: GJ851275  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t146 (motorcycle)
+Track duration: 4.0 s  frames 1340-1434
+Plate candidates: 72  best frame: 1430  plate size: 73x51  quality: 0.916
+OCR (per candidate, first 40):
+  f 1357 28x26 q=0.51 det=0.29 -> KA03ASP334 0.88
+  f 1358 31x26 q=0.54 det=0.61 -> - 0.00
+  f 1359 34x24 q=0.63 det=0.47 -> - 0.00
+  f 1360 36x25 q=0.62 det=0.42 -> GJ03KS334 0.99
+  f 1361 36x24 q=0.65 det=0.68 -> GJ11LP1393 0.57
+  f 1362 35x25 q=0.65 det=0.76 -> - 0.00
+  f 1363 36x25 q=0.65 det=0.49 -> - 0.00
+  f 1364 36x25 q=0.65 det=0.65 -> - 0.00
+  f 1365 37x25 q=0.67 det=0.55 -> DL11TM726 0.60
+  f 1366 37x24 q=0.66 det=0.39 -> KL21TM126 0.53
+  f 1367 38x25 q=0.67 det=0.74 -> - 0.00
+  f 1368 38x25 q=0.64 det=0.68 -> - 0.00
+  f 1369 38x25 q=0.66 det=0.58 -> KL11A8776 0.55
+  f 1370 39x25 q=0.68 det=0.74 -> - 0.00
+  f 1371 38x24 q=0.68 det=0.72 -> GJ33K7354 0.53
+  f 1372 39x24 q=0.69 det=0.73 -> ML14SS7364 0.57
+  f 1373 39x24 q=0.69 det=0.76 -> AP47F134 0.52
+  f 1374 40x24 q=0.69 det=0.75 -> - 0.00
+  f 1375 40x25 q=0.75 det=0.65 -> GJ13FU2774 0.56
+  f 1376 40x24 q=0.73 det=0.79 -> GJ19T2774 0.60
+  f 1377 39x23 q=0.72 det=0.79 -> - 0.00
+  f 1378 40x23 q=0.72 det=0.77 -> - 0.00
+  f 1379 40x24 q=0.69 det=0.73 -> GJ07C737 0.56
+  f 1380 40x24 q=0.73 det=0.75 -> TR744378 0.53
+  f 1381 41x24 q=0.77 det=0.66 -> DL128178 0.56
+  f 1382 41x23 q=0.76 det=0.62 -> MH12C3774 0.52
+  f 1383 42x24 q=0.78 det=0.65 -> OD27C7777 0.58
+  f 1384 41x23 q=0.75 det=0.70 -> DL11S7144 0.50
+  f 1385 42x23 q=0.77 det=0.78 -> TN12A974 0.57
+  f 1386 43x23 q=0.76 det=0.79 -> TN127114 0.55
+  f 1387 43x24 q=0.78 det=0.76 -> TN557114 0.51
+  f 1388 43x24 q=0.76 det=0.79 -> GJ12EC774 0.58
+  f 1389 43x24 q=0.80 det=0.80 -> TN547974 0.53
+  f 1390 43x25 q=0.79 det=0.81 -> DL7RT7234 0.61
+  f 1391 43x24 q=0.80 det=0.78 -> KA03AMA234 0.58
+  f 1392 43x24 q=0.80 det=0.79 -> TN947784 0.52
+  f 1393 44x24 q=0.80 det=0.78 -> KA01A714 0.56
+  f 1394 45x25 q=0.81 det=0.77 -> DL1RS0174 0.56
+  f 1395 45x25 q=0.82 det=0.80 -> MN547384 0.51
+  f 1396 45x24 q=0.83 det=0.78 -> MN54B3174 0.60
+FINAL: GJ03KS334  status CANDIDATE  confidence 0.069  second_reader_only  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t160 (motorcycle)
+Track duration: 2.1 s  frames 1407-1456
+Plate candidates: 22  best frame: 1453  plate size: 110x24  quality: 0.96
+OCR (per candidate, first 40):
+  f 1424 56x14 q=0.82 det=0.35 -> MH02AC8895 0.53
+  f 1428 60x16 q=0.87 det=0.31 -> - 0.00
+  f 1430 60x16 q=0.86 det=0.46 -> - 0.00
+  f 1432 61x16 q=0.88 det=0.43 -> GJ04FV4183 0.52
+  f 1436 65x15 q=0.90 det=0.39 -> - 0.00
+  f 1438 67x16 q=0.92 det=0.67 -> - 0.00
+  f 1439 68x16 q=0.93 det=0.64 -> WB04LF9711 0.58
+  f 1440 68x16 q=0.93 det=0.47 -> - 0.00
+  f 1441 68x16 q=0.93 det=0.49 -> WB41AR1471 0.60
+  f 1442 70x16 q=0.93 det=0.61 -> WB04LR1173 0.54
+  f 1443 69x16 q=0.92 det=0.34 -> CH11PH1173 0.75
+  f 1444 71x16 q=0.94 det=0.28 -> MH11PH1173 0.72
+  f 1445 72x16 q=0.95 det=0.36 -> PB51P1173 0.69
+  f 1446 77x14 q=0.94 det=0.30 -> PB51P1417 0.74
+  f 1447 78x17 q=0.96 det=0.55 -> GJ11LP1393 0.57
+  f 1448 80x18 q=0.96 det=0.45 -> GJ11PT7393 0.79
+  f 1449 81x17 q=0.95 det=0.44 -> GJ11LP1333 0.61
+  f 1450 80x18 q=0.96 det=0.28 -> GJ11CP1141 0.73
+  f 1451 85x17 q=0.96 det=0.40 -> GA11CP1241 0.66
+  f 1452 87x18 q=0.96 det=0.51 -> GJ11CP1111 0.69
+  f 1453 88x16 q=0.96 det=0.66 -> GJ11CP1111 0.73
+  f 1454 94x22 q=0.97 det=0.31 -> GJ11LP1133 0.67
+FINAL: GJ11PH171  status CANDIDATE  confidence 0.1981  too_few_agreeing_frames  emitted: no
+
+[CAM06_1080P] Vehicle ID: cam06_1080p_s0_t163 (motorcycle)
+Track duration: 1.4 s  frames 1471-1504
+Plate candidates: 29  best frame: 1504  plate size: 53x34  quality: 0.795
+OCR (per candidate, first 40):
+  f 1471 34x17 q=0.63 det=0.62 -> TN04A6677 0.51
+  f 1472 34x17 q=0.62 det=0.74 -> UP277515 0.51
+  f 1473 33x17 q=0.64 det=0.74 -> - 0.00
+  f 1474 34x18 q=0.64 det=0.76 -> - 0.00
+  f 1475 34x16 q=0.70 det=0.76 -> TN07AQ141 0.57
+  f 1476 34x18 q=0.71 det=0.74 -> - 0.00
+  f 1477 35x18 q=0.70 det=0.72 -> - 0.00
+  f 1478 35x18 q=0.67 det=0.77 -> - 0.00
+  f 1479 36x19 q=0.70 det=0.75 -> - 0.00
+  f 1480 35x18 q=0.67 det=0.80 -> MH023447 0.51
+  f 1481 35x18 q=0.67 det=0.80 -> TN07B6143 0.61
+  f 1482 36x18 q=0.68 det=0.76 -> TR223487 0.51
+  f 1484 37x20 q=0.71 det=0.77 -> - 0.00
+  f 1486 37x19 q=0.68 det=0.77 -> - 0.00
+  f 1488 38x20 q=0.72 det=0.77 -> GJ14F9497 0.61
+  f 1490 39x21 q=0.73 det=0.79 -> LA223718 0.62
+  f 1492 39x21 q=0.75 det=0.68 -> GJ21D5487 0.63
+  f 1493 39x22 q=0.76 det=0.62 -> KA02FDM482 0.50
+  f 1494 39x21 q=0.74 det=0.77 -> JK33GC9487 0.53
+  f 1495 40x22 q=0.75 det=0.74 -> RJ03FCH487 0.75
+  f 1496 41x23 q=0.76 det=0.76 -> GJ03FD407 0.62
+  f 1497 40x22 q=0.78 det=0.77 -> GJ03FQ8437 0.63
+  f 1498 41x23 q=0.77 det=0.78 -> GJ03B487 0.70
+  f 1499 41x23 q=0.76 det=0.74 -> MP08G2813 0.52
+  f 1500 41x23 q=0.79 det=0.77 -> GJ01FD487 0.78
+  f 1501 41x23 q=0.78 det=0.70 -> RJ03FD487 0.74
+  f 1502 42x24 q=0.80 det=0.77 -> RJ03FL487 0.66
+  f 1503 43x25 q=0.79 det=0.75 -> RJ03FAK481 0.64
+  f 1504 43x23 q=0.80 det=0.77 -> GJ03FA481 0.89
+FINAL: GJ03F0487  status CANDIDATE  confidence 0.0062  low_confidence  emitted: no

@@ -1,0 +1,7 @@
+[CAM01] Vehicle ID: cam01_s0_t6 (truck)
+Track duration: 8.0 s  frames 41-240
+Plate candidates: 2  best frame: 54  plate size: 133x91  quality: 0.876
+OCR (per candidate, first 40):
+  f   54 107x61 q=0.88 det=0.35 -> - 0.00
+  f   56 105x58 q=0.87 det=0.25 -> - 0.00
+FINAL: GJ015052  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

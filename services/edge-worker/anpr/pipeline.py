@@ -11,7 +11,8 @@ import dataclasses
 import json
 import logging
 import time
-from dataclasses import dataclass
+from collections import deque
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -113,6 +114,43 @@ def _top_valid_texts(hyps: list, k: int = 3) -> list[str]:
     return out
 
 
+def _coerce_to_format(text: str) -> Optional[str]:
+    """`text` with every character moved into the class its slot wants, or None if nothing changes.
+
+    Only the confusion map is used (anpr/plate_grammar.py: O/0, I/1, S/5, B/8, Z/2, G/6, ...), and only
+    where the most likely format for that length says letter or digit. A character with no confusion in
+    the wanted class is left alone, which leaves the string invalid and the caller drops it.
+    """
+    from anpr.plate_grammar import coerce, slot_types
+    slots = slot_types(len(text))
+    if not slots:
+        return None
+    out = "".join(coerce(ch, slot) for ch, slot in zip(text, slots))
+    return out if out != text else None
+
+
+def _one_track_per_plate(cands: list[tuple]) -> list[tuple]:
+    """One physical plate goes to one track per frame.
+
+    The plate detector runs once per vehicle box, and vehicle boxes overlap: a car inside a bus's
+    box, a lorry boxed twice as cab and trailer, a tracker duplicate. Each of them proposed the
+    same plate pixels, so one registration was banked into several tracks and each of them
+    voted on a mixture (delhi_1080p: 64 same-frame duplicate crops across 33 track pairs; t221
+    held DL1LT1087 next to the neighbour's DL3CCN5712, t560 three different plates). Of two
+    proposals for the same box (IoU >= 0.5) the higher post-prior score wins - the geometry prior
+    already marks a plate that is tiny for its vehicle box - and at equal score the tighter
+    vehicle box, the one the plate more plausibly belongs to.
+    """
+    def area(v) -> float:
+        return max(0.0, v.box[2] - v.box[0]) * max(0.0, v.box[3] - v.box[1])
+
+    kept: list[tuple] = []
+    for v, p in sorted(cands, key=lambda vp: (-vp[1].conf, area(vp[0]))):
+        if all(k[0].track_id == v.track_id or _iou(k[1].box, p.box) < 0.5 for k in kept):
+            kept.append((v, p))
+    return kept
+
+
 @dataclass
 class Timings:
     frames: int = 0
@@ -133,7 +171,6 @@ class Timings:
                 "total_ms_per_frame": (self.mask_ms + self.vehicle_ms + self.plate_ms) / n}
 
 
-
 class ANPRPipeline:
     def __init__(self, camera_id: str, thresholds: str | Path = "config/thresholds.yaml",
                  roi_cfg: str | Path = "config/roi.yaml", vehicle_weights: str = "models/yolo11s.pt",
@@ -141,9 +178,15 @@ class ANPRPipeline:
                  ablate: Iterable[str] = (), evidence_dir: Optional[str | Path] = "evidence",
                  frame_stride: int = 1, write_candidates: bool = True, keep_frames: bool = True,
                  reader_weights: Optional[list[str]] = None, vehicle_backend: str = "yolo",
-                 preferred_state: Optional[str] = None, bank_dump_dir: Optional[str | Path] = None):
+                 preferred_state: Optional[str] = None, bank_dump_dir: Optional[str | Path] = None,
+                 camera_profile=None):
         with open(thresholds, "r", encoding="utf-8") as fh:
             self.cfg = yaml.safe_load(fh)
+        # per-camera overrides (config/camera_profiles.yaml, anpr/camera/profile.py) over the global file
+        self.camera_profile = camera_profile
+        if camera_profile is not None and camera_profile.thresholds:
+            from anpr.camera import deep_merge
+            self.cfg = deep_merge(self.cfg, camera_profile.thresholds)
         # reading / decision options; an absent key keeps the frozen 2026-09-10 behaviour
         self.rcfg = self.cfg.get("reading") or {}
         # grammar tie-break state (a plate from this state gets no 0.7 prior penalty). Was
@@ -172,10 +215,11 @@ class ANPRPipeline:
             self.vehicles = RTDETRVehicleTracker(device=device, conf=max(d["vehicle_conf"], 0.3), imgsz=640)
         else:
             self.vehicles = VehicleTracker(vehicle_weights, device, d["vehicle_imgsz"], d["vehicle_conf"],
-                                           tuple(d["vehicle_classes"]))
+                                           tuple(d["vehicle_classes"]), upscale=bool(d.get("vehicle_upscale", True)))
         self.plates = PlateDetector(plate_weights, device, d["plate_imgsz"], d["plate_conf"],
                                     d["vehicle_crop_upscale_min_px"], tile=d.get("tile_size", 0),
-                                    overlap=d.get("tile_overlap", 0.2), use_retro=d.get("retro_proposer", True))
+                                    overlap=d.get("tile_overlap", 0.2), use_retro=d.get("retro_proposer", True),
+                                    min_conf=float(d.get("plate_min_conf_after_prior", 0.0)))
         self.masker: Optional[OverlayMasker] = None
         self.roi_cfg = ROIConfig.load(roi_cfg, camera_id)
         self.bank = CropBankStore(camera_id, self.cfg["crop_bank"]["max_bank"])
@@ -227,7 +271,8 @@ class ANPRPipeline:
         self._best_imgs: dict[str, tuple] = {}   # track_id -> (best box, best crop) for the retroactive check at flush
         self.frame_cache: dict[int, np.ndarray] = {}   # frame_idx -> image (for evidence)
         self._last_frame: Optional[np.ndarray] = None
-        self.gate_log: list[dict] = []
+        # bounded: a 24/7 reader closes tracks for days, and nothing ever read the whole log
+        self.gate_log: deque = deque(maxlen=2000)
 
     # ------------------------------------------------------------------
     def run(self, source: FrameSource, max_frames: Optional[int] = None) -> list[dict]:
@@ -281,45 +326,46 @@ class ANPRPipeline:
         # per-frame state for visualisation / annotation tools
         self.last_vehicles = [(v.track_id, v.box, v.cls_name, v.conf) for v in vdets]
         self.last_plates = []
+        cands: list[tuple] = []          # (vehicle, plate det) for every vehicle box in the frame
         for v in vdets:
             if not self.masker.box_allowed(*v.box, max_masked_frac=0.5):
                 continue
             self.bank.touch(v.track_id, frame.frame_idx, frame.pts_ms, v.box, v.cls_name)
             if v.box[2] - v.box[0] < self.min_vehicle_px:
                 continue
-            pdets = self.plates.detect_in_vehicle(frame.image, v.box, v.cls_name, frame.frame_idx, v.track_id)
-            # plates banked per vehicle per frame: a second, weaker box inside the same vehicle is
-            # almost always a bumper edge or the neighbour's plate, and it filled half the top-12
-            # on the Delhi clip (68 of 116 tracks), failing registration and skewing the row vote
-            per_vehicle = int(self.cfg["detector"].get("plates_per_vehicle", 2))
-            n_banked = 0
-            for p in pdets:
-                if n_banked >= per_vehicle:
-                    break
-                if not self.masker.box_allowed(*p.box, self.cfg["detector"]["max_masked_frac"]):
-                    continue
-                self.last_plates.append((v.track_id, p.box, p.source, p.conf))
-                x1, y1, x2, y2 = p.box
-                w, h = x2 - x1, y2 - y1
-                mx, my = 0.12 * w, 0.25 * h
-                X1, Y1 = int(max(0, x1 - mx)), int(max(0, y1 - my))
-                X2, Y2 = int(min(frame.image.shape[1], x2 + mx)), int(min(frame.image.shape[0], y2 + my))
-                crop = frame.image[Y1:Y2, X1:X2]
-                if crop.size == 0:
-                    continue
-                # hoardings / sign boards / shop names: same frame position and same pixels
-                # under a different vehicle -> static scene text, never a plate
-                if self.static_text.check(p.box, crop, v.box, v.track_id, frame.frame_idx):
-                    self.plates.rejection_log.append({"frame": frame.frame_idx, "track": v.track_id,
-                                                      "box": [round(float(t), 1) for t in p.box], "reason": "static_scene_text"})
-                    continue
-                corners, cconf = estimate_corners(crop)
-                if cconf < 0.2:
-                    # trust the box: corners at the un-margined box
-                    corners = np.array([[x1 - X1, y1 - Y1], [x2 - X1, y1 - Y1], [x2 - X1, y2 - Y1], [x1 - X1, y2 - Y1]],
-                                       np.float32)
-                self.bank.add_crop(v.track_id, crop, corners, p.box, frame.frame_idx, frame.pts_ms, p.conf, p.two_row)
-                n_banked += 1
+            for p in self.plates.detect_in_vehicle(frame.image, v.box, v.cls_name, frame.frame_idx, v.track_id):
+                if self.masker.box_allowed(*p.box, self.cfg["detector"]["max_masked_frac"]):
+                    cands.append((v, p))
+        # plates banked per vehicle per frame: a second, weaker box inside the same vehicle is
+        # almost always a bumper edge or the neighbour's plate, and it filled half the top-12
+        # on the Delhi clip (68 of 116 tracks), failing registration and skewing the row vote
+        per_vehicle = int(self.cfg["detector"].get("plates_per_vehicle", 2))
+        n_banked: dict[str, int] = {}
+        for v, p in _one_track_per_plate(cands):
+            if n_banked.get(v.track_id, 0) >= per_vehicle:
+                continue
+            self.last_plates.append((v.track_id, p.box, p.source, p.conf))
+            x1, y1, x2, y2 = p.box
+            w, h = x2 - x1, y2 - y1
+            mx, my = 0.12 * w, 0.25 * h
+            X1, Y1 = int(max(0, x1 - mx)), int(max(0, y1 - my))
+            X2, Y2 = int(min(frame.image.shape[1], x2 + mx)), int(min(frame.image.shape[0], y2 + my))
+            crop = frame.image[Y1:Y2, X1:X2]
+            if crop.size == 0:
+                continue
+            # hoardings / sign boards / shop names: same frame position and same pixels
+            # under a different vehicle -> static scene text, never a plate
+            if self.static_text.check(p.box, crop, v.box, v.track_id, frame.frame_idx):
+                self.plates.rejection_log.append({"frame": frame.frame_idx, "track": v.track_id,
+                                                  "box": [round(float(t), 1) for t in p.box], "reason": "static_scene_text"})
+                continue
+            corners, cconf = estimate_corners(crop)
+            if cconf < 0.2:
+                # trust the box: corners at the un-margined box
+                corners = np.array([[x1 - X1, y1 - Y1], [x2 - X1, y1 - Y1], [x2 - X1, y2 - Y1], [x1 - X1, y2 - Y1]],
+                                   np.float32)
+            self.bank.add_crop(v.track_id, crop, corners, p.box, frame.frame_idx, frame.pts_ms, p.conf, p.two_row)
+            n_banked[v.track_id] = n_banked.get(v.track_id, 0) + 1
         self.timings.plate_ms += (time.perf_counter() - t2) * 1000
         for b in self.bank.close_stale(frame.frame_idx, self.cfg["tracker"]["track_buffer"]):
             self._finalise_track(b)
@@ -376,6 +422,14 @@ class ANPRPipeline:
                 if by_hyp and gap <= 3000 and any(editdistance.eval(x, y) <= 1 for x in tops[id(a)] for y in tops[id(b)]):
                     parent[find(id(a))] = find(id(b))
                     continue
+                # The same registration, read twice within seconds, is one vehicle wherever its box sits:
+                # the tracker splits a car crossing the frame into fragments far apart in space, and
+                # delhi_1080p reported HR26CC2083 four times and DL13CA2927 three times. Two vehicles
+                # carrying one registration through the same junction inside the window do not happen.
+                same_plate_s = float(self.rcfg.get("merge_same_plate_seconds", 0))
+                if same_plate_s and a["plate"] == b["plate"] and gap <= same_plate_s * 1000:
+                    parent[find(id(a))] = find(id(b))
+                    continue
                 if editdistance.eval(a["plate"], b["plate"]) > 1:
                     continue
                 iou = _iou(tuple(a["vehicle_box"]), tuple(b["vehicle_box"]))
@@ -405,16 +459,8 @@ class ANPRPipeline:
                 # vote-confirmed plate fell back to CANDIDATE once fragments were merged)
                 entries = [(w, t, p, set(src.split("/", 1)[1].split("+")), f"{m['track_id']}#{i}")
                            for m in members for i, (t, w, p, src, sr) in enumerate(m["_hyps"]) if src.startswith("vote/")]
-                fallback = self.rcfg.get("second_reader_mode") == "fallback"
-                prim = [e for e in entries if "crnn" in e[3]] if fallback else entries
-                sv = self._vote_entries(prim, fused) if prim else None
                 glyphs = max((int(m.get("glyphs", 0)) for m in members), default=0)
-                if fallback and entries:
-                    ok1 = sv is not None and self._decide(sv[0], n_used, sv[1], best_w, sv[2], glyphs)[0]
-                    if not ok1:
-                        sv2 = self._vote_entries(entries, fused)
-                        if sv2 is not None and (sv is None or sv2[0].plate != sv[0].plate):
-                            sv = (dataclasses.replace(sv2[0], reason="string_vote_secondary"), sv2[1], sv2[2])
+                sv = self._vote_pick(entries, fused, n_used, best_w, glyphs)
                 if sv is not None:
                     fused, n_agree, readers = sv
             confirm_ok, why = self._decide(fused, n_used, n_agree, best_w, readers,
@@ -452,6 +498,8 @@ class ANPRPipeline:
 
     def _finalise_track(self, b: TrackBank) -> None:
         self.timings.tracks_closed += 1
+        # the bank has served its purpose; keeping it held every crop of every vehicle ever seen
+        self.bank.banks.pop(b.track_id, None)
         if self.bank_dump_dir:
             import pickle
             with open(self.bank_dump_dir / f"{self._n_dumped:05d}_{b.track_id}.pkl", "wb") as fh:
@@ -549,18 +597,12 @@ class ANPRPipeline:
             # temporal evidence: on the Delhi clip DL1LT1087 was read exactly on 20 single crops yet
             # the fused-image variants (weight 1.0 each vs 0.5 x quality for a single crop) won the
             # vote with DL14T1087; every good crop now reads and votes on its own
-            # reading.second_reader_mode: fallback - the primary reader votes alone and decides every
-            # confirm; a second reader in the same vote diluted the primary's share (Delhi 4K: 9 -> 5
-            # confirms). It only supplies a displayed, never-confirmed read when the primary cannot decide
-            fallback = self.rcfg.get("second_reader_mode") == "fallback"
-            prim = [r for r in crop_reads if "crnn" in r[3]] if fallback else crop_reads
-            sv = self._string_vote(prim, fused) if prim else None
-            if fallback:
-                ok1 = sv is not None and self._decide(sv[0], n_used, sv[1], best.quality.width_px, sv[2])[0]
-                if not ok1:
-                    sv2 = self._string_vote(crop_reads, fused)
-                    if sv2 is not None and (sv is None or sv2[0].plate != sv[0].plate):
-                        sv = (dataclasses.replace(sv2[0], reason="string_vote_secondary"), sv2[1], sv2[2])
+            # the vote's own decision (_vote_pick) runs the glyph floor too: counted here, once, or
+            # that decision failed on every track and the pooled vote replaced the primary's string
+            if self.rcfg.get("confirm_min_glyphs") or self.rcfg.get("secondary_confirm_min_glyphs"):
+                rec["glyphs"] = track_glyphs(b.top_k(int(self.rcfg.get("glyph_crops", 8))))
+            entries = [(TrackBank.rank_score(c) * p, t, p, rs, id(c)) for c, t, p, rs in crop_reads]
+            sv = self._vote_pick(entries, fused, n_used, best.quality.width_px, int(rec.get("glyphs", 0)))
             if sv is not None:
                 fused, n_vote, vote_readers = sv
                 # for a vote read the evidence count is the crops that read EXACTLY the winner
@@ -593,7 +635,7 @@ class ANPRPipeline:
         rec["_n_used"] = int(n_used)
         rec["_n_agree"] = int(lr.n_agree)
         best_w = best.quality.width_px if best is not None else 0.0
-        if self.rcfg.get("confirm_min_glyphs") or self.rcfg.get("secondary_confirm_min_glyphs"):
+        if "glyphs" not in rec and (self.rcfg.get("confirm_min_glyphs") or self.rcfg.get("secondary_confirm_min_glyphs")):
             rec["glyphs"] = track_glyphs(b.top_k(int(self.rcfg.get("glyph_crops", 8))))
         confirm_ok, why = self._decide(fused, n_used, lr.n_agree, best_w,
                                        _readers_supporting(hyps, fused.plate), rec.get("glyphs", 0))
@@ -707,8 +749,15 @@ class ANPRPipeline:
         One entry per (crop, reader) read that qualifies, the strongest per crop first."""
         thr = float(self.rcfg.get("read_filter_min", 0.5))
         reject = tuple(self.rcfg.get("vote_reject") or ())
+        # A plate too narrow to carry glyphs cannot be read, only guessed at: reading it spends OCR on
+        # noise and lets that guess vote. The vehicle is still tracked, and its wider crops are read when
+        # it comes closer (reading.crop_read_min_width_px; 0 = read every crop).
+        floor = float(self.rcfg.get("crop_read_min_width_px", 0))
+        coerce_w = float(self.rcfg.get("coerce_votes", 0))
         out = []
-        for c in crops:
+        for c in (crops if self.filter_ensemble is not None else []):
+            if floor and c.quality.width_px < floor:
+                continue
             best: dict[str, list] = {}
             for two in ((True, False) if c.two_row else (False,)):
                 g = cv2.cvtColor(rectify(c.image, c.corners, two), cv2.COLOR_BGR2GRAY)
@@ -719,9 +768,40 @@ class ANPRPipeline:
                     if p >= thr and self._vote_admissible(h.text, self.state, reject):
                         e = best.setdefault(h.text, [0.0, set()])
                         e[0] = max(e[0], p)
-                        e[1].add(h.source.split("/")[-1])
+                        # sources are 'variant/reader' or 'variant/reader/rows': the reader is the
+                        # second part. The last part credited every per-row two-row read to a
+                        # reader named 'rows', which the primary-only vote then left out
+                        e[1].add(h.source.split("/")[1])
             for t, (p, rs) in sorted(best.items(), key=lambda kv: -kv[1][0]):
                 out.append((c, t, p, frozenset(rs)))
+            # reading.coerce_votes: a read that is a registration except for one class of character -
+            # a letter where the format wants a digit, or the reverse - also votes in its coerced form,
+            # at a lower confidence. The original keeps its vote: this offers the alternative to the
+            # evidence instead of rewriting the read (O/0, I/1, S/5, B/8, Z/2, G/6 are the confusions).
+            if coerce_w:
+                for t, (p, rs) in list(best.items()):
+                    fixed = _coerce_to_format(t)
+                    if fixed and fixed not in best and self._vote_admissible(fixed, self.state, reject):
+                        out.append((c, fixed, p * coerce_w, frozenset(rs)))
+        # reading.text_vote_crops: a whole-crop text reader (awiros, PP-OCRv5 on 558k Indian plates)
+        # reads the k best crops and votes as a reader of its own, so reading.vote_any_reader can
+        # confirm on it. It read DL1CW0942 exactly on 11 of 19 Delhi 4K crops where the primary
+        # CRNN read DL1CX0942; k bounds the cost (about 0.1 s per crop on CPU)
+        k = int(self.rcfg.get("text_vote_crops", 0))
+        text_readers = [r for r in self.ensemble.readers if hasattr(r, "read_batch")]
+        if k and text_readers and crops:
+            top = sorted(crops, key=TrackBank.rank_score, reverse=True)[:k]
+            # a squat box is read both ways here too: Delhi t69 (UP13AY3893) reads right on 5 of 20
+            # crops as one row and on none as two rows
+            jobs = [(c, two) for c in top for two in ((True, False) if c.two_row else (False,))]
+            imgs = [rectify(c.image, c.corners, two) for c, two in jobs]
+            for r in text_readers:
+                best: dict[tuple, float] = {}
+                for (c, _), (t, p) in zip(jobs, r.read_batch(imgs)):
+                    if t and p >= thr and self._vote_admissible(t, self.state, reject):
+                        best[(id(c), t)] = max(best.get((id(c), t), 0.0), float(p))
+                by_id = {id(c): c for c in top}
+                out += [(by_id[i], t, p, frozenset({r.name})) for (i, t), p in best.items()]
         return out
 
     def _readable_crops(self, crops: list) -> list:
@@ -740,6 +820,105 @@ class ANPRPipeline:
         the winning crops, so a string that is out-voted, or read by few or weak crops, stays low;
         the usual _decide guards (runner-up ratio, agreeing crops, width) still apply."""
         return self._vote_entries([(TrackBank.rank_score(c) * p, t, p, rs, id(c)) for c, t, p, rs in reads], fused)
+
+    def _vote_pick(self, entries: list[tuple], fused, n_used: int, best_w: float, glyphs: int = 0):
+        """The string vote's verdict for one track's crop reads or a merged group's pooled reads:
+        (fused read, crops reading it exactly, readers), or None.
+
+        reading.second_reader_mode: fallback - the primary reader votes alone and decides every
+        confirm; a second reader in the same vote diluted its share (Delhi 4K: 9 -> 5 confirms).
+        When the primary cannot decide, reading.vote_any_reader lets another reader's OWN vote carry
+        the confirm under the same evidence rule, provided a second reader produced that string on
+        some crop and no reader opposes it: the fallback reader's confident misreads (UP14DK7400,
+        DL11T1087) were strings no other reader produced. Delhi 4K: the primary reads DL1CW0942 as
+        DL1CX0942 on a 129 px plate where v6 reads it exactly on 13 crops. Otherwise the pooled
+        vote supplies a displayed, never-confirmed read (string_vote_secondary)."""
+        if not entries:
+            return None
+        if self.rcfg.get("second_reader_mode") != "fallback":
+            return self._vote_entries(entries, fused)
+        names = sorted({n for e in entries for n in e[3]})
+        text_readers = {r.name for r in self.ensemble.readers if hasattr(r, "read_batch")}
+        votes = {n: self._vote_entries([e for e in entries if n in e[3]], fused) for n in names}
+        min_crops = int((self.rcfg.get("vote_confirm") or {}).get("min_crops", 4))
+
+        def opposed(n: str, win: str) -> bool:
+            # another reader's own vote carries a different string on a confirm's worth of crops and
+            # that reader does not itself read `win` on as many: the readers disagree, and a vote
+            # share cannot settle it. delhi_1080p t10 (true DL1LAB9684): v6 voted DL11AB9684 on 4
+            # crops and read the primary's DL11AB3684 on 2. cam06 t39 (true GJ11CK1044): v6 voted
+            # GJ11CE1044 on 7 crops but also read GJ11CK1044 on 4 - corroboration, not opposition
+            def support(o: str) -> int:
+                return len({e[4] for e in entries if o in e[3] and e[1] == win})
+
+            def dropped_one(s: str) -> bool:
+                # the other reader's string is `win` with one glyph missing: the text reader drops
+                # characters (cam06 GJ18X6705 -> GJ18X705 on 11 crops, GJ11CK1044 -> GJ11CK044 on
+                # 13) and that agrees with `win` on everything it did read
+                return len(s) == len(win) - 1 and any(win[:i] + win[i + 1:] == s for i in range(len(win)))
+            def rival(s: str) -> bool:
+                # a competing reading of the same glyphs, not a reader failing on them: delhi t10's
+                # DL11AB9684 against DL11AB3684 (1 edit) opposes; Delhi t448's DL1CW0723 against the
+                # text reader's unanimous DL1CW0942 (3 edits, 5 of 46 v6 reads) does not
+                import editdistance
+                return s != win and editdistance.eval(s, win) <= 2 and not dropped_one(s)
+            # Corroboration outranks a minority objection: when readers of both kinds read `win` exactly,
+            # on their own crops, a third reader's smaller vote for something else is that reader
+            # failing, not a disagreement about the glyphs. delhi_1080p t534 (DL1CW0942): the text
+            # reader read it on 25 crops and v6 on 6, while the primary's own vote went to DL1CN6942 on
+            # 4. Without this the track fell back to a never-confirmed pooled read. The rule still needs
+            # two kinds: two CRNNs agreeing is the case that produced DL11AB3684.
+            kinds = {("text" if o in text_readers else "crnn") for o in names if support(o) >= 2}
+            if len(kinds) >= 2:
+                return False
+            return any(o != n and votes[o] is not None and votes[o][1] >= min_crops and rival(votes[o][0].plate)
+                       and support(o) < min_crops for o in names)
+
+        sv = votes.get("crnn")
+        if sv is not None and self._decide(sv[0], n_used, sv[1], best_w, sv[2], glyphs)[0]:
+            # reading.vote_unopposed: delhi_1080p t10, a 55 px yellow plate DL1LAB9684, was CONFIRMED
+            # as DL11AB3684 - the primary read that on 13 of 24 crops while v6 split 4 / 4 / 2 / 2
+            # between four strings, two of them one edit from the truth. A misread the primary makes
+            # consistently on a small plate looks exactly like agreement; a second reader that votes
+            # for something else is the only evidence against it
+            if self.rcfg.get("vote_unopposed") and opposed("crnn", sv[0].plate):
+                return (dataclasses.replace(sv[0], reason="string_vote_contested"), sv[1], sv[2])
+            return sv
+        if self.rcfg.get("vote_any_reader"):
+            for n in names:
+                v = votes[n]
+                if n == "crnn" or v is None or not self._decide(v[0], n_used, v[1], best_w, v[2], glyphs)[0]:
+                    continue
+                win = v[0].plate
+                backed = any(e[1] == win and (e[3] - {n}) for e in entries)
+                near = int(self.rcfg.get("vote_near_backing", 0))
+                if not backed and near and text_readers:  # near backing needs two kinds of reader
+                    # reading.vote_near_backing: only a reader of a different kind may back a string it
+                    # did not produce exactly. Two CRNNs share their confusions: on delhi_1080p the
+                    # primary's DL4SAS6522 "backed" v6's DL6SAS6522 against the true DL6SAS6524. The
+                    # whole-crop text reader is independent, which is what makes near backing evidence.
+                    # Delhi t448 (DL1CW0942, 69 px): the text
+                    # reader reads it on 8 of 8 crops, the primary reads DL1CW0542 - one glyph off,
+                    # the 9/5 confusion it makes everywhere. Another reader's string one SUBSTITUTION
+                    # away on `near` distinct crops backs the winner. Not an insertion: Delhi 4K t9
+                    # (DL11SD3385) was confirmed as the text reader's DL11SD385 - a dropped glyph -
+                    # "backed" by v6's DL11SD9385, which only says a glyph is there.
+                    def one_sub(s: str) -> bool:
+                        return len(s) == len(win) and sum(x != y for x, y in zip(s, win)) == 1
+                    # a reader of the other kind: the whole-crop text reader backing a CRNN, or a CRNN
+                    # backing the text reader. Two CRNNs may not back each other - they share their
+                    # confusions - which is what let DL4SAS6522 "back" DL6SAS6522 over DL6SAS6524.
+                    def other_kind(readers: set) -> bool:
+                        return bool(readers & text_readers) if n not in text_readers else bool(readers - text_readers)
+
+                    backers = {e[4] for e in entries if other_kind(e[3] - {n}) and one_sub(e[1])}
+                    backed = len(backers) >= near
+                if backed and not opposed(n, win):
+                    return v
+        sv2 = self._vote_entries(entries, fused)
+        if sv2 is not None and (sv is None or sv2[0].plate != sv[0].plate):
+            return (dataclasses.replace(sv2[0], reason="string_vote_secondary"), sv2[1], sv2[2])
+        return sv
 
     def _vote_entries(self, entries: list[tuple], fused):
         """String vote over (weight, text, read confidence, readers, crop key) entries - one track's
@@ -799,6 +978,9 @@ class ANPRPipeline:
         min_glyphs = int(self.rcfg.get("confirm_min_glyphs", 0))
         if min_glyphs and glyphs < min_glyphs:
             return False, f"no_glyph_evidence:{glyphs}"
+        if getattr(fused, "reason", "") == "string_vote_contested":
+            # reading.vote_unopposed: another reader's own vote went to a different string (_vote_pick)
+            return False, "vote_contested"
         if getattr(fused, "reason", "") == "string_vote_secondary":
             # normally never confirmed: the fallback reader's misreads were the confident ones
             # (UP14DK7400, DL11T1087). reading.secondary_confirm_min_glyphs lets a legible crop

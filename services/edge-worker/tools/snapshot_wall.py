@@ -437,6 +437,14 @@ class Estate:
                     draw_anpr(frame, vehicles, [b for _, b, _, _ in pipe.last_plates], labels, last_box)
                     self._publish(cam, frame, time.time(), width=1280)
             finally:
+                # settle the open tracks of this capture: without finish() the fragment merge, the
+                # sign-board demotion and the record trim never run, and records grow without limit
+                try:
+                    with self.engine_lock:
+                        engine.finish()
+                    seen = min(seen, len(pipe.records))
+                except Exception:  # noqa: BLE001 - a settle fault must not end the feed thread
+                    pass
                 newest["alive"] = False
                 if grabber is not None:
                     # Freeing a capture while a read is still in it segfaults inside

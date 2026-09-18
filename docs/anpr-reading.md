@@ -85,19 +85,22 @@ camera-placement finding, and the system reports it as one instead of guessing.
 
 ## Readers
 
-`reading.readers` selects them. `crnn` is the only reader enabled by default
-and the only one whose weights ship in `models/`; it runs on ONNX Runtime.
+`reading.readers` selects them. `crnn` runs on ONNX Runtime and its weights ship
+in `models/`.
 
-One further reader exists in the tree and is imported lazily, so it is not a
-dependency of the image: `anpr/read/awiros.py` (PaddleOCR-based). Enabling it
-means adding its heavy dependencies to `requirements-anpr.txt` first;
-`thresholds.yaml` records its measured cost and why it is off.
+`reading.extra_crnn_weights` names a second CRNN (`reader_crnn_v6.onnx`, which
+does ship). The adapter resolves it in `ANPR_MODELS_DIR` and passes both
+readers to the engine (`app/anpr_engine.py`), so it is loaded and votes; under
+`second_reader_mode: fallback` the primary reader decides every confirmation
+and the second one may carry a confirmation only when it agrees with a third
+opinion (`anpr/pipeline.py` `_vote_pick`).
 
-`reading.extra_crnn_weights` and `reading.second_reader_mode` in the shipped
-config come from the vendor's own evaluation setup and name a weight file that
-is **not** part of this deployment. They are inert here: the adapter passes an
-explicit reader list (`app/anpr_engine.py`), which takes the branch in
-`anpr/pipeline.py` that ignores `extra_crnn_weights` entirely.
+`reading.readers` also asks for `awiros` — `anpr/read/awiros.py`, a PaddleOCR
+model fine-tuned on Indian plates that reads a whole crop, two-row plates
+included. It is imported lazily and its dependencies are **not** in the image
+(`requirements-anpr.txt` says what enabling it costs). Where it is present it
+is worth 2 more plates over the evaluation clips; where it is not, the engine
+logs that it is unavailable and reads with the CRNNs alone.
 
 ## How the worker consumes it
 

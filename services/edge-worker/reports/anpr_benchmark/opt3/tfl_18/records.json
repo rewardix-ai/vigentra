@@ -1,0 +1,28 @@
+[
+ {
+  "track_id": "tfl_18_s0_t1",
+  "camera_id": "tfl_18",
+  "first_seen_pts_ms": 8000.0,
+  "last_seen_pts_ms": 9400.0,
+  "first_frame": 40,
+  "last_frame": 47,
+  "status": "UNREADABLE",
+  "plate": null,
+  "confidence": 0.0,
+  "alternates": [],
+  "plate_class": "unknown",
+  "vehicle_type": "car",
+  "frames_fused": 0,
+  "vehicle_box": [
+   229.6,
+   73.7,
+   259.5,
+   99.9
+  ],
+  "n_frames_seen": 8,
+  "n_plate_hits": 0,
+  "bbox": null,
+  "reason": "no_plate_detected",
+  "gate": {}
+ }
+]

@@ -188,7 +188,7 @@ one row per act, not per frame.
 | Workload | Hardware | Measured |
 |---|---|---|
 | YOLO11n object detection | CPU, bundled 4K clip | ~190 ms/frame |
-| Track-level ANPR, typical grid camera | Apple M1 GPU, three readers sharing it | 3–6 frames/s per reader |
+| Track-level ANPR, typical grid camera | Apple M1 GPU, three readers sharing it | 5–10 frames/s per reader (was 3–6: frames are detected at their own resolution and junk plate candidates fell 7x) |
 | Track-level ANPR, busiest junctions (cam01, cam30) | same | 0.7–1.2 frames/s before the plate-search floor below |
 | Plate-search floor (skip vehicles under 96 px wide), labelled Delhi clip, 300 frames | same | the same 36 readings and 4 of 12 plates exact, in 586 s instead of 878 s |
 

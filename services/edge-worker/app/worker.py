@@ -36,7 +36,8 @@ from typing import Any, Iterator
 import httpx
 
 from . import grid
-from .anpr_engine import EngineCache, _track_number, build_engine
+from .anpr_engine import (EngineCache, _track_number, build_engine, load_camera_profile, pass_budget,
+                          router_settings, sampler_settings)
 from .detectors import DetectorError, build_detector
 
 try:
@@ -85,8 +86,8 @@ GRID_EXTERNAL_PREFIX = "GRID-"
 # Frame sources
 # ---------------------------------------------------------------------------
 
-def iter_clip_frames(path: str, sample_interval: int) -> Iterator[tuple[int, Any]]:
-    """Yield (frame_index, frame) from a local clip, sampling every Nth frame.
+def iter_clip_frames(path: str, sample_interval: int) -> Iterator[tuple[int, Any, float]]:
+    """Yield (frame_index, frame, pts_seconds) from a local clip, sampling every Nth frame.
 
     Sampling matters: a 25 fps feed produces 90,000 frames an hour, and running
     every one of them buys almost nothing for traffic counting while costing
@@ -105,6 +106,7 @@ def iter_clip_frames(path: str, sample_interval: int) -> Iterator[tuple[int, Any
     if not capture.isOpened():
         raise DetectorError(f"Could not open video source '{path}'.")
 
+    fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
     index = 0
     try:
         while True:
@@ -112,7 +114,9 @@ def iter_clip_frames(path: str, sample_interval: int) -> Iterator[tuple[int, Any
             if not ok:
                 break
             if index % max(1, sample_interval) == 0:
-                yield index, frame
+                # media time, not wall-clock: the fusion's 3 s fragment window and every reported
+                # timestamp then describe the footage instead of how fast this machine replayed it
+                yield index, frame, (capture.get(cv2.CAP_PROP_POS_MSEC) or index * 1000.0 / fps) / 1000.0
             index += 1
     finally:
         capture.release()
@@ -380,16 +384,19 @@ class CentralClient:
 # Run
 # ---------------------------------------------------------------------------
 
-def _plain(frames: Iterator[tuple[int, Any]]) -> Iterator[tuple[int, Any, float, bool]]:
+def _plain(frames: Iterator[tuple]) -> Iterator[tuple[int, Any, float, bool]]:
     """Give a non-grid source the same four-part shape as the live one.
 
-    Clips and synthetic frames have no presentation timestamp, so the capture
-    instant falls back to wall-clock. That is acceptable for a local
-    demonstration and NOT acceptable on a live feed, which is why the grid path
-    carries real PTS rather than reusing this.
+    A clip carries its own presentation time (`iter_clip_frames`). Synthetic frames have none, so they
+    fall back to wall-clock; nothing in them depends on it.
     """
-    for index, frame in frames:
-        yield index, frame, time.time(), False
+    for item in frames:
+        if len(item) == 3:
+            index, frame, pts = item
+        else:
+            index, frame = item
+            pts = time.time()
+        yield index, frame, pts, False
 
 
 def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenance) -> int:
@@ -431,9 +438,17 @@ def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenan
             )
 
     if client and pending:
-        result = client.ingest(pending)
-        logger.info("ingested final batch: %s", result)
-        pending.clear()
+        try:
+            result = client.ingest(pending)
+            logger.info("ingested final batch: %s", result)
+            pending.clear()
+        except Exception as exc:
+            # The engine has already marked these plates as emitted, so they are not coming back. Say
+            # which ones were lost, at ERROR: a silent drop here reads as a camera that saw nothing.
+            lost = [row.get("plate_text") for row in pending if row.get("plate_text")]
+            logger.error("final ingest failed (%s); %d payload(s) lost%s", exc, len(pending),
+                         f", plates: {', '.join(lost)}" if lost else "")
+            pending.clear()
     return plates
 
 
@@ -544,7 +559,6 @@ def run(
     # a one-shot run builds its own.
     built_here = detector is None
     detector = detector or build_detector()
-    router = FrameQualityRouter()
 
     # ANPR is off unless ANPR_ENABLE is set. The consensus engine is stateful
     # per camera - it votes a plate across every frame a vehicle appears in -
@@ -555,7 +569,15 @@ def run(
     # learned about itself: its overlays, its plate votes - survives from one
     # cycle to the next. A one-shot run builds its own and throws it away,
     # which is right for a single pass.
-    anpr = anpr_cache.get(camera_id) if anpr_cache is not None else build_engine()
+    # a grid camera's profile is also found by its grid id (GRID-cam06 -> cam06)
+    ext = (external_camera_id or "").strip()
+    profile_key = ext[len(GRID_EXTERNAL_PREFIX):] if ext.upper().startswith(GRID_EXTERNAL_PREFIX) else (ext or None)
+    anpr = (anpr_cache.get(camera_id, profile_key) if anpr_cache is not None
+            else build_engine(camera_id=camera_id, profile_key=profile_key))
+    # per-camera sampling and low-light handling (config/camera_profiles.yaml)
+    profile = anpr.profile if anpr is not None else load_camera_profile(camera_id, profile_key)
+    router = FrameQualityRouter(**router_settings(profile))
+    max_frames = pass_budget(profile, max_frames)
     plates_read = 0
 
     # Incident detection rides on the same tracker the ANPR engine already
@@ -624,7 +646,7 @@ def run(
     # Synthetic frames are excluded because there is nothing in them to bunch
     # around, and a burst there would only distort the wiring test.
     sampler = (
-        AdaptiveSampler(stride=max(1, sample_interval))
+        AdaptiveSampler(**sampler_settings(profile, sample_interval))
         if AdaptiveSampler is not None and not synthetic
         else None
     )
@@ -657,6 +679,12 @@ def run(
         )
 
     pending: list[dict] = []
+    # A pass whose every frame was skipped still has to settle: the engine may hold plates from the
+    # frames before it, and _finish_pass needs this. It was only built inside the frame loop, so such a
+    # pass raised UnboundLocalError and dropped them.
+    base_provenance: dict = {"frame_index": None, "frame_quality": None, "enhancement_applied": None,
+                             "sample_interval": sample_interval, "worker": "vigentra-edge-worker",
+                             "pts_seconds": None}
     processed = skipped = produced = 0
     started = time.perf_counter()
 
@@ -830,29 +858,24 @@ def run(
     if anpr is not None:
         report = anpr.stats()
         r = report.get("readability") or {}
-        if r.get("crops_measured"):
-            # The answer to "why did this camera produce no plates". Said out
-            # loud every run, because the alternative is an operator inferring
-            # a quiet road from a camera that simply cannot resolve a plate.
-            logger.info(
-                "readability %s: %d plate crop(s), %d at a readable size, "
-                "%d below the floor; tracks settled %d confirmed / %d "
-                "uncertain / %d unreadable",
-                r.get("verdict"), r.get("crops_measured"),
-                r.get("crops_at_readable_size"), r.get("crops_below_floor"),
-                r.get("confirmed"), r.get("uncertain"), r.get("unreadable"),
-            )
-        stages = (report.get("timings") or {}).get("stages") or {}
+        # The answer to "why did this camera produce no plates". Said out loud every pass, because the
+        # alternative is an operator inferring a quiet road from a camera that cannot resolve a plate.
+        # (These lines read keys stats() returns; the previous ones named keys it never had.)
+        logger.info(
+            "tracks settled %d: %d confirmed / %d uncertain / %d unreadable; %d had a plate, %d of them "
+            "at least %.0f px wide (widest %.0f px)",
+            report.get("tracks", 0), report.get("confirmed", 0), report.get("candidates", 0),
+            report.get("unreadable", 0), r.get("tracks_with_a_plate", 0),
+            r.get("tracks_at_readable_width", 0), r.get("readable_width_px", 0.0),
+            r.get("widest_plate_px", 0.0),
+        )
+        stages = report.get("timings_ms") or {}
         if stages:
-            # P99, not the mean: the frame in each hundred that overruns is
-            # what a viewer experiences, and an average hides exactly that.
-            logger.info(
-                "timings p50/p99 ms: %s",
-                "  ".join(
-                    f"{name}={d['p50_ms']:.0f}/{d['p99_ms']:.0f}"
-                    for name, d in sorted(stages.items())
-                ),
-            )
+            def _stage(name: str) -> str:
+                return name.replace("_ms_per_frame", "/frame").replace("_ms_per_track", "/track")
+
+            logger.info("engine ms: %s",
+                        "  ".join(f"{_stage(k)}={v:.0f}" for k, v in sorted(stages.items())))
     if dry_run:
         logger.info("dry run - nothing was sent to the central API")
     return 0

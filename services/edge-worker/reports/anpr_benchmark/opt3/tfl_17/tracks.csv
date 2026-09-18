@@ -1,0 +1,17 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+tfl_17_s0_t8,car,0,0,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t7,car,0,10,3,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t1,car,0,155,6,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t2,car,0,240,49,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t3,car,0,240,49,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t4,truck,0,45,10,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t5,car,0,240,49,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t6,truck,0,80,17,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t19,car,35,240,42,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t20,car,35,240,42,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t35,car,65,145,16,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t61,car,115,240,26,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t85,car,170,215,10,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t93,car,210,225,4,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t96,car,230,235,2,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+tfl_17_s0_t97,car,235,240,2,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

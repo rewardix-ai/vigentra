@@ -144,7 +144,7 @@ class AnprEngine:
 
     name = "vigentra-anpr"
 
-    def __init__(self, *, camera_id: str = "camera") -> None:
+    def __init__(self, *, camera_id: str = "camera", profile_key: str | None = None) -> None:
         self.camera_id = camera_id
         self._frames = 0
         self._started = time.perf_counter()
@@ -158,6 +158,7 @@ class AnprEngine:
 
         try:
             import yaml
+            from anpr.camera import profile_for
             from anpr.pipeline import ANPRPipeline
             from anpr.sources.frame_source import Frame
         except ImportError as exc:  # pragma: no cover - depends on the image
@@ -168,6 +169,9 @@ class AnprEngine:
             ) from exc
 
         self._Frame = Frame
+        #: this camera's block of config/camera_profiles.yaml (defaults when it has none); the worker reads
+        #: its sampling and frame-quality settings, the pipeline its threshold overrides
+        self.profile = profile_for(CONFIG_DIR, camera_id, profile_key)
         thresholds = CONFIG_DIR / "thresholds.yaml"
         roi_cfg = CONFIG_DIR / "roi.yaml"
         vehicle = MODELS_DIR / VEHICLE_WEIGHTS
@@ -187,7 +191,9 @@ class AnprEngine:
         # supplies a shown, never-confirmed read on tracks the primary cannot
         # decide. Passing reader_weights skips the engine's own lookup of it, so
         # it is resolved here, in ANPR_MODELS_DIR, and used when present.
-        reading = (yaml.safe_load(thresholds.read_text(encoding="utf-8")) or {}).get("reading") or {}
+        from anpr.camera import deep_merge
+        cfg = deep_merge(yaml.safe_load(thresholds.read_text(encoding="utf-8")) or {}, self.profile.thresholds)
+        reading = cfg.get("reading") or {}
         extra = [MODELS_DIR / Path(w).name for w in reading.get("extra_crnn_weights") or []]
         self._readers = [str(reader)] + [str(p) for p in extra if p.exists()]
 
@@ -206,6 +212,7 @@ class AnprEngine:
                 # The worker already samples; the engine must look at every
                 # frame it is given, not thin them again.
                 frame_stride=1,
+                camera_profile=self.profile,
             )
         except Exception as exc:  # pragma: no cover - depends on the weights
             raise AnprUnavailable(f"The ANPR engine failed to load: {exc}") from exc
@@ -328,6 +335,11 @@ class AnprEngine:
                 continue
 
             self._emitted.add(key)
+            # _merge_fragments gives every fragment of one vehicle the same reading; emitting each of
+            # them reported one vehicle several times. The group's first track speaks for it.
+            group = rec.get("merged_from") or []
+            if group and str(min(group)) != str(rec.get("track_id")):
+                continue
             out.append(
                 PlateSighting(
                     track_id=_track_number(key),
@@ -377,21 +389,86 @@ class AnprEngine:
             "readers": [Path(r).name for r in getattr(self, "_readers", [READER_WEIGHTS])],
             "device": ANPR_DEVICE,
             "emit_unconfirmed": EMIT_UNCONFIRMED,
+            "camera_profile": getattr(getattr(self, "profile", None), "key", None),
         }
 
     def stats(self) -> dict:
         elapsed = time.perf_counter() - self._started
         records = list(getattr(self._pipeline, "records", []))
+        gate = list(getattr(self._pipeline, "gate_log", []))
+        floor = float(((getattr(self._pipeline, "cfg", None) or {}).get("confidence")
+                       or {}).get("confirm_min_width_px", 40))
+        widths = [float(g.get("w") or 0.0) for g in gate]
         return {
             "frames": self._frames,
             "fps": round(self._frames / elapsed, 2) if elapsed else 0.0,
             "tracks": len(records),
             "confirmed": sum(1 for r in records if r.get("status") == "CONFIRMED"),
+            "candidates": sum(1 for r in records if r.get("status") == "CANDIDATE"),
+            "unreadable": sum(1 for r in records if r.get("status") == "UNREADABLE"),
             "emitted": len(self._emitted),
+            # why a camera produced no plate: how many closed tracks even had a plate wide enough to read
+            "readability": {
+                "tracks_with_a_plate": len(widths),
+                "tracks_at_readable_width": sum(1 for w in widths if w >= floor),
+                "tracks_below_floor": sum(1 for w in widths if 0 < w < floor),
+                "readable_width_px": floor,
+                "widest_plate_px": round(max(widths), 1) if widths else 0.0,
+            },
+            "timings_ms": {k: round(v, 1) for k, v in
+                           (getattr(self._pipeline, "timings", None).as_dict() if
+                            getattr(self._pipeline, "timings", None) else {}).items()
+                           if k.endswith("_ms_per_frame") or k.endswith("_ms_per_track")},
         }
 
 
-def build_engine(*, camera_id: str = "camera") -> AnprEngine | None:
+def load_camera_profile(camera_id: str, profile_key: str | None = None):
+    """This camera's block of config/camera_profiles.yaml, or None without the anpr package."""
+    try:
+        from anpr.camera import profile_for
+    except ImportError:  # pragma: no cover - minimal install
+        return None
+    return profile_for(CONFIG_DIR, camera_id, profile_key)
+
+
+def pass_budget(profile, max_frames: int) -> int:
+    """Processed frames this camera gets per pass: its profile's `sampling.max_frames`, or the worker's.
+
+    A plate needs many frames of the same vehicle: on the Delhi clip 25 processed frames confirmed 2
+    plates and 150 confirmed 4, while 100 spread thinly over the same footage still confirmed 2
+    (docs/anpr-optimisation.md). Cameras whose plates are too small to read keep the cheap budget.
+    """
+    value = (getattr(profile, "sampling", None) or {}).get("max_frames")
+    return max(1, int(value)) if value else max_frames
+
+
+def sampler_settings(profile, stride: int) -> dict:
+    """AdaptiveSampler arguments: the profile's `sampling` block over the worker's stride."""
+    s = dict(getattr(profile, "sampling", None) or {})
+    out = {"stride": max(1, int(s.get("stride") or stride))}
+    if s.get("burst_frames") is not None:
+        out["burst_frames"] = int(s["burst_frames"])
+    if s.get("burst_plate_px") is not None:
+        out["burst_plate_px"] = float(s["burst_plate_px"])
+    return out
+
+
+def router_settings(profile) -> dict:
+    """FrameQualityRouter arguments from the profile's `frame_quality` block.
+
+    `night_mode: off` never enhances a dark frame, `on` enhances every frame, `auto` (the default)
+    enhances frames darker than `low_light_luma`. Any other key is passed through.
+    """
+    fq = dict(getattr(profile, "frame_quality", None) or {})
+    mode = str(fq.pop("night_mode", "auto")).lower()
+    if mode == "off":
+        fq["enhance_low_light"] = False
+    elif mode == "on":
+        fq["low_light_luma"] = 256.0
+    return fq
+
+
+def build_engine(*, camera_id: str = "camera", profile_key: str | None = None) -> AnprEngine | None:
     """Build the engine, or return None when ANPR is off or unavailable.
 
     Returns None rather than raising when the extras are missing, because ANPR
@@ -402,7 +479,7 @@ def build_engine(*, camera_id: str = "camera") -> AnprEngine | None:
         logger.info("ANPR disabled (set ANPR_ENABLE=true to turn it on)")
         return None
     try:
-        engine = AnprEngine(camera_id=camera_id)
+        engine = AnprEngine(camera_id=camera_id, profile_key=profile_key)
     except AnprUnavailable as exc:
         logger.error("%s", exc)
         return None
@@ -435,7 +512,7 @@ class EngineCache:
         #: every cycle and log the same error a thousand times.
         self._unavailable = False
 
-    def get(self, camera_id: str) -> AnprEngine | None:
+    def get(self, camera_id: str, profile_key: str | None = None) -> AnprEngine | None:
         """The engine for this camera, built on first use."""
         if self._unavailable:
             return None
@@ -450,7 +527,7 @@ class EngineCache:
             return engine
 
         self.misses += 1
-        engine = build_engine(camera_id=camera_id)
+        engine = build_engine(camera_id=camera_id, profile_key=profile_key)
         if engine is None:
             self._unavailable = True
             return None

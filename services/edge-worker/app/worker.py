@@ -679,6 +679,8 @@ def run(
         )
 
     pending: list[dict] = []
+    frame_ms: list[float] = []
+    source_fps = 25.0
     # A pass whose every frame was skipped still has to settle: the engine may hold plates from the
     # frames before it, and _finish_pass needs this. It was only built inside the frame loop, so such a
     # pass raised UnboundLocalError and dropped them.
@@ -713,6 +715,7 @@ def run(
                 )
                 continue
 
+            frame_started = time.perf_counter()
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             plate_sightings = []
 
@@ -737,6 +740,11 @@ def run(
             # burst of dense frames - the plate is growing and the best crop is
             # a moment away.
             if sampler is not None:
+                # what this machine can actually process, so the sampler does not ask for frames the
+                # source will drop unevenly (anpr/sampling.py pace)
+                frame_ms.append((time.perf_counter() - frame_started) * 1000.0)
+                if len(frame_ms) % 10 == 0:
+                    sampler.pace(sum(frame_ms[-10:]) / 10000.0, source_fps or 25.0)
                 sampler.note(
                     d.bbox_xyxy[2] - d.bbox_xyxy[0]
                     for d in detections

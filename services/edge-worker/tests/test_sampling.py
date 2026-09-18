@@ -57,3 +57,22 @@ def test_it_reports_what_it_spent():
     assert d["looked"] == 20
     assert d["bursts"] == 1
     assert d["processed"] > 20 // 5  # more than a bare stride would have taken
+
+
+def test_pace_raises_the_stride_to_what_the_engine_can_process():
+    """Asking for more frames than the machine can take does not buy frames: the late ones are dropped
+    wherever they fall. Measured on a 1080p cam06 recording paced at camera speed, stride 2 asked for
+    1189 frames, 941 were dropped and 2 plates were read; the same engine at stride 5 read 3."""
+    from anpr.sampling import AdaptiveSampler
+
+    s = AdaptiveSampler(stride=2)
+    s.pace(0.29, 23.2)                      # 290 ms a frame on a 23.2 fps source
+    assert s.paced_stride == 7
+    assert [i for i in range(15) if s.should_process(i)] == [0, 7, 14]
+
+    s.pace(0.01, 23.2)                      # fast machine: never below the configured stride
+    assert s.paced_stride == 2
+
+    s.pace(0.0, 23.2)                       # no measurement yet, or a still source: unchanged
+    assert s.paced_stride == 2
+    assert s.describe()["paced_stride"] == 2

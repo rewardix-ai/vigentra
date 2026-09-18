@@ -73,11 +73,28 @@ class AdaptiveSampler:
         self.burst_frames = max(1, burst_frames)
         self.burst_plate_px = burst_plate_px
         self._burst_left = 0
+        #: Raised by pace() when the engine cannot process frames as fast as this stride asks for.
+        #: Asking for more than it can take does not buy frames - the late ones are dropped wherever
+        #: they fall - and it spends them unevenly. Measured on a 1080p cam06 recording paced at camera
+        #: speed: stride 2 asked for 1189 frames, 941 were dropped and 2 plates were read; the same
+        #: engine at stride 5 and stride 8 read 3.
+        self.paced_stride = self.stride
         self.stats = SamplerStats()
 
     @property
     def bursting(self) -> bool:
         return self._burst_left > 0
+
+    def pace(self, seconds_per_processed_frame: float, source_fps: float) -> None:
+        """Ask for no more frames than the engine can process on this machine.
+
+        A burst still fires: a vehicle close enough to read is worth falling behind for, and the
+        source's own buffer drops what arrives meanwhile.
+        """
+        if seconds_per_processed_frame <= 0 or source_fps <= 0:
+            return
+        import math
+        self.paced_stride = max(self.stride, min(60, math.ceil(seconds_per_processed_frame * source_fps)))
 
     def should_process(self, index: int) -> bool:
         self.stats.looked += 1
@@ -85,7 +102,7 @@ class AdaptiveSampler:
             self._burst_left -= 1
             self.stats.processed += 1
             return True
-        if index % self.stride == 0:
+        if index % self.paced_stride == 0:
             self.stats.processed += 1
             return True
         return False
@@ -107,6 +124,7 @@ class AdaptiveSampler:
             "processed": self.stats.processed,
             "bursts": self.stats.bursts,
             "stride": self.stride,
+            "paced_stride": self.paced_stride,
             "burst_frames": self.burst_frames,
             "burst_plate_px": self.burst_plate_px,
         }

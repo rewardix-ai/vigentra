@@ -81,7 +81,7 @@ def camera_of(clip: str) -> str:
 # ---------------------------------------------------------------------------
 
 def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: int,
-             max_frames: int | None = None) -> dict:
+             max_frames: int | None = None, realtime: bool = False) -> dict:
     import cv2
     import numpy as np
     import psutil
@@ -185,14 +185,25 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
         threading.Thread(target=monitor, daemon=True).start()
 
         processed = skipped = veh = plates = 0
+        late = 0
         quality = Counter()
         lat = []
         t0 = time.perf_counter()
+        first_pts = None
         for frame_index, frame, pts_seconds in iter_clip_frames(str(path), 1):
+            if first_pts is None:
+                first_pts = pts_seconds
             if max_frames is not None and processed >= max_frames:
                 break          # the worker's pass budget (--max-frames)
             if not sampler.should_process(frame_index):
                 continue
+            if realtime:
+                # a live camera does not wait: a frame that arrived while the engine was busy is gone,
+                # exactly as the live reader's newest-frame grabber drops it (tools/snapshot_wall.py)
+                behind = (time.perf_counter() - t0) - (pts_seconds - first_pts)
+                if behind > 1.0 / max(FPS, 1e-6):
+                    late += 1
+                    continue
             processed += 1
             img, assess = router.route(frame)
             quality[assess.quality.value] += 1
@@ -203,6 +214,8 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
             t1 = time.perf_counter()
             dets, _ = engine.process(img, captured_at=pts_seconds, discontinuity=False)
             lat.append((time.perf_counter() - t1) * 1000)
+            if len(lat) % 10 == 0:      # as the worker does: keep the sampler honest about this machine
+                sampler.pace(sum(lat[-10:]) / 10000.0, FPS)
             sampler.note(d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name in PLATE_BEARING_CLASSES)
             veh += len(dets)
             plates += len(getattr(pipe, "last_plates", []))
@@ -288,6 +301,8 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
         "duration_s": round(N / FPS, 1), "device": device, "sampler_stride": stride, "max_frames": max_frames,
         "engine": engine.describe(),
         "frames_processed": processed, "frames_skipped_quality": skipped, "frame_quality": dict(quality),
+        "realtime": realtime, "frames_dropped_late": late,
+        "frames_the_sampler_wanted": processed + late,
         "sampler": sampler.describe(),
         "vehicle_detections": veh,
         "unique_vehicle_tracks": len(records),
@@ -333,7 +348,7 @@ def cmd_run(a) -> int:
     banks_root = BANKS / a.tag
     for clip in a.clips or default_clips():
         t = time.time()
-        s = run_clip(clip, out_root, banks_root, a.device, a.stride, a.max_frames)
+        s = run_clip(clip, out_root, banks_root, a.device, a.stride, a.max_frames, a.realtime)
         print(f"{clip}: {s['unique_vehicle_tracks']} tracks, {s['tracks_with_plate_candidates']} with plates, "
               f"{len(s['confirmed_plates'])} confirmed, {len(s['emitted'])} emitted, "
               f"{s['processed_fps']} fps, {time.time() - t:.0f}s", flush=True)
@@ -442,6 +457,9 @@ def main() -> int:
     r.add_argument("--device", default="cpu")
     r.add_argument("--stride", type=int, default=int(os.getenv("YOLO_FRAME_SAMPLE_INTERVAL", "5")))
     r.add_argument("--max-frames", type=int, help="stop after this many processed frames (compose passes use 25)")
+    r.add_argument("--realtime", action="store_true",
+                   help="pace the clip at its own frame rate and drop frames the engine is too slow for, "
+                        "as a live camera does")
     r.add_argument("--out", default=str(OUT))
     r.add_argument("--anpr-root", help="directory holding an alternative anpr/ package")
     r.add_argument("--config-dir", help="thresholds.yaml / roi.yaml directory (default: config/)")

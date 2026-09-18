@@ -1,0 +1,8 @@
+vehicle,tracks,plate,legibility,vehicle_type,side,notes
+V001,61,GJ32AG2883,readable,car,front,"green EV plate, 80 px; checked by eye on the native crops"
+V002,119,GJ23H1546,readable,car,front,"77 px"
+V003,154,GJ11S7924,readable,car,front,"68 px"
+V004,237,GJ03MH7800,readable,car,front,"79 px"
+V005,243,GJ03JR1036,readable,car,front,"78 px; also legible on the independent labelling sheet (T397, 49 px)"
+V006,7,GJ18X6705,readable,auto,front,"yellow two-row auto plate, legible at 27 px on the labelling sheet (T7)"
+REST,,,unreadable,,,"135 vehicle tracks in the independent pass, 97 with a plate proposal >= 22 px; none of the others is legible by eye (tools/anpr_gt_plates.py). 854x480 recording of grid cam06 from the night1 session, 150 s"

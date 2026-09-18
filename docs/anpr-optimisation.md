@@ -120,6 +120,33 @@ between the two namings.
 | Confirm a vote on 3 crops instead of 4 | a false confirm on Delhi (DL01AP4173 for DL8CAP4175) |
 | 32 px reading floor instead of 24 | same plates, no further saving |
 
+## At camera speed
+
+`tools/anpr_benchmark.py run --realtime` paces a clip at its own frame rate and drops any frame that
+arrives while the engine is busy, exactly as the live reader's newest-frame grabber does. Measured on
+three recordings of grid cam06 — the 150 s 854x480 clip from the night1 session, the 1080p sandbox
+recording and the 720p grid recording — on an Apple M1 with the whole-crop text reader loaded:
+
+| Clip | Speed against live | Stride it settled on | Frames processed / dropped | Correct plates | False |
+|---|---|---:|---|---:|---:|
+| cam06 night, 854x480, 150 s | 1.31x | 9 | 1 016 / 20 | 5 of 6 | 0 |
+| cam06, 1080p, 66 s | 0.92x | 12 | 196 / 607 | 3 of 5 | 0 |
+| cam06, 720p, 45 s | 1.00x | 3 | 275 / 301 | no readable plate; reads the green EV plate that matches what is legible | 0 |
+
+Eight of the eleven readable plates across the three clips, none wrong, at camera speed on one machine.
+
+Two things came out of this:
+
+- **The sampler has to respect the hardware.** At 1080p the profile asked for every second frame, about
+  12 frames a second, while this machine processes 3. Of 1 189 frames wanted, 941 were dropped wherever
+  they happened to fall, and 2 plates were read. At stride 5 and stride 8 the same engine read 3.
+  `AdaptiveSampler.pace()` now raises the effective stride from the measured per-frame time and the
+  source frame rate, never below the configured stride, so a faster machine keeps the dense sampling.
+  Self-paced, the 1080p clip settled on stride 12 and read 3.
+- **One 1080p camera is about one machine's worth of work here.** 173 ms a frame at 1080p against 58 ms
+  at 854x480. The estate's cameras are 720p, where the same engine runs at 96 ms a frame and keeps up
+  with the camera.
+
 ## What still misses, and why
 
 `tools/anpr_failures.py --tag final` pairs every missed readable plate with the nearest reading the run

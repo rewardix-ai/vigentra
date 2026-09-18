@@ -1,0 +1,114 @@
+{
+ "camera": "cam06_night",
+ "clip": "cam06_night.mp4",
+ "resolution": "854x480",
+ "fps": 24.0,
+ "frames": 3602,
+ "duration_s": 150.1,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_mix_n/reader_crnn",
+  "camera": "cam06_night",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_mix_n.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "default"
+ },
+ "frames_processed": 1207,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 1207
+ },
+ "realtime": true,
+ "frames_dropped_late": 7,
+ "frames_the_sampler_wanted": 1214,
+ "sampler": {
+  "looked": 3602,
+  "processed": 1214,
+  "bursts": 7,
+  "stride": 5,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 2471,
+ "unique_vehicle_tracks": 104,
+ "tracks_with_plate_candidates": 23,
+ "tracks_by_size_band": {
+  "MEDIUM": 9,
+  "VERY_SMALL": 10,
+  "SMALL": 3,
+  "LARGE": 1
+ },
+ "plate_detections": 391,
+ "plate_candidates_banked": 391,
+ "ocr_calls": 1224,
+ "ocr_images": 1360,
+ "tracks_with_ocr_result": 23,
+ "unique_ocr_results": 23,
+ "status_counts": {
+  "UNREADABLE": 81,
+  "CANDIDATE": 18,
+  "CONFIRMED": 5
+ },
+ "confirmed_plates": [
+  "GJ03JR1036",
+  "GJ03MH7800",
+  "GJ11S7924",
+  "GJ23H1546",
+  "GJ32AG2883"
+ ],
+ "emitted": [
+  {
+   "plate": "GJ32AG2883",
+   "confirmed": true,
+   "score": 0.577,
+   "track": 61
+  },
+  {
+   "plate": "GJ23H1546",
+   "confirmed": true,
+   "score": 0.606,
+   "track": 119
+  },
+  {
+   "plate": "GJ11S7924",
+   "confirmed": true,
+   "score": 0.888,
+   "track": 154
+  },
+  {
+   "plate": "GJ03MH7800",
+   "confirmed": true,
+   "score": 0.525,
+   "track": 237
+  },
+  {
+   "plate": "GJ03JR1036",
+   "confirmed": true,
+   "score": 0.549,
+   "track": 243
+  }
+ ],
+ "unreadable_reasons": {
+  "no_plate_detected": 81
+ },
+ "wall_s": 108.5,
+ "finish_s": 4.6,
+ "processed_fps": 11.13,
+ "clip_seconds_per_wall_second": 1.384,
+ "frame_latency_ms_p50": 55.9,
+ "frame_latency_ms_p95": 83.4,
+ "cpu_percent_mean": 136.3,
+ "cpu_cores": 8,
+ "rss_max_mb": 2082,
+ "gpu_mem_max_mb": 1120
+}

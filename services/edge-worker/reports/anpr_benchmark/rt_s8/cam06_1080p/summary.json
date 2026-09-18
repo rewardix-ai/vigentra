@@ -1,0 +1,99 @@
+{
+ "camera": "cam06_1080p",
+ "clip": "cam06_1080p.mp4",
+ "resolution": "1920x1080",
+ "fps": 23.21,
+ "frames": 1546,
+ "duration_s": 66.6,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_mix_n/reader_crnn",
+  "camera": "cam06_1080p",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_mix_n.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "cam06"
+ },
+ "frames_processed": 201,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 200,
+  "blurred": 1
+ },
+ "realtime": true,
+ "frames_dropped_late": 583,
+ "frames_the_sampler_wanted": 784,
+ "sampler": {
+  "looked": 1546,
+  "processed": 784,
+  "bursts": 12,
+  "stride": 8,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 222,
+ "unique_vehicle_tracks": 29,
+ "tracks_with_plate_candidates": 16,
+ "tracks_by_size_band": {
+  "SMALL": 5,
+  "MEDIUM": 11
+ },
+ "plate_detections": 76,
+ "plate_candidates_banked": 76,
+ "ocr_calls": 466,
+ "ocr_images": 523,
+ "tracks_with_ocr_result": 16,
+ "unique_ocr_results": 16,
+ "status_counts": {
+  "UNREADABLE": 13,
+  "CANDIDATE": 13,
+  "CONFIRMED": 3
+ },
+ "confirmed_plates": [
+  "GJ18X6705",
+  "GJ23H1546",
+  "GJ32AG2883"
+ ],
+ "emitted": [
+  {
+   "plate": "GJ18X6705",
+   "confirmed": true,
+   "score": 0.681,
+   "track": 1
+  },
+  {
+   "plate": "GJ32AG2883",
+   "confirmed": true,
+   "score": 1.0,
+   "track": 23
+  },
+  {
+   "plate": "GJ23H1546",
+   "confirmed": true,
+   "score": 1.0,
+   "track": 94
+  }
+ ],
+ "unreadable_reasons": {
+  "no_plate_detected": 13
+ },
+ "wall_s": 73.3,
+ "finish_s": 7.3,
+ "processed_fps": 2.74,
+ "clip_seconds_per_wall_second": 0.908,
+ "frame_latency_ms_p50": 171.6,
+ "frame_latency_ms_p95": 1205.5,
+ "cpu_percent_mean": 119.9,
+ "cpu_cores": 8,
+ "rss_max_mb": 4169,
+ "gpu_mem_max_mb": 1151
+}

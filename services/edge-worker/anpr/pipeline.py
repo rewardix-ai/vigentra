@@ -114,6 +114,21 @@ def _top_valid_texts(hyps: list, k: int = 3) -> list[str]:
     return out
 
 
+def _coerce_to_format(text: str) -> Optional[str]:
+    """`text` with every character moved into the class its slot wants, or None if nothing changes.
+
+    Only the confusion map is used (anpr/plate_grammar.py: O/0, I/1, S/5, B/8, Z/2, G/6, ...), and only
+    where the most likely format for that length says letter or digit. A character with no confusion in
+    the wanted class is left alone, which leaves the string invalid and the caller drops it.
+    """
+    from anpr.plate_grammar import coerce, slot_types
+    slots = slot_types(len(text))
+    if not slots:
+        return None
+    out = "".join(coerce(ch, slot) for ch, slot in zip(text, slots))
+    return out if out != text else None
+
+
 def _one_track_per_plate(cands: list[tuple]) -> list[tuple]:
     """One physical plate goes to one track per frame.
 
@@ -730,6 +745,7 @@ class ANPRPipeline:
         # noise and lets that guess vote. The vehicle is still tracked, and its wider crops are read when
         # it comes closer (reading.crop_read_min_width_px; 0 = read every crop).
         floor = float(self.rcfg.get("crop_read_min_width_px", 0))
+        coerce_w = float(self.rcfg.get("coerce_votes", 0))
         out = []
         for c in (crops if self.filter_ensemble is not None else []):
             if floor and c.quality.width_px < floor:
@@ -750,6 +766,15 @@ class ANPRPipeline:
                         e[1].add(h.source.split("/")[1])
             for t, (p, rs) in sorted(best.items(), key=lambda kv: -kv[1][0]):
                 out.append((c, t, p, frozenset(rs)))
+            # reading.coerce_votes: a read that is a registration except for one class of character -
+            # a letter where the format wants a digit, or the reverse - also votes in its coerced form,
+            # at a lower confidence. The original keeps its vote: this offers the alternative to the
+            # evidence instead of rewriting the read (O/0, I/1, S/5, B/8, Z/2, G/6 are the confusions).
+            if coerce_w:
+                for t, (p, rs) in list(best.items()):
+                    fixed = _coerce_to_format(t)
+                    if fixed and fixed not in best and self._vote_admissible(fixed, self.state, reject):
+                        out.append((c, fixed, p * coerce_w, frozenset(rs)))
         # reading.text_vote_crops: a whole-crop text reader (awiros, PP-OCRv5 on 558k Indian plates)
         # reads the k best crops and votes as a reader of its own, so reading.vote_any_reader can
         # confirm on it. It read DL1CW0942 exactly on 11 of 19 Delhi 4K crops where the primary

@@ -1,0 +1,29 @@
+[CAM01] Vehicle ID: cam01_s0_t9 (truck)
+Track duration: 12.3 s  frames 23-330
+Plate candidates: 2  best frame: 57  plate size: 130x87  quality: 0.879
+OCR (per candidate, first 40):
+  f   43 123x63 q=0.88 det=0.21 -> - 0.00
+  f   57 105x58 q=0.88 det=0.33 -> - 0.00
+FINAL: MH01A7999  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t82 (truck)
+Track duration: 9.6 s  frames 285-525
+Plate candidates: 2  best frame: 295  plate size: 119x47  quality: 0.954
+OCR (per candidate, first 40):
+  f  295 96x32 q=0.95 det=0.20 -> - 0.00
+  f  296 99x35 q=0.93 det=0.21 -> - 0.00
+FINAL: CC05B8  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t206 (car)
+Track duration: 0.4 s  frames 711-722
+Plate candidates: 1  best frame: 722  plate size: 72x50  quality: 0.646
+OCR (per candidate, first 40):
+  f  722 57x33 q=0.65 det=0.22 -> - 0.00
+FINAL: GJ11L4399  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t216 (truck)
+Track duration: 0.9 s  frames 739-761
+Plate candidates: 1  best frame: 740  plate size: 40x39  quality: 0.531
+OCR (per candidate, first 40):
+  f  740 32x26 q=0.53 det=0.21 -> - 0.00
+FINAL: GJ221921  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

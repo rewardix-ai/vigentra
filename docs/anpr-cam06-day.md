@@ -40,7 +40,7 @@ Each row is one 2-minute clip. "Plate px" is the median width of the plate candi
 | 18 Jun 06:00 | 2 | 2 | 28 | 56 | 0 | 0 |
 | 18 Jun 08:00 | 28 | 8 | 37 | 70 | 1 | 0 |
 | 18 Jun 10:00 | 91 | 31 | 45 | 69 | 13 | 0 |
-| 18 Jun 12:00 | 128 | 44 | 37 | 32 | 14 | 0 |
+| 18 Jun 12:00 | 128 | 44 | 37 | 32 | 14 (15 after change 8 of `docs/anpr-optimisation.md`) | 0 |
 | 18 Jun 14:00 | 58 | 24 | 45 | 65 | 9 | 0 |
 | 18 Jun 16:00 | 47 | 18 | 37 | 73 | 8 | 0 |
 | 18 Jun 18:00 | 94 | 31 | 38 | 90 | 10 | 0 |

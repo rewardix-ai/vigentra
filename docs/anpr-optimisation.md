@@ -8,26 +8,45 @@ Every number here comes from `services/edge-worker/tools/anpr_benchmark.py` over
 
 ## Result
 
-Over all 36 clips (15 grid cameras, the Delhi clip, the 1080p cam06 recording, 19 TfL clips):
+Over all 38 recorded clips (15 grid cameras, the Delhi clip, the 1080p cam06 recording, the noon and
+night cam06 recordings, 19 TfL clips), run whole on 19 Sep with the final configuration (`final2`):
 
-| | Before (`baseline`) | After (`final`) |
-|---|---|---|
-| Correct plates, of the 26 readable by eye | 9 | **16** |
-| False plates confirmed or sent | 0 | **0** |
-| Vehicle tracks | 1 524 | **1 868** |
-| Plate candidates banked | 22 279 | **3 409** |
-| OCR images | 36 727 | **14 915** |
-| Total processing time (Apple M1, MPS) | 5 784 s | **2 779 s** |
+| | Before (`baseline`, 36 clips) | After (`final2`, same 36 clips) | After, all 38 clips |
+|---|---|---|---|
+| Correct plates, of those readable by eye | 9 of 26 | **16 of 26** | **36 of 48** |
+| False plates confirmed or sent | 0 | **0** | **0** |
+| Vehicle tracks | 1 524 | **1 868** | 2 100 |
+| Plate candidates banked | 22 279 | **3 448** | 7 817 |
+| OCR images | 36 727 | **14 915** | 20 087 |
+| Processing time (Apple M1, MPS) | 5 784 s | 3 341 s* | 4 030 s |
 
-Per clip: Delhi 7 → **13** of 20, cam06 1080p 2 → **3** of 5 (a fourth reading matches a plate only
-partly legible by eye, so it is counted neither right nor wrong), cam07 0 of 1 — its one readable plate
-is still never detected, though the clip now yields 10 vehicle tracks instead of 2. Every other camera
-has no readable plate and confirms none, before and after.
+\* The `final` run of the same configuration minus change 8 took 2 779 s on the same 36 clips; the
+19 Sep machine was slower, not the pipeline: every count above — tracks, candidates, OCR images,
+plates — is identical between `final` and `final2` on those 36 clips.
+
+Per clip: Delhi 7 → **13** of 20; cam06 1080p 2 → **3** of 5 (a fourth reading matches a plate only
+partly legible by eye, so it is counted neither right nor wrong); **cam06 at noon 15 of 16**; cam06 at
+night 5 of 6; cam07 0 of 1 — its one readable plate is still never detected, though the clip now yields
+10 vehicle tracks instead of 2. Every other camera has no readable plate and confirms none, before and
+after. The per-camera table, the missed plates and the width bands are in
+`services/edge-worker/reports/anpr_benchmark/final2/REPORT.md`, the failure attribution in `FAILURES.md`
+beside it.
 
 Without the optional whole-crop text reader (the Docker image's configuration) the same run reads 13.
 
 Sightings: 18 for 16 plates, against 15 sightings for 9 before — one vehicle is no longer reported
 several times.
+
+**Regression proof.** Change 8 was replayed first (reading stage only), then the whole set was run
+again from the video. On the 36 clips that `final` covered, `final2` confirms the same 16 plates and
+the same 0 false, banks the same 3 448 candidates and reads the same 14 915 images. Change 8 gains one
+plate on the noon clip and moves nothing else. The 124 edge-worker tests pass.
+
+One thing the rerun caught: the whole-clip benchmark had begun pacing the sampler like the live worker
+(change at camera speed, below), so a slow day on the benchmark machine thinned the frames and lost a
+plate that the same pipeline reads when it sees every frame. Pacing now applies only under
+`--realtime`: a whole-clip run measures what the pipeline can read, a paced run what one machine keeps
+up with, and the two are reported separately.
 
 ## Changes, in the order they were measured
 
@@ -78,6 +97,22 @@ So the budget is now per camera: cam06, cam07, cam12 and the Delhi camera take a
 ### 7. Robustness (no plate counts, but plates were being lost)
 
 From the audit: a pass whose every frame was skipped crashed and dropped the plates the engine held; a failed final upload dropped its payloads silently; clips carried wall-clock timestamps, so the 3 s fragment-merge window depended on replay speed; closed crop banks and the gate log grew without limit; the live wall never settled its tracks; and the pass-end diagnostics read keys the engine never returned, so the line that explains "why no plates" never printed.
+
+### 8. A plate two kinds of reader agree on (+1 plate on the busiest clip, 0 false)
+
+`reading.cross_reader_confirm`. The vote rules above want one reader's string to hold a share of that
+reader's own crops. On a long daylight track the readings scatter across blur variants, so no single
+share is reached even when the readers agree: on the cam06 noon clip GJ11VV7988 was read exactly by the
+primary CRNN on 5 crops and by the whole-crop text reader on 11, every share sat between 0.11 and 0.29,
+and the plate was thrown away. Now a string that readers of *both kinds* read on their own crops, on at
+least 2 crops each and 6 together, with no rival reading of the same glyphs behind more crops, confirms
+on that evidence. Two CRNNs cannot do it between themselves: they share their confusions, which is the
+same reason near backing between two CRNNs was switched off in change 1.
+
+Measured by replay on the noon clip, whose ground truth was read by eye over all 102 vehicles that had a
+plate proposal: 14 → **15 of the 16 plates legible by eye, 0 wrong**. The one that remains, GJ1KR6061, is
+misread by every reader (the K), so refusing it is the right answer. Delhi 13 of 20 and cam06 1080p 3 of 5
+are unchanged, and the cameras that confirm nothing still confirm nothing.
 
 ## The architecture, stage by stage
 
@@ -149,8 +184,8 @@ Two things came out of this:
 
 ## What still misses, and why
 
-`tools/anpr_failures.py --tag final` pairs every missed readable plate with the nearest reading the run
-produced (`reports/anpr_benchmark/final/FAILURES.md`). On the Delhi clip:
+`tools/anpr_failures.py --tag final2` pairs every missed readable plate with the nearest reading the run
+produced (`reports/anpr_benchmark/final2/FAILURES.md`). On the Delhi clip:
 
 | Missed | Nearest reading | Why it was not confirmed |
 |---|---|---|
@@ -161,8 +196,10 @@ produced (`reports/anpr_benchmark/final/FAILURES.md`). On the Delhi clip:
 | DL1LAB9684 | DL11AR9684 | 5 crops of a 45 px yellow plate; readers disagree |
 | UP14EC6398 | MP14EC6396 | readers disagree on the state and the last glyph |
 
-On cam06 1080p, GJ18X6705 (a two-row auto plate) and GJ03KS7334 are read only in part. On cam07 the one
-readable plate is never proposed by the plate detector on the two frames where it is wide enough.
+On cam06 1080p, GJ18X6705 (a two-row auto plate) and GJ03KS7334 are read only in part; the same auto
+passes the night clip and misses there too. On the noon clip the one miss, GJ1KR6061, is misread by every
+reader (the K), so no reading of it is confirmed. On cam07 the one readable plate is never proposed by
+the plate detector on the two frames where it is wide enough.
 
 The pattern: what remains is not decision logic but glyph-level recognition on 45–100 px plates, and
 plate detection on dark 720p footage. Both are model work — a reader trained on more Indian two-row

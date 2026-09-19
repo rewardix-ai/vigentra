@@ -53,6 +53,7 @@ that decide whether a reading is allowed out:
 | `confidence.confirm_min_char_vote` | weakest character's share of its vote |
 | `reading.vote_confirm` | crops and vote share a string vote needs |
 | `reading.vote_reject` | grammar rules that bar a crop from voting |
+| `reading.cross_reader_confirm` | crops on which a CRNN and the text reader must each read the same string for it to confirm without a vote-share majority (2 each, 6 together) |
 | `reading.confirm_min_glyphs` | glyph-shaped marks a track's best crops must show to confirm (3) |
 | `reading.glyph_crops` | how many of a track's best crops are searched for glyphs (8) |
 | `reading.secondary_confirm_min_glyphs` | lets a second-reader string confirm on glyph evidence; unset, and inert here (see Readers) |

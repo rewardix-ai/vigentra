@@ -246,7 +246,8 @@ frame (sampled per camera: config/camera_profiles.yaml)
   ├─ string vote           each crop's own reading votes, weighted by crop quality and read
   │                        confidence; the primary reader decides, another reader may carry a
   │                        confirmation only when a second reader produced that string and no
-  │                        reader opposes it
+  │                        reader opposes it; a string read by both a CRNN and the text reader
+  │                        on enough crops confirms without a vote-share majority
   ├─ grammar engine        Indian plate formats + confusion-aware repair
   ├─ ROVER vote            across the track's crops
   └─ glyph check           the crops must show a row of characters ──► CONFIRMED | CANDIDATE

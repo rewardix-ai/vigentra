@@ -214,7 +214,9 @@ def run_clip(clip: str, out_root: Path, banks_root: Path, device: str, stride: i
             t1 = time.perf_counter()
             dets, _ = engine.process(img, captured_at=pts_seconds, discontinuity=False)
             lat.append((time.perf_counter() - t1) * 1000)
-            if len(lat) % 10 == 0:      # as the worker does: keep the sampler honest about this machine
+            if realtime and len(lat) % 10 == 0:
+                # as the worker does: keep the sampler honest about this machine. Only at camera speed:
+                # a whole-clip run measures what the pipeline can read, not what this machine keeps up with
                 sampler.pace(sum(lat[-10:]) / 10000.0, FPS)
             sampler.note(d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name in PLATE_BEARING_CLASSES)
             veh += len(dets)

@@ -11,6 +11,11 @@ plate you are about to add**, the alerts page with nothing open. Record at 1920x
 zoomed as in the 15 Sep recording. Say the four beat names aloud or caption them; a juror scoring
 against the list should be able to tick each one without rewinding.
 
+**Recording it.** `deliverables/tools/record_demo.py` drives a separate Chrome through exactly these
+beats with a visible pointer and captions, and `edit_demo.py` cuts the result, shortening the wait for
+your password and the wait for the alert. You sign in and type your password; the script never does.
+The commands are at the top of `record_demo.py`.
+
 ## A. Own-feed demonstration (≤ 3:00)
 
 Feed: the Delhi traffic clip served by the Traffic Police VMS. "Footage of your choice" is what the

@@ -627,12 +627,13 @@ def run(
     # twice over if the first pass is discarded.
     incidents = None
     if anpr is not None and IncidentDetector is not None:
+        zone = (getattr(profile, "info", None) or {}).get("intrusion")   # the camera's restricted zone
         if incidents_by_camera is None:
-            incidents = IncidentDetector(camera_id)
+            incidents = IncidentDetector(camera_id, intrusion=zone)
         else:
             incidents = incidents_by_camera.get(camera_id)
             if incidents is None:
-                incidents = incidents_by_camera[camera_id] = IncidentDetector(camera_id)
+                incidents = incidents_by_camera[camera_id] = IncidentDetector(camera_id, intrusion=zone)
     incident_batch: list[dict] = []
 
     # The supervisor already logged this once for the whole process; repeating
@@ -843,7 +844,7 @@ def run(
                 if discontinuity:
                     incidents.reset()
                 views = _incident_views(detections)
-                for inc in incidents.update(views, pts_seconds):
+                for inc in incidents.update(views, pts_seconds, frame_size=(frame.shape[1], frame.shape[0])):
                     incident_batch.append(inc.to_dict())
                     logger.info(
                         "incident %s (%s) on camera %s: %s",

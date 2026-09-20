@@ -36,6 +36,7 @@ const KIND_LABEL: Record<string, string> = {
   SUDDEN_STOP: "Sudden stop",
   COLLISION_CANDIDATE: "Possible collision",
   PERSON_ON_CARRIAGEWAY: "Person in traffic",
+  INTRUSION: "Intrusion in a restricted zone",
 };
 
 type Tone = "ok" | "warn" | "bad" | "idle" | "info";

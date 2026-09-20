@@ -736,6 +736,7 @@ export interface Incident {
     | "SUDDEN_STOP"
     | "COLLISION_CANDIDATE"
     | "PERSON_ON_CARRIAGEWAY"
+    | "INTRUSION"
     | string;
   severity: "LOW" | "MEDIUM" | "HIGH" | string;
   status: "CANDIDATE" | "REVIEWING" | "CONFIRMED" | "DISMISSED" | string;

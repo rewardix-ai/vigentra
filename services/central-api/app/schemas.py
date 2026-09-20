@@ -1589,6 +1589,7 @@ INCIDENT_KINDS = (
     "SUDDEN_STOP",
     "COLLISION_CANDIDATE",
     "PERSON_ON_CARRIAGEWAY",
+    "INTRUSION",   # a person or vehicle inside a camera's configured restricted zone
 )
 INCIDENT_SEVERITIES = ("LOW", "MEDIUM", "HIGH")
 INCIDENT_STATUSES = ("CANDIDATE", "REVIEWING", "CONFIRMED", "DISMISSED")

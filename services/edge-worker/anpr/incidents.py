@@ -143,9 +143,23 @@ class _State:
     #: fraction of a second as it passes, so exposure is judged over the gap
     #: between passes rather than one continuous overlap.
     last_exposed: float = 0.0
+    #: When this track's foot point first entered the camera's intrusion zone, or None.
+    zone_since: float | None = None
     first_seen: float = 0.0
     last_seen: float = 0.0
     label: str = "?"
+
+
+def _in_polygon(x: float, y: float, poly) -> bool:
+    """Ray casting; `poly` is [[x, y], ...]."""
+    inside = False
+    j = len(poly) - 1
+    for i in range(len(poly)):
+        (xi, yi), (xj, yj) = poly[i], poly[j]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            inside = not inside
+        j = i
+    return inside
 
 
 def _iou(a, b) -> float:
@@ -164,8 +178,13 @@ def _iou(a, b) -> float:
 class IncidentDetector:
     """Per-camera. Feed it the tracker's confirmed tracks each frame."""
 
-    def __init__(self, camera_id: str):
+    def __init__(self, camera_id: str, intrusion: dict | None = None):
         self.camera_id = camera_id
+        #: The camera's restricted zone, from its profile (config/camera_profiles.yaml):
+        #:   intrusion: {zone: [[x, y], ...], classes: [person], dwell_seconds: 2, hours: [22, 6]}
+        #: `zone` is a polygon in fractions of the frame (or pixels when no frame size is given),
+        #: `hours` the local hours it is armed between (omit for always). No zone, no rule.
+        self.intrusion = intrusion if intrusion and len(intrusion.get("zone") or []) >= 3 else None
         self._tracks: dict[int, _State] = {}
         self._flow: deque = deque(maxlen=200)      # headings of completed tracks
         self._flow_count = 0
@@ -268,7 +287,8 @@ class IncidentDetector:
 
     # -------------------------------------------------------------------- update
 
-    def update(self, tracks, timestamp: float | None = None) -> list[Incident]:
+    def update(self, tracks, timestamp: float | None = None,
+               frame_size: tuple[int, int] | None = None) -> list[Incident]:
         """Returns incidents newly raised on this frame. Never raises the same one twice
         inside the cooldown window."""
         now = time.time() if timestamp is None else timestamp
@@ -290,6 +310,9 @@ class IncidentDetector:
             sp = self._speed(st)
             if sp is not None:
                 st.speeds.append((now, sp))
+
+            # before the motion gate: someone standing still inside a fence has no speed to measure
+            out.extend(self._intrusion(tid, st, (x1, y1, x2, y2), now, frame_size))
 
             if now - st.first_seen < MIN_TRACK_SECONDS or sp is None:
                 continue
@@ -383,6 +406,40 @@ class IncidentDetector:
                               "flow_learned_from_tracks": self._flow_count,
                               "vehicle": st.label}))
         return out
+
+    def _intrusion(self, tid, st, box, now, frame_size) -> list[Incident]:
+        """A person or vehicle (the profile says which) inside the camera's restricted zone.
+
+        Judged on the foot point - bottom centre of the box - because that is where the object
+        stands; a tall box beside a fence otherwise "enters" it with its head. Held for
+        `dwell_seconds` so a track that clips a corner of the zone is not an alarm.
+        """
+        cfg = self.intrusion
+        if cfg is None or st.label not in (cfg.get("classes") or [PERSON_LABEL]):
+            return []
+        hours = cfg.get("hours")
+        if hours:
+            h, (start, end) = time.localtime().tm_hour, hours
+            armed = start <= h < end if start <= end else (h >= start or h < end)
+            if not armed:
+                return []
+        w, h_ = frame_size or (1.0, 1.0)
+        x, y = (box[0] + box[2]) / 2.0 / w, box[3] / h_
+        if not _in_polygon(x, y, cfg["zone"]):
+            st.zone_since = None
+            return []
+        if st.zone_since is None:
+            st.zone_since = now
+        dwell = float(cfg.get("dwell_seconds", 2.0))
+        if now - st.zone_since < dwell or not self._fire((tid, "INTRUSION"), now):
+            return []
+        return [Incident(
+            self.camera_id, "INTRUSION", str(cfg.get("severity", "HIGH")), [tid],
+            st.zone_since, now,
+            reason=f"a {st.label} has been inside this camera's restricted zone for "
+                   f"{now - st.zone_since:.0f}s",
+            evidence={"dwell_s": round(now - st.zone_since, 1), "foot_point": [round(x, 3), round(y, 3)],
+                      "armed_hours": hours or "always"})]
 
     def _person(self, tid, st, tracks, now) -> list[Incident]:
         """A person in the carriageway while traffic is moving.

@@ -392,7 +392,10 @@ def hover_el(sel, pattern=None, nth=0, timeout=10):
 
 def nav(href):
     """Open a module from the sidebar, the way an operator would."""
-    click_el(f'a[href="{href}"]')
+    try:
+        click_el(f'a[href="{href}"]', timeout=4)
+    except LookupError:          # not in this account's sidebar: go by address instead
+        js(f"location.assign({json.dumps(href)})")
     wait_for(f"location.pathname === {json.dumps(href)}", 10)
     time.sleep(1.3)
 

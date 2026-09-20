@@ -173,3 +173,19 @@ current text, README test count behind (124 edge-worker tests now).
 | 10 | HLD: alert workflow with prioritisation, face-recognition position, continuous readers, intrusion | docs | **done** today; re-export the PDF |
 | 11 | Re-record both demos to the new scripts; upload unlisted; fill the links | **team** | after 4–6 |
 | 12 | Hosted URL with a read-only test login | **team decision** | open |
+
+## 5. Where the scores stand after 20 September's work
+
+| # | Area | Was | Now | What still holds it below 10 |
+|---|---|---:|---:|---|
+| 1 | Successful test case | 6 | 8 | The continuous reader is tested in code and has not yet run against the live grid; on the day it needs one reader process per legible camera and the hardware for it |
+| 2 | Presentation | 7 | 9 | Keynote 3 and the 15-slide presentation carry the measured result, the alert workflow and the organisers' checklist; a juror still has to be shown it in the video |
+| 3 | Architecture and HLD | 8 | 9.5 | Proposal v3 with Addendum B; alert prioritisation, webhook, continuous readers, intrusion and the position on faces are all written down |
+| 4 | Working platform | 7 | 8 | The platform now does everything the brief lists; **the submitted video still does not show it** — re-record to `docs/demo-script.md` |
+| 5 | Analytics output | 6.5 | 8.5 | Intrusion added, zero false plates across 38 clips; night footage and faces are limits of the footage, stated as such; the default image still lacks the text reader until `anpr-text` is built |
+| 6 | Scalability and PoC readiness | 8 | 9 | Measured ingest with matching (164 reads/s per process) and a measured sizing unit for continuous readers; no multi-node test, and we say so |
+| 7 | Submission completeness | 5 | 7 | Documents current and consistent; **links, recordings and the output report from a fresh daylight run are the team's** |
+
+Verified on 20 Sep: 201 platform and 131 edge-worker tests pass; the dashboard image builds with the alert-priority and intrusion changes; both v3 PDFs render and keep their outline and links. Not verified: the `anpr-live` profile and the `anpr-text` image against the live grid — Docker was started only to build the dashboard.
+
+Nothing in code stands between this submission and full marks on areas 2, 3 and 6. Areas 1, 4 and 7 are decided by the recordings and one live run, and area 5's ceiling is the footage.

@@ -205,8 +205,9 @@ services:
       dockerfile: services/edge-worker/Dockerfile
       # The ANPR target carries the plate models; the yolo target is vehicles
       # only and starts far faster if that is all you need.
-      target: anpr
-    image: vigentra/edge-worker:0.2.0
+      # anpr-text adds the whole-crop text reader (~1 GB; 16 of 26 plates instead of 13)
+      target: ${EDGE_ANPR_TARGET:-anpr}
+    image: vigentra/edge-worker:0.2.0${EDGE_ANPR_TARGET:+-text}
     restart: unless-stopped
     environment:
       CENTRAL_API_URL: http://central-api:8000
@@ -238,6 +239,8 @@ services:
     # log line and no error - a silent failure worth making impossible.
     volumes:
       - ./services/edge-worker/models:/app/models:ro
+      # PaddleOCR model code for the text reader; only read by the anpr-text target
+      - ./services/edge-worker/third_party:/app/third_party:ro
     # --forever is the whole point: every camera the account may watch, cycling
     # continuously, so the counts keep accumulating without anyone running a
     # command. --cycle-seconds paces it - each client gets its own copy of the

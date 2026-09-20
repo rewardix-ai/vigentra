@@ -104,3 +104,21 @@ ENV ANPR_ENABLE=true \
 
 USER edge
 CMD ["python", "-m", "app.worker", "--help"]
+
+
+# ---------------------------------------------------------------------------
+# anpr-text: the anpr image plus the whole-crop text reader (anpr/read/awiros.py).
+#
+#   EDGE_ANPR_TARGET=anpr-text docker compose --profile anpr build edge-worker
+#
+# config/thresholds.yaml asks for this reader; without PaddlePaddle the engine logs one line and
+# falls back to the two CRNNs. Measured on the 36-clip set (docs/anpr-optimisation.md): 16 of 26
+# plates with it, 13 without, none wrong either way, and the cross-reader confirm rule can only
+# fire when it is loaded. ~1 GB larger, which is why it is a target and not the default.
+# Weights (models/awiros) and the PaddleOCR model code (third_party/PaddleOCR) are mounted by
+# docker-compose.yml, like every other weight.
+# ---------------------------------------------------------------------------
+FROM anpr AS anpr-text
+USER root
+RUN pip install --no-cache-dir "paddlepaddle==3.3.1" "safetensors>=0.4"
+USER edge

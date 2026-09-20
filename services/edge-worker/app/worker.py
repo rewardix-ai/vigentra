@@ -399,6 +399,32 @@ def _plain(frames: Iterator[tuple]) -> Iterator[tuple[int, Any, float, bool]]:
         yield index, frame, pts, False
 
 
+#: A continuous reader (EDGE_CONTINUOUS=1) watches its cameras all the time instead of sampling them.
+#: The sampled schedule - 25 frames, then the next camera, then a two-minute sleep - looks at each
+#: camera 1-2 % of the time, which counts traffic well and will not see one designated vehicle cross a
+#: junction in five seconds. Give a continuous reader only the cameras whose plates are legible, one
+#: process per camera or two; a pass still ends every CONTINUOUS_PASS_FRAMES so tracks settle and the
+#: engine's memory is bounded.
+CONTINUOUS = os.getenv("EDGE_CONTINUOUS", "").strip().lower() in ("1", "true", "yes")
+CONTINUOUS_PASS_FRAMES = int(os.getenv("EDGE_CONTINUOUS_PASS_FRAMES", "1500"))
+
+
+def _pass_frames(profile, max_frames: int, continuous: bool | None = None) -> int:
+    """Processed frames in one pass: the camera's budget, or a long pass for a continuous reader."""
+    if CONTINUOUS if continuous is None else continuous:
+        return CONTINUOUS_PASS_FRAMES
+    return pass_budget(profile, max_frames)
+
+
+def _nap_seconds(cycle_seconds: int, worst: int, continuous: bool | None = None) -> int:
+    """Pause between cycles. A healthy continuous reader reconnects after a breath; one whose
+    cameras failed keeps the full pause, so a dead feed is never hammered (the gateway asks
+    callers to pace their load)."""
+    if (CONTINUOUS if continuous is None else continuous) and not worst:
+        return min(cycle_seconds, 3)
+    return cycle_seconds
+
+
 def _should_flush(pending: list, plate_sightings) -> bool:
     """Upload now, or keep batching?
 
@@ -587,7 +613,7 @@ def run(
     # per-camera sampling and low-light handling (config/camera_profiles.yaml)
     profile = anpr.profile if anpr is not None else load_camera_profile(camera_id, profile_key)
     router = FrameQualityRouter(**router_settings(profile))
-    max_frames = pass_budget(profile, max_frames)
+    max_frames = _pass_frames(profile, max_frames)
     plates_read = 0
 
     # Incident detection rides on the same tracker the ANPR engine already
@@ -1119,7 +1145,7 @@ def supervise(
                     "cycle %d complete; sleeping %ds; anpr engines %s",
                     cycle, cycle_seconds, anpr_cache.describe(),
                 )
-                for _ in range(cycle_seconds):
+                for _ in range(_nap_seconds(cycle_seconds, worst)):
                     if stop:
                         break
                     time.sleep(1)

@@ -247,6 +247,38 @@ services:
       central-api: { condition: service_healthy }
 
   # ---------------------------------------------------------------------------
+  # Continuous plate readers, for the cameras whose plates are legible. The
+  # sampled worker above looks at each camera 1-2 % of the time: right for
+  # counting, and it will not see one designated vehicle cross a junction.
+  # This one never leaves its cameras (EDGE_CONTINUOUS: long passes, a 3 s
+  # breath between them, the full pause only after a failure) and uploads a
+  # plate the moment it settles, so a watchlist alert follows the vehicle by
+  # seconds. One 720p camera is about real time on one M1-class machine
+  # (docs/anpr-optimisation.md), so list only what the host can carry:
+  #
+  #   ANPR_LIVE_CAMERAS="--camera <canonical id> --camera <canonical id>" \
+  #   docker compose --profile anpr-live up -d anpr-live
+  #
+  # Canonical ids are on each camera's registry page; unset, it takes every
+  # camera in long turns, which is better than sampling and worse than a
+  # dedicated reader. Do not run it beside the
+  # `anpr` profile on the same cameras: both sign in as the same AI account.
+  # ---------------------------------------------------------------------------
+  anpr-live:
+    extends: { service: edge-worker }
+    profiles: ["anpr-live"]
+    environment:
+      EDGE_CONTINUOUS: "true"
+      EDGE_CONTINUOUS_PASS_FRAMES: ${EDGE_CONTINUOUS_PASS_FRAMES:-1500}
+    command: >
+      python -m app.worker --forever
+      --sample-interval ${ANPR_LIVE_STRIDE:-2}
+      --cycle-seconds ${EDGE_CYCLE_SECONDS:-120}
+      ${ANPR_LIVE_CAMERAS:---all-cameras}
+    depends_on:
+      central-api: { condition: service_healthy }
+
+  # ---------------------------------------------------------------------------
   # Live-wall frames. The grid HLS CDN delivers a 6 s segment in 15-80 s and
   # 403s under concurrency, so a browser HLS wall of thirty tiles blacks out.
   # This decodes the same cameras over the real-time RTSP gateway (every codec,

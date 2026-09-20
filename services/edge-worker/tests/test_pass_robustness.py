@@ -77,3 +77,14 @@ def test_a_settled_plate_is_uploaded_at_once_and_boxes_wait_for_the_batch():
     assert not worker._should_flush([{"box": 1}], [])
     assert worker._should_flush([{"box": 1}], [object()])
     assert worker._should_flush([{}] * worker.BATCH_SIZE, [])
+
+
+def test_a_continuous_reader_runs_long_passes_and_pauses_only_when_a_camera_failed():
+    from types import SimpleNamespace
+    from app import worker
+    dense = SimpleNamespace(sampling={"max_frames": 150})
+    assert worker._pass_frames(dense, 25, continuous=False) == 150
+    assert worker._pass_frames(dense, 25, continuous=True) == worker.CONTINUOUS_PASS_FRAMES
+    assert worker._nap_seconds(120, worst=0, continuous=False) == 120
+    assert worker._nap_seconds(120, worst=0, continuous=True) == 3
+    assert worker._nap_seconds(120, worst=1, continuous=True) == 120   # never hammer a dead feed

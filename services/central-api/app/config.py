@@ -729,6 +729,10 @@ class Settings(BaseSettings):
     #: How long a registration number is kept. Shorter than the detection it
     #: rides on, because the plate is the identifying part.
     anpr_plate_retention_days: int = 30
+    #: Where watchlist alerts are POSTed as they are raised (services/alert_webhook.py). Empty: console only.
+    alert_webhook_url: str = ""
+    #: HMAC-SHA256 key for the X-Vigentra-Signature header. Set it whenever the URL is set.
+    alert_webhook_secret: str = ""
     #: Statewide/city admins get metadata by default; flip these to grant video.
     vigentra_state_admin_video: bool = False
     vigentra_city_admin_video: bool = False

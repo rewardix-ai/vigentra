@@ -162,6 +162,10 @@ services:
       MUNICIPAL_VMS_TOKEN: ${MUNICIPAL_VMS_TOKEN:-municipal-demo-token}
       JWT_SECRET: ${JWT_SECRET:-vigentra-module1-demo-secret-change-me}
       ENVIRONMENT_LABEL: ${ENVIRONMENT_LABEL:-DEMO}
+      # Watchlist alerts are also POSTed here as they are raised, signed with
+      # HMAC-SHA256 (X-Vigentra-Signature). Empty: console only.
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET:-}
       # The always-on detector services below run real YOLO inference.
       YOLO_ENABLE: "true"
       # Vigentra never exposes footage; both flags remain absent by design.

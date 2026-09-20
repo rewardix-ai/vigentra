@@ -46,7 +46,7 @@ from ..schemas import (
     InstallationStatus,
     VehicleCount,
 )
-from ..services import audit_service, watchlist_service
+from ..services import alert_webhook, audit_service, watchlist_service
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
 from ..services.normalization import to_utc
 from ..services.policy_service import may_read_detections
@@ -316,6 +316,8 @@ async def ingest_detections(
     identity = await watchlist_service.record_sightings(db, plate_reads)
 
     await db.commit()
+
+    alert_webhook.notify(settings, identity.alerts_raised)   # after the commit, off the request
 
     # Audited separately from the ingest itself, and only when it fired. The
     # matcher is a machine decision with operational consequences, so the trail

@@ -4,9 +4,11 @@ What the organisers ask for, what answers it, and what is still open. Update
 this file in the same commit as any change that moves a number or a status
 below, and add a row to the change log at the end.
 
-**Deadline.** Upload by **15 September 2026**; shortlisting is announced that
-evening; the hackathon runs **22–23 September** at i-Hub Gujarat
-(<https://sentinel.gujarat.gov.in/schedule>).
+**Deadline.** Upload by **28 September 2026**; shortlisting is announced the
+same day; the hackathon runs **12–13 October** at i-Hub Gujarat, results on
+13 October (<https://sentinel.gujarat.gov.in/schedule>, read 20 Sep — the
+dates moved from 15 and 22–23 September). What a juror would mark us down for
+today, and the plan to the deadline: [`hackathon-evaluation.md`](hackathon-evaluation.md).
 
 **Sources.** Steps 5 and 6 of <https://sentinel.gujarat.gov.in/problems>, and
 FAQs 24 and 29–38 of <https://sentinel.gujarat.gov.in/faqs>, which spell the
@@ -93,6 +95,7 @@ labelled as an estimate.
 | Date | Change (commit) | Deliverables updated |
 |---|---|---|
 | 14 Sep | Tracker created | this file |
+| 20 Sep | Site re-read in full: deadline now 28 Sep, event 12–13 Oct; the brief now centres on watchlist correlation and real-time alerts, and allows footage of our choice for the own-feed demo. Evaluation written as a juror would (`docs/hackathon-evaluation.md`); demo scripts rewritten to the brief's four beats; a settled plate is uploaded at once and the alerts page refreshes every 5 s (`9479690`) | tracker, demo script, evaluation |
 | 19 Sep | A plate read by both a CRNN and the text reader confirms without a vote-share majority (cam06 noon 14 → 15 of 16); the noon and night cam06 recordings join the regression set; the whole-clip benchmark no longer paces itself like a live camera. Full 38-clip regression: 36 of 48, none wrong, the 18 Sep numbers reproduced exactly on their 36 clips | HLD, reading doc, optimisation report, tracker |
 | 18 Sep | ANPR optimised across the whole estate and measured on every recorded clip: 16 of 26 readable plates against 9, none wrong, 1 868 vehicle tracks against 1 524, 2.1x the speed. Audit, baseline, per-camera configuration, failure analysis and a per-vehicle dataset: `docs/anpr-audit.md`, `docs/anpr-baseline.md`, `docs/anpr-optimisation.md` | HLD, scalability plan, tracker |
 | 14 Sep | HLD brought up to date: readers and runtime, the catalogue read once centrally, RTSP-backed liveness, the 96 px plate-search floor, 295 tests, 14 Sep measurements, and a new section on dispersed sites and thin links (FAQ 30) | HLD |

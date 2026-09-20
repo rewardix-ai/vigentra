@@ -1,4 +1,48 @@
-# Vigentra — demo script
+# Vigentra — demo scripts
+
+Two recordings are submitted (Step 5 of <https://sentinel.gujarat.gov.in/problems>), each at most three
+minutes, screen-recorded from the running platform. The brief lists what each must *clearly
+illustrate*; the beats below are in that order and nothing else goes in. The longer walkthrough of the
+registry and the access model follows as an appendix: it is the material for questions, not for the
+upload.
+
+Before recording: `docker compose up --build`, every service healthy, the watchlist **empty of the
+plate you are about to add**, the alerts page with nothing open. Record at 1920x1080 with the page
+zoomed as in the 15 Sep recording. Say the four beat names aloud or caption them; a juror scoring
+against the list should be able to tick each one without rewinding.
+
+## A. Own-feed demonstration (≤ 3:00)
+
+Feed: the Delhi traffic clip served by the Traffic Police VMS. "Footage of your choice" is what the
+brief asks for. Use **HR26CC2083** as the wanted plate: the engine confirms it on every run.
+
+| Time | Beat the brief names | What is on screen |
+|---|---|---|
+| 0:00–0:35 | **Onboarding and processing of a feed** | `/installations/new`: the camera's form, submitted; `/registry`: it appears on the map and in the table with its department and status; open it and the feed plays |
+| 0:35–1:15 | **AI-powered detection and analytics** | `/live`: the tile full screen with vehicle boxes, plate boxes and settled readings drawn live; `/detections` filtered to this camera, counts rising |
+| 1:15–1:45 | **Correlation with a watchlist database** | `/watchlist`: add HR26CC2083, category *stolen*, a reason and a case reference; show the entry with who added it; say that the matcher runs at ingest, exact and one-glyph-near |
+| 1:45–2:30 | **Automatic real-time alert and visualisation** | `/alerts` open beside the feed; the vehicle passes, the alert appears within seconds with camera, time, category, the crop and exact/near; acknowledge it |
+| 2:30–3:00 | (the test case, in one move) | From the alert open the plate's route on `/plates`: every sighting, timestamped, on the map; then `/audit`: the watchlist entry, the alert and the acknowledgement are all there |
+
+## B. Government-feed demonstration (≤ 3:00), submitted with the output report
+
+Feed: the Sentinel grid. Record **by the recording's daylight** — plates on these cameras are legible
+from about 08:00 to 19:00 of the recording's clock and not at night (`docs/anpr-cam06-day.md`).
+
+| Time | What the brief asks | What is on screen |
+|---|---|---|
+| 0:00–0:30 | **Onboard the Government feeds** | `/registry` filtered to the grid source: 30 of 30 cameras from the catalogue, online, on the Gujarat map; say "read from `/api/ingest`, not hard-coded" |
+| 0:30–1:10 | **Live or recorded viewing** | `/live`: the wall with live detection on every tile; click CAM06, full screen, live ANPR |
+| 1:10–1:50 | **Analytics output on the feed** | `/detections` and `/incidents` for grid cameras; a settled plate on CAM06 with its crop |
+| 1:50–2:30 | **Watchlist and alert on the Government feed** | add a plate CAM06 is about to show to `/watchlist`; the alert arrives; acknowledge |
+| 2:30–3:00 | **Output report with timestamps** | `/reports/anpr`: plates with camera and time; export; the same file is what is uploaded (`scripts/anpr_report.py`) |
+
+Upload both as unlisted YouTube links or Drive links with "anyone with the link — viewer", and put the
+links in `docs/submission.md`.
+
+---
+
+# Appendix — the registry and access-model walkthrough
 
 A walkthrough of the federated registry and the video access model. Around
 twelve minutes. Every input is synthetic.

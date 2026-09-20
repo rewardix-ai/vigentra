@@ -190,6 +190,8 @@ one row per act, not per frame.
 | YOLO11n object detection | CPU, bundled 4K clip | ~190 ms/frame |
 | Track-level ANPR, typical grid camera | Apple M1 GPU, three readers sharing it | 5–10 frames/s per reader (was 3–6: frames are detected at their own resolution and junk plate candidates fell 7x) |
 | Track-level ANPR, busiest junctions (cam01, cam30) | same | 0.7–1.2 frames/s before the plate-search floor below |
+| Plate ingest with watchlist matching, one API process (`tests/test_ingest_volume.py`, 20 Sep) | Apple M1, SQLite in-process | 2,000 plate reads in batches of 50 against 200 watched plates: **164 reads/s**, every row accepted, the one watched vehicle alerted once |
+| Track-level ANPR at camera speed, one 720p grid camera (`docs/anpr-optimisation.md`) | Apple M1 GPU | 1.00x real time; 854x480 1.31x, 1080p 0.92x — the sizing unit for a continuous reader |
 | Plate-search floor (skip vehicles under 96 px wide), labelled Delhi clip, 300 frames | same | the same 36 readings and 4 of 12 plates exact, in 586 s instead of 878 s |
 
 The floor matters for capacity because the cost of ANPR on a busy wide view is
@@ -239,6 +241,7 @@ care.
 | Ingest throughput | ~1.2 M detections/minute statewide at peak. Batched inserts (already), partitioned tables, and a write path that touches no shared row. |
 | Load balancing | Layer-7 balancer in front of stateless API replicas; sessions are signed tokens, so any replica serves any request. |
 | Read/write split | Dashboards, reports and route queries go to read replicas. Ingest goes to the primary. |
+| Plate-read throughput | Measured: 164 plate reads/s through one API process, fuzzy-matched against the active watchlist inside the ingest transaction. If one camera in ten is an ANPR camera yielding a settled plate every 10 s, 80,000 cameras produce ~800 reads/s: five to six API replicas before the matcher moves to its own topic, and the measured process was on a laptop with SQLite, so treat the figure as a floor. |
 | Alert fan-out | The matcher runs in the ingest transaction today. Past a few thousand cameras it moves to a Kafka topic between ingest and matching — the interface is already a single function call over a list of `PlateRead`, so this is a substitution rather than a rewrite. |
 | Orchestration | Kubernetes, one namespace per tier, autoscaling on ingest queue depth rather than CPU. |
 

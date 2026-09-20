@@ -164,12 +164,12 @@ current text, README test count behind (124 edge-worker tests now).
 | 1 | Upload a settled plate at once; alerts page every 5 s | code | **done** `9479690` |
 | 2 | Tracker: new dates, own-feed rule, open items | docs | **done** today |
 | 3 | Demo scripts rewritten to the brief's four beats, own feed and Government feed | docs | **done** today |
-| 4 | Alert priority from category and exactness; console sorts and colours by it | code | next |
-| 5 | Continuous-reader mode for legible cameras (one process per camera, no sleep, RTSP only) and a compose profile for it | code | next |
-| 6 | Intrusion zones: polygon + hours per camera, raised through the incident pipeline | code | next |
+| 4 | Alert priority from category and exactness; console sorts and colours by it | code | **done** `1e9a9a5` |
+| 5 | Continuous-reader mode for legible cameras and a compose profile for it (`anpr-live`) | code | **done** `78afbaa`; **needs one live run by the team** — the stack was down while it was written |
+| 6 | Intrusion zones: polygon + hours per camera, raised through the incident pipeline | code | **done** `6279929`; draw a zone on one camera for the demo |
 | 7 | Signed webhook for alerts | code | after 4 |
 | 8 | Text reader in the ANPR image, or quote the CRNN-only figure | **team decision** (≈1 GB image) | open |
 | 9 | Presentation and keynote: new headline figures, alert-workflow slide, guide-checklist slide, night-footage slide | docs, then PDF rebuild | after 4–6 |
-| 10 | HLD: alert workflow with prioritisation, face-recognition position, continuous readers | docs | after 4–6 |
+| 10 | HLD: alert workflow with prioritisation, face-recognition position, continuous readers, intrusion | docs | **done** today; re-export the PDF |
 | 11 | Re-record both demos to the new scripts; upload unlisted; fill the links | **team** | after 4–6 |
 | 12 | Hosted URL with a read-only test login | **team decision** | open |

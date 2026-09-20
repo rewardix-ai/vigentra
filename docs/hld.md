@@ -295,6 +295,13 @@ The two layers carrying the accuracy are the **grammar engine** and the
   Measured on 182 hand-graded tracks from the Delhi clip and CAM06 in the ANPR
   research project (16 Sep).
 
+- **Intrusion.** A camera's profile may carry a restricted zone — a polygon, the
+  classes it applies to, a dwell and the hours it is armed. A person whose foot
+  point stays inside it raises an `INTRUSION` incident through the same pipeline
+  as wrong-way and stopped-in-lane. The foot point, not the box, decides: a tall
+  box beside a fence otherwise enters it with its head. Zones are drawn by the
+  department that owns the site; no camera ships with one.
+
 Everything that does not parse as a plausible Indian registration is dropped at
 the edge and never transmitted, then checked again centrally. Half-read text is
 worse than no text: it looks like evidence and is not.
@@ -333,6 +340,36 @@ stolen vehicles; it finds more innocent ones.
 Alerts carry `exact` separately from `distance`, because an operator acts
 differently on the two. Near matches are shown by default; suppressing them to
 keep a console tidy is how a stolen vehicle passes a camera and nobody hears.
+
+**Prioritisation and the alert workflow.** Every alert carries a priority,
+derived rather than stored so that nothing can disagree with it:
+
+| Priority | When | What the control room does |
+|---|---|---|
+| critical | exact read of a *stolen* or *wanted* vehicle | act now: the alert leads the console |
+| high | exact read in any other category (blacklist, missing, suspect) | act, after the critical ones |
+| review | near match, whatever the category | look at the crop before anyone is sent anywhere |
+
+```
+plate settles at the edge ──► uploaded with that frame (not with the batch, not at the end of the pass)
+   ──► matched at ingest ──► alert + audit row ──► console within 5 s, open alerts sorted by priority
+   ──► operator acknowledges (acted on) or dismisses with a reason ──► both audited
+```
+
+**Latency is a property of how the cameras are read, not of the matcher.** The
+sampled worker visits each camera for about 20 s and returns minutes later:
+right for counting, and it will not see one designated vehicle cross a junction.
+Cameras whose plates are legible are therefore given a **continuous reader**
+(`EDGE_CONTINUOUS`, compose profile `anpr-live`): long passes, a 3 s breath
+between them, the full pause only after a failure so a dead feed is never
+hammered. One 720p camera is about real time on one M1-class machine
+(`docs/anpr-optimisation.md`), which is the sizing unit for the finale.
+
+**Persons.** The watchlist schema, the matcher and the alert path do not care
+what kind of reader produced the identifier. A face matcher plugs in behind
+them as another reader; it is not built, because 720p footage at these
+distances does not carry a face any more than it carries a 14 px plate, and a
+system that alerts on faces it cannot see is worse than one that says so.
 
 ## 8. Cross-camera movement reconstruction
 

@@ -78,7 +78,7 @@ labelled as an estimate.
 | Delhi clip, whole clip | 13 of 20 plates, none wrong (was 7) | 18 Sep |
 | Grid cam06, 1080p recording | 3 of 5 plates, none wrong (was 2) | 18 Sep |
 | Vehicle tracks across all clips | 1 868 on the 36-clip set (was 1 524), 2 100 on all 38; the 36 processed in 2 779 s (was 5 784 s) | 19 Sep |
-| Automated tests | 192 passed, 5 skipped (platform); 123 passed (edge worker) | 18 Sep |
+| Automated tests | 192 passed, 5 skipped (platform, 18 Sep); 131 passed (edge worker) | 20 Sep |
 
 ## Links
 
@@ -95,6 +95,7 @@ labelled as an estimate.
 | Date | Change (commit) | Deliverables updated |
 |---|---|---|
 | 14 Sep | Tracker created | this file |
+| 20 Sep | Alert priority (critical / high / review, derived from category and exactness, console sorted by it); continuous plate readers for legible cameras (`EDGE_CONTINUOUS`, compose profile `anpr-live`); intrusion zones per camera raised as `INTRUSION` incidents. 131 edge-worker tests, 30 watchlist tests pass; the dashboard changes build with the image and were not type-checked on the host | HLD §6–7, evaluation plan, tracker |
 | 20 Sep | Site re-read in full: deadline now 28 Sep, event 12–13 Oct; the brief now centres on watchlist correlation and real-time alerts, and allows footage of our choice for the own-feed demo. Evaluation written as a juror would (`docs/hackathon-evaluation.md`); demo scripts rewritten to the brief's four beats; a settled plate is uploaded at once and the alerts page refreshes every 5 s (`9479690`) | tracker, demo script, evaluation |
 | 19 Sep | A plate read by both a CRNN and the text reader confirms without a vote-share majority (cam06 noon 14 → 15 of 16); the noon and night cam06 recordings join the regression set; the whole-clip benchmark no longer paces itself like a live camera. Full 38-clip regression: 36 of 48, none wrong, the 18 Sep numbers reproduced exactly on their 36 clips | HLD, reading doc, optimisation report, tracker |
 | 18 Sep | ANPR optimised across the whole estate and measured on every recorded clip: 16 of 26 readable plates against 9, none wrong, 1 868 vehicle tracks against 1 524, 2.1x the speed. Audit, baseline, per-camera configuration, failure analysis and a per-vehicle dataset: `docs/anpr-audit.md`, `docs/anpr-baseline.md`, `docs/anpr-optimisation.md` | HLD, scalability plan, tracker |

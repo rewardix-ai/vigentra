@@ -167,9 +167,9 @@ current text, README test count behind (124 edge-worker tests now).
 | 4 | Alert priority from category and exactness; console sorts and colours by it | code | **done** `1e9a9a5` |
 | 5 | Continuous-reader mode for legible cameras and a compose profile for it (`anpr-live`) | code | **done** `78afbaa`; **needs one live run by the team** — the stack was down while it was written |
 | 6 | Intrusion zones: polygon + hours per camera, raised through the incident pipeline | code | **done** `6279929`; draw a zone on one camera for the demo |
-| 7 | Signed webhook for alerts | code | after 4 |
-| 8 | Text reader in the ANPR image, or quote the CRNN-only figure | **team decision** (≈1 GB image) | open |
-| 9 | Presentation and keynote: new headline figures, alert-workflow slide, guide-checklist slide, night-footage slide | docs, then PDF rebuild | after 4–6 |
+| 7 | Signed webhook for alerts | code | **done** `fdd61fe` |
+| 8 | Text reader in the ANPR image | opt-in target `anpr-text` **done**; **team builds it** (≈1 GB) | open |
+| 9 | Presentation, keynote 3 and proposal v3 with the new figures, alert workflow, guide checklist, night footage | docs + PDFs | **done** |
 | 10 | HLD: alert workflow with prioritisation, face-recognition position, continuous readers, intrusion | docs | **done** today; re-export the PDF |
 | 11 | Re-record both demos to the new scripts; upload unlisted; fill the links | **team** | after 4–6 |
 | 12 | Hosted URL with a read-only test login | **team decision** | open |

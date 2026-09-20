@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Vigentra technical proposal v2 pages</title>
+<!--
+  Addendum B for deliverables/Vigentra_Technical_Proposal_v3.pdf: two pages, printed by Chrome and
+  appended after the v2 document (which already ends with Addendum A). Same furniture and rhythm
+  as proposal_v2_pages.html.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600&family=Montserrat:wght@600;700;800&family=Roboto+Mono&display=block">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: "DM Sans", sans-serif;
+         font-variation-settings: "opsz" 11; color: #2d2d2d; }
+  .pg { position: relative; width: 210mm; height: 297mm; overflow: hidden; break-after: page; }
+  .pg:last-of-type { break-after: auto; }
+
+  /* ---- overlays: a cover in the ground colour, and the new text at the measured position ---- */
+  .cover { position: absolute; }
+  .ln { position: absolute; white-space: nowrap; line-height: 1; }
+  .b11 { font-size: 11pt; }
+  .b95 { font-size: 9.5pt; }
+  .para17 { position: absolute; font-size: 11pt; line-height: 17.15pt; }
+
+  /* ---- addendum page furniture, as on every original page ---- */
+  .stripe { position: absolute; top: 0; height: 6.22pt; width: 119.06pt; }
+  .hd, .ft { position: absolute; font-size: 8.5pt; line-height: 1; white-space: nowrap; }
+  .hd { top: 41.44pt; color: #a7a7a7; }     /* PDF top 39.55 */
+  .ft { top: 795.74pt; }                    /* PDF top 793.85 */
+  .rule { position: absolute; left: 70.9pt; width: 453.8pt; height: 0.5pt; background: #e3e3e3; }
+
+  /* ---- addendum body ---- */
+  .content { position: absolute; left: 70.95pt; top: 89.555pt; width: 453.55pt; height: 662.45pt; }
+  #flow { position: absolute; left: -2000pt; top: 0; width: 453.55pt; }
+  h1 { font: 800 19pt/1 Montserrat, sans-serif; letter-spacing: -0.92pt; color: #101010; font-variation-settings: normal; }
+  h2 { font: 600 15pt/1 Montserrat, sans-serif; letter-spacing: -0.5pt; color: #2d2d2d; font-variation-settings: normal; }
+  p, li { font-size: 11pt; line-height: 17.15pt; }
+  ul { list-style: none; }
+  li { position: relative; padding-left: 18pt; }
+  li + li { margin-top: 3pt; }
+  li::before { content: "\2022"; position: absolute; left: 4.1pt; }
+  .cap { font-size: 8.5pt; line-height: 1; color: #6a6a6a; white-space: nowrap; }
+  .cap b { font-weight: 600; }
+  table { border-collapse: collapse; table-layout: fixed; width: 454.15pt; margin-left: -0.15pt; }
+  th, td { border: 0.5pt solid #e3e3e3; padding: 8.1pt 9.9pt 9.6pt; text-align: left; vertical-align: middle; }
+  th { background: #f6f6f6; font-weight: 600; font-size: 9.5pt; line-height: 14.75pt; color: #101010; }
+  td { font-size: 11pt; line-height: 16.4pt; }
+  .callout { background: #f6f6f6; border-radius: 6pt; margin-left: -1.4pt; width: 454.6pt; padding: 15.15pt 0 15.1pt 4.25pt; }
+  .callout .bar { display: flow-root; border-left: 2.2pt solid #3fc4ef; padding-left: 10pt; }
+  .callout .kick { font-weight: 600; font-size: 8.5pt; line-height: 1; letter-spacing: .12em; color: #101010; margin-top: 1.3pt; }
+  .callout p { margin-top: 2.655pt; margin-bottom: -1.635pt; width: 423pt; }
+
+  /* Vertical rhythm, measured on the original between PDF line tops and turned into margins. */
+  .content > h1:first-child { margin-top: 3.215pt; }
+  .content > h2:first-child { margin-top: 2.805pt; }
+  h1 + p { margin-top: 13.1pt; }       /* p44: last title line to body, 37.89 */
+  h1 + h2 { margin-top: 24.91pt; }
+  p + p, p + ul, ul + p { margin-top: 11.4pt; }
+  p + h2, ul + h2 { margin-top: 24.25pt; }
+  h2 + p, h2 + ul { margin-top: 12.3pt; }
+  h2 + table { margin-top: 13.65pt; }
+  p + table { margin-top: 14.15pt; }
+  table + .cap { margin-top: 18.55pt; }
+  .cap + p { margin-top: 17.8pt; }
+  .cap + h2 { margin-top: 30.37pt; }
+  .cap + .callout { margin-top: 18.9pt; }
+  p + .callout, ul + .callout { margin-top: 12.77pt; }
+  .callout + p { margin-top: 16.1pt; }
+  .callout + h2 { margin-top: 29pt; }
+</style>
+</head>
+<body>
+<!-- Addendum B; #flow is laid out into the two .content boxes by paginate() -->
+<section class="pg add">
+  <div class="stripe" style="left:0;        background:#ee4050"></div>
+  <div class="stripe" style="left:119.06pt; background:#f8a23f"></div>
+  <div class="stripe" style="left:238.12pt; background:#46b772"></div>
+  <div class="stripe" style="left:357.18pt; background:#752c89"></div>
+  <div class="stripe" style="left:476.24pt; width:119.06pt; background:#3fc4ef"></div>
+  <div class="hd" style="left:70.95pt">Vigentra</div>
+  <div class="hd dot" style="left:108.5pt">·</div>
+  <div class="hd" style="left:114.95pt">Technical Proposal</div>
+  <div class="hd" style="right:70.8pt">Addendum B: changes to 20 September 2026</div>
+  <div class="rule" style="top:55.1pt"></div>
+  <div class="content"></div>
+  <div class="rule" style="top:772.9pt"></div>
+  <div class="ft" style="left:70.95pt; color:#a7a7a7">Confidential</div>
+  <div class="ft" style="right:70.8pt; color:#6a6a6a">Addendum B page 1 of 2</div>
+</section>
+<section class="pg add">
+  <div class="stripe" style="left:0;        background:#ee4050"></div>
+  <div class="stripe" style="left:119.06pt; background:#f8a23f"></div>
+  <div class="stripe" style="left:238.12pt; background:#46b772"></div>
+  <div class="stripe" style="left:357.18pt; background:#752c89"></div>
+  <div class="stripe" style="left:476.24pt; width:119.06pt; background:#3fc4ef"></div>
+  <div class="hd" style="left:70.95pt">Vigentra</div>
+  <div class="hd dot" style="left:108.5pt">·</div>
+  <div class="hd" style="left:114.95pt">Technical Proposal</div>
+  <div class="hd" style="right:70.8pt">Addendum B: changes to 20 September 2026</div>
+  <div class="rule" style="top:55.1pt"></div>
+  <div class="content"></div>
+  <div class="rule" style="top:772.9pt"></div>
+  <div class="ft" style="left:70.95pt; color:#a7a7a7">Confidential</div>
+  <div class="ft" style="right:70.8pt; color:#6a6a6a">Addendum B page 2 of 2</div>
+</section>
+
+<div id="flow">
+  <h1>Addendum B. Reading plates right, and alerts that arrive</h1>
+  <p>Between 17 and 20 September 2026 the plate reader was measured against ground truth read by eye on every recorded clip, and the alert path was brought in line with the challenge’s requirement for real-time, prioritised alerts. Nothing earlier in this proposal is withdrawn.</p>
+
+  <h2>B.1 ANPR, measured against what a person can read</h2>
+  <table>
+    <colgroup><col style="width:236pt"><col style="width:96pt"><col></colgroup>
+    <tr><th>Measure, over the recorded clips</th><th>Before</th><th>Now</th></tr>
+    <tr><td>Plates read correctly, 36-clip set (26 legible by eye)</td><td>9</td><td>16</td></tr>
+    <tr><td>All 38 clips, with grid CAM06 at noon and at night (48 legible)</td><td>not run</td><td>36</td></tr>
+    <tr><td>Grid CAM06 at noon: 2 minutes, 127 vehicles, 16 legible</td><td>not run</td><td>15</td></tr>
+    <tr><td>False plates confirmed or sent, any clip</td><td>0</td><td>0</td></tr>
+    <tr><td>Vehicle tracks, 36-clip set</td><td>1,524</td><td>1,868</td></tr>
+  </table>
+  <p class="cap"><b>Table B1.</b> Whole clips, Apple M1. Ground truth is by eye and is used only for scoring.</p>
+  <p>The gains came from decision rules, not a new model: one vote per vehicle weighted by crop quality, detection at each camera’s own resolution, a per-camera configuration file, and confirmation when a character reader and a whole-plate text reader agree. The grid’s 720p night feeds carry plates 14 to 31 px wide; nobody can read them, and the system reads none rather than guess.</p>
+
+  <h2>B.2 From a read to an alert, in seconds</h2>
+  <ul>
+    <li>A plate is uploaded with the frame that settles it, no longer with the batch or at the end of a pass; the alert console refreshes every 5 seconds.</li>
+    <li>Every alert carries a priority: critical for an exact read of a stolen or wanted vehicle, high for any other exact read, review for a near match. Open alerts lead the console, most urgent first.</li>
+    <li>Each alert is also sent to a webhook, signed with HMAC-SHA256, so dispatch, SMS or messaging can sit behind it. A receiver that is down never delays an ingest.</li>
+    <li>Raise, acknowledge and dismiss are each audited; a dismissal needs a reason.</li>
+  </ul>
+
+  <h2>B.3 Continuous readers for the designated-vehicle test</h2>
+  <p>The sampled worker visits each camera for about 20 seconds and returns minutes later. That counts traffic well and does not see one vehicle cross a junction. Cameras whose plates are legible now get a continuous reader: long passes, a 3-second breath between them, and the full pause only after a failure, so a dead feed is never hammered. One 720p camera runs at 1.00 times real time on one M1-class machine, which is the sizing unit for the finale.</p>
+
+  <h2>B.4 Intrusion, and the position on faces</h2>
+  <p>A camera’s profile may carry a restricted zone: a polygon, a dwell and the hours it is armed. A person whose foot point stays inside raises an intrusion incident. A face matcher would plug in behind the same watchlist and alert path; it is not built, because this footage carries a face no better than a 14 px plate.</p>
+
+  <h2>B.5 Measured, 20 September 2026</h2>
+  <table>
+    <colgroup><col style="width:172pt"><col></colgroup>
+    <tr><th>Measure</th><th>Value</th></tr>
+    <tr><td>Plate ingest with watchlist matching</td><td>164 reads a second through one API process, 200 watched plates</td></tr>
+    <tr><td>ANPR at camera speed</td><td>720p 1.00x, 854x480 1.31x, 1080p 0.92x real time, one machine</td></tr>
+  </table>
+  <p class="cap"><b>Table B2.</b> One Apple M1 laptop, 20 September 2026. 332 automated tests pass (201 platform, 131 edge worker).</p>
+</div>
+
+<script>
+// Lay #flow into the two page boxes. A paragraph that straddles a page end is split at a line
+// boundary (greedy line breaking gives the same lines either side), never leaving a single line
+// at the foot of one page or the head of the next; headings travel with what follows them.
+const PT = 96 / 72, LINE = 17.15 * PT;
+let done = false;
+function paginate() {
+  if (done) return;
+  done = true;
+  const pages = [...document.querySelectorAll('.add .content')];
+  const fits = pg => !pg.lastElementChild || pg.lastElementChild.getBoundingClientRect().bottom <= pg.getBoundingClientRect().bottom + 0.5;
+  const lines = el => Math.round(el.getBoundingClientRect().height / LINE);
+  let pi = 0;
+  for (const b of [...document.getElementById('flow').children]) {
+    const pg = pages[pi];
+    pg.appendChild(b);
+    if (fits(pg) || pi + 1 >= pages.length) continue;
+    const next = pages[++pi];
+    const carry = [];
+    const prev = b.previousElementSibling;
+    if (b.tagName === 'P' && !b.classList.contains('cap')) {
+      const words = b.textContent.trim().split(/\s+/);
+      const maxWords = test => {           // largest k whose first k words satisfy test()
+        let lo = 0, hi = words.length;
+        while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); b.textContent = words.slice(0, mid).join(' '); if (test()) lo = mid; else hi = mid - 1; }
+        return lo;
+      };
+      let k = maxWords(() => fits(pg));
+      b.textContent = words.slice(0, k).join(' ');
+      const n = k ? lines(b) : 0;
+      b.textContent = words.slice(k).join(' ');
+      const restLines = k < words.length ? lines(b) : 0;
+      if (restLines === 1 && n > 2) k = maxWords(() => lines(b) <= n - 1);   // no widow
+      if (k > 0 && n >= 2 && (restLines !== 1 || n > 2)) {
+        b.textContent = words.slice(0, k).join(' ');
+        const rest = document.createElement('p');
+        rest.textContent = words.slice(k).join(' ');
+        next.appendChild(rest);
+        continue;
+      }
+      b.textContent = words.join(' ');
+    }
+    if (prev && /^H[12]$/.test(prev.tagName)) carry.push(prev);
+    carry.push(b);
+    for (const el of carry) next.appendChild(el);
+  }
+}
+window.__report = () => {
+  paginate();
+  const pt = px => Math.round(px / PT * 100) / 100;
+  const out = {};
+  document.querySelectorAll('.add').forEach((s, i) => {
+    const c = s.querySelector('.content'), last = c.lastElementChild, top = s.getBoundingClientRect().top;
+    out['addendum' + (i + 1)] = {
+      lastBottomPt: last ? pt(last.getBoundingClientRect().bottom - top) : null,
+      limitPt: pt(c.getBoundingClientRect().bottom - top),
+      overflow: last ? last.getBoundingClientRect().bottom > c.getBoundingClientRect().bottom + 0.5 : false,
+      blocks: [...c.children].map(el => el.tagName + (el.tagName === 'P' && !el.classList.contains('cap') ? ':' + lines(el) : '') + ' ' + el.textContent.trim().slice(0, 18)),
+    };
+  });
+  out.flowLeft = document.getElementById('flow').children.length;
+  out.p17lines = Math.round(document.getElementById('p17').getBoundingClientRect().height / LINE);
+  out.wrapped = [...document.querySelectorAll('h1, h2, .cap')].filter(h => h.getBoundingClientRect().height > 20 * PT || h.scrollWidth > h.parentElement.clientWidth + 1).map(h => h.textContent.slice(0, 30));
+  out.tableRowsPt = [...document.querySelectorAll('.add table')].map(t => [...t.rows].map(r => pt(r.getBoundingClientRect().height)));
+  return out;
+};
+const lines = el => Math.round(el.getBoundingClientRect().height / LINE);
+document.fonts.ready.then(paginate);
+</script>
+</body>
+</html>

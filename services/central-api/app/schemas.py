@@ -15,7 +15,7 @@ from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer, field_validator
 
 
 def iso_z(value: datetime | None) -> str | None:
@@ -1449,6 +1449,18 @@ class AlertOut(BaseModel):
     #: Set when the account holds `alert:read` but not `plate:read`. The alert
     #: is not refused; the registration numbers in it are.
     plate_withheld: bool = False
+
+    @computed_field  # derived, so every alert already stored has one and nothing can disagree
+    @property
+    def priority(self) -> str:
+        """What the control room does first: `critical`, `high` or `review`.
+
+        A near match is something to look at before anyone is sent anywhere, whatever the list
+        says. An exact read of a stolen or wanted vehicle is the one to act on now.
+        """
+        if not self.exact:
+            return "review"
+        return "critical" if self.category in ("stolen", "wanted") else "high"
 
     @field_serializer("timestamp_utc", "acknowledged_at")
     def _ser_times(self, value: datetime | None) -> str | None:

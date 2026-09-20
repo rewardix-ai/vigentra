@@ -36,6 +36,18 @@ import type { Alert } from "@/lib/types";
 
 const REFRESH_MS = 5_000;
 
+/** Open alerts lead, the most urgent first; within a priority, the newest first. */
+const PRIORITY_RANK: Record<string, number> = { critical: 0, high: 1, review: 2 };
+const PRIORITY_TONE: Record<string, "bad" | "warn" | "idle"> = {
+  critical: "bad",
+  high: "warn",
+  review: "idle",
+};
+const byUrgency = (a: Alert, b: Alert) =>
+  Number(a.acknowledged) - Number(b.acknowledged) ||
+  (PRIORITY_RANK[a.priority] ?? 3) - (PRIORITY_RANK[b.priority] ?? 3) ||
+  b.timestamp_utc.localeCompare(a.timestamp_utc);
+
 export default function AlertsPage() {
   const [rows, setRows] = useState<Alert[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -199,7 +211,7 @@ export default function AlertsPage() {
                 <thead>
                   <tr>
                     <th>Seen</th>
-                    <th>Category</th>
+                    <th>Priority · category</th>
                     <th>Watched plate</th>
                     <th>Plate read</th>
                     <th>Match</th>
@@ -210,13 +222,14 @@ export default function AlertsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
+                  {[...rows].sort(byUrgency).map((row) => (
                     <tr key={row.alert_id} className={row.acknowledged ? "opacity-60" : ""}>
                       <td className="whitespace-nowrap">
                         <div>{ist(row.timestamp_utc)}</div>
                         <div className="text-2xs text-ink-500">{relative(row.timestamp_utc)}</div>
                       </td>
-                      <td>
+                      <td className="whitespace-nowrap">
+                        <Pill tone={PRIORITY_TONE[row.priority] ?? "idle"}>{row.priority}</Pill>{" "}
                         <Pill tone={CATEGORY_TONE[row.category] ?? "idle"}>{row.category}</Pill>
                       </td>
                       <td className="mono">

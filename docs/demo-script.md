@@ -21,7 +21,7 @@ brief asks for. Use **HR26CC2083** as the wanted plate: the engine confirms it o
 | 0:00–0:35 | **Onboarding and processing of a feed** | `/installations/new`: the camera's form, submitted; `/registry`: it appears on the map and in the table with its department and status; open it and the feed plays |
 | 0:35–1:15 | **AI-powered detection and analytics** | `/live`: the tile full screen with vehicle boxes, plate boxes and settled readings drawn live; `/detections` filtered to this camera, counts rising |
 | 1:15–1:45 | **Correlation with a watchlist database** | `/watchlist`: add HR26CC2083, category *stolen*, a reason and a case reference; show the entry with who added it; say that the matcher runs at ingest, exact and one-glyph-near |
-| 1:45–2:30 | **Automatic real-time alert and visualisation** | `/alerts` open beside the feed; the vehicle passes, the alert appears within seconds with camera, time, category, the crop and exact/near; acknowledge it |
+| 1:45–2:30 | **Automatic real-time alert and visualisation** | `/alerts` open beside the feed; the vehicle passes, the alert appears within seconds with camera, time, priority, category and exact/near; acknowledge it |
 | 2:30–3:00 | (the test case, in one move) | From the alert open the plate's route on `/plates`: every sighting, timestamped, on the map; then `/audit`: the watchlist entry, the alert and the acknowledgement are all there |
 
 ## B. Government-feed demonstration (≤ 3:00), submitted with the output report

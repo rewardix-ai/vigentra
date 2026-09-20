@@ -263,6 +263,7 @@ async def test_an_exact_plate_read_raises_an_alert(api, login, traffic_camera):
     alerts = await api.get("/api/v1/alerts", headers=watcher)
     hits = [a for a in alerts.json() if a["sighting_id"]]
     assert hits and hits[0]["exact"] is True
+    assert hits[0]["priority"] in ("critical", "high")   # an exact read is acted on, by category
     assert hits[0]["watch_plate"] == "GJ01AB1234"
     assert hits[0]["category"] == "stolen"
 
@@ -311,6 +312,7 @@ async def test_a_single_misread_still_alerts_but_is_marked_inexact(
     alerts = (await api.get("/api/v1/alerts", headers=watcher)).json()
     assert len(alerts) == 1
     assert alerts[0]["exact"] is False
+    assert alerts[0]["priority"] == "review"   # a near match is looked at before anyone is sent
     assert 0 < alerts[0]["distance"] <= plate_matching.DEFAULT_MAX_DISTANCE
     assert alerts[0]["seen_plate"] == "GJ01AB1284"
 

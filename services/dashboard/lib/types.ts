@@ -610,6 +610,8 @@ export interface Alert {
   /** 0.0 is an exact match. Anything above is a near match to be reviewed. */
   distance: number;
   exact: boolean;
+  /** Derived by the API: exact stolen/wanted = critical, other exact = high, near = review. */
+  priority: "critical" | "high" | "review";
   sighting_id: string;
   camera_id: string;
   camera_name: string | null;

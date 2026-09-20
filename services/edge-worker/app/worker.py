@@ -399,6 +399,16 @@ def _plain(frames: Iterator[tuple]) -> Iterator[tuple[int, Any, float, bool]]:
         yield index, frame, pts, False
 
 
+def _should_flush(pending: list, plate_sightings) -> bool:
+    """Upload now, or keep batching?
+
+    Boxes can wait for a full batch. A settled plate cannot: a watchlist alert hangs on it, and
+    the matcher runs at ingest, so a plate held for the batch or for the end of the pass is an
+    alert the control room gets minutes late.
+    """
+    return bool(pending) and (bool(plate_sightings) or len(pending) >= BATCH_SIZE)
+
+
 def _finish_pass(client, pending, anpr, *, camera_id, source_mode, base_provenance) -> int:
     """Settle the pass: drain the engine's plates, then flush everything once.
 
@@ -820,7 +830,7 @@ def run(
                         logger.warning("incident ingest failed: %s", exc)
                     incident_batch.clear()
 
-            if client and len(pending) >= BATCH_SIZE:
+            if client and _should_flush(pending, plate_sightings):
                 result = client.ingest(pending)
                 logger.info("ingested batch: %s", result)
                 pending.clear()

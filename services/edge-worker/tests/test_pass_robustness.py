@@ -69,3 +69,11 @@ def test_one_sighting_per_merged_vehicle():
     engine._pipeline = Pipe()
     engine._settle()
     assert [s.text for s in engine._pending] == ["GJ01AB1234", "GJ05CD9876"]
+
+
+def test_a_settled_plate_is_uploaded_at_once_and_boxes_wait_for_the_batch():
+    from app import worker
+    assert not worker._should_flush([], [])
+    assert not worker._should_flush([{"box": 1}], [])
+    assert worker._should_flush([{"box": 1}], [object()])
+    assert worker._should_flush([{}] * worker.BATCH_SIZE, [])

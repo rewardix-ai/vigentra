@@ -34,7 +34,7 @@ import type { Alert } from "@/lib/types";
  * missed, so the filter to suppress them exists and is off.
  */
 
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 5_000;
 
 export default function AlertsPage() {
   const [rows, setRows] = useState<Alert[] | null>(null);

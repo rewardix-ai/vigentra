@@ -31,6 +31,7 @@ os.environ.setdefault("ANPR_MODELS_DIR", str(WORKER / "models"))
 os.environ.setdefault("ANPR_CONFIG_DIR", str(WORKER / "config"))
 sys.path.insert(0, str(WORKER))
 from app.anpr_engine import MIN_GRAMMAR_PRIOR, AnprEngine  # noqa: E402
+from app.plates import PLATE_BEARING_CLASSES  # noqa: E402
 
 LOGO = WORKER.parent.parent / "deliverables" / "presentation" / "logo-on-dark.png"
 W, H, HEAD, VW, VH = 1920, 1080, 84, 1440, 810
@@ -77,7 +78,7 @@ def main() -> int:
     ap.add_argument("--title", default="Vigentra — live ANPR")
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--camera", default=None)
-    ap.add_argument("--stride", type=int, default=1, help="run the engine on every Nth frame")
+    ap.add_argument("--stride", type=int, default=1, help="base stride between processed frames; the camera profile may override it, and a burst is added while a plate is in view")
     ap.add_argument("--max-frames", type=int, default=None)
     ap.add_argument("--min-confidence", type=float, default=0.10,
                     help="hide unconfirmed readings scored below this - the output report's own floor")
@@ -87,6 +88,13 @@ def main() -> int:
     fps = cap.get(cv2.CAP_PROP_FPS) or 25.0     # a local file's own rate; grid streams are never sized this way
     engine = AnprEngine(camera_id=a.camera or Path(a.clip).stem)
     pipe = engine._pipeline
+    # Sample as the worker and the benchmark do - the camera's stride plus a burst of consecutive
+    # frames while a readable plate is in view - not a plain stride. On the noon clip a plain
+    # stride of 2 confirmed two plates wrongly that the burst sampler reads right: the burst is
+    # what gives the vote enough crops of the plate while it is legible.
+    from anpr.sampling import AdaptiveSampler
+    from app.anpr_engine import sampler_settings
+    sampler = AdaptiveSampler(**sampler_settings(engine.profile, a.stride))
     base = base_canvas(a.title, a.subtitle)
     sx, sy = VW / 1920.0, VH / 1080.0
     writer = None
@@ -167,8 +175,9 @@ def main() -> int:
         if not ok or (a.max_frames and idx >= a.max_frames):
             break
         last = frame
-        if idx % a.stride == 0:
-            engine.process(frame, captured_at=cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0)
+        if sampler.should_process(idx):
+            dets, _ = engine.process(frame, captured_at=cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0)
+            sampler.note(d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name in PLATE_BEARING_CLASSES)
             vehicles = [(str(t).split("_")[-1], b, c) for t, b, c, _ in pipe.last_vehicles]
             plates = [b for _, b, _, _ in pipe.last_plates]
             for tid, b, _ in vehicles:

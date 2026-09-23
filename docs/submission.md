@@ -74,7 +74,7 @@ labelled as an estimate.
 | Vehicle/object detections on the government feed | 95,287 from 20 cameras | 14 Sep, 00:00–16:30 IST |
 | Labelled Delhi clip, 300 frames | 4 of 12 plates read exactly, 1 wrong confirmation | 14 Sep |
 | Plates read across all 38 recorded clips | 36 of the 48 a person can read, none wrong; on the 36 clips of the 18 Sep set, 16 of 26 (was 9) | 19 Sep, `docs/anpr-optimisation.md` |
-| Grid cam06 at noon, 2 min, 127 vehicles | 15 of 16 plates, none wrong | 19 Sep |
+| Grid cam06 at noon, 2 min, 84 vehicles (141 tracker ids, fragments linked and checked by eye) | 15 of 16 plates, none wrong | 23 Sep |
 | Delhi clip, whole clip | 13 of 20 plates, none wrong (was 7) | 18 Sep |
 | Grid cam06, 1080p recording | 3 of 5 plates, none wrong (was 2) | 18 Sep |
 | Vehicle tracks across all clips | 1 868 on the 36-clip set (was 1 524), 2 100 on all 38; the 36 processed in 2 779 s (was 5 784 s) | 19 Sep |
@@ -96,6 +96,7 @@ labelled as an estimate.
 | Date | Change (commit) | Deliverables updated |
 |---|---|---|
 | 14 Sep | Tracker created | this file |
+| 23 Sep | Vehicles are counted once: `anpr/track/vehicle_count.py` links the tracker ids that are one vehicle — an id switch along its path, a double box, a parked vehicle re-acquired — and drops boxes that never moved and never looked like a vehicle (lane markings, the time overlay). CAM06 noon: 141 tracker ids are 84 vehicles, every merge and every doubtful entry checked by eye; the verification clip numbers each vehicle (V1, V2, …) and keeps the number through id switches. The noon figure was quoted as 127 vehicles and is corrected in the presentation and proposal v3 | tracker, presentation, proposal, day report |
 | 23 Sep | CAM06 noon clip re-rendered as a verification view (`tools/annotate_video.py --verify`): the whole clip is read first exactly as the worker reads it, then every vehicle is drawn with an interpolated box, its settled class and the plate the engine read for it while it is on screen, beside the crop whose own reading is that plate. 126 vehicles, 15 plates confirmed, none wrong. 1080p H.264 46 MB, 720p 15 MB | tracker, government-feed demo material |
 | 22 Sep | Continuous reader verified live: `anpr-live` on grid CAM06 and the Delhi camera confirmed 37 plates over the weekend, uploaded as they settled. Annotated CAM06 noon clip rendered with the full engine: 15 of 16 legible plates, none wrong — `deliverables/Vigentra_CAM06_Noon_ANPR.mp4` (+ `_720p`, not in git; copies in `~/Downloads/Vigentra_Submission`). `tools/annotate_video.py` now samples with the camera's burst sampler like the worker; a plain stride had confirmed two plates wrongly | tracker, government-feed demo material |
 | 20 Sep | Keynote 3 (20 slides: slide 14 now 36 of 48 plates, 0 false, 332 tests; new slide 19, from a read to an alert) and technical proposal v3 (55 pages: Addendum B — measured ANPR, alert workflow, continuous readers, intrusion, faces, 164 reads/s ingest). Built by whole-page patching with `deliverables/tools/pdfpatch.swift`; the proposal keeps its 58 outline entries and 108 links. Solution presentation rebuilt, 15 slides. Copies in `~/Downloads/Vigentra_Submission` | keynote, proposal, presentation |

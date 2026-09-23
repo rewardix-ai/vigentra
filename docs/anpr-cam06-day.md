@@ -28,6 +28,9 @@ the grid keeps serving VOD, the worker should carry an offset per camera — pas
 ## The day, at 2-hour intervals
 
 Each row is one 2-minute clip. "Plate px" is the median width of the plate candidates in that clip.
+"Vehicles" counts tracker ids, which over-count vehicles: the tracker gives one vehicle several ids
+(an id switch, a double box, a parked car re-acquired). With the fragments linked
+(`anpr/track/vehicle_count.py`, checked by eye on the 12:00 clip) its 141 ids are **84 vehicles**.
 
 | Clock (recording time) | Vehicles | With a plate | Plate px | Brightness | Plates read | Wrong |
 |---|---:|---:|---:|---:|---:|---:|
@@ -56,7 +59,7 @@ crops by eye: every one is correct, including the yellow and orange commercial p
   plates bright enough to detect — the median candidate is 35-55 px at every hour — but not legible.
 - **The engine reads nothing it cannot see.** Not one false plate in any of the 13 clips, including the
   night hours where it banks candidates and confirms none.
-- **Traffic follows the clock**, not the camera: 128 vehicles at noon, 0 between 02:00 and 03:00.
+- **Traffic follows the clock**, not the camera: 128 vehicle tracks at noon, 0 between 02:00 and 03:00.
 - **Cost follows the traffic.** The same 2 minutes cost 71 s at 02:00 and 389 s at 12:00 on an M1.
   Sizing has to assume the busy hour.
 

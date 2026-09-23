@@ -93,7 +93,7 @@ def verify(a) -> int:
     engine = AnprEngine(camera_id=a.camera or Path(a.clip).stem)
     pipe = engine._pipeline
     sampler = AdaptiveSampler(**sampler_settings(engine.profile, a.stride))
-    veh, plt, cls, best = {}, {}, {}, {}
+    veh, plt, cls, best, score = {}, {}, {}, {}, {}   # score: each track's highest detection confidence
 
     from anpr.pipeline import ANPRPipeline
     orig_add, orig_reads = CropBankStore.add_crop, ANPRPipeline._crop_reads
@@ -121,35 +121,74 @@ def verify(a) -> int:
             best[key(track_id)] = (top, top.image.copy())
         return out
 
-    CropBankStore.add_crop, ANPRPipeline._crop_reads = add_crop, reads
+    import pickle
+    cached = Path(a.cache) if a.cache else None
     idx, started = 0, time.perf_counter()
+    if cached and cached.exists():
+        veh, plt, cls, records, evidence, best, idx, score = pickle.load(open(cached, "rb"))
+        cap.release()
+    else:
+        records = None
+    CropBankStore.add_crop, ANPRPipeline._crop_reads = add_crop, reads
     try:
-        while True:
+        while records is None:
             ok, frame = cap.read()
             if not ok or (a.max_frames and idx >= a.max_frames):
                 break
             if sampler.should_process(idx):
                 dets, _ = engine.process(frame, captured_at=cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0)
                 sampler.note(d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name in PLATE_BEARING_CLASSES)
-                for t, b, c, _ in pipe.last_vehicles:
+                for t, b, c, sc in pipe.last_vehicles:
                     veh.setdefault(key(t), []).append((idx, tuple(float(v) for v in b)))
                     cls.setdefault(key(t), Counter())[c] += 1
+                    score[key(t)] = max(score.get(key(t), 0.0), float(sc))
                 for t, b, _, _ in pipe.last_plates:
                     plt.setdefault(key(t), []).append((idx, tuple(float(v) for v in b)))
             idx += 1
-        pipe.flush()
+        if records is None:
+            pipe.flush()
+            records = pipe.records
+            best = {t: (None, img) for t, (_, img) in best.items()}
+            if cached:
+                pickle.dump((veh, plt, cls, records, evidence, best, idx, score), open(cached, "wb"))
     finally:
         CropBankStore.add_crop, ANPRPipeline._crop_reads = orig_add, orig_reads
         cap.release()
     frames, analysed = idx, time.perf_counter() - started
 
     shown = {}
-    for rec in pipe.records:
+    for rec in records:
         prior, conf = rec.get("grammar_prior"), float(rec.get("confidence") or 0)
         if (rec.get("status") in STATUS and rec.get("plate") and (prior is None or prior >= MIN_GRAMMAR_PRIOR)
                 and (rec["status"] == "CONFIRMED" or conf >= a.min_confidence)):
             shown[key(rec.get("track_id"))] = rec
-    tracks = {t: (obs[0][0], obs[-1][0]) for t, obs in veh.items() if len(obs) >= 3}   # 1-2 hits: tracker noise
+    # vehicles, not tracker ids: an id switch, a double box or a re-acquired parked car is one vehicle
+    from anpr.track.vehicle_count import link_fragments
+    majority = {t: c.most_common(1)[0][0] for t, c in cls.items()}
+    joined = [[key(m) for m in (r.get("merged_from") or [])] for r in records if r.get("merged_from")]
+    confirmed_at = {}
+    for r in records:                                     # the same plate read twice within 15 s is one vehicle
+        if r.get("status") == "CONFIRMED" and r.get("plate"):
+            k = key(r.get("track_id"))                   # video frames: the record's own frame count is the engine's
+            confirmed_at.setdefault(r["plate"], []).append((veh[k][0][0] if k in veh else 0, k))
+    for sightings in confirmed_at.values():
+        sightings.sort()
+        run = [sightings[0]]
+        for f, t in sightings[1:]:
+            if f - run[-1][0] <= 15 * fps:
+                run.append((f, t))
+            else:
+                joined.append([x for _, x in run])
+                run = [(f, t)]
+        joined.append([x for _, x in run])
+    number, n_vehicles = link_fragments(veh, majority, fps=fps, same_vehicle=joined, scores=score, min_score=0.65)
+    tracks = {t: (obs[0][0], obs[-1][0]) for t, obs in veh.items() if number.get(t)}
+    first_of = {}
+    for t, (f0, _) in tracks.items():
+        first_of[number[t]] = min(f0, first_of.get(number[t], f0))
+    group_cls = {}
+    for t in tracks:
+        group_cls.setdefault(number[t], Counter()).update(cls[t])
     # the side panel: each plate once, from the moment its vehicle first appears
     listing = {}
     for t, rec in shown.items():
@@ -226,7 +265,7 @@ def verify(a) -> int:
             colour = STATUS[rec["status"]][0] if rec else VEH
             x1, y1, x2, y2 = to(vb)
             d.rectangle((x1, y1, x2, y2), outline=colour, width=3)
-            tag = f"#{t} {cls[t].most_common(1)[0][0]}"
+            tag = f"V{number[t]} {group_cls[number[t]].most_common(1)[0][0]}"
             ty = max(HEAD, y1 - 22)
             d.rectangle((x1, ty, x1 + 8 + 9 * len(tag), ty + 22), fill=(20, 30, 50))
             d.text((x1 + 4, ty + 2), tag, font=font(16, True), fill=(220, 230, 245))
@@ -265,17 +304,17 @@ def verify(a) -> int:
             d.text((VW + 24, y), rec["plate"], font=font(30, True), fill=(255, 255, 255))
             d.rounded_rectangle((VW + 300, y + 4, VW + 452, y + 30), radius=6, fill=bg)
             d.text((VW + 311, y + 7), rec["status"], font=font(16, True), fill=fg)
-            d.text((VW + 24, y + 38), f"first seen {first / fps:5.1f} s · {int(rec.get('frames_fused') or 0)} crops agreed · #{t}",
+            d.text((VW + 24, y + 38), f"first seen {first / fps:5.1f} s · {int(rec.get('frames_fused') or 0)} crops agreed · V{number.get(t) or '?'}",
                    font=font(17), fill=MUTE)
             view = zoom(t, 220, 60)
             if view:
                 canvas.paste(view, (VW + 24, y + 62))
                 d.rectangle((VW + 24, y + 62, VW + 244, y + 62 + view.height), outline=(255, 255, 255), width=2)
             y += 132
-        seen = sum(1 for f0, _ in tracks.values() if f0 <= fi)
+        seen = sum(1 for f0 in first_of.values() if f0 <= fi)
         confirmed = sum(1 for x in so_far if x[1]["status"] == "CONFIRMED")
         d.text((W - 360, 26), f"{fi / fps:6.1f} s", font=font(28, True), fill=(255, 255, 255))
-        d.text((24, FOOT + 80), f"Vehicles tracked  {seen}      Plates confirmed  {confirmed}      "
+        d.text((24, FOOT + 80), f"Vehicles counted  {seen}      Plates confirmed  {confirmed}      "
                f"Each vehicle: the reading the engine settled, beside the crop it was read from", font=font(22, True), fill=(255, 255, 255))
         out = cv2.cvtColor(np.asarray(canvas), cv2.COLOR_RGB2BGR)
         if writer is None:
@@ -285,7 +324,7 @@ def verify(a) -> int:
     if writer is not None:
         writer.release()
     confirmed = sorted({x[1]["plate"] for x in listing if x[1]["status"] == "CONFIRMED"})
-    print(f"{frames} frames analysed in {analysed:.0f} s; {len(tracks)} vehicles; "
+    print(f"{frames} frames analysed in {analysed:.0f} s; {n_vehicles} vehicles from {len(veh)} tracker ids; "
           f"{len(confirmed)} plates confirmed: {', '.join(confirmed) or 'none'}")
     print("candidates shown: " + ", ".join(f"{x[1]['plate']} {float(x[1].get('confidence') or 0):.2f}"
                                            for x in listing if x[1]["status"] != "CONFIRMED"))
@@ -301,6 +340,7 @@ def main() -> int:
     ap.add_argument("--camera", default=None)
     ap.add_argument("--stride", type=int, default=1, help="base stride between processed frames; the camera profile may override it, and a burst is added while a plate is in view")
     ap.add_argument("--max-frames", type=int, default=None)
+    ap.add_argument("--cache", default=None, help="--verify: keep the engine pass in this file and reuse it")
     ap.add_argument("--verify", action="store_true",
                     help="two passes: label every vehicle with the reading the engine settled for it, while it is on screen")
     ap.add_argument("--min-confidence", type=float, default=0.10,

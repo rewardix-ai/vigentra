@@ -1,0 +1,51 @@
+source_system,camera_id,name,owning_department,district,health_status,detections,plate_sightings,distinct_plates,incidents,watchlist_alerts
+municipal_vms,VIGENTRA-MUNICIPAL-AHM-CAM03,O.N.G.C. Office,Municipal Corporation,Ahmedabad,online,394,0,0,0,0
+municipal_vms,VIGENTRA-MUNICIPAL-NAV-CAM19,Khaparia Gram Panchayat,Municipal Corporation,Navsari,online,2457,0,0,0,0
+municipal_vms,VIGENTRA-MUNICIPAL-NAV-CAM20,Mohanpura (AI IPC),Municipal Corporation,Navsari,online,151,0,0,0,0
+municipal_vms,VIGENTRA-MUNICIPAL-NAV-CAM21,Kheram village road,Municipal Corporation,Navsari,online,92,0,0,0,0
+municipal_vms,VIGENTRA-MUNICIPAL-NAV-CAM22,Bilimora Bus Station - concourse,Municipal Corporation,Navsari,online,0,0,0,0,0
+municipal_vms,VIGENTRA-MUNICIPAL-RAJ-CAM17,Rajkot Bus Port,Municipal Corporation,Rajkot,online,13462,44,44,28,0
+municipal_vms,VIGENTRA-MUNICIPAL-RAJ-CAM18,Rajkot City Camera,Municipal Corporation,Rajkot,online,14156,18,18,9,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM01,"Chimanbhai Patel Bridge, RTO Circle, Ranip",Traffic Police,Ahmedabad,online,57938,160,151,135,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM02,Janpath T-Junction,Traffic Police,Ahmedabad,online,18504,43,41,92,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM04,Paldi Junction (V.S. Hospital approach),Traffic Police,Ahmedabad,online,45637,79,79,156,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM05,Visat Three-Way Junction (Motera),Traffic Police,Ahmedabad,online,45418,56,42,122,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM13,C.N. Vidyalaya Junction,Traffic Police,Ahmedabad,online,6843,14,13,21,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM14,Delight Circle,Traffic Police,Ahmedabad,online,7030,5,5,11,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM15,Suvidha Park Junction,Traffic Police,Ahmedabad,online,3200,4,4,2,0
+traffic_vms,VIGENTRA-TRAFFIC-AHM-CAM16,Visat T-Junction,Traffic Police,Ahmedabad,online,6393,6,6,4,0
+traffic_vms,VIGENTRA-TRAFFIC-BHA-CAM06,Madhuram Bypass Road (from Aksharvadi),Traffic Police,Bhavnagar,online,14142,124,114,19,0
+traffic_vms,VIGENTRA-TRAFFIC-GAN-CAM12,"Tri Mandir Adalaj Toll Plaza, Lane 9",Traffic Police,Gandhinagar,online,317,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GIR-CAM07,Hero Showroom (Bhavani Char Rasta approach),Traffic Police,Gir Somnath,online,440,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM24,33 dehgam,Traffic Police,Gujarat,online,36,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM25,34 dhanori,Traffic Police,Gujarat,online,145,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM26,35 TANKAL,Traffic Police,Gujarat,online,11,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM27,36 bilimora,Traffic Police,Gujarat,online,558,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM28,37 bilimora,Traffic Police,Gujarat,online,80,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM29,38 bilimora,Traffic Police,Gujarat,online,790,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-GUJ-CAM30,Gandhidham Rambaugh p2,Traffic Police,Gujarat,online,8887,16,16,38,0
+traffic_vms,VIGENTRA-TRAFFIC-JUN-CAM08,Majevadi Gate,Traffic Police,Junagadh,online,733,6,6,0,0
+traffic_vms,VIGENTRA-TRAFFIC-JUN-CAM09,New Bypass at 66KV Substation (from Vadla Fatak),Traffic Police,Junagadh,online,0,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-JUN-CAM10,Char Chowk (from Diparti Furniture),Traffic Police,Junagadh,online,1163,2,2,1,0
+traffic_vms,VIGENTRA-TRAFFIC-JUN-CAM11,Dolatpara Gate,Traffic Police,Junagadh,online,542,0,0,0,0
+traffic_vms,VIGENTRA-TRAFFIC-KUT-CAM23,"Hiralal Parakh Circle, Rambaug",Traffic Police,Kutch,online,219,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-AHM-0001,Own feed - Delhi test clip,Traffic Police,Ahmedabad,online,107629,533,108,31,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J01,TfL JamCam - Maida Vale/St Johns Wood Rd (London),Traffic Police,London,online,1400,4,2,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J02,TfL JamCam - Pettman Crescent/Western Way (London),Traffic Police,London,online,1250,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J03,TfL JamCam - Stanstead Rd/Blythe Hill Lane (London),Traffic Police,London,online,706,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J04,TfL JamCam - A4 Cromwell Rd/Gloucester Rd (London),Traffic Police,London,online,2307,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J05,TfL JamCam - A23 Streatham H Rd/Greyhound Ln (London),Traffic Police,London,online,1174,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J06,TfL JamCam - Eltham Rd/Leyland Rd (London),Traffic Police,London,online,299,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J07,TfL JamCam - A21 London Rd/Tweedy Rd (London),Traffic Police,London,online,976,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J08,TfL JamCam - Falloden Way/Northway/Hill Rise (London),Traffic Police,London,online,483,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J09,TfL JamCam - A10 Grt Cambridge Rd/Devonshire H Ln (London),Traffic Police,London,online,2715,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J10,TfL JamCam - Caledonian R/Caledonia S (London),Traffic Police,London,online,782,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J11,TfL JamCam - Old Kent Rd/Albany Rd (London),Traffic Police,London,online,508,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J12,TfL JamCam - Twickenham Rd/St Johns Grove (London),Traffic Police,London,online,1051,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J13,TfL JamCam - A4 Bath Rd/The Avenue (London),Traffic Police,London,online,1356,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J14,TfL JamCam - Vauxhall Brd Rd/Drummond Gt (London),Traffic Police,London,online,2413,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J15,TfL JamCam - A24 Morden Rd/Merantun Way (London),Traffic Police,London,online,1659,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J16,TfL JamCam - A23 Brixton Rd/Wynne Rd (London),Traffic Police,London,online,768,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J17,TfL JamCam - A40 Western Ave/Gibbon Rd (London),Traffic Police,London,online,1626,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J18,TfL JamCam - A3 Clapham Rd/Elias Place (London),Traffic Police,London,online,253,0,0,0,0
+traffic_vms_local,VIGENTRA-TRAFFIC-LON-J19,TfL JamCam - Borough High St/Grt Dover St (London),Traffic Police,London,online,532,0,0,0,0

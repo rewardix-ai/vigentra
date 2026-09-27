@@ -165,6 +165,24 @@ Three properties that took deliberate work:
 Onboarding a new vendor is: implement the ABC, add a config entry, sync. The
 checklist is `docs/adapter-contract.md`.
 
+### Existing departmental systems stay as they are
+
+Integration is a client of each department's system, never a change to it:
+
+- **Nothing is installed on a departmental VMS.** Each adapter uses the interface the system already
+  offers — the Traffic Police VMS's `X-API-Key` API, the Municipal VMS's `Bearer` API, the grid's
+  catalogue and RTSP gateway — exactly as any other client would.
+- **Writes go only where the department's own workflow accepts them.** The one write is an
+  installation request into the department's own register, through its own API, which the department
+  then decides. No camera, recording, retention setting or user of a departmental system is ever changed;
+  the grid, which has no register, refuses every write in its adapter before a request is made.
+- **Footage stays with the department.** Nothing is recorded centrally. People watch through
+  short-lived brokered sessions to the department's own stream or archive, on the department's own
+  retention (7 days in one place, 15 or more in another), and the owning unit grants or revokes access.
+- **Either side can fail or leave on its own.** A department going offline takes only its cameras
+  offline in Vigentra (`docker compose stop municipal-vms` shows it); withdrawing Vigentra leaves every
+  departmental system exactly as it was, because nothing in it depended on Vigentra.
+
 ## 5. Video ingestion and stream handling
 
 **For inference,** the edge worker captures live, directly, following the

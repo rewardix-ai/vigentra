@@ -27,6 +27,29 @@ steps out.
 | Video & output report | The government-feed recording plus an **output report of detected vehicles or number plates with timestamps** (33) | `scripts/anpr_report.py` → `reports/anpr_report.md`, `.csv` (plates) and `_vehicles.csv`, from the platform's own API; annotated detection video `deliverables/Vigentra_ANPR_Demo.mp4` (CAM06 and the Delhi clip, not in git — upload it) | Plates with timestamps and vehicles per camera and class with first/last sighting; final export on submission day with an account that can read every department |
 | Submission links | Unlisted YouTube, or Google Drive/OneDrive with viewer access; optional hosted URL with test credentials and a repository link (34) | [Links](#links) below | Repository known; video links pending |
 
+## Reference-model deliverables (our hybrid: Model 1 + 3 + 2)
+
+Each model on <https://sentinel.gujarat.gov.in/problems> lists the deliverables it expects; a hybrid is
+judged against those of the models it combines.
+
+| Model | Expected deliverable | Our artefact |
+|---|---|---|
+| 1 Registry & GIS | Working registry portal with GIS map view | Dashboard *Registry* (table and map), `/registry` |
+| 1 | Bulk and manual camera-onboarding demonstration | *Installations → New* and *Bulk upload*; demo script appendix steps 1–7 |
+| 1 | Sample onboarded camera-metadata dataset | [`deliverables/samples/camera_registry_sample.csv`](../deliverables/samples/camera_registry_sample.csv) (70 cameras) |
+| 1 | Registry API documentation | [`docs/api.md`](api.md), plus OpenAPI at `/docs` on the running API |
+| 1 | Sample gap-analysis report | [`deliverables/samples/gap_analysis_sample.md`](../deliverables/samples/gap_analysis_sample.md); live at *Reports → Gap analysis* |
+| 3 VMS federation | Working middleware demo federating at least two different systems | Three: the Sentinel grid, the Traffic Police VMS and the Municipal VMS, in different dialects (HLD §4) |
+| 3 | Unified event-correlation dashboard | *Events*, *Incidents* and *Alerts* across every source; the plate route across cameras (*Plates*) |
+| 3 | Adapter/plugin architecture documentation | [`docs/adapter-contract.md`](adapter-contract.md), HLD §4 |
+| 3 | Sample federated analytics report | [`deliverables/samples/federated_analytics_sample.md`](../deliverables/samples/federated_analytics_sample.md) and `federated_analytics_by_camera.csv` |
+| 2 Unified viewing | Unified viewer connected to feeds from at least two systems | *Live wall*: 50 feeds from three systems |
+| 2 | ANPR demonstration on live or recorded feeds | Live ANPR on grid CAM06 and the Delhi clip; `deliverables/Vigentra_CAM06_Noon_ANPR.mp4`, `Vigentra_Delhi_ANPR.mp4` |
+| 2 | Searchable metadata dashboard | *Detections*, *Plates* (fuzzy search), *Reports → ANPR* |
+| 2 | Architecture note: existing departmental systems unaffected | HLD §4, "Existing departmental systems stay as they are" |
+
+The samples are regenerated from the running platform with `python3 scripts/export_samples.py`.
+
 ## Step 6 — Plan for Scale (~80,000 cameras)
 
 [`docs/scalability.md`](scalability.md) is the plan. FAQ 35 says it must

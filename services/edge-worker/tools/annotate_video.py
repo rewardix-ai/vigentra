@@ -303,7 +303,7 @@ def verify(a) -> int:
         d.text((W - 360, 26), f"{fi / fps:6.1f} s", font=font(28, True), fill=(255, 255, 255))
         d.text((24, FOOT + 80), (f"Plates confirmed  {confirmed}      " if a.no_count else
                                  f"Vehicles counted  {seen}      Plates confirmed  {confirmed}      ")
-               f"Each vehicle: the reading the engine settled, beside the crop it was read from", font=font(22, True), fill=(255, 255, 255))
+               + f"Each vehicle: the reading the engine settled, beside the crop it was read from", font=font(22, True), fill=(255, 255, 255))
         out = cv2.cvtColor(np.asarray(canvas), cv2.COLOR_RGB2BGR)
         if writer is None:
             writer = cv2.VideoWriter(a.out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))

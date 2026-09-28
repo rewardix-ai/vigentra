@@ -530,7 +530,7 @@ def a_watch():
 
 def a_alert():
     cap("4 · Real-time alert", "The feed keeps playing. The moment the edge settles this plate, the alert is raised")
-    alert_arrives(WATCH_PLATE, 420)
+    alert_arrives(WATCH_PLATE, 1200)   # a 1080p pass on one laptop can take ten minutes to settle a plate
     cap("4 · Real-time alert", "Critical: an exact read of a stolen vehicle. Camera, time and place; acknowledged by the operator")
     time.sleep(3)
 

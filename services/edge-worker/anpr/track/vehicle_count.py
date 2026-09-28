@@ -21,6 +21,11 @@ import math
 from statistics import median
 
 TWO_WHEEL = {"motorcycle", "bicycle", "motorbike", "scooter"}
+#: A track that never moved and never reached this detection confidence is a box on nothing. Every parked
+#: vehicle on the CAM06 noon clip scored 0.70 or more; the lane-marking boxes 0.32-0.62.
+STILL_MIN_SCORE = 0.65
+#: Two fragments must look at least this alike to be linked by their boxes (see link_fragments).
+MIN_SIMILARITY = 0.0
 
 
 def _family(name: str) -> str:
@@ -44,14 +49,54 @@ def iou(a, b) -> float:
     return i / max(_area(a) + _area(b) - i, 1e-9)
 
 
+def similarity(h1, h2) -> float:
+    """Bhattacharyya coefficient of two normalised histograms: 1 identical, 0 nothing in common."""
+    import numpy as np
+    return float(np.sum(np.sqrt(np.asarray(h1) * np.asarray(h2))))
+
+
+def appearance_from_video(path, obs: dict) -> dict:
+    """{track: {"first" | "mid" | "last": hue-saturation histogram}} of each track's box at its first,
+    middle and last sighting, from one decode of the clip. Brightness is left out so a vehicle moving
+    from sun into shade still looks like itself; the box is trimmed by a tenth so less road is counted."""
+    import cv2
+    import numpy as np
+    want: dict = {}
+    for t, o in obs.items():
+        for name, (f, b) in (("first", o[0]), ("mid", o[len(o) // 2]), ("last", o[-1])):
+            want.setdefault(f, []).append((t, name, b))
+    out: dict = {}
+    cap, i = cv2.VideoCapture(str(path)), 0
+    while want:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        for t, name, b in want.pop(i, []):
+            x1, y1, x2, y2 = b
+            dx, dy = (x2 - x1) * 0.1, (y2 - y1) * 0.1
+            crop = frame[int(max(0, y1 + dy)):int(max(0, y2 - dy)), int(max(0, x1 + dx)):int(max(0, x2 - dx))]
+            if crop.size == 0:
+                continue
+            hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+            h = cv2.calcHist([hsv], [0, 1], None, [18, 8], [0, 180, 0, 256]).ravel()
+            out.setdefault(t, {})[name] = h / max(float(h.sum()), 1e-9)
+        i += 1
+    cap.release()
+    return out
+
+
 def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=(), scores=None,
                    min_score: float = 0.0, max_gap_s: float = 2.0, parked_gap_s: float = 120.0,
-                   min_obs: int = 3):
+                   min_obs: int = 3, appearance=None, min_similarity: float = 0.0, explain=None):
     """Group tracker ids into vehicles.
 
     obs:          {track: [(frame, (x1, y1, x2, y2)), ...]}, each list in frame order
     classes:      {track: class name}, the track's majority class
     same_vehicle: groups of tracks already known to be one vehicle (e.g. the plate reader merged them)
+    appearance:   {track: {"first"|"mid"|"last": histogram}} (appearance_from_video); when given, every
+                  box-based link also needs the two fragments to look alike (similarity >= min_similarity):
+                  in a queue, where the next vehicle stands where the last one stood, position is not enough
+    explain:      a list to append (rule, a, b, similarity) to for every link made, for checking by eye
     scores:       {track: its highest detection confidence}; a track that stood still all its life and
                   never reached `min_score` is a box on nothing - a lane marking, a shadow, the time
                   overlay - and is neither linked nor counted. A moving box is kept whatever its
@@ -94,6 +139,20 @@ def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=
         for t in members[1:]:
             union(members[0], t)
 
+    def looks_alike(a, which_a, b, which_b):
+        if not appearance:
+            return True, None
+        ha, hb = appearance.get(a, {}).get(which_a), appearance.get(b, {}).get(which_b)
+        if ha is None or hb is None:
+            return False, None
+        sim = similarity(ha, hb)
+        return sim >= min_similarity, round(sim, 3)
+
+    def link(rule, a, b, sim):
+        if explain is not None and find(a) != find(b):
+            explain.append((rule, a, b, sim))
+        union(a, b)
+
     span = {t: (obs[t][0][0], obs[t][-1][0]) for t in tracks}
     at = {t: dict(obs[t]) for t in tracks}
 
@@ -110,7 +169,9 @@ def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=
             cover = [_inter(at[a][f], at[b][f]) / max(min(_area(at[a][f]), _area(at[b][f])), 1e-9) for f in common]
             ratio = [min(_area(at[a][f]), _area(at[b][f])) / max(_area(at[a][f]), _area(at[b][f]), 1e-9) for f in common]
             if median(ious) >= 0.6 or (median(cover) >= 0.85 and median(ratio) >= 0.5):
-                union(a, b)
+                ok, sim = looks_alike(a, "mid", b, "mid")
+                if ok:
+                    link("duplicate", a, b, sim)
 
     # 2. parked: every id that stood still all its life, at the same spot, is one vehicle however often
     #    passing traffic made the tracker drop it
@@ -120,7 +181,9 @@ def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=
             gap = max(span[a][0], span[b][0]) - min(span[a][1], span[b][1])
             if (gap <= parked_gap_s * fps and _family(classes.get(a, "")) == _family(classes.get(b, ""))
                     and iou(standing[a], standing[b]) >= 0.5):
-                union(a, b)
+                ok, sim = looks_alike(a, "mid", b, "mid")
+                if ok:
+                    link("parked", a, b, sim)
 
     # 3. continuations: an id that starts where an id that just ended was heading
     def motion(t):
@@ -160,12 +223,12 @@ def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=
             ratio = _area(bb) / max(_area(ba), 1e-9)
             if parked and still_at_start(b) and len(obs[b]) >= 3 and gap <= parked_gap_s * fps:
                 overlap = iou(ba, bb)               # stood, then picked up again where it stood
-                if overlap >= 0.5:
+                if overlap >= 0.5 and looks_alike(a, "last", b, "first")[0]:
                     pairs.append((1.0 - overlap + gap / (parked_gap_s * fps), a, b))
             elif gap <= max_gap_s * fps and 0.4 <= ratio <= 2.5:
                 (cx, cy), (bx, by) = _centre(ba), _centre(bb)
                 d = math.hypot(cx + vx * gap - bx, cy + vy * gap - by) / math.sqrt(max(_area(ba), _area(bb)))
-                if d <= 0.6:
+                if d <= 0.6 and looks_alike(a, "last", b, "first")[0]:
                     pairs.append((d + 0.5 * gap / (max_gap_s * fps), a, b))   # the nearest in time first
     has_next, has_prev = set(), set()
     for _, a, b in sorted(pairs):
@@ -173,7 +236,7 @@ def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=
             continue
         has_next.add(a)
         has_prev.add(b)
-        union(a, b)
+        link("continuation", a, b, looks_alike(a, "last", b, "first")[1])
 
     groups: dict = {}
     for t in tracks:
@@ -185,3 +248,30 @@ def link_fragments(obs: dict, classes: dict, *, fps: float = 25.0, same_vehicle=
         for t in g:
             number[t] = n
     return number, len(kept)
+
+
+def reader_groups(records, first_frame: dict, fps: float, window_s: float = 15.0) -> list[list]:
+    """Groups of track ids the plate reader says are one vehicle: the fragments it merged, and
+    tracks that confirmed the same plate within `window_s` of each other.
+
+    records:     the pipeline's records ({"track_id", "status", "plate", "merged_from", ...})
+    first_frame: {track key: first video frame it was seen}, to measure the window in video time
+    """
+    key = lambda t: str(t).split("_")[-1]
+    groups = [[key(m) for m in (r.get("merged_from") or [])] for r in records if r.get("merged_from")]
+    seen: dict = {}
+    for r in records:
+        if r.get("status") == "CONFIRMED" and r.get("plate"):
+            k = key(r.get("track_id"))
+            seen.setdefault(r["plate"], []).append((first_frame.get(k, 0), k))
+    for sightings in seen.values():
+        sightings.sort()
+        run = [sightings[0]]
+        for f, t in sightings[1:]:
+            if f - run[-1][0] <= window_s * fps:
+                run.append((f, t))
+            else:
+                groups.append([x for _, x in run])
+                run = [(f, t)]
+        groups.append([x for _, x in run])
+    return groups

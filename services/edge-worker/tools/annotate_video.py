@@ -163,25 +163,11 @@ def verify(a) -> int:
                 and (rec["status"] == "CONFIRMED" or conf >= a.min_confidence)):
             shown[key(rec.get("track_id"))] = rec
     # vehicles, not tracker ids: an id switch, a double box or a re-acquired parked car is one vehicle
-    from anpr.track.vehicle_count import link_fragments
+    from anpr.track.vehicle_count import STILL_MIN_SCORE, link_fragments, reader_groups
     majority = {t: c.most_common(1)[0][0] for t, c in cls.items()}
-    joined = [[key(m) for m in (r.get("merged_from") or [])] for r in records if r.get("merged_from")]
-    confirmed_at = {}
-    for r in records:                                     # the same plate read twice within 15 s is one vehicle
-        if r.get("status") == "CONFIRMED" and r.get("plate"):
-            k = key(r.get("track_id"))                   # video frames: the record's own frame count is the engine's
-            confirmed_at.setdefault(r["plate"], []).append((veh[k][0][0] if k in veh else 0, k))
-    for sightings in confirmed_at.values():
-        sightings.sort()
-        run = [sightings[0]]
-        for f, t in sightings[1:]:
-            if f - run[-1][0] <= 15 * fps:
-                run.append((f, t))
-            else:
-                joined.append([x for _, x in run])
-                run = [(f, t)]
-        joined.append([x for _, x in run])
-    number, n_vehicles = link_fragments(veh, majority, fps=fps, same_vehicle=joined, scores=score, min_score=0.65)
+    joined = reader_groups(records, {t: o[0][0] for t, o in veh.items()}, fps)
+    number, n_vehicles = link_fragments(veh, majority, fps=fps, same_vehicle=joined, scores=score,
+                                        min_score=STILL_MIN_SCORE)
     tracks = {t: (obs[0][0], obs[-1][0]) for t, obs in veh.items() if number.get(t)}
     first_of = {}
     for t, (f0, _) in tracks.items():
@@ -265,7 +251,8 @@ def verify(a) -> int:
             colour = STATUS[rec["status"]][0] if rec else VEH
             x1, y1, x2, y2 = to(vb)
             d.rectangle((x1, y1, x2, y2), outline=colour, width=3)
-            tag = f"V{number[t]} {group_cls[number[t]].most_common(1)[0][0]}"
+            tag = (group_cls[number[t]].most_common(1)[0][0] if a.no_count
+                   else f"V{number[t]} {group_cls[number[t]].most_common(1)[0][0]}")
             ty = max(HEAD, y1 - 22)
             d.rectangle((x1, ty, x1 + 8 + 9 * len(tag), ty + 22), fill=(20, 30, 50))
             d.text((x1 + 4, ty + 2), tag, font=font(16, True), fill=(220, 230, 245))
@@ -314,7 +301,8 @@ def verify(a) -> int:
         seen = sum(1 for f0 in first_of.values() if f0 <= fi)
         confirmed = sum(1 for x in so_far if x[1]["status"] == "CONFIRMED")
         d.text((W - 360, 26), f"{fi / fps:6.1f} s", font=font(28, True), fill=(255, 255, 255))
-        d.text((24, FOOT + 80), f"Vehicles counted  {seen}      Plates confirmed  {confirmed}      "
+        d.text((24, FOOT + 80), (f"Plates confirmed  {confirmed}      " if a.no_count else
+                                 f"Vehicles counted  {seen}      Plates confirmed  {confirmed}      ")
                f"Each vehicle: the reading the engine settled, beside the crop it was read from", font=font(22, True), fill=(255, 255, 255))
         out = cv2.cvtColor(np.asarray(canvas), cv2.COLOR_RGB2BGR)
         if writer is None:
@@ -340,6 +328,8 @@ def main() -> int:
     ap.add_argument("--camera", default=None)
     ap.add_argument("--stride", type=int, default=1, help="base stride between processed frames; the camera profile may override it, and a burst is added while a plate is in view")
     ap.add_argument("--max-frames", type=int, default=None)
+    ap.add_argument("--no-count", action="store_true",
+                    help="--verify: show no vehicle count or numbers (for dense scenes where fragments cannot be linked reliably)")
     ap.add_argument("--cache", default=None, help="--verify: keep the engine pass in this file and reuse it")
     ap.add_argument("--verify", action="store_true",
                     help="two passes: label every vehicle with the reading the engine settled for it, while it is on screen")

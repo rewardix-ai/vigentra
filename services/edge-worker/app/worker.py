@@ -267,6 +267,7 @@ class CentralClient:
         body = response.json()
         self._token = body["access_token"]
         self._password = password
+        self._username = username
         logger.info(
             "signed in as %s (role=%s)", body["user"]["username"], body["user"]["role"]
         )
@@ -342,14 +343,23 @@ class CentralClient:
                 for chunk in response.iter_bytes(chunk_size=1 << 16):
                     handle.write(chunk)
 
-    def ingest(self, detections: list[dict]) -> dict:
-        response = self._client.post(
-            "/api/v1/detections/ingest",
-            headers=self._headers(),
-            json={"detections": detections},
-        )
+    def _post_signed(self, path: str, payload: dict) -> httpx.Response:
+        """POST with the session token, signing in again once if it has expired.
+
+        A continuous reader's pass can outlive its sign-in; on 25-27 Sep every such pass ended in a
+        401 on its upload and lost what it had read. One fresh sign-in and one retry: a second 401 is
+        a real refusal (a revoked account) and is raised as before.
+        """
+        response = self._client.post(path, headers=self._headers(), json=payload)
+        if response.status_code == 401 and self._password and getattr(self, "_username", None):
+            logger.info("session expired; signing in again")
+            self.sign_in(self._username, self._password)
+            response = self._client.post(path, headers=self._headers(), json=payload)
         response.raise_for_status()
-        return response.json()
+        return response
+
+    def ingest(self, detections: list[dict]) -> dict:
+        return self._post_signed("/api/v1/detections/ingest", {"detections": detections}).json()
 
     def ingest_incidents(self, incidents: list[dict]) -> dict:
         """Submit incident CANDIDATES for the review queue.
@@ -358,13 +368,7 @@ class CentralClient:
         (a box existed), an incident is a pattern that a human must confirm, so
         they land in different stores with different retention and review.
         """
-        response = self._client.post(
-            "/api/v1/incidents/ingest",
-            headers=self._headers(),
-            json={"incidents": incidents},
-        )
-        response.raise_for_status()
-        return response.json()
+        return self._post_signed("/api/v1/incidents/ingest", {"incidents": incidents}).json()
 
     def report_frame_quality(self, camera_id: str, assessment: dict) -> None:
         try:

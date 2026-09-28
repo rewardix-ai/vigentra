@@ -88,3 +88,24 @@ def test_a_continuous_reader_runs_long_passes_and_pauses_only_when_a_camera_fail
     assert worker._nap_seconds(120, worst=0, continuous=False) == 120
     assert worker._nap_seconds(120, worst=0, continuous=True) == 3
     assert worker._nap_seconds(120, worst=1, continuous=True) == 120   # never hammer a dead feed
+
+
+def test_an_expired_session_signs_in_again_and_the_upload_goes_through():
+    import httpx
+    from app import worker
+    calls = {"ingest": 0, "login": 0}
+
+    def handler(request):
+        if request.url.path.endswith("/auth/login"):
+            calls["login"] += 1
+            return httpx.Response(200, json={"access_token": f"tok{calls['login']}", "user": {"username": "traffic.ai", "role": "ai_operator"}})
+        calls["ingest"] += 1
+        if request.headers.get("Authorization") == "Bearer tok1":
+            return httpx.Response(401, json={"detail": "expired"})
+        return httpx.Response(200, json={"accepted": 1})
+
+    client = worker.CentralClient("http://central")
+    client._client = httpx.Client(base_url="http://central", transport=httpx.MockTransport(handler))
+    client.sign_in("traffic.ai", "test-only")
+    assert client.ingest([{"x": 1}]) == {"accepted": 1}
+    assert calls == {"ingest": 2, "login": 2}

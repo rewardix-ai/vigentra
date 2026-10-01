@@ -44,10 +44,11 @@ def test_the_foot_point_decides_not_the_head():
     assert _stand(IncidentDetector("cam", intrusion=ZONE), (900, 200, 960, 500))
 
 
-def test_a_vehicle_is_ignored_unless_the_profile_lists_it():
-    assert _stand(IncidentDetector("cam", intrusion=ZONE), (900, 400, 1100, 600), label="car") == []
-    both = dict(ZONE, classes=["person", "car"])
-    assert _stand(IncidentDetector("cam", intrusion=both), (900, 400, 1100, 600), label="car")
+def test_any_tracked_vehicle_counts_unless_the_profile_limits_the_classes():
+    # the live tracker follows vehicles only, so with no classes listed a vehicle in the zone is an intrusion
+    assert _stand(IncidentDetector("cam", intrusion=ZONE), (900, 400, 1100, 600), label="car")
+    people_only = dict(ZONE, classes=["person"])
+    assert _stand(IncidentDetector("cam", intrusion=people_only), (900, 400, 1100, 600), label="car") == []
 
 
 def test_a_camera_without_a_zone_has_no_intrusion_rule():

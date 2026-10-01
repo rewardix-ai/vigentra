@@ -408,14 +408,16 @@ class IncidentDetector:
         return out
 
     def _intrusion(self, tid, st, box, now, frame_size) -> list[Incident]:
-        """A person or vehicle (the profile says which) inside the camera's restricted zone.
+        """Anything tracked - or the classes the profile lists - inside the camera's restricted zone.
 
         Judged on the foot point - bottom centre of the box - because that is where the object
         stands; a tall box beside a fence otherwise "enters" it with its head. Held for
         `dwell_seconds` so a track that clips a corner of the zone is not an alarm.
         """
         cfg = self.intrusion
-        if cfg is None or st.label not in (cfg.get("classes") or [PERSON_LABEL]):
+        # No classes listed: anything the camera's tracker follows. The live ANPR tracker follows
+        # vehicles only, so a zone with `classes: [person]` needs a tracker that follows people.
+        if cfg is None or (cfg.get("classes") and st.label not in cfg["classes"]):
             return []
         hours = cfg.get("hours")
         if hours:

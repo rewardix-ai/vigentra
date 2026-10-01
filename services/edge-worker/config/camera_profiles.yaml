@@ -6,11 +6,12 @@
 #   thresholds     deep-merged over thresholds.yaml (only keys that differ from the global file)
 #   sampling       AdaptiveSampler: stride (null = the worker's --sample-interval), burst_frames, burst_plate_px
 #   frame_quality  FrameQualityRouter: night_mode auto | on | off, plus any router argument
-#   intrusion      a restricted zone for this camera (anpr/incidents.py): a person - or the classes listed -
-#                  whose foot point stays inside the polygon raises an INTRUSION incident. Fractions of the
+#   intrusion      a restricted zone for this camera (anpr/incidents.py): anything tracked - or only the classes
+#                  listed - whose foot point stays inside the polygon raises an INTRUSION incident. The live ANPR
+#                  tracker follows vehicles only (car, motorcycle, bus, truck), so person zones need a person tracker. Fractions of the
 #                  frame; `hours` are the local hours it is armed between, omit for always. Example:
 #                    intrusion: {zone: [[0.55, 0.60], [1.0, 0.60], [1.0, 1.0], [0.55, 1.0]],
-#                                classes: [person], dwell_seconds: 2, hours: [22, 6]}
+#                                classes: [car, truck], dwell_seconds: 2, hours: [22, 6]}
 #                  No camera ships with one: a zone is drawn by the department that owns the site.
 # Everything else is description for operators, measured by tools/anpr_profile_cameras.py on the recorded
 # clips (docs/anpr-baseline.md): lighting, which plate side the camera mostly sees, the median widest plate

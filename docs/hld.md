@@ -180,7 +180,8 @@ Integration is a client of each department's system, never a change to it:
   short-lived brokered sessions to the department's own stream or archive, on the department's own
   retention (7 days in one place, 15 or more in another), and the owning unit grants or revokes access.
 - **Either side can fail or leave on its own.** A department going offline takes only its cameras
-  offline in Vigentra (`docker compose stop municipal-vms` shows it); withdrawing Vigentra leaves every
+  offline in Vigentra (`docker compose stop traffic-vms` takes the Traffic Police VMS's cameras offline
+  and leaves the grid's running; `tests/test_federation.py` proves it for every source); withdrawing Vigentra leaves every
   departmental system exactly as it was, because nothing in it depended on Vigentra.
 
 ## 5. Video ingestion and stream handling
@@ -314,9 +315,12 @@ The two layers carrying the accuracy are the **grammar engine** and the
   research project (16 Sep).
 
 - **Intrusion.** A camera's profile may carry a restricted zone — a polygon, the
-  classes it applies to, a dwell and the hours it is armed. A person whose foot
-  point stays inside it raises an `INTRUSION` incident through the same pipeline
-  as wrong-way and stopped-in-lane. The foot point, not the box, decides: a tall
+  classes it applies to, a dwell and the hours it is armed. A tracked object whose
+  foot point stays inside it raises an `INTRUSION` incident through the same pipeline
+  as wrong-way and stopped-in-lane. The live ANPR tracker follows vehicles only
+  (car, motorcycle, bus, truck), so live zones catch vehicles; the person rules
+  (person in the carriageway, a person in a zone) need the person class added to the
+  tracker, which is not done yet. The foot point, not the box, decides: a tall
   box beside a fence otherwise enters it with its head. Zones are drawn by the
   department that owns the site; no camera ships with one.
 

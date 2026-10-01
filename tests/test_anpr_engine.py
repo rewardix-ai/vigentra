@@ -203,10 +203,10 @@ def test_a_discontinuity_resets_the_tracker_and_keeps_the_reading(engine_module)
     engine.process(None, captured_at=1.0)
     assert engine._pipeline.vehicles.resets == 0
 
-    engine.process(None, captured_at=0.5, discontinuity=True)
+    _, at_cut = engine.process(None, captured_at=0.5, discontinuity=True)
     assert engine._pipeline.vehicles.resets == 1
 
-    settled = engine.finish()
+    settled = at_cut + engine.finish()     # handed over at the cut itself, and only once
     assert [p.text for p in settled] == ["GJ01AB1234"], "a cut must not eat a reading"
 
 
@@ -329,3 +329,25 @@ def test_replaying_one_pass_collapses_to_one_row(worker_module, engine_module):
     assert payload_for(make()) != payload_for(make(text="GJ01AB1284"))
     # A different vehicle is a different row.
     assert payload_for(make()) != payload_for(make(track_id=8))
+
+
+class ClosingPipeline(FakePipeline):
+    """A track that closes during a pass: its vehicle left, the buffer ran out, the bank closed."""
+
+    def __init__(self, record_at_frame, record):
+        super().__init__()
+        self._at, self._record = record_at_frame, record
+
+    def process_frame(self, frame):
+        super().process_frame(frame)
+        if len(self.frames) == self._at:
+            self.records.append(self._record)
+
+
+def test_a_plate_is_handed_over_on_the_frame_its_track_closes(engine_module):
+    """Not at the end of the pass: the watchlist alert it can raise must not wait for 1,500 frames."""
+    engine = build(engine_module)
+    engine._pipeline = ClosingPipeline(3, record())
+    seen = [engine.process(FakeFrame(), captured_at=float(i))[1] for i in range(5)]
+    assert [len(s) for s in seen] == [0, 0, 1, 0, 0]
+    assert engine.finish() == []          # and the end of the pass does not send it again

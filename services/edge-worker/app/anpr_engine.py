@@ -249,8 +249,10 @@ class AnprEngine:
     ) -> tuple[list[Detection], list[PlateSighting]]:
         """Run one frame.
 
-        Returns the vehicles seen in this frame. The plate list is always empty:
-        a plate settles per track, and tracks are closed by `finish()`.
+        Returns the vehicles seen in this frame, and the plates of any tracks that closed on it. A
+        track closes once its vehicle has been gone for the tracker's buffer, so its verdict is
+        final there and then; holding it for `finish()` delayed every plate - and the watchlist
+        alert it can raise - to the end of the pass (1,500 frames for a continuous reader).
         """
         if discontinuity:
             self.reset()
@@ -286,7 +288,9 @@ class AnprEngine:
                     extra={"track_id": _track_number(track_id)},
                 )
             )
-        return detections, []
+        self._harvest()
+        settled, self._pending = self._pending, []
+        return detections, settled
 
     # -- end of pass -------------------------------------------------------
 
@@ -303,7 +307,10 @@ class AnprEngine:
         except Exception as exc:  # pragma: no cover - engine fault
             logger.warning("ANPR flush failed for %s: %s", self.camera_id, exc)
             return
+        self._harvest()
 
+    def _harvest(self) -> None:
+        """Move the readings of tracks that have closed into `_pending`, each track once."""
         out = self._pending
         for rec in list(getattr(self._pipeline, "records", [])):
             key = str(rec.get("track_id"))

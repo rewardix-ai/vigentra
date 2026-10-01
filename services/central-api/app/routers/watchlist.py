@@ -30,7 +30,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config import DemoUser, Permission
+from ..config import DemoUser, Permission, get_settings
 from ..database import get_db
 from ..dependencies import SettingsDep, client_ip, require_permission
 from ..models import Camera as CameraRow
@@ -644,7 +644,8 @@ async def search_plates(
     actually see?" An operator picks one of these and then asks for its route.
     """
     cameras = await _readable_cameras(db, user)
-    since = datetime.now(timezone.utc) - timedelta(hours=since_hours)
+    # never further back than plates are kept: retention is enforced on read here too
+    since = max(datetime.now(timezone.utc) - timedelta(hours=since_hours), _plate_horizon(get_settings()))
     hits = await track_service.search_plates(
         db, q, max_distance=max_distance, camera_ids=set(cameras), since=since
     )
@@ -689,7 +690,8 @@ async def plate_track(
     have been run — so the requirement is at the API, not in a guideline.
     """
     cameras = await _readable_cameras(db, user)
-    since = datetime.now(timezone.utc) - timedelta(hours=since_hours)
+    # never further back than plates are kept: retention is enforced on read here too
+    since = max(datetime.now(timezone.utc) - timedelta(hours=since_hours), _plate_horizon(get_settings()))
     track = await track_service.reconstruct(
         db, plate, max_distance=max_distance, since=since, camera_ids=set(cameras)
     )

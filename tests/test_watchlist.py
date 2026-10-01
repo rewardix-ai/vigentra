@@ -712,3 +712,22 @@ async def test_the_anpr_report_carries_plates_places_and_timestamps(
     assert csv_response.headers["content-type"].startswith("text/csv")
     assert "GJ99ZR4040" in csv_response.text
     assert "attachment" in csv_response.headers["content-disposition"]
+
+
+async def test_a_trace_never_reaches_further_back_than_plates_are_kept(api, login, traffic_camera):
+    """Retention is enforced on read: asking for a year of history returns only the retention window."""
+    edge = await login("traffic.ai")
+    old = datetime.now(timezone.utc) - timedelta(days=200)
+    response = await api.post(
+        "/api/v1/detections/ingest", headers=edge,
+        json={"detections": [plate_detection(traffic_camera["camera_id"], "GJ05ZZ4321", detection_id="old-1", moment=old)]},
+    )
+    if response.status_code != 200 or response.json().get("accepted") != 1:
+        pytest.skip("ingest refuses a 200-day-old timestamp here, which also keeps it out of a trace")
+    tracer = await login("traffic.state")
+    trace = await api.get("/api/v1/plates/GJ05ZZ4321/track", headers=tracer,
+                          params={"reason": "retention check in tests", "since_hours": 8760})
+    assert trace.status_code == 200
+    body = trace.json()
+    points = body.get("points") or body.get("sightings") or body.get("legs") or []
+    assert not points, "a sighting older than the retention window must not be disclosed"

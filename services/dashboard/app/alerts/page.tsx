@@ -85,8 +85,8 @@ export default function AlertsPage() {
   }, [load]);
 
   // Polled rather than pushed. A websocket would be better and is a small
-  // change; thirty seconds is the honest interval for what this is today, and
-  // the page says so rather than implying it is live.
+  // change; every five seconds is the honest interval for what this is today,
+  // and the page says so rather than implying it is pushed.
   useEffect(() => {
     const timer = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(timer);
@@ -166,7 +166,7 @@ export default function AlertsPage() {
 
             {refreshedAt && (
               <span className="text-2xs text-ink-500">
-                Updated {relative(refreshedAt)} · re-checks every 30s
+                Updated {relative(refreshedAt)} · re-checks every 5s
               </span>
             )}
           </div>

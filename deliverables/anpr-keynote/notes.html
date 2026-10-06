@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Presenter view</title>
+<link rel="stylesheet" href="css/theme.css">
+<style>
+  body { margin: 0; background: #06090d; color: var(--ink); font-family: var(--text); padding: 28px 34px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; }
+  h1 { font: 650 30px/1.2 var(--display); margin: 0; }
+  .meta { color: var(--mute); font: 500 15px var(--text); }
+  .say { margin: 22px 0; padding: 20px 24px; border-radius: 12px; background: #0d131c; font: 400 24px/1.5 var(--text); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 10px 20px; font: 400 16px/1.5 var(--text); color: var(--ink-2); }
+  dt { color: var(--mute); text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; padding-top: 4px; }
+  dd { margin: 0; }
+  .bar { display: flex; gap: 10px; align-items: center; margin-top: 22px; }
+  button { background: #141b26; color: var(--ink); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 18px; font: 600 15px var(--text); cursor: pointer; }
+  #clock { margin-left: auto; font: 600 28px var(--mono); }
+  .wait { color: var(--mute); }
+</style>
+</head>
+<body>
+<header><h1 id="title">Waiting for the presentation…</h1><span class="meta" id="pos"></span></header>
+<div class="say" id="say"><span class="wait">Open index.html (served from the same address) and press S there.</span></div>
+<dl id="detail"></dl>
+<div class="bar">
+  <button id="prev">← Previous</button><button id="next">Next →</button>
+  <span class="meta" id="upnext"></span><span id="clock">00:00</span>
+</div>
+<script>
+  const ch = new BroadcastChannel("anpr-keynote");
+  const $ = (id) => document.getElementById(id);
+  ch.onmessage = ({ data }) => {
+    if (!data || typeof data !== "object") return;
+    $("title").textContent = data.title;
+    $("pos").textContent = `${data.act} · scene ${data.index + 1}/${data.total} · step ${data.step + 1}/${data.steps}`;
+    $("say").textContent = data.notes.say || "";
+    const rows = [["Sees", data.notes.sees], ["Happens", data.notes.happens], ["Understand", data.notes.understand], ["Transition", data.notes.transition]];
+    $("detail").innerHTML = "";
+    rows.forEach(([k, v]) => { if (!v) return; const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; $("detail").append(dt, dd); });
+    $("upnext").textContent = data.next ? `Next scene: ${data.next}` : "Last scene";
+  };
+  $("next").onclick = () => ch.postMessage("next");
+  $("prev").onclick = () => ch.postMessage("prev");
+  document.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === " ") ch.postMessage("next"); if (e.key === "ArrowLeft") ch.postMessage("prev"); });
+  ch.postMessage("hello");
+  const t0 = Date.now();
+  setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $("clock").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }, 1000);
+</script>
+</body>
+</html>

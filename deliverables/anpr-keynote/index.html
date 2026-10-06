@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Pixels to Information</title>
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/stage.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/scenes.css">
+</head>
+<body>
+<div id="viewport"><main id="stage" aria-live="polite"></main></div>
+
+<div id="hud">
+  <div id="progress"><div id="progress-fill"></div></div>
+  <span id="hud-act"></span>
+  <div id="hud-buttons">
+    <button id="nav-prev" title="Previous (←)">←</button>
+    <button id="nav-next" title="Next (→ or Space)">→</button>
+    <button id="nav-grid" title="All scenes (G)">Scenes</button>
+    <button id="nav-tech" title="Technical layer (T)">Tech</button>
+  </div>
+  <span id="hud-count"></span>
+</div>
+<div id="notes" hidden></div>
+<div id="grid" hidden></div>
+
+<!-- data: real numbers, real media, the storyboard -->
+<script src="js/data/project.js"></script>
+<script src="js/data/assets.js"></script>
+<script src="js/data/evidence.js"></script>
+<script src="js/data/storyboard.js"></script>
+<!-- engine -->
+<script src="js/core/anim.js"></script>
+<script src="js/core/media.js"></script>
+<script src="js/core/engine.js"></script>
+<!-- components -->
+<script src="js/components/plate.js"></script>
+<script src="js/components/overlay.js"></script>
+<script src="js/components/controls.js"></script>
+<script src="js/components/charts.js"></script>
+<script src="js/components/pipeline.js"></script>
+<!-- scenes, in story order -->
+<script src="js/scenes/helpers.js"></script>
+<script src="js/scenes/01-question.js"></script>
+<script src="js/scenes/02-pixels.js"></script>
+<script src="js/scenes/03-reading.js"></script>
+<script src="js/scenes/04-system.js"></script>
+<script src="js/scenes/05-truth.js"></script>
+<script>K.start();</script>
+</body>
+</html>

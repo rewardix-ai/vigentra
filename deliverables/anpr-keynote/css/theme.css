@@ -1,0 +1,59 @@
+/* Design system: one dark, cinematic look, deliberately single-theme (it is projected).
+ *
+ * Colour carries meaning, the same in every scene:
+ *   --vehicle  a detected vehicle box        --plate   a detected number plate
+ *   --track    the identity that follows it  --ok      a reading the system believes
+ *   --warn     a reading it doubts           --bad     a rejection, or what was lost
+ * The plate itself is drawn like an Indian HSRP plate: white, black glyphs, a blue IND strip.
+ */
+:root {
+  --bg: #040608;
+  --bg-2: #0a0e14;
+  --bg-3: #111722;
+  --ink: #f3f5f8;
+  --ink-2: #aeb7c5;
+  --mute: #6c7686;
+  --line: rgba(255, 255, 255, 0.09);
+
+  --vehicle: #5ab0ff;
+  --plate: #ffcd4f;
+  --track: #39d3bf;
+  --ok: #45dc98;
+  --warn: #ffab45;
+  --bad: #ff5f5f;
+  --glow: rgba(90, 176, 255, 0.35);
+
+  --hsrp-bg: #f6f6f1;
+  --hsrp-ink: #121212;
+  --hsrp-blue: #1f4fd8;
+
+  --display: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --text: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+  --slow: 1.1s;
+  --mid: 0.7s;
+  --quick: 0.35s;
+}
+
+/* Type scale, on the 1920×1080 stage. One idea per scene: headings are large and few. */
+.hero { font: 700 168px/0.95 var(--display); letter-spacing: -0.045em; }
+.h1 { font: 700 104px/1.0 var(--display); letter-spacing: -0.035em; }
+.h2 { font: 650 68px/1.08 var(--display); letter-spacing: -0.025em; }
+.h3 { font: 600 44px/1.15 var(--display); letter-spacing: -0.015em; }
+.lede { font: 400 38px/1.35 var(--text); color: var(--ink-2); letter-spacing: -0.01em; }
+.body { font: 400 30px/1.45 var(--text); color: var(--ink-2); }
+.caption { font: 500 24px/1.4 var(--text); color: var(--mute); }
+.kicker { font: 600 20px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--mute); }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+.c-vehicle { color: var(--vehicle); }
+.c-plate { color: var(--plate); }
+.c-track { color: var(--track); }
+.c-ok { color: var(--ok); }
+.c-warn { color: var(--warn); }
+.c-bad { color: var(--bad); }
+.c-mute { color: var(--mute); }
+.c-ink2 { color: var(--ink-2); }

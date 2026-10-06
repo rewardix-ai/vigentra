@@ -91,3 +91,6 @@ services/edge-worker/reports/anpr_benchmark/*/*/records.json
 *.safetensors
 services/edge-worker/third_party/
 services/edge-worker/models/awiros
+
+# Keynote media: government CCTV frames and real plate crops, rebuilt by tools/build_assets.py
+deliverables/anpr-keynote/assets/

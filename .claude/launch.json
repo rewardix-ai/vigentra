@@ -4,14 +4,37 @@
     {
       "name": "dashboard",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "services/dashboard", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "services/dashboard",
+        "run",
+        "dev"
+      ],
       "port": 3000
     },
     {
       "name": "central-api",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--port", "8000", "--app-dir", "services/central-api"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--reload",
+        "--port",
+        "8000",
+        "--app-dir",
+        "services/central-api"
+      ],
       "port": 8000
+    },
+    {
+      "name": "anpr-keynote",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "deliverables/anpr-keynote/tools/serve.py",
+        "8765"
+      ],
+      "port": 8765
     }
   ]
 }

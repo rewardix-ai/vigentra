@@ -1,0 +1,135 @@
+/* Components. Every interactive one is large enough to drive from the back of a hall. */
+
+/* ---- HSRP number plate ------------------------------------------------------------- */
+.hsrp {
+  --s: 1;
+  display: inline-flex; align-items: stretch; height: calc(150px * var(--s));
+  background: var(--hsrp-bg); border: calc(6px * var(--s)) solid #1b1b1b; border-radius: calc(16px * var(--s));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55), inset 0 0 0 calc(3px * var(--s)) #d8d8cf; overflow: hidden;
+}
+.hsrp-strip {
+  width: calc(64px * var(--s)); background: var(--hsrp-blue); color: #fff; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end; padding-bottom: calc(14px * var(--s));
+  font: 700 calc(22px * var(--s)) var(--display); letter-spacing: 0.04em;
+}
+.hsrp-chakra { width: calc(26px * var(--s)); height: calc(26px * var(--s)); border-radius: 50%; border: calc(3px * var(--s)) solid rgba(255,255,255,.85); margin-bottom: calc(18px * var(--s)); }
+.plate-chars { display: flex; align-items: center; padding: 0 calc(30px * var(--s)); gap: calc(4px * var(--s)); }
+.pc {
+  font: 700 calc(104px * var(--s))/1 "DIN Alternate", "Arial Narrow", var(--display); color: var(--hsrp-ink);
+  opacity: 0; transform: translateY(12px); transition: opacity 0.35s var(--ease), transform 0.35s var(--ease), color 0.3s;
+}
+.pc.in { opacity: 1; transform: none; }
+.pc.gap { width: calc(24px * var(--s)); }
+.pc.doubt { color: var(--warn); }
+.pc.wrong { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 6px; }
+.pc.fixed { color: #0f8a54; }
+.pc.ok { color: #0f8a54; }
+
+/* readings of one plate across frames */
+.readings { display: flex; flex-direction: column; gap: 14px; }
+.reading { display: grid; grid-template-columns: 220px auto 1fr; align-items: center; gap: 28px; }
+.reading-src { font: 500 22px var(--mono); color: var(--mute); }
+.reading-chars { font: 700 60px/1 var(--mono); letter-spacing: 0.12em; color: var(--ink); }
+.reading-chars .x { color: var(--bad); }
+.reading-note { font: 400 24px var(--text); color: var(--ink-2); }
+
+/* ---- boxes over footage -------------------------------------------------------------- */
+.boxes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.box rect { fill: none; stroke-width: 4; opacity: 0; filter: drop-shadow(0 0 10px var(--glow)); }
+.box.on rect { opacity: 1; }
+.box-vehicle rect { stroke: var(--vehicle); }
+.box-plate rect { stroke: var(--plate); filter: drop-shadow(0 0 10px rgba(255, 205, 79, 0.5)); }
+.box-track rect { stroke: var(--track); }
+.box-labels { position: absolute; inset: 0; pointer-events: none; }
+.box-tag {
+  position: absolute; transform: translateY(calc(-100% - 8px)); padding: 6px 12px; border-radius: 8px;
+  font: 700 22px var(--mono); color: #04121d; opacity: 0; transition: opacity 0.4s var(--ease); white-space: nowrap;
+}
+.box-tag.on { opacity: 1; }
+.box-tag.box-vehicle { background: var(--vehicle); }
+.box-tag.box-plate { background: var(--plate); }
+.box-tag.box-track { background: var(--track); }
+
+/* ---- before / after --------------------------------------------------------------------- */
+.ba { position: relative; overflow: hidden; border-radius: 18px; cursor: ew-resize; user-select: none; touch-action: none; background: #000; }
+.ba-pane { position: absolute; inset: 0; }
+.ba-pane > img, .ba-pane > video, .ba-pane > canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ba-label { position: absolute; left: 24px; bottom: 22px; padding: 8px 16px; border-radius: 10px; background: rgba(0,0,0,.65); font: 600 24px var(--text); }
+.ba-label.right { left: auto; right: 24px; }
+.ba-handle { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: #fff; box-shadow: 0 0 24px rgba(255,255,255,.6); }
+.ba-handle span { position: absolute; top: 50%; left: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.ba-handle span::before { content: "‹ ›"; position: absolute; inset: 0; display: grid; place-items: center; font: 700 28px var(--display); color: #111; }
+
+/* ---- scrubber ---------------------------------------------------------------------------- */
+.scrub { display: flex; flex-direction: column; gap: 22px; }
+.scrub-view { min-height: 360px; display: grid; place-items: center; }
+.scrub-range, .diff-range { width: 100%; accent-color: var(--track); height: 32px; cursor: pointer; }
+.scrub-ticks { display: flex; gap: 10px; justify-content: space-between; }
+.scrub-tick { flex: 1; padding: 12px 0; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-3); color: var(--ink-2); font: 600 20px var(--mono); cursor: pointer; }
+.scrub-tick.on { border-color: var(--track); color: var(--ink); box-shadow: 0 0 0 1px var(--track) inset; }
+
+/* ---- difficulty ------------------------------------------------------------------------------ */
+.diff { display: flex; flex-direction: column; gap: 18px; width: 900px; }
+.diff-canvas { width: 900px; height: 300px; border-radius: 14px; background: #000; image-rendering: pixelated; box-shadow: 0 30px 90px rgba(0,0,0,.55); }
+.diff-legend { display: flex; justify-content: space-between; font: 600 22px var(--text); color: var(--mute); }
+.diff-readout { font: 600 30px var(--mono); color: var(--plate); text-align: center; }
+
+/* ---- tabs ------------------------------------------------------------------------------------- */
+.tabs { display: flex; flex-direction: column; gap: 26px; }
+.tabs-bar { display: flex; gap: 12px; flex-wrap: wrap; }
+.tabs-bar button { padding: 14px 24px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-3); color: var(--ink-2); font: 600 22px var(--text); cursor: pointer; }
+.tabs-bar button.on { background: var(--ink); color: #05080c; border-color: var(--ink); }
+
+/* ---- bars, stats --------------------------------------------------------------------------- */
+.bars { display: flex; flex-direction: column; gap: 22px; }
+.bar { display: grid; grid-template-columns: 330px 1fr 150px; align-items: center; gap: 28px; }
+.bar-label span { display: block; font: 600 30px var(--display); }
+.bar-label small { display: block; font: 400 20px var(--mono); color: var(--mute); margin-top: 4px; }
+.bar-track { height: 40px; border-radius: 10px; background: rgba(255,255,255,.05); overflow: hidden; }
+.bar-fill { height: 100%; width: 0; border-radius: 10px; transition: width 1.2s var(--ease); }
+.bar.in .bar-fill { width: var(--w); }
+.bar-value { font: 700 40px var(--display); text-align: right; }
+.stat { display: flex; flex-direction: column; gap: 10px; }
+.stat-value { font: 700 150px/0.95 var(--display); letter-spacing: -0.04em; }
+.stat-label { font: 500 28px/1.35 var(--text); color: var(--ink-2); max-width: 560px; }
+
+/* ---- the engineering loop --------------------------------------------------------------- */
+.loop { position: relative; width: calc(var(--r) * 2 + 320px); height: calc(var(--r) * 2 + 200px); }
+.loop-ring { position: absolute; left: 50%; top: 50%; width: calc(var(--r) * 2); height: calc(var(--r) * 2); margin: calc(var(--r) * -1) 0 0 calc(var(--r) * -1); border-radius: 50%; border: 2px dashed rgba(255,255,255,.14); animation: spin 40s linear infinite; }
+.loop-node { position: absolute; transform: translate(-50%, -50%); padding: 16px 26px; border-radius: 999px; background: var(--bg-3); border: 1px solid var(--line); font: 600 28px var(--display); white-space: nowrap; transition: background .4s, color .4s, box-shadow .4s, opacity var(--mid) var(--ease); }
+.loop-node.in { transform: translate(-50%, -50%); }
+.loop-node.hot { background: var(--track); color: #04121d; box-shadow: 0 0 60px rgba(57,211,191,.55); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- pipeline ------------------------------------------------------------------------------ */
+.pipe { display: flex; align-items: center; gap: 0; }
+.pipe-column { flex-direction: column; }
+.pipe-node {
+  --c: var(--vehicle);
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 26px; min-width: 210px;
+  border-radius: 16px; border: 1px solid var(--line); background: var(--bg-3); color: var(--ink); text-align: center; cursor: default;
+}
+button.pipe-node { cursor: pointer; font: inherit; }
+.pipe-node.on, button.pipe-node:hover { border-color: var(--c); box-shadow: 0 0 0 1px var(--c) inset, 0 0 40px color-mix(in srgb, var(--c) 35%, transparent); }
+.pipe-name { font: 650 25px/1.2 var(--display); }
+.pipe-hint { font: 400 17px var(--mono); color: var(--mute); }
+.pipe-link { position: relative; width: 44px; height: 3px; background: rgba(255,255,255,.12); overflow: hidden; flex: none; }
+.pipe-column .pipe-link { width: 3px; height: 30px; }
+.pipe-pulse { position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--track), transparent); transform: translateX(-100%); }
+.pipe-column .pipe-pulse { background: linear-gradient(180deg, transparent, var(--track), transparent); transform: translateY(-100%); }
+.pipe.flowing .pipe-pulse { animation: pulse-x 1.4s linear infinite; }
+.pipe-column.flowing .pipe-pulse { animation: pulse-y 1.4s linear infinite; }
+@keyframes pulse-x { to { transform: translateX(100%); } }
+@keyframes pulse-y { to { transform: translateY(100%); } }
+
+/* ---- CCTV wall ----------------------------------------------------------------------------- */
+.wall { position: relative; display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 14px; }
+.wall-tile { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; padding: 0; cursor: zoom-in; }
+.wall-tile video, .wall-tile img, .wall-big video, .wall-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wall-label { position: absolute; left: 12px; top: 10px; display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 8px; background: rgba(0,0,0,.6); font: 600 17px var(--mono); color: #fff; }
+.wall-label.big { font-size: 26px; left: 24px; top: 20px; }
+.wall-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 10px var(--bad); animation: blink 1.6s infinite; }
+.wall-badge { position: absolute; right: 12px; bottom: 10px; padding: 5px 10px; border-radius: 8px; background: var(--plate); color: #111; font: 700 17px var(--mono); }
+.wall-big { position: absolute; inset: 0; z-index: 5; border-radius: 16px; overflow: hidden; background: #000; cursor: zoom-out; box-shadow: 0 40px 140px rgba(0,0,0,.8); }
+.wall-detail { position: absolute; right: 24px; bottom: 24px; max-width: 560px; padding: 18px 22px; border-radius: 12px; background: rgba(4,6,8,.86); font: 400 22px/1.45 var(--text); color: var(--ink-2); }
+@keyframes blink { 50% { opacity: .35; } }

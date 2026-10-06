@@ -26,9 +26,14 @@ The rules, and where each one lives:
   DON'T publish to the gateway      this module only ever reads
   DO pace your load                 one capture per camera, released on exit
 
-Transport: RTSP is what the guide recommends for inference. Port 8554 is
-blocked on many networks, and the guide sanctions HLS explicitly for that case,
-so `open_capture` probes RTSP and falls back to HLS rather than failing.
+Transport: RTSP is what the guide recommends for inference, and `open_capture`
+probes it first. Port 8554 is blocked on many networks and the guide sanctions
+HLS for that case, but the grid serves HLS only behind a sign-in cookie, and a
+second sign-in with the grid account ends the central API's session. So the HLS
+fallback reads the camera through the central API's video broker, which holds
+that sign-in, over the audited session the worker already opens. It is opt-in
+(SENTINEL_GRID_HLS_FALLBACK=1, for a venue or office firewall); without it an
+unreachable RTSP port raises.
 """
 from __future__ import annotations
 
@@ -413,10 +418,13 @@ class ReconnectingCapture:
     #: is a loop even when the jump itself is short (a short clip).
     LOOP_RESTART_MS = 1500.0
 
-    def __init__(self, url: str, *, label: str = "") -> None:
+    def __init__(self, url: str, *, label: str = "", headers: dict[str, str] | None = None) -> None:
         _force_tcp_transport()
         self.url = url
         self.label = label or safe_url(url)
+        #: HTTP request headers for this capture only (the broker's bearer token on the HLS
+        #: fallback). FFmpeg takes them as one CRLF-joined option; never logged.
+        self._headers = "".join(f"{k}: {v}\r\n" for k, v in (headers or {}).items())
         self._capture: Any = None
         self._backoff = self.MIN_BACKOFF
         self._consecutive_failures = 0
@@ -438,7 +446,22 @@ class ReconnectingCapture:
         if self._capture is not None:
             self._capture.release()
         logger.info("[connect] %s", self.label)
-        self._capture = cv2.VideoCapture(self.url, cv2.CAP_FFMPEG)
+        if self._headers:
+            # FFmpeg options are read from the environment as each capture opens, so the
+            # headers are set for this open only and the previous options put back: a
+            # token must not leak into the next camera's capture.
+            previous = os.environ.get("OPENCV_FFMPEG_CAPTURE_OPTIONS")
+            os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "|".join(
+                [x for x in (previous, "headers;" + self._headers) if x])
+            try:
+                self._capture = cv2.VideoCapture(self.url, cv2.CAP_FFMPEG)
+            finally:
+                if previous is None:
+                    os.environ.pop("OPENCV_FFMPEG_CAPTURE_OPTIONS", None)
+                else:
+                    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = previous
+        else:
+            self._capture = cv2.VideoCapture(self.url, cv2.CAP_FFMPEG)
         self._consecutive_failures = 0
 
     def _reconnect(self) -> None:
@@ -558,18 +581,26 @@ class ReconnectingCapture:
         return (self._frames_in_pass - 1) * 1000.0 / span_ms
 
 
+def hls_fallback_enabled() -> bool:
+    """Whether an unreachable RTSP port may fall back to the broker's HLS (opt-in)."""
+    return os.getenv("SENTINEL_GRID_HLS_FALLBACK", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def open_capture(
     camera: GridCamera,
     *,
     prefer: str = "rtsp",
     probe_seconds: float = 5.0,
+    fallback: tuple[str, dict[str, str]] | None = None,
 ) -> ReconnectingCapture:
-    """Open a direct RTSP capture for this camera.
+    """Open a capture for this camera: direct RTSP, or with the opt-in, the broker's HLS.
 
-    RTSP is what the guide recommends for inference. The CDN HLS endpoint is
-    not a usable fallback from here (it needs a sign-in cookie this capture
-    cannot carry), so an unreachable RTSP port raises rather than silently
-    decoding the gateway's login page.
+    RTSP is what the guide recommends for inference. The grid's own CDN HLS needs a
+    sign-in cookie this capture cannot carry, and signing in here would end the central
+    API's grid session. `fallback` is the central API's brokered stream for this camera
+    (URL and auth headers of the audited session the worker opened); it is used only
+    when RTSP is unreachable and SENTINEL_GRID_HLS_FALLBACK is set. Otherwise an
+    unreachable RTSP port raises rather than decoding a login page.
     """
     if prefer == "rtsp" and camera.rtsp_url:
         parsed = urllib.parse.urlparse(camera.rtsp_url)
@@ -578,13 +609,16 @@ def open_capture(
             return ReconnectingCapture(camera.rtsp_url, label=f"rtsp {camera.described}")
         logger.warning("RTSP port %s:%s is not reachable for camera %s", host, port, camera.id)
 
-    # No usable RTSP. The CDN HLS endpoint is NOT a fallback the worker can
-    # take: it serves HLS behind a sign-in cookie (a bare /<id>/index.m3u8
-    # answers 302 to /auth/login) that OpenCV/FFmpeg cannot carry, so opening
-    # it would decode the login page rather than video. Fail loudly instead of
-    # ingesting garbage. This deployment reaches RTSP, so this does not fire.
+    if fallback is not None and hls_fallback_enabled():
+        url, headers = fallback
+        logger.warning("camera %s: reading it as HLS through the central API's broker "
+                       "(SENTINEL_GRID_HLS_FALLBACK); slower than RTSP", camera.id)
+        return ReconnectingCapture(url, label=f"brokered hls {camera.described}", headers=headers)
+
+    # No usable RTSP and no fallback allowed. Fail loudly instead of ingesting garbage.
     raise RuntimeError(
-        f"camera {camera.id}: RTSP (8554) is unreachable and the CDN HLS "
-        f"endpoint needs a session cookie this capture cannot supply. Open the "
-        f"RTSP gateway, or point SENTINEL_GRID_RTSP_HOST at a reachable one."
+        f"camera {camera.id}: RTSP (8554) is unreachable and the CDN HLS endpoint needs a "
+        f"session cookie this capture cannot supply. Open the RTSP gateway, point "
+        f"SENTINEL_GRID_RTSP_HOST at a reachable one, or set SENTINEL_GRID_HLS_FALLBACK=1 "
+        f"to read the camera through the central API's broker."
     )

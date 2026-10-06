@@ -69,8 +69,12 @@ cameras change.
 
 Ports 8554 and 8889 are blocked on many networks (they are unreachable from
 this development machine; only 443 answers). The guide sanctions HLS explicitly
-for that case, so the browser path is always HLS and the edge worker prefers
-RTSP with an HLS fallback.
+for that case, so the browser path is always HLS. The edge worker captures RTSP.
+Where 8554 is blocked (a venue or office firewall), `SENTINEL_GRID_HLS_FALLBACK=1`
+lets it read the camera as HLS through the central API's video broker instead,
+over the audited session it already opens: the grid's HLS needs a sign-in cookie,
+and a second sign-in with the grid account would end the central API's session.
+Off by default, because it is slower; without it an unreachable 8554 raises.
 
 The gateway also 302s to an `http://` URL unless `?cookieCheck=1` is present,
 which would downgrade the scheme mid-playlist. Every request carries it.

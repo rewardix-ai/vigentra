@@ -41,6 +41,7 @@ x-detector: &detector
     SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
     SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
     SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+    SENTINEL_GRID_HLS_FALLBACK: ${SENTINEL_GRID_HLS_FALLBACK:-0}
     YOLO_ENABLE: "true"
     YOLO_DEVICE: cpu
     # Fetch yolo11n.pt once on first start, INTO the volume: Ultralytics
@@ -218,6 +219,7 @@ services:
       SENTINEL_GRID_PASSWORD: ${SENTINEL_GRID_PASSWORD:-}
       SENTINEL_GRID_EMAIL: ${SENTINEL_GRID_EMAIL:-}
       SENTINEL_GRID_RTSP_HOST: ${SENTINEL_GRID_RTSP_HOST:-103.250.160.189}
+      SENTINEL_GRID_HLS_FALLBACK: ${SENTINEL_GRID_HLS_FALLBACK:-0}
       ANPR_ENABLE: "true"
       ANPR_MODELS_DIR: /app/models
       # Emit every reading the engine settles, not only the confirmed ones.

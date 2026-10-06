@@ -148,7 +148,8 @@ def iter_synthetic_frames(count: int, sample_interval: int) -> Iterator[tuple[in
 
 
 def iter_grid_frames(
-    camera: "grid.GridCamera", sample_interval: int, max_frames: int
+    camera: "grid.GridCamera", sample_interval: int, max_frames: int,
+    fallback: tuple[str, dict[str, str]] | None = None,
 ) -> Iterator[tuple[int, Any, float, bool]]:
     """Decode a live grid camera, yielding (index, frame, pts_seconds, cut).
 
@@ -161,7 +162,7 @@ def iter_grid_frames(
     because the grid's declared fps routinely disagrees with what actually
     arrives and computing a stride from it would sample unevenly.
     """
-    with grid.open_capture(camera) as capture:
+    with grid.open_capture(camera, fallback=fallback) as capture:
         emitted = 0
         for frame in capture.frames(stall_timeout_s=GRID_STALL_SECONDS):
             if frame.index % max(1, sample_interval) != 0 and not frame.discontinuity:
@@ -703,14 +704,18 @@ def run(
         frames = _plain(iter_clip_frames(clip, 1 if sampler is not None else sample_interval))
     elif grid_camera is not None:
         logger.info("live capture: %s", grid_camera.described)
+        # Where RTSP is blocked (a venue firewall), the opt-in HLS fallback reads the same
+        # camera through the broker, over the audited session opened above.
+        fallback = ((client.base_url + session["stream_url"], client._headers())
+                    if client and session and session.get("stream_url") else None)
         # Look at every frame across the SAME footage window the fixed stride
         # would have spanned, and let the sampler decide where to spend the
         # expensive passes. Decoding is cheap; missing the second a plate is
         # large is not.
         if sampler is not None:
-            frames = iter_grid_frames(grid_camera, 1, max_frames * max(1, sample_interval))
+            frames = iter_grid_frames(grid_camera, 1, max_frames * max(1, sample_interval), fallback)
         else:
-            frames = iter_grid_frames(grid_camera, sample_interval, max_frames)
+            frames = iter_grid_frames(grid_camera, sample_interval, max_frames, fallback)
     elif session and client:
         frames = _plain(iter_session_frames(client, session, sample_interval))
     else:

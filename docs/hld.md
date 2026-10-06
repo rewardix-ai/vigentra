@@ -494,8 +494,11 @@ by keeping the heavy traffic local:
   the coax.
 - **Protocols.** RTSP for inference, WHEP for low-latency preview and HLS for
   dashboards and networks that block 8554 — the three the grid publishes. The
-  worker captures RTSP only and says so when 8554 is unreachable, rather than
-  silently decoding a login page over HLS.
+  worker captures RTSP and says so when 8554 is unreachable, rather than
+  silently decoding a login page over HLS. For a site that blocks 8554, the
+  opt-in `SENTINEL_GRID_HLS_FALLBACK=1` reads the camera through the central
+  API's broker as HLS, over the worker's own audited session (no second grid
+  sign-in); slower than RTSP, so off by default.
 
 ## 11. Scalability
 

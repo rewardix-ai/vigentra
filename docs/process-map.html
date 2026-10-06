@@ -91,6 +91,40 @@ footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line);
   .diagram.stepping #vflow g.node.on > rect, .diagram.stepping #vflow g.node.on > polygon, .diagram.stepping #vflow g.node.on > path { animation: glow 1.6s ease-in-out infinite; } }
 @keyframes glow { 50% { filter: drop-shadow(0 0 13px rgba(27, 79, 156, .85)); } }
 .wrap { padding-block-end: 96px; }
+.player-meta { font-size: 13px; color: var(--mute); }
+.player-meta b { color: var(--ink2); font-weight: 600; }
+.section-head { display: grid; gap: 6px; max-width: 80ch; }
+.section-head p { color: var(--ink2); }
+.modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.module { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.module h3 { font-family: var(--display); font-weight: 700; color: var(--head); font-size: 16px; margin: 0; line-height: 1.3; display: flex; gap: 10px; align-items: baseline; }
+.module h3 span { font-family: var(--mono); font-size: 12px; color: var(--mute); font-weight: 500; }
+.module p { font-size: 15px; color: var(--ink); }
+.module dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 10px; font-size: 13.5px; }
+.module dt { color: var(--mute); }
+.module dd { margin: 0; color: var(--ink2); overflow-wrap: anywhere; }
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; }
+.layer { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.layer b { font-family: var(--display); color: var(--head); font-size: 15px; }
+.layer p { font-size: 14.5px; color: var(--ink2); }
+.table { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font-family: var(--display); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); background: var(--bg); position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+td.y { color: var(--sb); font-weight: 700; }
+td.n { color: var(--mute); }
+td.p { color: var(--sc); font-weight: 600; }
+.matrix td:not(:first-child), .matrix th:not(:first-child) { text-align: center; }
+.matrix th, .matrix td { padding: 8px 9px; }
+.matrix td:first-child { min-width: 190px; }
+.matrix td.y, .matrix td.n { white-space: nowrap; }
+.acct td:first-child { white-space: nowrap; }
+.acct code, .matrix code { font-size: 13px; color: var(--head); }
+.small { font-size: 13.5px; color: var(--mute); max-width: 90ch; }
+.story { margin: 0; padding-left: 1.8em; display: grid; gap: 10px; max-width: 86ch; }
+.story li::marker { font-family: var(--display); font-weight: 700; color: var(--accent); }
+.story code { color: var(--head); }
 </style>
 </head>
 <body>
@@ -98,7 +132,7 @@ footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line);
 <header>
   <p class="eyebrow">Vigentra · the whole process on one page</p>
   <h1>From a camera frame to an officer's action</h1>
-  <p class="lede">One flowchart for the whole platform. Read it from top to bottom, through four coloured stages. The numbers on the boxes match the notes under the chart.</p>
+  <p class="lede">One flowchart for the whole platform. Read it from top to bottom, through four coloured stages. The numbers on the boxes match the notes under the chart. Further down are the ten modules, the nineteen demo accounts and what each account can do, and a demo script that follows the chart.</p>
 </header>
 <div class="legend" aria-label="How to read the chart">
   <span><i class="chip ca">A</i>Cameras join</span>
@@ -116,6 +150,7 @@ footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line);
   <div class="player-text" aria-live="polite">
     <p class="player-step" id="pstep">Follow one plate · 21 steps</p>
     <p class="player-title" id="ptitle">Press Play, or click any numbered box</p>
+    <p class="player-meta" id="pmeta"></p>
     <p class="player-body" id="pbody">The chart lights up one step at a time and moves on by itself. Use Previous and Next (or the arrow keys) to go at your own pace.</p>
   </div>
   <div class="player-controls">
@@ -177,6 +212,139 @@ footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line);
     <p class="code">Code: <code>dashboard/middleware.ts</code>, <code>app/api/vigentra/[...path]/route.ts</code>, <code>app/alerts/page.tsx</code>, <code>central-api/app/services/video_permissions.py</code>, <code>video_broker.py</code></p>
   </article>
 </section>
+<section class="section-head" id="modules">
+  <h2>The ten modules</h2>
+  <p>Each module is one job the platform does. The cards say where each one sits in the chart, which dashboard pages show it, which accounts use it, and where its code lives.</p>
+</section>
+<section class="modules" aria-label="Modules">
+  <article class="module">
+    <h3><span>1</span>Camera registry and federation</h3>
+    <p>One list of every camera, whichever department owns it. Adapters read each department's own system and turn its format into one standard record. The departments keep running their systems unchanged.</p>
+    <dl><dt>In the chart</dt><dd>Steps 1–3</dd><dt>Dashboard</dt><dd>Overview (with Synchronise metadata), Camera registry and map, Federated events</dd><dt>Accounts</dt><dd>Every account that can see camera records</dd><dt>Code</dt><dd><code>adapters/, sync_service.py, normalization.py · reference Models 1 and 3</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>2</span>Camera onboarding</h3>
+    <p>A new camera starts as an installer's request, either one form or many at once from a CSV. The owning department's system validates it, and at the next sync it joins the registry. A camera can later be suspended or decommissioned, and its record is kept.</p>
+    <dl><dt>In the chart</dt><dd>The “New camera?” box</dd><dt>Dashboard</dt><dd>New CCTV installation, Installation requests, Bulk upload (CSV)</dd><dt>Accounts</dt><dd>traffic.installer and municipal.installer create and submit. state.admin, the traffic operators and system.admin can suspend or decommission.</dd><dt>Code</dt><dd><code>installation_service.py, routers/installation_requests.py</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>3</span>Health monitoring</h3>
+    <p>Every camera and every department system is re-checked every 20 seconds. If a department system stops answering, only its own cameras are marked offline, and their last good record is kept.</p>
+    <dl><dt>In the chart</dt><dd>Step 3</dd><dt>Dashboard</dt><dd>Status light in the menu, camera pages, Gap analysis</dd><dt>Accounts</dt><dd>health.monitor sees status only. Every account with camera access sees the health of its cameras.</dd><dt>Code</dt><dd><code>health_monitor.py</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>4</span>Video access</h3>
+    <p>Watching a camera is a separate decision from seeing that it exists. Every request is checked (password again, role, camera state, unit or grant, area) and opens a short watermarked session. The camera's real address stays on the server. Another unit's camera needs that unit's approval.</p>
+    <dl><dt>In the chart</dt><dd>Steps 20–21</dd><dt>Dashboard</dt><dd>Live wall, the player on each camera page, Access requests</dd><dt>Accounts</dt><dd>Operators watch their own unit's cameras. Everyone else needs a grant from the owning unit, decided by its traffic.operator or dept.admin.</dd><dt>Code</dt><dd><code>video_permissions.py, video_broker.py, video_grants.py · Model 2 viewing through Model 3</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>5</span>Number-plate reading (ANPR) at the edge</h3>
+    <p>Runs next to the cameras. It follows each vehicle, reads the plate from many frames once the vehicle has gone, and uploads only confirmed plates, as text. Runs as edge-worker (samples every camera) and anpr-live (stays on chosen cameras).</p>
+    <dl><dt>In the chart</dt><dd>Steps 4–11</dd><dt>Dashboard</dt><dd>Results show in Alerts, Trace a vehicle and the ANPR output report</dd><dt>Accounts</dt><dd>traffic.ai, the edge's own account. No person is involved.</dd><dt>Code</dt><dd><code>edge-worker/app/, edge-worker/anpr/</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>6</span>Object detection and incidents</h3>
+    <p>Always-on detectors count vehicles and people on every camera of their department. They also flag possible incidents, such as an intrusion, for a person to review.</p>
+    <dl><dt>In the chart</dt><dd>Not drawn. Same path as steps 4–6 and 11–13.</dd><dt>Dashboard</dt><dd>Object detections, Incident review, the counts on each camera page</dd><dt>Accounts</dt><dd>traffic.ai and municipal.ai upload. Operators review.</dd><dt>Code</dt><dd><code>app/detectors.py, anpr/incidents.py, routers/detections.py, routers/incidents.py</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>7</span>Vehicles of interest: watchlist, alerts, tracing</h3>
+    <p>The watchlist holds the plates to look for. Every uploaded plate is compared with it, allowing for common misreads, and a match becomes a critical, high or review alert. Trace a vehicle draws on a map where one plate was seen, camera by camera.</p>
+    <dl><dt>In the chart</dt><dd>Steps 12–19</dd><dt>Dashboard</dt><dd>Alerts, Watchlist, Trace a vehicle</dd><dt>Accounts</dt><dd>Traffic operators, department admins, joint.control and system.admin act. auditor can only read. Municipal operators see no plates, by design.</dd><dt>Code</dt><dd><code>watchlist_service.py, plate_matching.py, alert_webhook.py, track_service.py</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>8</span>Reports</h3>
+    <p>Gap analysis lists thin districts and offline or ageing cameras. The ANPR output report lists every plate read, with its time and camera. Sample exports are in deliverables/samples.</p>
+    <dl><dt>In the chart</dt><dd>Reads what steps 3 and 13 stored</dd><dt>Dashboard</dt><dd>Gap analysis, ANPR output report</dd><dt>Accounts</dt><dd>Gap analysis: anyone who can see camera records. ANPR report: only accounts allowed to read plates.</dd><dt>Code</dt><dd><code>routers/reports.py, routers/watchlist.py, scripts/export_samples.py</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>9</span>Audit and oversight</h3>
+    <p>Every sign-in, upload, alert, video session, refusal and dismissal is written to an audit log that is never edited. Oversight accounts read it, and nobody can change it.</p>
+    <dl><dt>In the chart</dt><dd>Steps 12, 16, 20, 21 and every refusal</dd><dt>Dashboard</dt><dd>Audit log</dd><dt>Accounts</dt><dd>auditor, state.admin, ahmedabad.cityadmin, the department admins, system.admin</dd><dt>Code</dt><dd><code>audit_service.py, routers/audit.py</code></dd></dl>
+  </article>
+  <article class="module">
+    <h3><span>10</span>Vehicle reference registry</h3>
+    <p>A look-up table of vehicle registration records (demo data), kept behind its own permission. Looking up an owner never comes bundled with watching cameras.</p>
+    <dl><dt>In the chart</dt><dd>Not drawn</dd><dt>Dashboard</dt><dd>No page. Reached through the API at /api/v1/vehicles.</dd><dt>Accounts</dt><dd>vehicle.registry, auditor, system.admin</dd><dt>Code</dt><dd><code>vehicle_service.py, routers/vehicles.py</code></dd></dl>
+  </article>
+</section>
+<section class="section-head" id="accounts">
+  <h2>How an account works</h2>
+  <p>Every request is checked against three layers, in this order. An account gets through only if all three allow it.</p>
+</section>
+<section class="layers" aria-label="The three layers of access">
+  <div class="layer"><b>1 · Role: what kind of actions</b><p>The role lists what the account may do, such as reading plates, acting on alerts or uploading detections. Plates are a separate permission, because a registration number is personal data.</p></div>
+  <div class="layer"><b>2 · Scope: which cameras</b><p>Department, city and zone. A Zone 3 officer does not see Zone 1's cameras as their own, and a city admin sees only their city.</p></div>
+  <div class="layer"><b>3 · Camera: is it available</b><p>For video, the camera must be commissioned, enabled by its owner and healthy. Another unit's camera, or any camera for a central account, needs a grant from the owning unit.</p></div>
+</section>
+<p class="small">Signing in gives a token that the dashboard keeps in a cookie page scripts cannot read. Every page asks the central API through the dashboard's proxy, and the API checks the three layers on each request.</p>
+<section class="section-head">
+  <h2>What each role can do</h2>
+  <p>✓ means yes, — means no, and the amber words say how far it goes. Only the two AI accounts may upload detections and plates.</p>
+</section>
+<div class="table">
+  <table class="matrix">
+    <thead><tr><th>Role and accounts</th><th>Camera records</th><th>Watch video</th><th>Approve video requests</th><th>Plates and alerts</th><th>Change watchlist</th><th>Trace a vehicle</th><th>Onboarding</th><th>Audit log</th></tr></thead>
+    <tbody>
+      <tr><td><b>System admin</b><br><code>system.admin</code></td><td class="y">✓</td><td class="p">with unit's approval</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">all actions</td><td class="y">✓</td></tr>
+      <tr><td><b>State admin</b><br><code>state.admin</code></td><td class="y">✓</td><td class="p">with unit's approval</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="p">sync, suspend, retire</td><td class="y">✓</td></tr>
+      <tr><td><b>City admin</b><br><code>ahmedabad.cityadmin</code></td><td class="p">own city</td><td class="p">with unit's approval</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="p">read only</td><td class="y">✓</td></tr>
+      <tr><td><b>State registry viewer</b><br><code>registry.viewer</code></td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td><b>Department admin</b><br><code>dept.admin, municipal.deptadmin, joint.control</code></td><td class="y">✓</td><td class="p">own unit</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">read, sync</td><td class="y">✓</td></tr>
+      <tr><td><b>Traffic operator</b><br><code>traffic.operator, traffic.zone3, traffic.state</code></td><td class="y">✓</td><td class="p">own zones</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">suspend, retire</td><td class="n">—</td></tr>
+      <tr><td><b>Municipal operator</b><br><code>municipal.operator, municipal.state</code></td><td class="y">✓</td><td class="p">own unit</td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td><b>Auditor</b><br><code>auditor</code></td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="p">read only</td><td class="n">—</td><td class="y">✓</td><td class="p">read only</td><td class="y">✓</td></tr>
+      <tr><td><b>AI operator (edge)</b><br><code>traffic.ai, municipal.ai</code></td><td class="y">✓</td><td class="p">for analysis</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td><b>Installation operator</b><br><code>traffic.installer, municipal.installer</code></td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="p">create, submit</td><td class="n">—</td></tr>
+      <tr><td><b>Health monitor</b><br><code>health.monitor</code></td><td class="p">status only</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td><b>Vehicle registry viewer</b><br><code>vehicle.registry</code></td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="small">The code also defines a grid operator role (live grid video, plates and alerts, no playback), but no demo account uses it. “Plates and alerts” also covers acting on alerts, except for the auditor, who can only read.</p>
+<section class="section-head">
+  <h2>The nineteen accounts</h2>
+  <p>These are the demo accounts from <code>services/central-api/app/config.py</code>. Passwords are not shown here.</p>
+</section>
+<div class="table">
+  <table class="acct">
+    <thead><tr><th>Account</th><th>Role</th><th>Scope</th><th>What it is for</th><th>Steps</th></tr></thead>
+    <tbody>
+      <tr><td><code>system.admin</code><br>Vigentra Administrator</td><td>System admin</td><td>Statewide</td><td>Runs the platform and can do everything. Each action is audited, and video still needs the owning unit's approval.</td><td>All</td></tr>
+      <tr><td><code>state.admin</code><br>State CCTV Administrator</td><td>State admin</td><td>Statewide</td><td>Oversight: sees every camera's record and health, reads the audit log, and can suspend or retire a camera. Watching video needs the unit's approval.</td><td>1–3, 20</td></tr>
+      <tr><td><code>registry.viewer</code><br>State Registry Desk</td><td>State registry viewer</td><td>Statewide</td><td>Read-only view of the camera registry. No video, no plates.</td><td>3</td></tr>
+      <tr><td><code>ahmedabad.cityadmin</code><br>Ahmedabad City Administrator</td><td>City admin</td><td>Ahmedabad</td><td>Oversight of one city: camera records, detections and the audit log. Video needs the unit's approval.</td><td>3, 20</td></tr>
+      <tr><td><code>health.monitor</code><br>NOC Health Desk</td><td>Health monitor</td><td>Statewide</td><td>Sees whether cameras are up, with only a few fields shown. Nothing else.</td><td>3</td></tr>
+      <tr><td><code>vehicle.registry</code><br>Vehicle Registry Desk</td><td>Vehicle registry viewer</td><td>Statewide</td><td>Looks up vehicle registration records only. No cameras, no video.</td><td>—</td></tr>
+      <tr><td><code>auditor</code><br>Internal Audit Cell</td><td>Auditor</td><td>Statewide</td><td>Reads everything, including plates, alerts, movement and the audit log, but cannot change anything or watch video.</td><td>12–21</td></tr>
+      <tr><td><code>dept.admin</code><br>P. Chauhan (Traffic HQ)</td><td>Department admin</td><td>Traffic · Ahmedabad · Zone 1</td><td>Runs the Traffic department: watchlist, alerts, video, approving other units' requests, audit.</td><td>14–21</td></tr>
+      <tr><td><code>municipal.deptadmin</code><br>S. Mehta (Civic HQ)</td><td>Department admin</td><td>Municipal · all cities</td><td>The same, for the Municipal Corporation's cameras.</td><td>17–21</td></tr>
+      <tr><td><code>joint.control</code><br>State Joint Control Room</td><td>Department admin</td><td>All departments · all cities</td><td>The state joint control room: acts across both departments.</td><td>14–21</td></tr>
+      <tr><td><code>traffic.operator</code><br>R. Solanki (Traffic Control)</td><td>Traffic operator</td><td>Traffic · Ahmedabad · Zones 1–2</td><td>The demo officer: gets the alert, acknowledges it, traces the vehicle and watches the camera. Approves requests for Zone 1 cameras.</td><td>14, 17–21</td></tr>
+      <tr><td><code>traffic.zone3</code><br>M. Parmar (Traffic Zone 3)</td><td>Traffic operator</td><td>Traffic · Ahmedabad · Zone 3</td><td>A second unit. Shows that Zone 3 must ask Zone 1 before watching a Zone 1 camera.</td><td>20</td></tr>
+      <tr><td><code>traffic.state</code><br>State Traffic Control Room</td><td>Traffic operator</td><td>Traffic · statewide</td><td>The statewide traffic control room.</td><td>17–21</td></tr>
+      <tr><td><code>municipal.operator</code><br>A. Desai (Civic Control)</td><td>Municipal operator</td><td>Municipal · Ahmedabad · West Zone</td><td>Civic monitoring: counts, incidents and video for its unit. No plates, by design.</td><td>20–21</td></tr>
+      <tr><td><code>municipal.state</code><br>State Civic Control Room</td><td>Municipal operator</td><td>Municipal · statewide</td><td>The statewide civic control room.</td><td>20–21</td></tr>
+      <tr><td><code>traffic.ai</code><br>Traffic Analytics Workbench</td><td>AI operator</td><td>Traffic · statewide</td><td>The edge's account. The plate readers and the Traffic detector sign in as it to upload. The only role that may upload.</td><td>4–12</td></tr>
+      <tr><td><code>municipal.ai</code><br>Municipal Analytics Workbench</td><td>AI operator</td><td>Municipal · statewide</td><td>The Municipal detector's account for uploads.</td><td>4–12</td></tr>
+      <tr><td><code>traffic.installer</code><br>Traffic Installation Desk</td><td>Installation operator</td><td>Traffic · Ahmedabad · Zone 1</td><td>Fills in the new-camera form and the CSV bulk upload.</td><td>New camera?</td></tr>
+      <tr><td><code>municipal.installer</code><br>Municipal Installation Desk</td><td>Installation operator</td><td>Municipal · Ahmedabad · West Zone</td><td>The same, for Municipal cameras.</td><td>New camera?</td></tr>
+    </tbody>
+  </table>
+</div>
+<section class="section-head" id="demo">
+  <h2>Presenting it: the chart in seven sign-ins</h2>
+  <p>One order for the demo that walks the chart from top to bottom and shows every layer of access.</p>
+</section>
+<ol class="story">
+  <li><code>traffic.installer</code> adds a camera with the form or a CSV. The Traffic VMS validates it, and after the next metadata sync it appears on the map (module 2, the “New camera?” box).</li>
+  <li><code>state.admin</code> sees every camera in the state and its health, but watching one requires asking the owning unit. This shows that metadata travels while video stays with the department (modules 1, 3 and 4).</li>
+  <li><code>traffic.operator</code> adds the demo plate to the watchlist (module 7, step 14).</li>
+  <li>No sign-in for this step: the edge, signed in as <code>traffic.ai</code>, reads the vehicle and uploads the plate (module 5, steps 4–11).</li>
+  <li><code>traffic.operator</code> sees the alert within 5 seconds, acknowledges it, traces the vehicle and opens the camera (module 7 and module 4, steps 17–21).</li>
+  <li><code>traffic.zone3</code> asks to watch a Zone 1 camera, and <code>traffic.operator</code> approves it under Access requests (module 4).</li>
+  <li><code>auditor</code> opens the audit log and finds every step above, including the refusals (module 9).</li>
+</ol>
 <p class="aside">Not drawn, to keep the chart readable: the object detectors run steps 4 to 6 on every camera and upload vehicle and people counts; possible incidents, such as an intrusion, go to the incident queue for review; and the live wall's still frames come from a separate frame service. All three send metadata only, like step 11.</p>
 <footer>Companion to the Vigentra Code Guide, which draws each part of this chart in detail.</footer>
 </div>
@@ -195,6 +363,22 @@ footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line);
     ["C12", "HC CX", "B11>HC HC>C12 C12>CX"], ["C13", "", "C12>C13"], ["C14", "CY", "C13>C14 C14>CY"],
     ["C15", "", "C14>C15"], ["C16", "", "C15>C16"], ["D17", "HD DZ", "C15>HD HD>D17 D17>DZ"], ["D18", "", "D17>D18"],
     ["D19", "DA DB2", "D18>D19 D19>DA D19>DB2"], ["D20", "DR", "DA>D20 D20>DR"], ["D21", "", "D20>D21"]];
+  const W = [
+    ["Registry and federation, onboarding", "the department systems; a new camera comes from traffic.installer or municipal.installer"],
+    ["Registry and federation", "automatic; state.admin, dept.admin or system.admin can press Synchronise"],
+    ["Registry and federation, health monitoring", "automatic; health.monitor watches the status"],
+    ["ANPR at the edge", "traffic.ai, the edge's own account"], ["ANPR at the edge", "traffic.ai, automatic"],
+    ["ANPR at the edge", "traffic.ai, automatic"], ["ANPR at the edge", "traffic.ai, automatic"],
+    ["ANPR at the edge", "traffic.ai, automatic"], ["ANPR at the edge", "traffic.ai, automatic"],
+    ["ANPR at the edge", "traffic.ai, automatic"], ["ANPR at the edge", "traffic.ai uploads; only AI accounts may"],
+    ["Vehicles of interest, audit", "the API checks traffic.ai's upload"], ["Vehicles of interest", "automatic"],
+    ["Vehicles of interest", "watchlist kept by traffic.operator, dept.admin, joint.control or system.admin"],
+    ["Vehicles of interest", "automatic"], ["Audit and oversight", "read by auditor, state.admin and the department admins"],
+    ["Sign-in and access", "traffic.operator, or any account allowed to read alerts"],
+    ["Vehicles of interest", "traffic.operator, dept.admin, traffic.state, joint.control; auditor reads only"],
+    ["Vehicles of interest", "traffic.operator acknowledges or dismisses"],
+    ["Video access", "traffic.operator for its own zones; traffic.zone3 must ask Zone 1 first"],
+    ["Video access, audit", "traffic.operator; every session is audited"]];
   const STAGE = { A: "Cameras join", B: "Edge reads plates", C: "Central API decides", D: "People act" };
   const box = document.querySelector(".diagram"), svg = document.getElementById("vflow");
   const texts = [...document.querySelectorAll(".stage ol li")].map((li) => li.textContent.trim());
@@ -248,12 +432,14 @@ footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line);
       $("pstep").textContent = "Follow one plate · 21 steps";
       $("ptitle").textContent = "Press Play, or click any numbered box";
       $("pbody").textContent = "The chart lights up one step at a time and moves on by itself. Use Previous and Next (or the arrow keys) to go at your own pace.";
+      $("pmeta").textContent = "";
       return;
     }
     const stage = M[at][0][0];
     $("pstep").textContent = "Step " + (at + 1) + " of " + M.length + " · " + stage + " · " + STAGE[stage];
     $("ptitle").textContent = T[at];
     $("pbody").textContent = texts[at] || "";
+    $("pmeta").innerHTML = "<b>Module:</b> " + W[at][0] + " · <b>Who:</b> " + W[at][1];
     if (scroll !== false) bring(node(M[at][0]));
   }
 

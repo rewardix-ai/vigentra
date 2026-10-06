@@ -119,6 +119,11 @@
         return ctx.wait(dur).then(() => nodes.forEach((node) => { node.style.strokeDasharray = ""; node.style.strokeDashoffset = ""; }));
       },
 
+      /** Move on by itself after `sec` seconds (a step that plays video): see K.autoNext. */
+      auto(sec) {
+        if (!ctx.instant && K.autoNext) K.autoNext(sec * 1000);
+      },
+
       /** Set a CSS transform with a timed transition (zooms, pans). */
       move(node, transform, dur = 1200) {
         if (typeof node === "string") node = ctx.$(node);

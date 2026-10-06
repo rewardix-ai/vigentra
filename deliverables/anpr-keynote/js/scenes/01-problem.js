@@ -17,6 +17,7 @@
       ctx.el.append(bg, h("div.fill.brand-shade"), h("div.center", null, h("div.stack.brand-stack", null, [lockup, sub])));
       return [
         async () => {
+          ctx.auto(5);
           await ctx.wait(200);
           bg.classList.add("in");
           await ctx.in(".lk-mark");
@@ -24,7 +25,7 @@
           await ctx.wait(1000);
           await ctx.in(".lk-tag");
         },
-        () => ctx.in(sub),
+        () => { ctx.auto(4); return ctx.in(sub); },
       ];
     },
   });
@@ -50,6 +51,7 @@
       const video = ctx.$("video");
       return [
         async () => {
+          ctx.auto(5.5);
           await ctx.wait(400);
           ctx.in(layer);
           if (video && video.play) video.play().catch(() => {});
@@ -59,13 +61,14 @@
           ctx.$(".still").classList.add("in");
         },
         async () => {
+          ctx.auto(4.5);
           ctx.$(".still").classList.add("in");
           ctx.out("#l1");
           if (plate) ctx.move(zoom, K.ui.zoomTo(plate, { fill: 0.5 }), 3200);
           await ctx.wait(1400);
           await ctx.in("#l2");
         },
-        async () => { ctx.out("#l2"); await ctx.wait(400); await ctx.in("#l3"); },
+        async () => { ctx.auto(3); ctx.out("#l2"); await ctx.wait(400); await ctx.in("#l3"); },
       ];
     },
   });
@@ -90,15 +93,16 @@
         h("div.center.over", null, say("reads", "h1", "Vigentra turns this video<br><span class='c-track'>into plates you can search.</span>"))
       );
       return [
-        () => ctx.in(".wall-tile", { stagger: 70 }),
+        () => { ctx.auto(7); return ctx.in(".wall-tile", { stagger: 70 }); },
         async () => {
+          ctx.auto(4);
           wallBox.classList.add("dim");
           await ctx.in("#cams");
           ctx.count("#cams", D.grid.cameras, { dur: 1100 });
           await ctx.in("#cams-l", { delay: 300 });
         },
-        async () => { ctx.out("#cams, #cams-l"); await ctx.in("#nobody"); },
-        async () => { ctx.out("#nobody"); wallBox.classList.add("dimmer"); await ctx.in("#reads"); },
+        async () => { ctx.auto(3.5); ctx.out("#cams, #cams-l"); await ctx.in("#nobody"); },
+        async () => { ctx.auto(4); ctx.out("#nobody"); wallBox.classList.add("dimmer"); await ctx.in("#reads"); },
       ];
     },
   });
@@ -154,6 +158,7 @@
       const cuts = ctx.$$(".cut");
       return [
         async () => {
+          ctx.auto(10.5);
           for (let i = 0; i < cuts.length; i += 1) {
             cuts.forEach((c, j) => c.classList.toggle("on", i === j));
             await ctx.wait(1500);
@@ -161,7 +166,7 @@
           reel.classList.add("collage");
           cuts.forEach((c) => c.classList.add("on"));
         },
-        async () => { reel.classList.add("collage", "dim"); cuts.forEach((c) => c.classList.add("on")); await ctx.in("#real"); },
+        async () => { ctx.auto(4); reel.classList.add("collage", "dim"); cuts.forEach((c) => c.classList.add("on")); await ctx.in("#real"); },
       ];
     },
   });

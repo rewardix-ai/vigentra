@@ -28,10 +28,30 @@ then open http://127.0.0.1:8765 and press **S** for the presenter view. Press **
 | G | all scenes; click one to jump |
 | T | technical layer: models, thresholds, sources |
 | B | blackout |
+| A | auto-advance on / off (on by default; remembered in this browser) |
 
 Interactive pieces take clicks without advancing the slide: the camera wall (click a feed to
 enlarge it), the two live flowcharts (click a box for its explanation), the one-frame / combined
 slider and the degradation slider. For rehearsal, `index.html#7.2` opens scene 7 at its 3rd beat.
+
+## Videos: time limits and auto-advance
+
+Each scene that plays video moves on by itself when its video has done its job; a thin line
+above the progress bar fills while it counts down. Press → to move on sooner, or **A** to turn
+auto-advance off (for questions). Scenes without video wait for you.
+
+| Scene | Video | Time on screen, then moves on |
+|---|---|---|
+| 1 Vigentra | four feeds behind the logo (8-s clips) | 9 s |
+| 2 A camera sees a vehicle | CAM06 clip, 4.5 s | 13 s (clip 5.5 · zoom 4.5 · answer 3) |
+| 3 Camera wall | 16 feeds, 20-s clips | 18.5 s (wall 7 · count 4 · line 3.5 · line 4) |
+| 5 The real input | six 1.5-s cuts, then all six | 14.5 s (reel 10.5 · line 4) |
+| 6 Flowchart: reading | CAM06 clip in the first card | 23 s (one full journey of the dot) |
+| 7 Find, follow, find its plate | CAM06 replay at half speed | 29.5 s (replay 12.5 · tracking 8.5 · plate 8.5) |
+| 12 CAM06 and Delhi | Vigentra's result videos | 52 s (CAM06 from 0:29, 24 · Delhi 0:00–0:28, 28) |
+| 15 Flowchart: system | four feeds in the first card | 27 s (all routes once 22 · line 5) |
+| 16 The Vigentra console | screen recording | 83 s (1:15–1:24 and 1:28–2:42; the camera wall and closing card, which show the London feeds, are skipped) |
+| 18 Finale | CAM06 replay behind the logo | stays: the end |
 
 ## The story
 

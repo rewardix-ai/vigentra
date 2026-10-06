@@ -227,36 +227,6 @@ K.FAILURES = [
   "source": "delhi_1080p_s0_t630_best.png"
  },
  {
-  "label": "Low light",
-  "file": "assets/img/fail_low_light.png",
-  "camera": "cam06",
-  "status": "CANDIDATE",
-  "reason": "readers_disagree",
-  "plate": "GK20B1",
-  "width_px": 79,
-  "height_px": 25,
-  "dark_frac": 0.583,
-  "bloom_frac": 0.0,
-  "blur_extent": 2.35,
-  "contrast": 52.5,
-  "source": "cam06_s0_t54_best.png"
- },
- {
-  "label": "Headlight glare",
-  "file": "assets/img/fail_headlight_glare.png",
-  "camera": "night07",
-  "status": "UNREADABLE",
-  "reason": "width_below_gate:18<22",
-  "plate": null,
-  "width_px": 18,
-  "height_px": 5,
-  "dark_frac": 0.0,
-  "bloom_frac": 0.122,
-  "blur_extent": 0.0,
-  "contrast": 60.8,
-  "source": "night07_s0_t15_best.png"
- },
- {
   "label": "Motion blur",
   "file": "assets/img/fail_motion_blur.png",
   "camera": "night06",
@@ -272,19 +242,19 @@ K.FAILURES = [
   "source": "night06_s0_t50_best.png"
  },
  {
-  "label": "Low contrast",
-  "file": "assets/img/fail_low_contrast.png",
-  "camera": "cam06",
-  "status": "UNREADABLE",
-  "reason": "sharpness_below_gate:4.6<8.0",
-  "plate": null,
-  "width_px": 30,
-  "height_px": 30,
-  "dark_frac": 0.26,
+  "label": "Blurred plate",
+  "file": "assets/img/fail_blurred_plate.png",
+  "camera": "delhi_1080p",
+  "status": "CANDIDATE",
+  "reason": "readers_disagree",
+  "plate": "DL1LAB5584",
+  "width_px": 62,
+  "height_px": 16,
+  "dark_frac": 0.046,
   "bloom_frac": 0.0,
-  "blur_extent": 2.78,
-  "contrast": 35.9,
-  "source": "cam06_s0_t3_best.png"
+  "blur_extent": 5.36,
+  "contrast": 64.9,
+  "source": "delhi_1080p_s0_t120_best.png"
  }
 ];
 K.TRACK = {

@@ -10,8 +10,8 @@
   K.scene({
     id: "challenge", act: "Proof", title: "CAM06 and Delhi",
     build(ctx) {
-      const panel = (id, slot, title, legible, read) => h("div.chal.r", { id }, [
-        h("div.frame.chal-media", null, K.media.video(slot, { cls: "media-cover" })),
+      const panel = (id, video, title, legible, read) => h("div.chal.r", { id }, [
+        h("div.frame.chal-media", null, video),
         h("div.chal-title.h3", null, title),
         h("div.chal-nums", null, [
           h("div", null, [h("span.kicker", null, "Readable by eye"), h("b.num", { "data-to": legible }, "–")]),
@@ -21,8 +21,8 @@
       ]);
       ctx.el.append(
         S.title("Real footage, real test", "Can it read enough, and never guess?"),
-        S.at(140, 280, 790, null, panel("c6", "cam06_vigentra", "CAM06 · government camera · midday", F.cam06Noon[1], F.cam06Noon[0])),
-        S.at(990, 280, 790, null, panel("dl", "delhi_vigentra", "Delhi · busy street · hand-held", F.delhi[1], F.delhi[0])),
+        S.at(140, 280, 790, null, panel("c6", K.media.video("cam06_vigentra", { start: 29, end: 56, cls: "media-cover" }), "CAM06 · government camera · midday", F.cam06Noon[1], F.cam06Noon[0])),
+        S.at(990, 280, 790, null, panel("dl", K.media.video("delhi_vigentra", { autoplay: false, cls: "media-cover" }), "Delhi · busy street · hand-held", F.delhi[1], F.delhi[0])),
         S.tech(["<b>Readable by eye</b> every legible plate counted frame by frame, before scoring", "<b>Videos</b> Vigentra's own output: each plate beside the crop it was read from"], F.src)
       );
       const countIn = async (panelId) => {
@@ -32,8 +32,15 @@
         }
       };
       return [
-        async () => { await ctx.in("#c6"); await countIn("c6"); },
-        async () => { await ctx.in("#dl"); await countIn("dl"); },
+        // CAM06's readings start 29 s into its result video; Delhi's video is 30 s long
+        async () => { ctx.auto(24); await ctx.in("#c6"); await countIn("c6"); },
+        async () => {
+          ctx.auto(28);
+          const v = ctx.$("#dl video");
+          if (v && v.play) { v.currentTime = 0; v.play().catch(() => {}); }
+          await ctx.in("#dl");
+          await countIn("dl");
+        },
       ];
     },
   });

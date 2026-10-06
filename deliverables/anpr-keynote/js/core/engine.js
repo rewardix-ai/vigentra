@@ -7,7 +7,10 @@
  * replays animations.
  *
  * Keys:  → Space PageDown next · ← PageUp previous · Home / End · F fullscreen · N notes
- *        S presenter window · G scene grid · T technical layer · B blackout
+ *        S presenter window · G scene grid · T technical layer · B blackout · A auto-advance
+ *
+ * Auto-advance: a step that plays video calls ctx.auto(seconds); when that time is up the deck
+ * moves on by itself, unless the presenter has already moved (or turned it off with A).
  */
 (function () {
   const K = (window.K = window.K || {});
@@ -29,6 +32,7 @@
   /* ---------------------------------------------------------- scenes */
   async function open(index, step, { instant = false } = {}) {
     if (index < 0 || index >= K.scenes.length) return;
+    clearAuto();
     state.busy = true;
     const stage = document.getElementById("stage");
     if (state.ctx) state.ctx.destroy();
@@ -88,8 +92,39 @@
     if (ctx) ctx.fast = false;
   }
 
+  /* ------------------------------------------------------- auto-advance */
+  let autoTimer = null;
+  K.autoOn = true;
+  try { K.autoOn = localStorage.getItem("keynote-auto") !== "off"; } catch (err) { /* private window: stay on */ }
+  function clearAuto() {
+    clearTimeout(autoTimer);
+    autoTimer = null;
+    const bar = document.getElementById("auto-fill");
+    if (bar) { bar.style.transition = "none"; bar.style.width = "0"; }
+  }
+  K.autoNext = (ms) => {
+    clearAuto();
+    if (!K.autoOn) return;
+    const at = `${state.index}.${state.step}`;
+    const bar = document.getElementById("auto-fill");
+    if (bar) { bar.getBoundingClientRect(); bar.style.transition = `width ${ms}ms linear`; bar.style.width = "100%"; }
+    autoTimer = setTimeout(function fire() {
+      if (`${state.index}.${state.step}` !== at) return;
+      if (state.running) { state.running.then(fire); return; } // let the step finish first
+      next();
+    }, ms);
+  };
+  function toggleAuto() {
+    K.autoOn = !K.autoOn;
+    try { localStorage.setItem("keynote-auto", K.autoOn ? "on" : "off"); } catch (err) { /* ignore */ }
+    if (!K.autoOn) clearAuto();
+    document.getElementById("nav-auto").classList.toggle("off", !K.autoOn);
+    document.getElementById("nav-auto").textContent = K.autoOn ? "Auto" : "Auto off";
+  }
+
   function next() {
     if (state.busy) return;
+    clearAuto();
     if (state.running && state.ctx) {
       // First press finishes the step in progress; the next press advances.
       state.ctx.fast = true;
@@ -107,6 +142,7 @@
 
   function prev() {
     if (state.busy) return;
+    clearAuto();
     if (state.step > 0) open(state.index, state.step - 1, { instant: true });
     else if (state.index > 0) open(state.index - 1, 999, { instant: true });
   }
@@ -256,6 +292,10 @@
       case "B":
         document.body.classList.toggle("blackout");
         break;
+      case "a":
+      case "A":
+        toggleAuto();
+        break;
       case "Escape":
         toggleGrid(false);
         document.getElementById("notes").hidden = true;
@@ -287,6 +327,8 @@
     document.getElementById("nav-next").addEventListener("click", next);
     document.getElementById("nav-grid").addEventListener("click", () => toggleGrid());
     document.getElementById("nav-tech").addEventListener("click", () => document.body.classList.toggle("tech"));
+    document.getElementById("nav-auto").addEventListener("click", toggleAuto);
+    if (!K.autoOn) { K.autoOn = true; toggleAuto(); }
     try {
       channel = new BroadcastChannel("anpr-keynote");
       channel.onmessage = (msg) => {

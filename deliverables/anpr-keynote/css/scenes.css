@@ -140,6 +140,9 @@
 .console.in { opacity: 1; transform: none; }
 .fchip { position: absolute; right: 40px; padding: 14px 22px; border-radius: 14px; font: 600 24px var(--text); color: var(--ink); background: rgba(10, 14, 20, 0.88); border: 1px solid rgba(57, 211, 191, 0.5); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); }
 
+.fchip.in:not(.now) { opacity: 0.5; }
+.fchip.now { border-color: var(--track); background: #0f2422; }
+
 /* next */
 .nexts { display: flex; flex-direction: column; gap: 46px; }
 .nx { display: flex; gap: 34px; align-items: flex-start; }

@@ -21,8 +21,8 @@
       const nodes = [
         { id: "cam", n: 1, x: X[0], y: R1, title: "Camera", sub: "real CCTV video", media: () => K.media.video("cam06_1080p", { start: 49.6, end: 54.05, cls: "media-cover" }),
           say: "Real CCTV video, frame after frame. Vigentra takes more frames when a vehicle is close enough to read." },
-        { id: "car", n: 2, x: X[1], y: R1, title: "Track the car", sub: "found in every frame · one ID", media: () => S.carThumb(),
-          say: "Every vehicle is boxed in each frame, and tracking gives each car one ID, so one car makes one record." },
+        { id: "car", n: 2, x: X[1], y: R1, title: "Track the car", sub: "boxed, then given one ID", media: () => S.carThumb(),
+          say: "In the frames Vigentra checks, every vehicle is boxed, and tracking gives each car one ID, so one car makes one record." },
         { id: "plate", n: 3, x: X[2], y: R1, title: "Find its plate", sub: "searched only inside the car", media: crop("assets/img/plate_1299.png"),
           say: "The plate detector looks only inside the car's box." },
         { id: "best", n: 4, x: X[3], y: R1, title: "Best frames", sub: `${E.frames.fused || 12} combined into one clearer image`, media: crop("assets/img/journey_fused.png"),
@@ -35,7 +35,7 @@
           say: "Readings from many frames must agree, and the plate must fit an Indian format." },
         { id: "ok", n: 6, x: X[3], y: R2, tone: "ok", title: "Confirmed plate", sub: "plate · time · camera, never video", media: () => h("div.fc-text.c-ok", null, `✓ ${E.plate}`),
           say: "Only now is a record made: the plate, the time and the camera. Never video." },
-        { id: "silent", type: "end", tone: "bad", x: X[0], y: R3, w: 340, h: 120, title: "Stay silent", sub: `e.g. this plate, ${tiny.width_px || "?"} px wide`, media: crop(tiny.file) },
+        { id: "silent", type: "end", tone: "bad", x: X[0], y: R3, w: 340, h: 120, title: "Stay silent", sub: `e.g. this ${tiny.width_px || "?"} px crop`, media: crop(tiny.file) },
         { id: "none", type: "end", tone: "bad", x: X[2], y: R3, w: 340, h: 120, title: "No record", sub: "e.g. this blurred plate", media: crop(blur.file) },
         { id: "use", type: "end", tone: "io", x: X[3], y: R3, w: 340, h: 120, title: "Search · Trace · Alert", sub: "in the Vigentra console",
           say: "Officers search it, trace the car across cameras, and get an alert if it is on a watchlist." },
@@ -61,6 +61,7 @@
       );
       return [
         async () => {
+          ctx.auto(23);
           await chart.reveal(ctx, { gap: 150 });
           await ctx.in("#say");
           chart.run(ctx, [
@@ -97,9 +98,9 @@
         S.tech([`<b>Vehicles</b> ${P.vehicle}`, `<b>Tracking</b> ${P.tracker}`, `<b>Plates</b> ${P.plate}`], (K.TRACK && K.TRACK.models) || "")
       );
       return [
-        async () => { await ctx.in(".media-layer"); await ctx.in("#c1"); ctx.in(".replay-note"); },
-        async () => { ctx.out("#c1"); ribbon.set(1); toCar(); live.overlay.set({ ids: true, trail: true }); await ctx.in("#c2"); },
-        async () => { ctx.out("#c2"); ribbon.set(2); toCar(); live.overlay.set({ plate: true }); await ctx.in("#c3"); },
+        async () => { ctx.auto(12.5); await ctx.in(".media-layer"); await ctx.in("#c1"); ctx.in(".replay-note"); },
+        async () => { ctx.auto(8.5); ctx.out("#c1"); ribbon.set(1); toCar(); live.overlay.set({ ids: true, trail: true }); await ctx.in("#c2"); },
+        async () => { ctx.auto(8.5); ctx.out("#c2"); ribbon.set(2); toCar(); live.overlay.set({ plate: true }); await ctx.in("#c3"); },
       ];
     },
   });
@@ -113,7 +114,7 @@
       // the approach, up to the best frames; the two later crops are the detector's mistakes
       const crops = T.sequence.filter((s) => s.file && s.frame <= 1304);
       const strip = h("div.grow", null, crops.map((s) => h("div.grow-item.r", null, [S.pixels(s.file, { scale: 1.25 }), h("div.caption.num", null, `${s.plate_px} px`)])));
-      const ba = K.ui.beforeAfter(K.media.img("journey_best", { cls: "media-fit" }), K.media.img("journey_enhanced", { cls: "media-fit" }), ["One frame", `${E.frames.fused || 12} frames combined`]);
+      const ba = K.ui.beforeAfter(K.media.img("journey_best", { cls: "media-fit" }), K.media.img("journey_enhanced", { cls: "media-fit" }), ["One frame", `${E.frames.fused || 12} frames, combined and cleaned`]);
       ctx.el.append(
         S.ribbon(3),
         S.title("One car, many frames", `As it comes closer, the plate grows: <span class="c-plate num">${crops.length ? crops[0].plate_px : "?"} → ${crops.length ? crops[crops.length - 1].plate_px : "?"} px</span>.`),
@@ -136,11 +137,11 @@
       const E = K.EVIDENCE || { quality: {} };
       const fail = (label) => (K.FAILURES || []).find((f) => f.label === label) || {};
       const tiny = fail("Tiny plate");
-      const faint = fail("Low contrast");
+      const blurred = fail("Blurred plate");
       const cards = [
         { file: "assets/img/journey_best.png", scale: 2, name: `CAM06 · ${E.quality.width_px} px wide`, stamp: "READ", ok: true },
         { file: tiny.file, scale: 14, name: `Delhi · ${tiny.width_px} px wide`, stamp: "TOO SMALL", ok: false },
-        { file: faint.file, scale: 6, name: `CAM06 · ${faint.width_px} px wide`, stamp: "TOO BLURRED", ok: false },
+        { file: blurred.file, scale: 6, name: `Delhi · ${blurred.width_px} px wide · blurred: the readers disagreed`, stamp: "NO RECORD", ok: false },
       ];
       ctx.el.append(
         S.ribbon(4),
@@ -152,7 +153,7 @@
         ])))),
         h("div.cap-bottom", null, h("div.h3.r.soft", { id: "silent" }, "If the pixels aren't there, Vigentra doesn't guess.")),
         S.tech([`<b>Gate</b> width ≥ ${P.gate.width} px, height ≥ ${P.gate.height} px, sharpness ≥ ${P.gate.sharpness}, contrast ≥ ${P.gate.contrast}`,
-          `<b>Refusals shown</b> ${tiny.reason || ""} · ${faint.reason || ""}`], P.src)
+          `<b>Outcomes shown</b> ${tiny.reason || ""} (refused before reading) · ${blurred.reason || ""} (read, never confirmed)`], P.src)
       );
       const stamp = async (i) => { await ctx.in(`.gcard[data-i="${i}"]`); await ctx.wait(350); ctx.$(`.gcard[data-i="${i}"] .stamp`).classList.add("in"); };
       return [() => stamp(0), () => stamp(1), async () => { await stamp(2); await ctx.in("#silent", { delay: 600 }); }];

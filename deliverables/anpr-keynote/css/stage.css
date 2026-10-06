@@ -62,6 +62,10 @@ body.tech .tech { display: block; }
 #hud { position: fixed; left: 0; right: 0; bottom: 0; height: 44px; pointer-events: none; z-index: 20; }
 #progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.06); }
 #progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--vehicle), var(--track)); transition: width 0.6s var(--ease); }
+/* auto-advance countdown: fills while a video step plays, then the deck moves on */
+#auto-bar { position: absolute; left: 0; right: 0; bottom: 3px; height: 2px; }
+#auto-fill { height: 100%; width: 0; background: rgba(255, 255, 255, 0.35); }
+#hud-buttons button.off { color: var(--mute); text-decoration: line-through; }
 #hud-act, #hud-count { position: absolute; bottom: 12px; font: 500 13px/1 var(--text); letter-spacing: 0.08em; color: var(--mute); text-transform: uppercase; transition: opacity 0.5s; }
 #hud-act { left: 20px; }
 #hud-count { right: 20px; }

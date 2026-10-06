@@ -16,16 +16,16 @@
           media: () => h("div.mosaic", null, ["wall_cam04", "wall_cam12", "wall_cam15", "delhi_raw"].map((k) => K.media.video(k, { cls: "media-cover" }))),
           say: "The department's own cameras, unchanged. Vigentra reads the video they already stream." },
         { id: "reader", n: 2, x: X[1], y: R, title: "Vigentra reader", sub: "find · follow · read", media: () => S.carThumb({ plate: true }),
-          say: "Reads plates next to the cameras. Only a confirmed plate leaves it, as text." },
+          say: "Reads the plates. Only a confirmed plate leaves it, as text: no image, no video." },
         { id: "central", n: 3, x: X[2], y: R, title: "Vigentra central", sub: "plate records · watchlist",
           media: () => h("div.fc-rec", null, [h("div", null, E.plate), h("span", null, "plate · time · camera")]),
           say: "Stores every plate record and checks it against the watchlist the moment it arrives." },
         { id: "console", n: 4, x: X[3], y: R, tone: "ok", title: "Console", sub: "search · trace · report", media: () => K.media.img("app_trace", { cls: "media-cover" }),
-          say: "Officers search plates, trace a vehicle across cameras and run reports. Every action is audited." },
-        { id: "list", type: "decision", x: X[2], y: R2, w: 260, h: 170, title: "On the watchlist?" },
-        { id: "alert", type: "end", tone: "bad", x: X[3], y: R2, w: 300, h: 110, title: "Alert", sub: "critical · high · review" },
-        { id: "kept", type: "end", tone: "io", x: X[1], y: R2, w: 300, h: 110, title: "Kept for search", sub: "and for tracing later" },
-        { id: "live", type: "end", tone: "video", x: 940, y: 300, w: 400, h: 100, title: "Live video", sub: "only with the owning unit's permission" },
+          say: "Officers search plates, trace a vehicle across cameras and run reports. What they do is audited." },
+        { id: "list", type: "decision", x: X[2], y: R2, w: 260, h: 170, title: "On the watchlist?", say: "Every new plate record is checked against the watchlist as it arrives." },
+        { id: "alert", type: "end", tone: "bad", x: X[3], y: R2, w: 300, h: 110, title: "Alert", sub: "critical · high · review", say: "A listed plate raises an alert in the console, by priority." },
+        { id: "kept", type: "end", tone: "io", x: X[1], y: R2, w: 300, h: 110, title: "Kept for search", sub: "and for tracing later", say: "Otherwise the record is kept, to be searched and traced later." },
+        { id: "live", type: "end", tone: "video", x: 940, y: 300, w: 400, h: 100, title: "Live video", sub: "only with the owning unit's permission", say: "Another unit sees a camera's live video only when the unit that owns it has granted access." },
       ];
       const edges = [
         { from: "cams", to: "reader", label: "video", at: [X[0] + 172, R - 14] },
@@ -49,6 +49,7 @@
       );
       return [
         async () => {
+          ctx.auto(22);
           await chart.reveal(ctx, { gap: 170 });
           await ctx.in("#say");
           chart.run(ctx, [
@@ -58,7 +59,7 @@
             { path: ["cams", "live", "console"], every: 9000, offset: 2000, cls: "video" },
           ]);
         },
-        () => ctx.in("#text"),
+        () => { ctx.auto(5); return ctx.in("#text"); },
       ];
     },
   });
@@ -67,18 +68,31 @@
   K.scene({
     id: "console", act: "The system", title: "The Vigentra console",
     build(ctx) {
-      // from 1:16, live CAM06 onward: earlier, the recording shows the 50-camera wall and registry
-      const screen = S.framed(K.media.video("app_demo", { start: 75.5, cls: "media-fit" }), 300, 250, 1320, 743, "console tilt");
-      const chips = ["Live detection on the feeds", "Search every detection", "Trace one vehicle", "Plate report", "Every action audited"];
+      // The useful parts of the recording: live CAM06 detection (1:15.5-1:24) and the console pages
+      // (1:28.5-2:42.6). Skipped: the camera wall at 1:24 and the closing card at 2:43, which show and
+      // credit the London feeds.
+      const PARTS = [["Live detection on a grid feed", 75.5, 83.9], ["Search every detection", 88.5, 108.6],
+        ["Trace one vehicle", 108.6, 132.1], ["Plate report", 132.1, 148], ["Audit log", 148, 162.6]];
+      const video = K.media.video("app_demo", { start: 75.5, loop: false, cls: "media-fit" });
+      const screen = S.framed(video, 120, 250, 1320, 743, "console tilt");
+      const chips = PARTS.map(([name], i) => h("span.fchip.r", { style: { top: `${300 + i * 130}px` } }, name));
+      if (video.tagName === "VIDEO") {
+        video.addEventListener("timeupdate", () => {
+          const t = video.currentTime;
+          if (t >= 83.9 && t < 88.5) video.currentTime = 88.6;
+          if (t >= 162.6) video.pause();
+          chips.forEach((c, i) => c.classList.toggle("now", t >= PARTS[i][1] && t < PARTS[i][2]));
+        });
+      }
       ctx.el.append(
         S.title("The Vigentra console", "From a plate to an answer, in a browser."),
         screen,
-        h("div.chips", null, chips.map((c, i) => h("span.fchip.r", { style: { top: `${300 + i * 130}px` } }, c))),
-        S.tech(["<b>Console</b> Next.js; detections, trace, report and audit log as shown; watchlist and camera-health alerts"], "deliverables/Vigentra_Demo_Short.mp4 (screen recording, from 1:16)")
+        h("div.chips", null, chips),
+        S.tech(["<b>Console</b> Next.js; detections, trace, report and audit log as shown; watchlist and camera-health alerts"], "deliverables/Vigentra_Demo_Short.mp4 (screen recording, 1:15-1:24 and 1:28-2:42)")
       );
       return [
-        async () => { await ctx.wait(200); screen.classList.add("in"); },
-        () => ctx.in(".fchip", { stagger: 260 }),
+        // 83 s: the two parts of the recording, back to back
+        async () => { ctx.auto(83); await ctx.wait(200); screen.classList.add("in"); await ctx.wait(900); await ctx.in(".fchip", { stagger: 260 }); },
       ];
     },
   });
@@ -90,7 +104,7 @@
       const items = [
         ["Night and glare", "Plates are found after dark, but rarely legible."],
         ["Small, distant plates", "Under 22 pixels wide, Vigentra will not read a plate."],
-        ["GPU servers for every feed", "One laptop keeps pace with one camera. Thirty need GPU servers."],
+        ["GPU servers for every feed", "One laptop keeps pace with one camera; all thirty would need GPU servers."],
       ];
       ctx.el.append(
         S.title("What's next", "What still doesn't work, honestly."),

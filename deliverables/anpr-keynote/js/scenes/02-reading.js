@@ -9,47 +9,64 @@
 
   /* ---------------------------------------------------------------- flow */
   K.scene({
-    id: "flow", act: "How Vigentra reads", title: "From camera to confirmed plate",
+    id: "flow", act: "How Vigentra reads", title: "How Vigentra reads a plate",
     build(ctx) {
-      const E = K.EVIDENCE || { plate: "" };
-      const R1 = 400;
-      const R2 = 680;
+      const E = K.EVIDENCE || { plate: "", frames: {} };
+      const fail = (label) => (K.FAILURES || []).find((f) => f.label === label) || {};
+      const tiny = fail("Tiny plate");
+      const blur = fail("Motion blur");
+      const X = [260, 713, 1166, 1620];
+      const [R1, R2, R3] = [360, 690, 940];
+      const crop = (src) => () => h("img.pix-fit", { src, alt: "" });
       const nodes = [
-        { id: "cam", x: 240, y: R1, label: "Camera", sub: "real CCTV video", kind: "io", detail: "Grid video arrives continuously; Vigentra samples its frames, more densely when a vehicle is big enough to read." },
-        { id: "veh", x: 600, y: R1, label: "Find vehicles", sub: "in every frame", detail: "Every car, motorcycle, bus and truck is boxed." },
-        { id: "trk", x: 960, y: R1, label: "Follow each one", sub: "one car = one ID", detail: "Tracking keeps one identity per vehicle across frames." },
-        { id: "plt", x: 1320, y: R1, label: "Find its plate", sub: "inside the vehicle", detail: "The plate detector looks only inside each vehicle's box." },
-        { id: "best", x: 1680, y: R1, label: "Keep the best", sub: "best frames combined", detail: "Every crop of the plate is scored; the best are kept and combined." },
-        { id: "q", x: 1680, y: R2, label: "Enough pixels?", sub: "22 px wide, sharp", detail: "Too small or too blurred: Vigentra does not read it." },
-        { id: "read", x: 1320, y: R2, label: "Read", sub: "character by character", detail: "Readers turn the crop into characters, each with a confidence." },
-        { id: "vote", x: 960, y: R2, label: "Do they agree?", sub: "many frames · plate rules", detail: "Readings from many frames must agree, and the plate must fit an Indian format." },
-        { id: "ok", x: 600, y: R2, label: "Confirmed plate", sub: "text · time · camera", kind: "ok", detail: "Only a confirmed plate becomes a record: text, time and camera. Never video." },
-        { id: "use", x: 240, y: R2, label: "Search · Trace · Alert", sub: "in the console", kind: "io", detail: "Officers search plates, trace a vehicle across cameras and get watchlist alerts." },
-        { id: "silent", x: 1680, y: 920, label: "Stay silent", sub: "no guess", kind: "bad", detail: "No record when the pixels are not there." },
-        { id: "none", x: 960, y: 920, label: "No record", sub: "not sure enough", kind: "bad", detail: "If the readings don't agree, nothing is sent." },
+        { id: "cam", n: 1, x: X[0], y: R1, title: "Camera", sub: "real CCTV video", media: () => K.media.video("cam06_1080p", { start: 49.6, end: 54.05, cls: "media-cover" }),
+          say: "Real CCTV video, frame after frame. Vigentra takes more frames when a vehicle is close enough to read." },
+        { id: "car", n: 2, x: X[1], y: R1, title: "Track the car", sub: "found in every frame · one ID", media: () => S.carThumb(),
+          say: "Every vehicle is boxed in each frame, and tracking gives each car one ID, so one car makes one record." },
+        { id: "plate", n: 3, x: X[2], y: R1, title: "Find its plate", sub: "searched only inside the car", media: crop("assets/img/plate_1299.png"),
+          say: "The plate detector looks only inside the car's box." },
+        { id: "best", n: 4, x: X[3], y: R1, title: "Best frames", sub: `${E.frames.fused || 12} combined into one clearer image`, media: crop("assets/img/journey_fused.png"),
+          say: "Every crop of the plate is scored; the best ones are lined up and combined into one clearer image." },
+        { id: "q", type: "decision", x: X[0], y: R2, w: 260, h: 180, title: "Enough pixels?", sub: "≥ 22 px wide, sharp",
+          say: "Too small or too blurred? Then Vigentra does not try to read it." },
+        { id: "read", n: 5, x: X[1], y: R2, title: "Read the plate", sub: "character by character", media: () => h("div.fc-text", null, E.plate),
+          say: "The readers turn the image into characters, each with its own confidence." },
+        { id: "agree", type: "decision", x: X[2], y: R2, w: 260, h: 180, title: "Readings agree?", sub: "many frames · valid format",
+          say: "Readings from many frames must agree, and the plate must fit an Indian format." },
+        { id: "ok", n: 6, x: X[3], y: R2, tone: "ok", title: "Confirmed plate", sub: "plate · time · camera, never video", media: () => h("div.fc-text.c-ok", null, `✓ ${E.plate}`),
+          say: "Only now is a record made: the plate, the time and the camera. Never video." },
+        { id: "silent", type: "end", tone: "bad", x: X[0], y: R3, w: 340, h: 120, title: "Stay silent", sub: `e.g. this plate, ${tiny.width_px || "?"} px wide`, media: crop(tiny.file) },
+        { id: "none", type: "end", tone: "bad", x: X[2], y: R3, w: 340, h: 120, title: "No record", sub: "e.g. this blurred plate", media: crop(blur.file) },
+        { id: "use", type: "end", tone: "io", x: X[3], y: R3, w: 340, h: 120, title: "Search · Trace · Alert", sub: "in the Vigentra console",
+          say: "Officers search it, trace the car across cameras, and get an alert if it is on a watchlist." },
       ];
-      const chain = ["cam", "veh", "trk", "plt", "best", "q", "read", "vote", "ok", "use"];
-      const edges = chain.slice(1).map((to, i) => ({ from: chain[i], to }))
-        .concat([{ from: "q", to: "silent", kind: "bad" }, { from: "vote", to: "none", kind: "bad" }]);
-      const chart = K.ui.flow({ nodes, edges });
-      const hero = (node, el) => {
-        const body = { cam: `<span class="pk-text vid">frame</span>`, plt: `<img src="assets/img/plate_1299.png" alt="">`, read: `<span class="pk-text">${E.plate}</span>`, ok: `<span class="pk-text ok">✓ ${E.plate}</span>` }[node];
-        if (body) el.innerHTML = `<div class="pk-body">${body}</div>`;
-      };
+      const edges = [
+        { from: "cam", to: "car" }, { from: "car", to: "plate" }, { from: "plate", to: "best" },
+        { from: "best", to: "q", out: "bottom", in: "top", via: [[X[3], 530], [X[0], 530]] },
+        { from: "q", to: "read", kind: "yes", label: "Yes", at: [X[0] + 150, R2 - 14] },
+        { from: "q", to: "silent", out: "bottom", in: "top", kind: "no", label: "No", at: [X[0] + 14, R2 + 130] },
+        { from: "read", to: "agree" },
+        { from: "agree", to: "ok", kind: "yes", label: "Yes", at: [X[2] + 150, R2 - 14] },
+        { from: "agree", to: "none", out: "bottom", in: "top", kind: "no", label: "No", at: [X[2] + 14, R2 + 130] },
+        { from: "ok", to: "use", out: "bottom", in: "top" },
+      ];
+      const caption = h("div.flow-say", null, [h("span.fs-n.blank"), h("div", null, [h("b", null, `Follow the dot: one real car, ${E.plate}`), h("span", null, "Red dots are plates Vigentra refused. Click any box to read what it does.")])]);
+      const chart = K.ui.flow({ nodes, edges, caption });
+      const main = ["cam", "car", "plate", "best", "q", "read", "agree", "ok", "use"];
       ctx.el.append(
-        S.title("The whole journey", "From camera to confirmed plate."),
+        S.title("The whole journey", "How Vigentra reads a plate."),
+        S.at(1060, 92, 760, null, h("div.r", { id: "say" }, caption)),
         chart,
-        h("div.flow-hint.r", null, "Click any box"),
         S.tech([`<b>Vehicles</b> ${P.vehicle}`, `<b>Tracking</b> ${P.tracker}`, `<b>Plates</b> ${P.plate}`, `<b>Confirmed when</b> ${P.confirm}`], P.src)
       );
       return [
-        () => chart.reveal(ctx, { gap: 140 }),
-        () => {
-          ctx.in(".flow-hint");
+        async () => {
+          await chart.reveal(ctx, { gap: 150 });
+          await ctx.in("#say");
           chart.run(ctx, [
-            { path: chain, every: 2600, carry: hero },
-            { path: chain.slice(0, 6).concat("silent"), every: 5200, offset: 1300, cls: "bad" },
-            { path: chain.slice(0, 8).concat("none"), every: 5200, offset: 3900, cls: "warn" },
+            { path: main, every: 21000, main: true },
+            { path: main.slice(0, 5).concat("silent"), every: 21000, offset: 6000, cls: "bad" },
+            { path: main.slice(0, 7).concat("none"), every: 21000, offset: 13000, cls: "bad" },
           ]);
         },
       ];
@@ -147,18 +164,17 @@
     id: "read", act: "How Vigentra reads", title: "From pixels to characters",
     build(ctx) {
       const E = K.EVIDENCE || { plate: "", per_char_conf: [] };
-      const plate = K.ui.plate(E.plate, { size: 1.05, hidden: true });
-      const confs = h("div.charconf", null, [...E.plate].map((ch, i) => {
+      const cols = h("div.ocr-cols", null, [...E.plate].map((ch, i) => {
         const c = E.per_char_conf[i] || 0;
-        return h("div.cc", null, [h("div.cc-bar", { style: { "--v": `${Math.round(c * 100)}%` } }), h("div.cc-v.num", null, c.toFixed(2))]);
+        return h("div.oc", null, [h("span.ch", null, ch), h("div.oc-barbox", null, h("div.oc-bar", { style: { "--v": `${Math.round(c * 100)}%` } })), h("div.oc-v.num", null, c.toFixed(2))]);
       }));
       const seg = ([txt, label]) => h("div.seg.r", null, [h("div.seg-txt.mono", null, txt), h("div.seg-label", null, label)]);
       ctx.el.append(
         S.ribbon(5),
         S.title("Reading", "From pixels to characters."),
-        S.at(560, 280, 800, 180, h("div.frame.r.scan", { id: "src" }, K.media.img("journey_enhanced", { cls: "media-fit" }))),
-        h("div.center.ocr-plate", null, plate),
-        S.at(560, 770, 800, null, h("div.r", { id: "confs" }, [confs, h("div.caption", null, "How sure Vigentra is of each character")])),
+        S.at(560, 270, 800, 180, h("div.frame.r", { id: "src" }, K.media.img("journey_enhanced", { cls: "media-fit" }))),
+        S.at(360, 500, 1200, null, cols),
+        S.at(360, 820, 1200, null, h("div.caption.r", { id: "conf-cap", style: { textAlign: "center" } }, "How sure Vigentra is of each character")),
         h("div.center.segs-wrap.r", { id: "segs" }, h("div.stack", { style: { alignItems: "center", gap: "40px" } }, [
           h("div.segs", null, D.grammar.segments.map(seg)),
           h("div.lede", null, "Indian plates follow a pattern. A 6 where a letter must be is read as G."),
@@ -166,9 +182,9 @@
         S.tech([`<b>Readers</b> ${P.readers}`], P.src)
       );
       return [
-        async () => { await ctx.in("#src"); ctx.$("#src").classList.add("sweep"); await ctx.wait(500); await K.ui.revealPlate(ctx, plate, 220); },
-        async () => { await ctx.in("#confs"); ctx.$(".charconf").classList.add("in"); },
-        async () => { ["#src", "#confs"].forEach((s) => ctx.$(s).closest(".abs").classList.add("gone")); ctx.$(".ocr-plate").classList.add("gone"); await ctx.in("#segs"); await ctx.in(".seg", { stagger: 300 }); },
+        async () => { await ctx.in("#src"); await ctx.wait(400); await K.ui.revealChars(ctx, cols, 200); },
+        async () => { cols.classList.add("conf"); await ctx.in("#conf-cap"); },
+        async () => { ["#src", "#conf-cap"].forEach((s) => ctx.$(s).closest(".abs").classList.add("gone")); cols.classList.add("gone"); await ctx.in("#segs"); await ctx.in(".seg", { stagger: 300 }); },
       ];
     },
   });
@@ -196,7 +212,7 @@
         S.at(140, 300, 1640, 560, cloud),
         h("div.center.verdict-wrap", null, h("div.stack", { style: { alignItems: "center", gap: "26px" } }, [
           h("div.h2.r.soft", { id: "said" }, [h("span.num.c-ok", null, String(win.count)), ` of ${total} say`]),
-          h("div.r.zoom", { id: "winner" }, K.ui.plate(E.plate, { size: 0.9 })),
+          h("div.r.zoom", { id: "winner" }, K.ui.chars(E.plate, { cls: "big" })),
           h("div.stamp.ok.big", { id: "conf" }, "CONFIRMED"),
           h("div.ticks", null, checks.map((c) => h("span.tk.r", null, [h("b", null, "✓"), c]))),
         ])),

@@ -33,21 +33,19 @@
   K.scene({
     id: "opening", act: "The question", title: "A camera sees a vehicle", cls: "black",
     build(ctx) {
-      const E = K.EVIDENCE || { plate: "" };
       const plate = S.box(S.at1299() && S.at1299().plate);
       const zoom = h("div.fill.zoombox", null, [
         K.media.video("cam06_1080p", { start: 49.6, end: 54.05, loop: false, autoplay: false, cls: "media-cover" }),
         h("div.fill.still", null, K.media.img("best_frame", { cls: "media-cover" })),
       ]);
       const layer = h("div.fill.r.slow.media-layer", null, [zoom, h("div.fill.shade-bottom")]);
-      const answer = h("div.center.answer", null, h("div.stack", { style: { alignItems: "center", gap: "34px" } }, [
-        K.ui.plate(E.plate, { size: 1, hidden: true }),
-        h("div.h2.r.soft", { id: "can" }, ["Vigentra ", h("span.c-ok", null, "reads it.")]),
-      ]));
       ctx.el.append(
         layer,
-        h("div.cap-bottom", null, [h("div.h2.r.soft", { id: "l1" }, "A camera sees a vehicle."), h("div.h2.r.soft", { id: "l2" }, "Can it tell us which one?")]),
-        answer
+        h("div.cap-bottom", null, [
+          h("div.h2.r.soft", { id: "l1" }, "A camera sees a vehicle."),
+          h("div.h2.r.soft", { id: "l2" }, "Can it tell us which one?"),
+          h("div.h2.r.soft", { id: "l3" }, ["Vigentra ", h("span.c-ok", null, "can.")]),
+        ])
       );
       const video = ctx.$("video");
       return [
@@ -67,13 +65,7 @@
           await ctx.wait(1400);
           await ctx.in("#l2");
         },
-        async () => {
-          ctx.out("#l2");
-          layer.classList.add("gone");
-          await ctx.wait(700);
-          await K.ui.revealPlate(ctx, ctx.$(".answer .hsrp"), 140);
-          await ctx.in("#can");
-        },
+        async () => { ctx.out("#l2"); await ctx.wait(400); await ctx.in("#l3"); },
       ];
     },
   });

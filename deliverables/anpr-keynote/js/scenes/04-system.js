@@ -9,37 +9,56 @@
     id: "system", act: "The system", title: "How the pieces connect",
     build(ctx) {
       const E = K.EVIDENCE || { plate: "" };
+      const X = [260, 713, 1166, 1620];
+      const [R, R2] = [540, 830];
       const nodes = [
-        { id: "cams", x: 240, y: 560, label: "Cameras", sub: "grid · Delhi", kind: "io", detail: "The department's cameras, unchanged. Vigentra reads their existing streams." },
-        { id: "edge", x: 700, y: 560, label: "Vigentra reader", sub: "find · follow · read", detail: "Reads plates beside the cameras. Only a confirmed plate leaves it, as text." },
-        { id: "central", x: 1180, y: 560, label: "Vigentra central", sub: "plate records · watchlist", detail: "Stores each plate record and checks it against the watchlist as it arrives." },
-        { id: "console", x: 1660, y: 560, label: "Console", sub: "search · trace · report", kind: "ok", detail: "Operators search, trace and report; every action is audited." },
-        { id: "alert", x: 1180, y: 850, label: "Alert", sub: "watchlist match", kind: "bad", detail: "A listed plate raises an alert in the console, by priority." },
-        { id: "video", x: 950, y: 300, label: "Live video", sub: "with the owner's permission", kind: "io", detail: "Another unit sees a camera's video only when the unit that owns it has granted access." },
+        { id: "cams", n: 1, x: X[0], y: R, tone: "io", title: "Cameras", sub: "the grid · Delhi",
+          media: () => h("div.mosaic", null, ["wall_cam04", "wall_cam12", "wall_cam15", "delhi_raw"].map((k) => K.media.video(k, { cls: "media-cover" }))),
+          say: "The department's own cameras, unchanged. Vigentra reads the video they already stream." },
+        { id: "reader", n: 2, x: X[1], y: R, title: "Vigentra reader", sub: "find · follow · read", media: () => S.carThumb({ plate: true }),
+          say: "Reads plates next to the cameras. Only a confirmed plate leaves it, as text." },
+        { id: "central", n: 3, x: X[2], y: R, title: "Vigentra central", sub: "plate records · watchlist",
+          media: () => h("div.fc-rec", null, [h("div", null, E.plate), h("span", null, "plate · time · camera")]),
+          say: "Stores every plate record and checks it against the watchlist the moment it arrives." },
+        { id: "console", n: 4, x: X[3], y: R, tone: "ok", title: "Console", sub: "search · trace · report", media: () => K.media.img("app_trace", { cls: "media-cover" }),
+          say: "Officers search plates, trace a vehicle across cameras and run reports. Every action is audited." },
+        { id: "list", type: "decision", x: X[2], y: R2, w: 260, h: 170, title: "On the watchlist?" },
+        { id: "alert", type: "end", tone: "bad", x: X[3], y: R2, w: 300, h: 110, title: "Alert", sub: "critical · high · review" },
+        { id: "kept", type: "end", tone: "io", x: X[1], y: R2, w: 300, h: 110, title: "Kept for search", sub: "and for tracing later" },
+        { id: "live", type: "end", tone: "video", x: 940, y: 300, w: 400, h: 100, title: "Live video", sub: "only with the owning unit's permission" },
       ];
       const edges = [
-        { from: "cams", to: "edge" }, { from: "edge", to: "central" }, { from: "central", to: "console" },
-        { from: "central", to: "alert", kind: "bad" }, { from: "alert", to: "console", kind: "bad" },
-        { from: "cams", to: "video", kind: "dash", d: "M240,508 V300 H825" }, { from: "video", to: "console", kind: "dash", d: "M1075,300 H1660 V508" },
+        { from: "cams", to: "reader", label: "video", at: [X[0] + 172, R - 14] },
+        { from: "reader", to: "central", label: "text", at: [X[1] + 172, R - 14] },
+        { from: "central", to: "console" },
+        { from: "central", to: "list", out: "bottom", in: "top" },
+        { from: "list", to: "alert", kind: "yes", label: "Yes", at: [X[2] + 150, R2 - 14] },
+        { from: "alert", to: "console", out: "top", in: "bottom", kind: "alert" },
+        { from: "list", to: "kept", out: "left", in: "right", kind: "no", label: "No", at: [X[2] - 200, R2 - 14] },
+        { from: "cams", to: "live", out: "top", in: "left", via: [[X[0], 300]], kind: "video" },
+        { from: "live", to: "console", out: "right", in: "top", via: [[X[3], 300]], kind: "video" },
       ];
-      const chart = K.ui.flow({ nodes, edges });
-      const chip = (html, cls = "") => `<div class="pk-body"><span class="pk-text ${cls}">${html}</span></div>`;
+      const caption = h("div.flow-say", null, [h("span.fs-n.blank"), h("div", null, [h("b", null, "Video in, text out"), h("span", null, "Follow the dots. Click any box to read what it does.")])]);
+      const chart = K.ui.flow({ nodes, edges, caption });
       ctx.el.append(
         S.title("The system", "How the pieces connect."),
+        S.at(1060, 92, 760, null, h("div.r", { id: "say" }, caption)),
         chart,
         h("div.cap-bottom", null, h("div.h3.r.soft", { id: "text" }, "Plates travel as text. Video is shared only with its owner's permission.")),
         S.tech(["<b>Plate record</b> plate, camera, time, confidence and boxes; no image, no video", "<b>Unconfirmed readings</b> not sent (ANPR_EMIT_UNCONFIRMED=false)", "<b>Video</b> central oversight roles need the owning unit's grant"], "services/edge-worker/app/worker.py · services/central-api (access model)")
       );
       return [
-        () => chart.reveal(ctx, { gap: 220 }),
         async () => {
+          await chart.reveal(ctx, { gap: 170 });
+          await ctx.in("#say");
           chart.run(ctx, [
-            { path: ["cams", "edge", "central", "console"], every: 1900, carry: (n, el) => { if (n === "cams") el.innerHTML = chip("video", "vid"); if (n === "edge") el.innerHTML = chip(`${E.plate} · cam06`); } },
-            { path: ["cams", "edge", "central", "alert", "console"], every: 6200, offset: 2600, cls: "bad", carry: (n, el) => { if (n === "central") el.innerHTML = chip("watchlist match", "bad"); } },
-            { path: ["cams", "video", "console"], every: 4400, offset: 900, cls: "vid", carry: (n, el) => { if (n === "cams") el.innerHTML = chip("live video", "vid"); } },
+            { path: ["cams", "reader", "central", "console"], every: 9500, main: true },
+            { path: ["cams", "reader", "central", "list", "alert", "console"], every: 14000, offset: 4000, cls: "bad" },
+            { path: ["cams", "reader", "central", "list", "kept"], every: 14000, offset: 11000, cls: "dim" },
+            { path: ["cams", "live", "console"], every: 9000, offset: 2000, cls: "video" },
           ]);
-          await ctx.in("#text", { delay: 1800 });
         },
+        () => ctx.in("#text"),
       ];
     },
   });

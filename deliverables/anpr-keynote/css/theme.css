@@ -4,7 +4,6 @@
  *   --vehicle  a detected vehicle box        --plate   a detected number plate
  *   --track    the identity that follows it  --ok      a reading the system believes
  *   --warn     a reading it doubts           --bad     a rejection, or what was lost
- * The plate itself is drawn like an Indian HSRP plate: white, black glyphs, a blue IND strip.
  */
 :root {
   --bg: #040608;
@@ -21,11 +20,7 @@
   --ok: #45dc98;
   --warn: #ffab45;
   --bad: #ff5f5f;
-  --glow: rgba(90, 176, 255, 0.35);
 
-  --hsrp-bg: #f6f6f1;
-  --hsrp-ink: #121212;
-  --hsrp-blue: #1f4fd8;
 
   --display: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --text: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;

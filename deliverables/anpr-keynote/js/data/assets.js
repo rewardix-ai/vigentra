@@ -25,4 +25,5 @@ K.ASSETS = {
   journey_best: { src: "assets/img/journey_best.png", label: "Best crop, GJ23H1546", need: "[REAL PLATE CROP REQUIRED]" },
   journey_fused: { src: "assets/img/journey_fused.png", label: "Frames fused", need: "[FUSED CROP REQUIRED]" },
   journey_enhanced: { src: "assets/img/journey_enhanced.png", label: "Enhanced", need: "[ENHANCED CROP REQUIRED]" },
+  app_trace: { src: "assets/img/app_trace.jpg", label: "Vigentra console, trace a vehicle", need: "[CONSOLE SCREENSHOT REQUIRED]" },
 };

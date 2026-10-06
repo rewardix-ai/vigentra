@@ -72,6 +72,21 @@
       return { el: h("div.fill", null, [video, overlay]), overlay };
     },
 
+    /** A small view of the evidence car at its best frame, zoomed in, with its real vehicle box
+     * (and plate box) drawn on: for flowchart cards. */
+    carThumb({ plate = false } = {}) {
+      const s = K.S.at1299() || {};
+      const v = K.S.box(s.vehicle);
+      const p = K.S.box(s.plate);
+      const rect = (b, kind) => (b ? `<g class="box box-${kind} on"><rect x="${b.x * 1000}" y="${b.y * 1000}" width="${b.w * 1000}" height="${b.h * 1000}" rx="6" vector-effect="non-scaling-stroke"/></g>` : "");
+      const zoom = h("div.fill.zoombox", null, [
+        K.media.img("best_frame", { cls: "media-cover" }),
+        h("div.fill", { html: `<svg class="boxes" viewBox="0 0 1000 1000" preserveAspectRatio="none">${rect(v, "track")}${plate ? rect(p, "plate") : ""}</svg>` }),
+      ]);
+      if (v) zoom.style.transform = K.ui.zoomTo(v, { fill: 0.55 });
+      return h("div.zoom169", null, zoom);
+    },
+
     /** "How Vigentra reads a plate": where this scene sits in the pipeline. */
     ribbon(active) {
       const names = ["Vehicle", "Track", "Plate", "Best frames", "Quality", "Read", "Vote"];

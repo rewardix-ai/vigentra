@@ -102,14 +102,6 @@ button:focus-visible, [data-interactive]:focus-visible { outline: 2px solid var(
 #brandbug img:last-child { height: 17px; }
 body.nobrand #brandbug { opacity: 0; }
 
-/* The cut between scenes: a scan line sweeps the stage with a faint flash */
-#wipe { position: absolute; inset: 0; z-index: 60; pointer-events: none; opacity: 0; }
-#wipe::before { content: ""; position: absolute; left: 0; right: 0; height: 3px; top: -4px; background: var(--track); box-shadow: 0 0 40px 10px rgba(57, 211, 191, 0.45); }
-#wipe.go { animation: wipe-flash 0.7s var(--ease); }
-#wipe.go::before { animation: wipe-line 0.7s var(--ease); }
-@keyframes wipe-flash { 0% { opacity: 1; background: rgba(57, 211, 191, 0.07); } 100% { opacity: 1; background: transparent; } }
-@keyframes wipe-line { from { top: -4px; } to { top: 1084px; } }
-
 /* Film grain and a vignette over everything: the look of a projected film, not a slide */
 #stage::after {
   content: ""; position: absolute; inset: -50%; z-index: 55; pointer-events: none; opacity: 0.06;
@@ -118,4 +110,4 @@ body.nobrand #brandbug { opacity: 0; }
 }
 #stage::before { content: ""; position: absolute; inset: 0; z-index: 54; pointer-events: none; background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45) 100%); }
 @keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-5%, 3%); } 50% { transform: translate(4%, -4%); } 75% { transform: translate(-3%, -2%); } 100% { transform: translate(0, 0); } }
-@media (prefers-reduced-motion: reduce) { #stage::after, #wipe.go, #wipe.go::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #stage::after { animation: none; } }

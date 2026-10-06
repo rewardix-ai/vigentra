@@ -14,8 +14,8 @@ K.STORY = {
   },
   opening: {
     purpose: "Ask the question with one real car.",
-    sees: "CAM06 on Madhuram Bypass Road. A car comes down the road, the frame freezes, the view pushes into its plate, then the plate appears as text.",
-    say: "This is a real camera on a road in Gujarat. A camera sees a vehicle. [pause] Can it tell us which one? [beat] Vigentra reads it: GJ 23 H 1546. Let me show you how hard that is.",
+    sees: "CAM06 on Madhuram Bypass Road. A car comes down the road, the frame freezes and the view pushes into its real plate; then the words: Vigentra can.",
+    say: "This is a real camera on a road in Gujarat. A camera sees a vehicle. [pause] Can it tell us which one? [beat] Vigentra can. Let me show you how hard that is.",
     understand: "Seeing a car is not the same as knowing which car it is.",
     transition: "Pull back to many cameras.",
     asset: "assets/video/cam06_1080p.mp4, assets/img/cam06_best_frame.jpg (frame 1299)",
@@ -46,8 +46,8 @@ K.STORY = {
   },
   flow: {
     purpose: "The whole method on one live flowchart, before the details.",
-    sees: "Ten boxes from Camera to Search · Trace · Alert. Packets flow through: one carries the real plate crop, which becomes text, then a confirmed plate. Some packets turn off to 'Stay silent' or 'No record'.",
-    say: "Here is the whole journey. Camera, find the vehicle, follow it, find its plate, keep the best frames. [beat] Enough pixels? If not, we stay silent. Read it. Do the readings agree? If not, no record. Only then a confirmed plate: text, time, camera. Click any box to explain it.",
+    sees: "A flowchart of six numbered steps, each card showing the real data at that step (the video, the car with its box, the plate crop, the combined image, the characters, the confirmed record), two Yes/No decisions, and outcomes with real refused plates. A dot follows one car; the caption beside the title explains each step as the dot reaches it. Red dots take the No arrows.",
+    say: "Here is the whole journey, on one real car. Camera; find and follow the car; find its plate; combine its best frames. [beat] Enough pixels? If not, Vigentra stays silent, like this 10-pixel plate. Read the characters. Do the readings agree? If not, no record. Only then a confirmed plate: plate, time, camera. Never video.",
     understand: "The steps, and that Vigentra refuses rather than guesses.",
     transition: "Now each step on one real car.",
     asset: "assets/img/plate_1299.png (the packet's crop)",
@@ -78,7 +78,7 @@ K.STORY = {
   },
   read: {
     purpose: "OCR, and the plate format.",
-    sees: "The enhanced crop is scanned; the characters appear on a plate with a confidence bar each; then the plate splits into State, RTO, Series, Number.",
+    sees: "The enhanced crop; under it the characters appear one by one, each with a bar for how sure Vigentra is; then the plate splits into State, RTO, Series, Number.",
     say: "Now we read it, character by character, with a confidence for each. [beat] And Indian plates follow a pattern: state, RTO, series, number. A 6 where a letter must be is read as G. The pattern catches mistakes.",
     understand: "Reading uses both the image and the rules of Indian plates.",
     transition: "But one reading is not enough.",
@@ -86,7 +86,7 @@ K.STORY = {
   },
   vote: {
     purpose: "Many readings, one confirmed answer.",
-    sees: "A cloud of real readings of this plate, in proportion; they collapse into one answer, stamped CONFIRMED, with three checks.",
+    sees: "A cloud of real readings of this plate, in proportion; they collapse into one answer, GJ23H1546 in plain characters, stamped CONFIRMED, with three checks.",
     say: "Across all the frames, our readers produced 136 readings of this plate. 73 of them say GJ 23 H 1546. [beat] Only when the readings agree, the format is valid and the crops hold real characters do we confirm.",
     understand: "Vigentra confirms by agreement, not by a single guess.",
     transition: "Does it work on real footage?",
@@ -118,8 +118,8 @@ K.STORY = {
   },
   system: {
     purpose: "How the system fits together, on a live flowchart.",
-    sees: "Cameras feed the Vigentra reader; plate records flow as text to Vigentra central and the console; a red packet branches to Alert; a dashed blue lane shows live video reaching the console with the owner's permission.",
-    say: "Video comes in; text goes out. The reader sends only the confirmed plate, camera and time to central, where it is checked against the watchlist; a match becomes an alert. [beat] Live video is a separate lane, shared only with the owning unit's permission.",
+    sees: "A flowchart: Cameras (four live feeds) → Vigentra reader (the car with its boxes) → Vigentra central (the plate record) → Console (the trace screen). Under central: On the watchlist? Yes → Alert → Console; No → kept for search. A dashed lane above: live video, only with the owning unit's permission. Dots travel each route; the caption explains each box.",
+    say: "Video comes in; text goes out. The reader sends only the confirmed plate, time and camera to central, which checks it against the watchlist: yes means an alert in the console, no means it is kept for search. [beat] Live video is a separate lane, shared only with the owning unit's permission.",
     understand: "Vigentra moves plates as text, and video only with permission.",
     transition: "What an operator sees.",
     asset: "services/edge-worker/app/worker.py (the plate record); central-api access model",

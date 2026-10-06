@@ -36,14 +36,15 @@ IMG = HERE / "assets/img"
 # slot: (source, height, start s, seconds) - None keeps the whole clip
 VIDEOS = {
     "cam06_noon": (OWN / "cam06_noon.mp4", 480, None, None),
-    "cam06_night": (OWN / "cam06_night.mp4", 480, 20, 60),
     "cam06_1080p": (OWN / "cam06_1080p.mp4", 1080, None, None),
     "delhi_raw": (OWN / "delhi_1080p.mp4", 720, None, None),
     "cam06_vigentra": (P / "deliverables/Vigentra_CAM06_Noon_ANPR_720p.mp4", 720, None, None),
     "delhi_vigentra": (P / "deliverables/Vigentra_Delhi_ANPR_720p.mp4", 720, None, None),
     "app_demo": (P / "deliverables/Vigentra_Demo_Short.mp4", 720, None, None),
-    "tfl_low": (OWN / "tfl_03.mp4", 288, None, None),
-    **{f"wall_{c}": (OWN / f"rec_{c}.mp4", 360, None, 20) for c in ("cam01", "cam02", "cam04", "cam05", "cam07", "cam12")},
+    # the grid's own cameras (cam01-cam16 recordings; cam03 has none and cam09 is black), no London feeds
+    **{f"wall_{c}": (OWN / f"rec_{c}.mp4", 360, None, 20) for c in (
+        "cam01", "cam02", "cam04", "cam05", "cam06", "cam07", "cam08", "cam10", "cam11", "cam12", "cam13", "cam14", "cam15", "cam16")},
+    **{f"reel_{c}": (OWN / f"rec_{c}.mp4", 720, 4, 8) for c in ("cam01", "cam04", "cam07", "cam15")},
 }
 
 IMAGES = {

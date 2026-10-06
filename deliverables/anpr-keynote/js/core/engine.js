@@ -64,6 +64,9 @@
       setTimeout(() => other.remove(), 900);
     });
     el.classList.add("current", "on");
+    // A moving scene opens with a scan-line cut across the stage (css/stage.css #wipe).
+    const wipe = document.getElementById("wipe");
+    if (wipe && !instant) { wipe.classList.remove("go"); void wipe.offsetWidth; wipe.classList.add("go"); }
     state.step = target;
     updateHud();
     broadcast();
@@ -123,6 +126,7 @@
     const stepShare = state.steps.length > 1 ? state.step / (state.steps.length - 1) : 1;
     bar.style.width = `${((state.index + stepShare) / total) * 100}%`;
     document.getElementById("hud-act").textContent = def.act || "";
+    document.body.classList.toggle("nobrand", /\bnobrand\b/.test(def.cls || ""));
     document.getElementById("hud-count").textContent = `${state.index + 1} / ${total}`;
     history.replaceState(null, "", `#${state.index + 1}`);
     renderNotes();

@@ -14,9 +14,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parents[1]
 FIELDS = [
-    ("purpose", "Story purpose"), ("sees", "Visual"), ("animation", "Animation"), ("interaction", "Interaction"),
-    ("say", "Speaker narration"), ("concept", "Technical concept"), ("asset", "Required asset"),
-    ("understand", "Audience should understand"), ("transition", "Transition"),
+    ("purpose", "Story purpose"), ("sees", "Visual"), ("say", "Speaker narration"),
+    ("understand", "Audience should understand"), ("transition", "Transition"), ("asset", "Real asset"),
 ]
 
 
@@ -39,7 +38,7 @@ def scenes() -> list[tuple[str, str, str]]:
 
 def main() -> int:
     notes = story()
-    lines = ["# From Pixels to Information: storyboard", "",
+    lines = ["# Vigentra · From Pixels to Information: storyboard", "",
              "Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, not this file. "
              "Every number is in `js/data/project.js` with its source; every picture is real project footage or "
              "output (`tools/build_assets.py`, `tools/track_evidence.py`).", ""]

@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parents[1]
 EW = Path("/Users/uchit/Vigentra/vigentra/services/edge-worker")
 CLIP = Path("/Users/uchit/Vigentra/vigentra/data/videos/own/cam06_1080p.mp4")
 IMG = HERE / "assets/img"
-FIRST, LAST, BEST = 1236, 1330, 1299          # the evidence track is 1251-1323; a little either side
+FIRST, LAST, BEST = 1190, 1335, 1299          # the evidence track is 1251-1323; the replay starts earlier
 VEHICLE_CLASSES = [2, 3, 5, 7]                 # car, motorcycle, bus, truck (THR: vehicle classes)
 EVIDENCE_PLATE = (549.6, 802.0)                # centre of the evidence plate box at frame 1299 (px)
 
@@ -32,12 +32,13 @@ def main() -> int:
     vehicles = YOLO(str(EW / "models/yolo11s.pt"))
     plates = YOLO(str(EW / "models/plate_det_mix_n.pt"))
     cap = cv2.VideoCapture(str(CLIP))
-    i, rows, frames = 0, {}, {}
+    i, rows, frames, times = 0, {}, {}, {}
     while i <= LAST:
         ok, frame = cap.read()
         if not ok:
             break
         if i >= FIRST:
+            times[i] = round(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000, 3)  # the frame's own timestamp
             res = vehicles.track(frame, persist=True, tracker=str(EW / "config/bytetrack.yaml"), classes=VEHICLE_CLASSES,
                                  conf=0.15, imgsz=1920, device="mps", verbose=False)[0]
             boxes = []
@@ -81,13 +82,16 @@ def main() -> int:
     track = {
         "track_id": target, "frames": [seq[0]["frame"], seq[-1]["frame"]], "seen": len(seq),
         "with_plate": len(keep), "picks": picks, "full_frames": [picks[0], BEST, picks[-1]],
-        "sequence": [{"frame": s["frame"], "vehicle": norm(s["vehicle"]["box"]), "vehicle_conf": s["vehicle"]["conf"],
+        "sequence": [{"frame": s["frame"], "t": times[s["frame"]], "vehicle": norm(s["vehicle"]["box"]), "vehicle_conf": s["vehicle"]["conf"],
                       "class": s["vehicle"]["cls"],
                       "plate": norm(s["plate"]["box"]) if s["plate"] else None,
                       "plate_conf": s["plate"]["conf"] if s["plate"] else None,
                       "plate_px": s["plate"]["width_px"] if s["plate"] else None,
                       "file": s["plate"].get("file") if s["plate"] else None} for s in seq],
         "others_at_best": [{"id": b["id"], "class": b["cls"], "conf": b["conf"], "box": norm(b["box"])} for b in rows[BEST]],
+        # every vehicle the deployed models saw, frame by frame, for the replay over the playing video:
+        # [track id, class, confidence, x, y, w, h] with the box as fractions of the frame
+        "replay": [{"f": f, "t": times[f], "boxes": [[b["id"], b["cls"], b["conf"], *norm(b["box"])] for b in rows[f]]} for f in sorted(rows)],
         "models": "yolo11s.pt + ByteTrack (config/bytetrack.yaml), conf 0.15, imgsz 1920; plate_det_mix_n.pt at 640, conf 0.2",
     }
     marker = "\nK.TRACK = "

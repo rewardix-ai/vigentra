@@ -3,14 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>From Pixels to Information</title>
+<title>Vigentra · From Pixels to Information</title>
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/stage.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/scenes.css">
 </head>
 <body>
-<div id="viewport"><main id="stage" aria-live="polite"></main></div>
+<div id="viewport"><main id="stage" aria-live="polite">
+  <div id="brandbug" aria-hidden="true"><img src="brand/vigentra-mark.png" alt=""><img src="brand/vigentra-wordmark.png" alt=""></div>
+  <div id="wipe" aria-hidden="true"></div>
+</main></div>
 
 <div id="hud">
   <div id="progress"><div id="progress-fill"></div></div>
@@ -39,15 +42,14 @@
 <script src="js/components/plate.js"></script>
 <script src="js/components/overlay.js"></script>
 <script src="js/components/controls.js"></script>
-<script src="js/components/charts.js"></script>
-<script src="js/components/pipeline.js"></script>
+<script src="js/components/wall.js"></script>
+<script src="js/components/flow.js"></script>
 <!-- scenes, in story order -->
 <script src="js/scenes/helpers.js"></script>
-<script src="js/scenes/01-question.js"></script>
-<script src="js/scenes/02-pixels.js"></script>
-<script src="js/scenes/03-reading.js"></script>
+<script src="js/scenes/01-problem.js"></script>
+<script src="js/scenes/02-reading.js"></script>
+<script src="js/scenes/03-proof.js"></script>
 <script src="js/scenes/04-system.js"></script>
-<script src="js/scenes/05-truth.js"></script>
 <script>K.start();</script>
 </body>
 </html>

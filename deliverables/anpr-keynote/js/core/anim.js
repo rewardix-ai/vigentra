@@ -114,7 +114,9 @@
           node.style.transition = ctx.instant || ctx.fast ? "none" : `stroke-dashoffset ${dur}ms var(--ease)`;
           node.style.strokeDashoffset = 0;
         });
-        return ctx.wait(dur);
+        // Once drawn, drop the dash: measured before a zoom (or with a non-scaling stroke), its
+        // length no longer matches the line on screen and would leave the outline half drawn.
+        return ctx.wait(dur).then(() => nodes.forEach((node) => { node.style.strokeDasharray = ""; node.style.strokeDashoffset = ""; }));
       },
 
       /** Set a CSS transform with a timed transition (zooms, pans). */

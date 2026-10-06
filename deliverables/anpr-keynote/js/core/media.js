@@ -40,7 +40,8 @@
           else v.pause();
         }
       });
-      if (loop && end == null) v.loop = true;
+      if (loop && end == null && !start) v.loop = true;
+      else if (loop && end == null) v.addEventListener("ended", () => { v.currentTime = start; v.play().catch(() => {}); });
       v.addEventListener("error", () => v.replaceWith(placeholder(slot, cls)));
       return v;
     },

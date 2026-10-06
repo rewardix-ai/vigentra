@@ -20,18 +20,6 @@
 }
 .pc.in { opacity: 1; transform: none; }
 .pc.gap { width: calc(24px * var(--s)); }
-.pc.doubt { color: var(--warn); }
-.pc.wrong { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 6px; }
-.pc.fixed { color: #0f8a54; }
-.pc.ok { color: #0f8a54; }
-
-/* readings of one plate across frames */
-.readings { display: flex; flex-direction: column; gap: 14px; }
-.reading { display: grid; grid-template-columns: 220px auto 1fr; align-items: center; gap: 28px; }
-.reading-src { font: 500 22px var(--mono); color: var(--mute); }
-.reading-chars { font: 700 60px/1 var(--mono); letter-spacing: 0.12em; color: var(--ink); }
-.reading-chars .x { color: var(--bad); }
-.reading-note { font: 400 24px var(--text); color: var(--ink-2); }
 
 /* ---- boxes over footage -------------------------------------------------------------- */
 .boxes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
@@ -60,67 +48,11 @@
 .ba-handle span { position: absolute; top: 50%; left: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
 .ba-handle span::before { content: "‹ ›"; position: absolute; inset: 0; display: grid; place-items: center; font: 700 28px var(--display); color: #111; }
 
-/* ---- scrubber ---------------------------------------------------------------------------- */
-.scrub { display: flex; flex-direction: column; gap: 22px; }
-.scrub-view { min-height: 360px; display: grid; place-items: center; }
-.scrub-range, .diff-range { width: 100%; accent-color: var(--track); height: 32px; cursor: pointer; }
-.scrub-ticks { display: flex; gap: 10px; justify-content: space-between; }
-.scrub-tick { flex: 1; padding: 12px 0; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-3); color: var(--ink-2); font: 600 20px var(--mono); cursor: pointer; }
-.scrub-tick.on { border-color: var(--track); color: var(--ink); box-shadow: 0 0 0 1px var(--track) inset; }
-
 /* ---- difficulty ------------------------------------------------------------------------------ */
 .diff { display: flex; flex-direction: column; gap: 18px; width: 900px; }
 .diff-canvas { width: 900px; height: 300px; border-radius: 14px; background: #000; image-rendering: pixelated; box-shadow: 0 30px 90px rgba(0,0,0,.55); }
 .diff-legend { display: flex; justify-content: space-between; font: 600 22px var(--text); color: var(--mute); }
 .diff-readout { font: 600 30px var(--mono); color: var(--plate); text-align: center; }
-
-/* ---- tabs ------------------------------------------------------------------------------------- */
-.tabs { display: flex; flex-direction: column; gap: 26px; }
-.tabs-bar { display: flex; gap: 12px; flex-wrap: wrap; }
-.tabs-bar button { padding: 14px 24px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-3); color: var(--ink-2); font: 600 22px var(--text); cursor: pointer; }
-.tabs-bar button.on { background: var(--ink); color: #05080c; border-color: var(--ink); }
-
-/* ---- bars, stats --------------------------------------------------------------------------- */
-.bars { display: flex; flex-direction: column; gap: 22px; }
-.bar { display: grid; grid-template-columns: 330px 1fr 150px; align-items: center; gap: 28px; }
-.bar-label span { display: block; font: 600 30px var(--display); }
-.bar-label small { display: block; font: 400 20px var(--mono); color: var(--mute); margin-top: 4px; }
-.bar-track { height: 40px; border-radius: 10px; background: rgba(255,255,255,.05); overflow: hidden; }
-.bar-fill { height: 100%; width: 0; border-radius: 10px; transition: width 1.2s var(--ease); }
-.bar.in .bar-fill { width: var(--w); }
-.bar-value { font: 700 40px var(--display); text-align: right; }
-.stat { display: flex; flex-direction: column; gap: 10px; }
-.stat-value { font: 700 150px/0.95 var(--display); letter-spacing: -0.04em; }
-.stat-label { font: 500 28px/1.35 var(--text); color: var(--ink-2); max-width: 560px; }
-
-/* ---- the engineering loop --------------------------------------------------------------- */
-.loop { position: relative; width: calc(var(--r) * 2 + 320px); height: calc(var(--r) * 2 + 200px); }
-.loop-ring { position: absolute; left: 50%; top: 50%; width: calc(var(--r) * 2); height: calc(var(--r) * 2); margin: calc(var(--r) * -1) 0 0 calc(var(--r) * -1); border-radius: 50%; border: 2px dashed rgba(255,255,255,.14); animation: spin 40s linear infinite; }
-.loop-node { position: absolute; transform: translate(-50%, -50%); padding: 16px 26px; border-radius: 999px; background: var(--bg-3); border: 1px solid var(--line); font: 600 28px var(--display); white-space: nowrap; transition: background .4s, color .4s, box-shadow .4s, opacity var(--mid) var(--ease); }
-.loop-node.in { transform: translate(-50%, -50%); }
-.loop-node.hot { background: var(--track); color: #04121d; box-shadow: 0 0 60px rgba(57,211,191,.55); }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ---- pipeline ------------------------------------------------------------------------------ */
-.pipe { display: flex; align-items: center; gap: 0; }
-.pipe-column { flex-direction: column; }
-.pipe-node {
-  --c: var(--vehicle);
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 26px; min-width: 210px;
-  border-radius: 16px; border: 1px solid var(--line); background: var(--bg-3); color: var(--ink); text-align: center; cursor: default;
-}
-button.pipe-node { cursor: pointer; font: inherit; }
-.pipe-node.on, button.pipe-node:hover { border-color: var(--c); box-shadow: 0 0 0 1px var(--c) inset, 0 0 40px color-mix(in srgb, var(--c) 35%, transparent); }
-.pipe-name { font: 650 25px/1.2 var(--display); }
-.pipe-hint { font: 400 17px var(--mono); color: var(--mute); }
-.pipe-link { position: relative; width: 44px; height: 3px; background: rgba(255,255,255,.12); overflow: hidden; flex: none; }
-.pipe-column .pipe-link { width: 3px; height: 30px; }
-.pipe-pulse { position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--track), transparent); transform: translateX(-100%); }
-.pipe-column .pipe-pulse { background: linear-gradient(180deg, transparent, var(--track), transparent); transform: translateY(-100%); }
-.pipe.flowing .pipe-pulse { animation: pulse-x 1.4s linear infinite; }
-.pipe-column.flowing .pipe-pulse { animation: pulse-y 1.4s linear infinite; }
-@keyframes pulse-x { to { transform: translateX(100%); } }
-@keyframes pulse-y { to { transform: translateY(100%); } }
 
 /* ---- CCTV wall ----------------------------------------------------------------------------- */
 .wall { position: relative; display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 14px; }
@@ -133,3 +65,42 @@ button.pipe-node { cursor: pointer; font: inherit; }
 .wall-big { position: absolute; inset: 0; z-index: 5; border-radius: 16px; overflow: hidden; background: #000; cursor: zoom-out; box-shadow: 0 40px 140px rgba(0,0,0,.8); }
 .wall-detail { position: absolute; right: 24px; bottom: 24px; max-width: 560px; padding: 18px 22px; border-radius: 12px; background: rgba(4,6,8,.86); font: 400 22px/1.45 var(--text); color: var(--ink-2); }
 @keyframes blink { 50% { opacity: .35; } }
+
+/* ---- Live flowchart (K.ui.flow) ------------------------------------------------------------ */
+.flow-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.flow-edge { fill: none; stroke: rgba(255, 255, 255, 0.24); stroke-width: 3; opacity: 0; transition: opacity 0.5s; }
+.flow-edge.in { opacity: 1; }
+.flow-edge.bad { stroke: rgba(255, 95, 95, 0.55); }
+.flow-edge.dash { stroke: rgba(90, 176, 255, 0.6); stroke-dasharray: 10 10; }
+.flow-node {
+  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 14px;
+  border-radius: 18px; background: rgba(17, 23, 34, 0.94); border: 2px solid rgba(90, 176, 255, 0.5); color: var(--ink);
+  cursor: pointer; opacity: 0; transform: scale(0.85); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease), border-color 0.3s;
+}
+.flow-node.in { opacity: 1; transform: none; }
+.flow-node.ok { border-color: var(--ok); }
+.flow-node.bad { border-color: rgba(255, 95, 95, 0.75); border-style: dashed; }
+.flow-node.io { border-color: var(--track); }
+.flow-node:hover { border-color: var(--ink); }
+.flow-node.hit { animation: node-hit 0.7s var(--ease); }
+.flow-node.bad.hit { animation-name: node-hit-bad; }
+@keyframes node-hit { 30% { box-shadow: 0 0 46px 6px rgba(57, 211, 191, 0.55); transform: scale(1.05); } }
+@keyframes node-hit-bad { 30% { box-shadow: 0 0 46px 6px rgba(255, 95, 95, 0.55); transform: scale(1.05); } }
+.fn-label { font: 650 28px/1.1 var(--display); text-align: center; }
+.fn-sub { margin-top: 6px; font: 500 18px/1.2 var(--text); color: var(--mute); text-align: center; }
+.packet { position: absolute; left: 0; top: 0; transition: opacity 0.6s; }
+.packet::before { content: ""; position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: var(--track); box-shadow: 0 0 18px 4px rgba(57, 211, 191, 0.7); }
+.packet.bad::before { background: var(--bad); box-shadow: 0 0 18px 4px rgba(255, 95, 95, 0.7); }
+.packet.warn::before { background: var(--warn); box-shadow: 0 0 18px 4px rgba(255, 171, 69, 0.7); }
+.packet.vid::before { background: var(--vehicle); box-shadow: 0 0 18px 4px rgba(90, 176, 255, 0.7); }
+.packet.done { opacity: 0; }
+.pk-body { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 16px)); white-space: nowrap; }
+.pk-body img { display: block; height: 38px; border-radius: 4px; image-rendering: pixelated; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
+.pk-text { display: inline-block; padding: 4px 10px; border-radius: 6px; font: 700 20px var(--mono); background: var(--hsrp-bg); color: var(--hsrp-ink); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
+.pk-text.ok { background: var(--ok); color: #04150d; }
+.pk-text.bad { background: var(--bad); color: #fff; }
+.pk-text.vid { background: var(--vehicle); color: #04121d; }
+.flow-tip { position: absolute; right: 80px; top: 104px; max-width: 600px; display: flex; flex-direction: column; gap: 6px; padding: 18px 22px; border-radius: 14px; background: rgba(10, 14, 20, 0.94); border: 1px solid var(--track); font: 400 24px/1.4 var(--text); color: var(--ink-2); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+.flow-tip.on { opacity: 1; }
+.flow-tip b { font: 650 26px var(--display); color: var(--ink); }
+.flow-hint { position: absolute; right: 84px; bottom: 56px; font: 500 20px var(--text); color: var(--mute); }

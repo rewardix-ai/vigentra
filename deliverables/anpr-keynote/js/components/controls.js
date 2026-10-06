@@ -1,9 +1,7 @@
 /* Interactive controls the presenter (or a volunteer) drives on stage.
  *
  * K.ui.beforeAfter(left, right, labels)   drag to compare two frames
- * K.ui.scrubber(frames, render)           step through frames of one vehicle
  * K.ui.difficulty(image, opts)            good footage -> poor footage, on a real plate
- * K.ui.tabs(cases, render)                a set of real examples, one at a time
  * All are marked data-interactive, so clicking them never advances the presentation.
  */
 (function () {
@@ -35,28 +33,6 @@
     return wrap;
   };
 
-  K.ui.scrubber = function scrubber(count, render, { labels } = {}) {
-    const wrap = K.h("div.scrub", { "data-interactive": true });
-    const view = K.h("div.scrub-view");
-    const input = K.h("input.scrub-range", { type: "range", min: 0, max: count - 1, value: 0, step: 1, "aria-label": "Frame" });
-    const ticks = K.h("div.scrub-ticks");
-    for (let i = 0; i < count; i += 1) {
-      ticks.appendChild(K.h("button.scrub-tick", { onclick: () => { input.value = i; update(); } }, labels ? labels[i] : String(i + 1)));
-    }
-    const update = () => {
-      const i = Number(input.value);
-      view.innerHTML = "";
-      view.appendChild(render(i));
-      ticks.querySelectorAll(".scrub-tick").forEach((t, j) => t.classList.toggle("on", j === i));
-    };
-    input.addEventListener("input", update);
-    wrap.append(view, input, ticks);
-    update();
-    wrap.go = (i) => { input.value = i; update(); };
-    return wrap;
-  };
-
-  /** One real plate image, degraded as the slider moves from good footage to poor footage. */
   K.ui.difficulty = function difficulty(imageSrc, { width = 900, height = 300, labels = ["Good footage", "Poor footage"] } = {}) {
     const wrap = K.h("div.diff", { "data-interactive": true });
     const canvas = K.h("canvas.diff-canvas", { width, height });
@@ -78,22 +54,6 @@
     img.src = imageSrc;
     input.addEventListener("input", draw);
     wrap.set = (v) => { input.value = v; draw(); };
-    return wrap;
-  };
-
-  K.ui.tabs = function tabs(cases, render) {
-    const wrap = K.h("div.tabs", { "data-interactive": true });
-    const bar = K.h("div.tabs-bar");
-    const view = K.h("div.tabs-view");
-    const select = (i) => {
-      bar.querySelectorAll("button").forEach((b, j) => b.classList.toggle("on", i === j));
-      view.innerHTML = "";
-      view.appendChild(render(cases[i], i));
-    };
-    cases.forEach((c, i) => bar.appendChild(K.h("button", { onclick: () => select(i) }, c.label)));
-    wrap.append(bar, view);
-    select(0);
-    wrap.select = select;
     return wrap;
   };
 })();

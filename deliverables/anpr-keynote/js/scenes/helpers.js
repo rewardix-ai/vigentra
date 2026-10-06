@@ -15,55 +15,35 @@
     /** Kicker + headline, top left. */
     title(kicker, text, { size = "h2" } = {}) {
       // .auto: fades in by itself when the scene opens (css/scenes.css); no step needed
-      return h("div.title-tl.auto", null, [h("div.kicker", null, kicker), h(`div.${size}`, { style: { marginTop: "18px" } }, text)]);
-    },
-
-    /** A centred statement made of lines; reveal them with ctx.in(). */
-    statement(lines, { size = "h1", gap = 28, top = null } = {}) {
-      const wrap = h("div.center");
-      const col = h("div.stack", { style: { gap: `${gap}px`, marginTop: top ? `${top}px` : null } });
-      lines.forEach((line, i) => col.appendChild(h(`div.${size}.r.soft`, { "data-line": i, html: line })));
-      wrap.appendChild(col);
-      return wrap;
+      return h("div.title-tl.auto", null, [h("div.kicker", null, kicker), h(`div.${size}`, { style: { marginTop: "18px" }, html: text })]);
     },
 
     /** The technical layer: only visible with T. */
     tech(lines, src) {
-      return h("div.tech.tech-panel", null, [
-        ...lines.map((l) => h("div", { html: l })),
-        src ? h("span.src", null, src) : null,
-      ]);
+      return h("div.tech.tech-panel", null, [...lines.map((l) => h("div", { html: l })), src ? h("span.src", null, src) : null]);
     },
 
     /** A framed piece of media at a position. */
     framed(node, x, y, w, hgt, extra = "") {
-      const f = h("div.frame.abs" + (extra ? "." + extra : ""), { style: { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${hgt}px` } }, node);
-      return f;
+      return h("div.frame.abs" + (extra ? "." + extra.split(" ").join(".") : ""), { style: { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${hgt}px` } }, node);
     },
 
-    /** Upscale an image onto a canvas with hard pixels (what the camera really captured). */
-    pixels(src, width, { factor = null, grid = false, targetW = null, scale: perPx = null } = {}) {
+    /** An image drawn with hard pixels (what the camera really captured), at `scale` canvas
+     * pixels per image pixel or at `targetW` wide. */
+    pixels(src, { targetW = null, scale = null, grid = false } = {}) {
       const canvas = h("canvas.pix");
       const img = new Image();
       img.onload = () => {
-        const srcW = factor ? Math.max(1, Math.round(width)) : img.naturalWidth;
-        const srcH = Math.max(1, Math.round((img.naturalHeight / img.naturalWidth) * srcW));
-        const tmp = document.createElement("canvas");
-        tmp.width = srcW;
-        tmp.height = srcH;
-        tmp.getContext("2d").drawImage(img, 0, 0, srcW, srcH);
-        const outW = targetW || srcW * (perPx || 8);
-        const scale = outW / srcW;
-        canvas.width = Math.round(srcW * scale);
-        canvas.height = Math.round(srcH * scale);
+        const s = targetW ? targetW / img.naturalWidth : scale || 8;
+        canvas.width = Math.round(img.naturalWidth * s);
+        canvas.height = Math.round(img.naturalHeight * s);
         const g = canvas.getContext("2d");
         g.imageSmoothingEnabled = false;
-        g.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-        if (grid && scale >= 6) {
+        g.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (grid && s >= 6) {
           g.strokeStyle = "rgba(0,0,0,0.35)";
-          g.lineWidth = 1;
-          for (let x = 0; x <= srcW; x += 1) { g.beginPath(); g.moveTo(x * scale + 0.5, 0); g.lineTo(x * scale + 0.5, canvas.height); g.stroke(); }
-          for (let y = 0; y <= srcH; y += 1) { g.beginPath(); g.moveTo(0, y * scale + 0.5); g.lineTo(canvas.width, y * scale + 0.5); g.stroke(); }
+          for (let x = 0; x <= img.naturalWidth; x += 1) { g.beginPath(); g.moveTo(x * s + 0.5, 0); g.lineTo(x * s + 0.5, canvas.height); g.stroke(); }
+          for (let y = 0; y <= img.naturalHeight; y += 1) { g.beginPath(); g.moveTo(0, y * s + 0.5); g.lineTo(canvas.width, y * s + 0.5); g.stroke(); }
         }
       };
       img.onerror = () => canvas.replaceWith(h("div.missing", null, "[REAL PLATE CROP REQUIRED]"));
@@ -75,13 +55,39 @@
       return Number(n).toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d });
     },
 
-    /** The evidence vehicle's record at a frame (from tools/track_evidence.py). */
+    /** The evidence vehicle's record at its best frame (from tools/track_evidence.py). */
     at1299() {
       return (K.TRACK && K.TRACK.sequence.find((s) => s.frame === 1299)) || null;
     },
 
     box(norm) {
       return norm ? { x: norm[0], y: norm[1], w: norm[2], h: norm[3] } : null;
+    },
+
+    /** CAM06 playing with the deployed models' real boxes over it (K.ui.replay). */
+    replay(ctx, { rate = 0.5, ...show } = {}) {
+      const R = (K.TRACK && K.TRACK.replay) || [];
+      const video = K.media.video("cam06_1080p", { start: R.length ? R[0].t : 49.6, end: R.length ? R[R.length - 1].t : 55.4, rate, cls: "media-cover" });
+      const overlay = K.ui.replay(ctx, video, show);
+      return { el: h("div.fill", null, [video, overlay]), overlay };
+    },
+
+    /** "How Vigentra reads a plate": where this scene sits in the pipeline. */
+    ribbon(active) {
+      const names = ["Vehicle", "Track", "Plate", "Best frames", "Quality", "Read", "Vote"];
+      const el = h("div.ribbon", null, names.map((n) => h("span.rb", null, [h("i"), n])));
+      el.set = (i) => el.querySelectorAll(".rb").forEach((b, j) => { b.classList.toggle("done", j < i); b.classList.toggle("now", j === i); });
+      el.set(active);
+      return el;
+    },
+
+    /** The Vigentra lockup: mark, wordmark, tagline (brand/, cut from the logo). */
+    lockup({ size = 1 } = {}) {
+      return h("div.lockup", { style: { "--s": size } }, [
+        h("img.lk-mark.r.soft", { src: "brand/vigentra-mark.png", alt: "" }),
+        h("img.lk-word", { src: "brand/vigentra-wordmark.png", alt: "Vigentra" }),
+        h("img.lk-tag.r", { src: "brand/vigentra-tagline.png", alt: "Vigilance · Intelligence · Safer roads" }),
+      ]);
     },
   };
 })();

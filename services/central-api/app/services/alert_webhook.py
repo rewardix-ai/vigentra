@@ -73,3 +73,17 @@ def notify(settings, alerts) -> None:
     task = asyncio.create_task(deliver(url, getattr(settings, "alert_webhook_secret", "") or "", build_body(alerts)))
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
+
+
+def notify_health(settings, raised, recovered) -> None:
+    """Camera and department-system health alerts, down and recovered, on the same signed channel."""
+    url = getattr(settings, "alert_webhook_url", "") or ""
+    if not url or not (raised or recovered):
+        return
+    from .health_alerts import as_payload   # local: keeps this module free of the ORM
+
+    rows = [as_payload(r, "down") for r in raised] + [as_payload(r, "recovered") for r in recovered]
+    body = json.dumps({"event": "camera_health_alerts", "alerts": rows}, sort_keys=True).encode()
+    task = asyncio.create_task(deliver(url, getattr(settings, "alert_webhook_secret", "") or "", body))
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)

@@ -99,6 +99,7 @@ can offer the request instead of a dead end:
 - [Installation onboarding](#installation-onboarding) — `/api/v1/installation-requests/*`
 - [Events](#events) — `/api/v1/events`, `/api/v1/events/correlation`
 - [Vehicles of interest](#vehicles-of-interest) — `/api/v1/watchlist`, `/api/v1/alerts`, `/api/v1/sightings`, `/api/v1/plates/*`
+- [Camera-health alerts](#camera-health-alerts) — `/api/v1/health-alerts`
 - [Reports](#reports) — `/api/v1/reports/gap-analysis`, `/api/v1/reports/anpr`
 - [Audit](#audit) — `/api/v1/audit`
 - [Video (refused)](#video-refused) — the four routes that always return 403
@@ -647,6 +648,39 @@ The artefact the challenge asks to be submitted alongside the government-feed
 demonstration: detected plates with timestamps, plus the camera, its location
 and whether the read hit the watchlist. `as_csv=true` returns `text/csv` with a
 `Content-Disposition` attachment header.
+
+## Camera-health alerts
+
+Raised by the health monitor, not by a request: a camera that reads offline or
+unavailable for `health_alert_after_checks` sweeps in a row (default 2, about
+40 s) is a `CAMERA_OFFLINE` alert; an unreachable department system is one
+`SOURCE_UNREACHABLE` alert, not one per camera. Closed by the monitor when the
+camera or system answers again (`recovered_at`, `open: false`). Withdrawn
+cameras never alert. Each raise and recovery is audited
+(`health_alert_raised`, `health_alert_recovered`) and sent on the signed alert
+webhook as `{"event": "camera_health_alerts", "alerts": [...]}` with
+`state: "down" | "recovered"`.
+
+### `GET /api/v1/health-alerts`
+
+Requires: `health:read`. Query: `open_only` (default false), `since_hours`
+(default 24, max 720), `limit` (default 200). Still-down alerts first. A camera
+alert follows the camera's visibility; a department-system alert the caller's
+departments. Not an audited read: it discloses no plate and no footage.
+
+### `GET /api/v1/health-alerts/open-count`
+
+Requires: `health:read`. `{"open": n}`: down and not yet taken up, in scope.
+The sidebar badge adds it to the watchlist count.
+
+### `POST /api/v1/health-alerts/{alert_id}/acknowledge`
+
+Requires: `health:acknowledge` (the NOC health desk, department admins,
+traffic, municipal and grid operators, the system admin). Body:
+`{"note": "..."}` (optional). Records who took it up; the alert stays open
+until the camera answers. Out of scope: `403 OUT_OF_SCOPE`, audited as denied.
+
+---
 
 ## Reports
 

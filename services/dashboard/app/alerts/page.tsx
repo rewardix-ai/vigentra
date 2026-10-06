@@ -17,7 +17,8 @@ import {
 import { api } from "@/lib/api";
 import { CATEGORY_TONE } from "@/lib/constants";
 import { ist, relative } from "@/lib/format";
-import type { Alert } from "@/lib/types";
+import { HealthAlerts } from "@/components/HealthAlerts";
+import type { Alert, Operator } from "@/lib/types";
 
 /**
  * Watchlist hits, newest first.
@@ -58,10 +59,20 @@ export default function AlertsPage() {
   const [exactOnly, setExactOnly] = useState(false);
   const [sinceHours, setSinceHours] = useState("24");
 
+  const [operator, setOperator] = useState<Operator | null>(null);
+  const permissions = operator?.permissions ?? [];
+  const canReadAlerts = permissions.includes("alert:read");
+
   const [dismissing, setDismissing] = useState<string | null>(null);
   const [dismissReason, setDismissReason] = useState("");
 
+  useEffect(() => {
+    api.me().then(setOperator).catch(() => undefined);
+  }, []);
+
   const load = useCallback(async () => {
+    // The NOC desk reads camera health but not the watchlist: it would only get a 403 here.
+    if (!canReadAlerts) return;
     setBusy(true);
     setError(null);
     try {
@@ -78,7 +89,7 @@ export default function AlertsPage() {
     } finally {
       setBusy(false);
     }
-  }, [unacknowledgedOnly, exactOnly, sinceHours]);
+  }, [unacknowledgedOnly, exactOnly, sinceHours, canReadAlerts]);
 
   useEffect(() => {
     void load();
@@ -112,12 +123,18 @@ export default function AlertsPage() {
     <>
       <PageHeader
         title="Alerts"
-        subtitle="Vehicles on the watchlist, seen by a camera on this network."
+        subtitle="Vehicles on the watchlist seen by a camera, and cameras that stopped answering."
       />
 
       <div className="space-y-3">
         {error && <Notice tone="bad">{error}</Notice>}
 
+        {permissions.includes("health:read") && (
+          <HealthAlerts canAcknowledge={permissions.includes("health:acknowledge")} />
+        )}
+
+        {canReadAlerts && (
+        <>
         <Notice tone="warn" title="An alert is not an identification">
           Every row here is a probabilistic reading of a photograph, matched against a list.
           Before acting on one, look at the frame. A near match especially — that is a plate the
@@ -349,6 +366,8 @@ export default function AlertsPage() {
               </table>
             </div>
           </Card>
+        )}
+        </>
         )}
       </div>
     </>

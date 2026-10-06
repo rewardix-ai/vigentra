@@ -751,3 +751,24 @@ export interface Incident {
   review_note: string | null;
   is_demo_data: boolean;
 }
+
+/** A camera, or a whole department system, that stopped answering the health monitor. */
+export interface HealthAlert {
+  alert_id: string;
+  kind: "CAMERA_OFFLINE" | "SOURCE_UNREACHABLE";
+  camera_id: string | null;
+  camera_name: string | null;
+  source_system: string;
+  department: string | null;
+  city: string | null;
+  district: string | null;
+  detail: string | null;
+  raised_at: string;
+  recovered_at: string | null;
+  acknowledged: boolean;
+  acknowledged_by: string | null;
+  acknowledged_at: string | null;
+  note: string | null;
+  /** True until the camera or system answers again. */
+  open: boolean;
+}

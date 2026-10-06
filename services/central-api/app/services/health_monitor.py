@@ -27,7 +27,9 @@ from ..config import Settings
 from ..models import Camera as CameraRow
 from ..models import CameraHealth, Source as SourceRow
 from ..schemas import CameraStatus, SyncStatus
+from . import alert_webhook, audit_service, health_alerts
 from . import normalization as norm
+from .audit_service import AuditAction, ResourceType
 
 logger = logging.getLogger("vigentra.health")
 
@@ -103,8 +105,13 @@ async def poll_source(
     db: AsyncSession,
     adapter: SurveillanceAdapter,
     settings: Settings,
+    alerts_out: list | None = None,
 ) -> dict[str, Any]:
-    """Probe one department system and every camera the registry holds for it."""
+    """Probe one department system and every camera the registry holds for it.
+
+    `alerts_out`, when given, collects the (raised, recovered) health alerts of this sweep so
+    the caller can audit and announce them after its commit.
+    """
     probe = await adapter.check_source_health()
     cameras = (
         await db.execute(select(CameraRow).where(CameraRow.source_system == adapter.source_system))
@@ -139,6 +146,7 @@ async def poll_source(
             source_row.status = "offline"
             source_row.last_error = probe.get("error")
             source_row.latency_ms = probe.get("latency_ms")
+        await _alerts(db, adapter, source_row, False, cameras, settings, alerts_out)
         return {"source": adapter.source_system, "reachable": False, "cameras": len(cameras)}
 
     statuses = [(await check_camera(db, adapter, camera)).status for camera in cameras]
@@ -148,6 +156,7 @@ async def poll_source(
         source_row.last_error = None
         source_row.latency_ms = probe.get("latency_ms")
         source_row.last_success_at = datetime.now(timezone.utc)
+    await _alerts(db, adapter, source_row, True, cameras, settings, alerts_out)
 
     return {
         "source": adapter.source_system,
@@ -158,6 +167,17 @@ async def poll_source(
     }
 
 
+async def _alerts(db, adapter, source_row, reachable, cameras, settings, alerts_out) -> None:
+    if alerts_out is None:
+        return
+    alerts_out.append(await health_alerts.evaluate(
+        db, source_system=adapter.source_system,
+        source_name=(source_row.display_name if source_row is not None else adapter.source_system),
+        department=(source_row.department if source_row is not None else None),
+        reachable=reachable, cameras=list(cameras),
+        after_checks=getattr(settings, "health_alert_after_checks", 2)))
+
+
 async def poll_once(
     session_factory: async_sessionmaker[AsyncSession],
     adapters: dict[str, SurveillanceAdapter],
@@ -166,14 +186,26 @@ async def poll_once(
     """One monitoring sweep across every department system. Never raises."""
     async with session_factory() as db:
         results = []
+        swept: list = []
         for adapter in adapters.values():
             try:
-                results.append(await poll_source(db, adapter, settings))
+                results.append(await poll_source(db, adapter, settings, swept))
             except Exception as exc:  # one bad department must not stop the sweep
                 logger.exception("health sweep failed for %s", adapter.source_system)
                 results.append({"source": adapter.source_system, "error": str(exc)})
         await _prune(db, settings)
         await db.commit()
+        raised = [row for up, _ in swept for row in up]
+        recovered = [row for _, down in swept for row in down]
+        for row, action, state in ([(r, AuditAction.HEALTH_ALERT_RAISED, "down") for r in raised]
+                                   + [(r, AuditAction.HEALTH_ALERT_RECOVERED, "recovered") for r in recovered]):
+            logger.warning("HEALTH ALERT %s %s: %s", state, row.camera_id or row.source_system, row.detail)
+            await audit_service.record(
+                db, username="system:health-monitor", role="system", action=action,
+                resource_type=ResourceType.HEALTH_ALERT, resource_id=row.alert_id,
+                department=row.department, source_system=row.source_system,
+                details=health_alerts.as_payload(row, state))
+        alert_webhook.notify_health(settings, raised, recovered)   # after the commit, off the sweep
         return results
 
 

@@ -867,3 +867,33 @@ class Incident(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )
+
+
+class HealthAlert(Base):
+    """A camera, or a whole department system, that stopped answering the health monitor.
+
+    Raised after `health_alert_after_checks` failed sweeps in a row and closed by the monitor
+    itself when the camera or system answers again (`recovered_at`). A person acknowledging
+    it only records that someone is on it; it stays open until the camera is back. One alert
+    per department system while the system is unreachable, not one per camera behind it.
+    """
+
+    __tablename__ = "health_alerts"
+    __table_args__ = (Index("ix_health_alerts_open", "recovered_at", "acknowledged"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    alert_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    #: CAMERA_OFFLINE or SOURCE_UNREACHABLE.
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    camera_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    source_system: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    #: The owning department, for scoping who sees the alert.
+    department: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raised_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    recovered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    acknowledged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    acknowledged_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

@@ -127,6 +127,8 @@ class Permission:
     ALERT_ACKNOWLEDGE = "alert:acknowledge"
     #: Cross-camera movement history for one registration number.
     TRACK_READ = "track:read"
+    #: Close a camera-health alert: a camera, or a whole department system, that stopped answering.
+    HEALTH_ACKNOWLEDGE = "health:acknowledge"
 
 
 #: Metadata-only baseline shared by most read roles.
@@ -293,6 +295,14 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permission.VIDEO_GRANT_ACCESS,
     },
 }
+
+
+#: Who closes a camera-health alert: the people who look after cameras - the NOC health desk and
+#: the operators and administrators of the units that own them. Oversight and read-only roles see
+#: the alerts (they hold health:read) but do not close them.
+for _role in (Role.HEALTH_MONITOR, Role.DEPARTMENT_ADMIN, Role.TRAFFIC_OPERATOR,
+              Role.MUNICIPAL_OPERATOR, Role.GRID_OPERATOR, Role.SYSTEM_ADMIN):
+    ROLE_PERMISSIONS[_role].add(Permission.HEALTH_ACKNOWLEDGE)
 
 
 class Visibility:
@@ -757,6 +767,9 @@ class Settings(BaseSettings):
     health_poll_interval_seconds: int = 20
     health_monitor_enabled: bool = True
     health_retention_hours: int = 6
+    #: Consecutive sweeps a camera or department system must fail before a health alert is
+    #: raised: 2 at the 20 s interval is about 40 s, long enough to ignore a blip.
+    health_alert_after_checks: int = 2
     auto_sync_on_startup: bool = True
     cors_origins: str = "*"
 

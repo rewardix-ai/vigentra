@@ -1475,6 +1475,45 @@ class AlertAcknowledge(BaseModel):
     dismissed_reason: str | None = Field(default=None, max_length=2000)
 
 
+class HealthAlertOut(BaseModel):
+    """A camera, or a whole department system, that stopped answering.
+
+    `open` is true until the monitor sees it answer again; acknowledging only records that a
+    person is on it.
+    """
+
+    alert_id: str
+    kind: str
+    camera_id: str | None = None
+    camera_name: str | None = None
+    source_system: str
+    department: str | None = None
+    city: str | None = None
+    district: str | None = None
+    detail: str | None = None
+    raised_at: datetime
+    recovered_at: datetime | None = None
+    acknowledged: bool = False
+    acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
+    note: str | None = None
+
+    @computed_field
+    @property
+    def open(self) -> bool:
+        return self.recovered_at is None
+
+    @field_serializer("raised_at", "recovered_at", "acknowledged_at")
+    def _ser_times(self, value: datetime | None) -> str | None:
+        return iso_z(value)
+
+
+class HealthAlertAcknowledge(BaseModel):
+    """A person is on it. The alert stays open until the camera answers again."""
+
+    note: str | None = Field(default=None, max_length=2000)
+
+
 class TrackPointOut(BaseModel):
     """One camera on a reconstructed route."""
 

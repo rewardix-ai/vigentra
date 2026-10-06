@@ -8,6 +8,7 @@
  * (streamUrl, snapshotUrl) are paths on that same proxy.
  */
 import type { Incident,
+  HealthAlert,
   CameraTrafficSummary,
   AccessPolicy,
   Alert,
@@ -258,6 +259,15 @@ export const api = {
   acknowledgeAlert: (alertId: string, dismissedReason?: string) =>
     post<Alert>(`/api/v1/alerts/${encodeURIComponent(alertId)}/acknowledge`, {
       dismissed_reason: dismissedReason || null,
+    }),
+
+  /** Cameras and department systems that stopped answering; closed by the monitor on recovery. */
+  healthAlerts: (filters: { open_only?: string; since_hours?: string } = {}) =>
+    request<HealthAlert[]>(`/api/v1/health-alerts${query(filters)}`),
+  openHealthAlertCount: () => request<{ open: number }>("/api/v1/health-alerts/open-count"),
+  acknowledgeHealthAlert: (alertId: string, note?: string) =>
+    post<HealthAlert>(`/api/v1/health-alerts/${encodeURIComponent(alertId)}/acknowledge`, {
+      note: note || null,
     }),
 
   /** Rank plates the network actually saw, tolerating OCR error. */

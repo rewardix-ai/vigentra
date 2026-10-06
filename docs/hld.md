@@ -378,6 +378,22 @@ plate settles at the edge ──► uploaded with that frame (not with the batch
    ──► operator acknowledges (acted on) or dismisses with a reason ──► both audited
 ```
 
+**Camera-health alerts.** A camera that stops is told to someone as well. The
+health monitor re-checks every camera and department system every 20 s; a camera
+that reads offline for two checks in a row (about 40 s, so a blip is not an
+alarm) raises a `CAMERA_OFFLINE` alert, and an unreachable department system
+raises one `SOURCE_UNREACHABLE` alert rather than one per camera behind it. The
+monitor closes each alert itself when the camera or system answers again;
+suspended and decommissioned cameras never alert. They show on the Alerts page
+(with the NOC desk and the owning units able to take one up), count in the same
+badge, go out on the same signed webhook (`event: camera_health_alerts`, down
+and recovered), and raise, recovery and acknowledgement are audited.
+
+```
+2 failed checks ──► alert + audit row ──► Alerts page within 5 s, signed webhook
+   ──► NOC desk or owning unit takes it up (audited) ──► camera answers ──► closed by the monitor
+```
+
 **Latency is a property of how the cameras are read, not of the matcher.** The
 sampled worker visits each camera for about 20 s and returns minutes later:
 right for counting, and it will not see one designated vehicle cross a junction.

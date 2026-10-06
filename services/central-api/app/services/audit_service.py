@@ -81,6 +81,12 @@ class AuditAction(str, Enum):
     VEHICLE_MOVEMENT_VIEWED = "vehicle_movement_viewed"
     PLATE_SEARCHED = "plate_searched"
 
+    # camera and department-system health. Raised and recovered are the health monitor's
+    # decisions, written by it; acknowledged is a person's.
+    HEALTH_ALERT_RAISED = "health_alert_raised"
+    HEALTH_ALERT_RECOVERED = "health_alert_recovered"
+    HEALTH_ALERT_ACKNOWLEDGED = "health_alert_acknowledged"
+
     # vehicle reference registry
     VEHICLE_REGISTRY_SEARCHED = "vehicle_registry_searched"
     VEHICLE_RECORD_VIEWED = "vehicle_record_viewed"
@@ -100,6 +106,7 @@ class ResourceType(str, Enum):
     WATCHLIST_ENTRY = "watchlist_entry"
     WATCHLIST_ALERT = "watchlist_alert"
     PLATE_SIGHTING = "plate_sighting"
+    HEALTH_ALERT = "health_alert"
 
 
 class AuditOutcome(str, Enum):

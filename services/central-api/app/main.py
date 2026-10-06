@@ -66,6 +66,7 @@ from .routers import (
     directory,
     events,
     health,
+    health_alerts,
     installation_requests,
     overview,
     reports,
@@ -307,6 +308,7 @@ async def adapter_error_handler(_: Request, exc: AdapterError) -> JSONResponse:
 
 
 app.include_router(health.router)
+app.include_router(health_alerts.router)
 app.include_router(auth.router)
 app.include_router(sources.router)
 app.include_router(installation_requests.router)

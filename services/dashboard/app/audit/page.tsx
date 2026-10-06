@@ -40,6 +40,9 @@ const ACTIONS = [
   "video_access_revoked",
   "video_session_opened",
   "video_stream_accessed",
+  "health_alert_raised",
+  "health_alert_recovered",
+  "health_alert_acknowledged",
 ];
 
 export default function AuditPage() {

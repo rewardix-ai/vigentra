@@ -37,7 +37,8 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   /** Permission required to see this section, if any. */
-  permission?: string;
+  /** Shown when the operator holds this permission, or any one of a list. */
+  permission?: string | string[];
   /** Shows a count pill when that queue is non-empty. */
   badge?: BadgeKey;
 }
@@ -87,7 +88,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     // and the municipal roles hold none of them at all.
     group: "Vehicles of interest",
     items: [
-      { href: "/alerts", label: "Alerts", icon: BellRing, permission: "alert:read", badge: "alerts" },
+      { href: "/alerts", label: "Alerts", icon: BellRing, permission: ["alert:read", "health:read"], badge: "alerts" },
       { href: "/plates", label: "Trace a vehicle", icon: Route, permission: "track:read" },
       { href: "/watchlist", label: "Watchlist", icon: ListChecks, permission: "watchlist:read" },
     ],
@@ -146,11 +147,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
           .then((o) => set("installations", o.pending_installation_requests))
           .catch(() => undefined);
       }
-      if (permissions.includes("alert:read")) {
-        api
-          .openAlertCount()
-          .then((count) => set("alerts", count.open))
-          .catch(() => undefined);
+      // Watchlist hits and cameras down, in one count: both are things someone should look at now.
+      if (permissions.includes("alert:read") || permissions.includes("health:read")) {
+        void Promise.all([
+          permissions.includes("alert:read") ? api.openAlertCount().then((c) => c.open).catch(() => 0) : 0,
+          permissions.includes("health:read") ? api.openHealthAlertCount().then((c) => c.open).catch(() => 0) : 0,
+        ]).then(([hits, down]) => set("alerts", hits + down));
       }
     };
 
@@ -168,8 +170,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
     router.refresh();
   }, [router]);
 
-  const can = (permission?: string) =>
-    !permission || (operator?.permissions ?? []).includes(permission);
+  const can = (permission?: string | string[]) =>
+    !permission || [permission].flat().some((p) => (operator?.permissions ?? []).includes(p));
 
   const statusTone =
     health?.status === "ok"

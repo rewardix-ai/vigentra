@@ -818,7 +818,9 @@ def run(
                         position,
                         source_mode=source_mode,
                         is_demo_data=source_mode != "authorized_edge",
-                        provenance=dict(base_provenance),
+                        # the tracker id lets central give this vehicle its plate once the plate settles
+                        provenance=dict(base_provenance, **({"track_id": (getattr(detection, "extra", None) or {}).get("track_id")}
+                                                            if (getattr(detection, "extra", None) or {}).get("track_id") is not None else {})),
                     )
                 )
             produced += len(detections)

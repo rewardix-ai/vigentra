@@ -136,6 +136,8 @@ def main() -> int:
     ap.add_argument("--until", required=True, help='deadline in IST, e.g. "2026-10-11 23:00"')
     ap.add_argument("--logs", default=str(Path.home() / "Library" / "Logs" / "vigentra-readers"))
     ap.add_argument("--restore-docker", nargs="*", default=[], help="containers to start again at the deadline")
+    ap.add_argument("--mode", choices=["light", "rotate"], default="light",
+                    help="light: every grid camera at once in one process (tools/light_readers.py); rotate: 3 full readers, one camera each per window")
     args = ap.parse_args()
     deadline = dt.datetime.strptime(args.until, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
     logs = Path(args.logs).expanduser()
@@ -149,11 +151,21 @@ def main() -> int:
         env["EDGE_CONTINUOUS_PASS_FRAMES"] = "1000000"   # one pass per window: read the whole replay
     cams = cameras()
     assert set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
-    slots = [{"name": f"reader{i + 1}", "camera": None, "proc": None, "log": logs / f"reader{i + 1}.log", "restart_at": None} for i in range(READERS)]
+    light = args.mode == "light"
+    slots = ([{"name": "light", "camera": "all", "proc": None, "log": logs / "light.log", "restart_at": None}] if light else
+             [{"name": f"reader{i + 1}", "camera": None, "proc": None, "log": logs / f"reader{i + 1}.log", "restart_at": None} for i in range(READERS)])
+    municipal = service_env(compose, "detector-municipal", dot)
     rot_file = logs / "rotation.txt"   # where the rotation stands, kept across supervisor restarts
     state = {"next": int(rot_file.read_text()) if rot_file.exists() else 0}
 
     def launch(slot, camera):
+        if light:
+            env = dict(envs["traffic_vms"], LIGHT_MUNICIPAL_USERNAME=municipal.get("EDGE_USERNAME", "municipal.ai"),
+                       LIGHT_MUNICIPAL_PASSWORD=municipal.get("EDGE_PASSWORD", ""))
+            slot["restart_at"] = None
+            slot["proc"] = subprocess.Popen([sys.executable, "tools/light_readers.py"], cwd=EDGE, env=env,
+                                            stdout=open(slot["log"], "a"), stderr=subprocess.STDOUT)
+            return
         cmd = [sys.executable, "-m", "app.worker", "--forever", "--sample-interval", "2", "--cycle-seconds", "120", "--camera", cams[camera][0]]
         slot["camera"], slot["restart_at"] = camera, None
         slot["proc"] = subprocess.Popen(cmd, cwd=EDGE, env=envs[cams[camera][1]], stdout=open(slot["log"], "a"), stderr=subprocess.STDOUT)
@@ -169,6 +181,20 @@ def main() -> int:
             slot["proc"] = None
 
     def new_window(restarted: bool, same: bool = False):
+        if light:
+            if restarted:
+                subprocess.run(PG + ["-c", f"INSERT INTO camera_plates.grid_restarts VALUES ('{dt.datetime.now(IST):%Y-%m-%d %H:%M:%S}') ON CONFLICT DO NOTHING"], capture_output=True)
+            for s_ in slots:
+                offsets[s_["name"]] = s_["log"].stat().st_size if s_["log"].exists() else 0
+            launch(slots[0], "all")
+            # every camera's clock, through the other account so no clock read competes with a reader for a stream
+            other = [j for j in range(len(accounts)) if j != acct["i"]]
+            if other:
+                subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py")], cwd=REPO,
+                                 env=dict(base_envs["traffic_vms"], **accounts[other[0]]),
+                                 stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
+            log(("restart: " if restarted else "") + f"light mode on all grid cameras (account {acct['i'] + 1})")
+            return
         chosen = [s_["camera"] for s_ in slots] if same and all(s_["camera"] for s_ in slots) else []
         while len(chosen) < READERS:
             cam = ROTATION[state["next"] % len(ROTATION)]

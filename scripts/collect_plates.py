@@ -51,9 +51,10 @@ PROBE = ("import os, cv2\nfrom app import grid\ngrid._force_tcp_transport()\n"
 # the wide overview cameras share one between many. Each group must sit in one department.
 GROUPS = [
     ["cam06", "cam05", "cam16"],
-    ["cam01", "cam02", "cam04", "cam07", "cam12", "cam13", "cam14", "cam15"],
+    # three readers, not four: a fourth pushed a 16 GB Mac into swap with the stack running
+    ["cam01", "cam02", "cam04", "cam07", "cam12", "cam13", "cam14", "cam15",
+     "cam08", "cam09", "cam10", "cam11", "cam23", "cam24", "cam25", "cam26", "cam27", "cam28", "cam29", "cam30"],
     ["cam03", "cam17", "cam18", "cam19", "cam20", "cam21", "cam22"],
-    ["cam08", "cam09", "cam10", "cam11", "cam23", "cam24", "cam25", "cam26", "cam27", "cam28", "cam29", "cam30"],
 ]
 
 

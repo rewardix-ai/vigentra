@@ -88,12 +88,50 @@
       return h("div.zoom169", null, [zoom, h("span.thumb-tag", null, `${(T.types && T.types[T.track_id]) || "vehicle"} · ID ${T.track_id}`)]);
     },
 
-    /** "How Vigentra reads a plate": where this scene sits in the pipeline. */
-    ribbon(active) {
-      const names = ["Vehicle", "Track", "Plate", "Best frames", "Quality", "Read", "Vote"];
-      const el = h("div.ribbon", null, names.map((n) => h("span.rb", null, [h("i"), n])));
-      el.set = (i) => el.querySelectorAll(".rb").forEach((b, j) => { b.classList.toggle("done", j < i); b.classList.toggle("now", j === i); });
-      el.set(active);
+    /** A control-room panel: a header strip (title, optional right-hand status) over a body.
+     * It powers on (.boot) when revealed with ctx.in. */
+    panel(x, y, w, hgt, title, body, { right = null, cls = "", id = null } = {}) {
+      return h("div.panel.boot" + (cls ? "." + cls.split(" ").join(".") : ""), { id, style: { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${hgt}px` } }, [
+        h("div.ph", null, [h("b", null, title), right ? h("span.ph-r", null, right) : null]),
+        h("div.pb", null, body),
+      ]);
+    },
+
+    /** Footage as a monitor: viewfinder corners and on-screen labels. */
+    monitor(media, { tl = null, tr = null, bl = null, br = null, full = false } = {}) {
+      const osd = (pos, c) => (c ? h(`div.osd.${pos}`, null, c) : null);
+      return h("div.fill.vf" + (full ? ".full" : ""), null, [media, osd("tl", tl), osd("tr", tr), osd("bl", bl), osd("br", br)]);
+    },
+
+    rec() {
+      return h("span.rec", null, "REC");
+    },
+
+    /** A lower-third statement: reveal with K.S.show(ctx, el), hide with K.S.hide(ctx, el). */
+    banner(kicker, text, { id = null, tone = "" } = {}) {
+      return h("div.banner" + (tone ? "." + tone : ""), { id }, [h("span.kicker", null, kicker), h("div.stmt.r.soft", { html: text })]);
+    },
+    async show(ctx, el) {
+      if (typeof el === "string") el = ctx.$(el);
+      el.classList.add("in");
+      await ctx.wait(350);
+      await ctx.in(el.querySelector(".stmt"));
+    },
+    hide(ctx, el) {
+      if (typeof el === "string") el = ctx.$(el);
+      ctx.out(el.querySelector(".stmt"));
+      el.classList.remove("in");
+    },
+
+    /** An event log: log.add(time, html, tone) appends a line, older lines dim, the oldest go. */
+    log({ max = 8 } = {}) {
+      const el = h("div.log");
+      el.add = (t, html, tone = "") => {
+        el.querySelectorAll(".ln").forEach((l) => l.classList.add("old"));
+        el.appendChild(h("div.ln" + (tone ? "." + tone : ""), null, [h("span.t", null, t), h("span", { html })]));
+        while (el.children.length > max) el.firstChild.remove();
+      };
+      el.clear = () => { el.innerHTML = ""; };
       return el;
     },
 

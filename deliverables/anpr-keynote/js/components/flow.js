@@ -7,7 +7,7 @@
  *   node: { id, x, y, w, h, type: "card" | "decision" | "end", n, title, sub, media(), tone, say }
  *         x, y = centre on the 1920×1080 stage; tone: "bad" | "ok" | "io"
  *   edge: { from, to, out: "right" | "left" | "top" | "bottom", in: side, via: [[x, y]], kind: "yes" | "no" | "alert" | "video", label, at: [x, y] }
- *   caption: the element that shows the current step
+ *   caption: an event log (K.S.log) that gets a line for each step the dot reaches
  * await f.reveal(ctx)            cards and arrows appear in order
  * f.run(ctx, routes)             dots travel until the scene is left
  *   route: { path: [ids], every, offset, main, cls }   main: the route the caption follows
@@ -58,9 +58,7 @@
 
     const say = (n) => {
       if (!caption || !n.say) return;
-      caption.innerHTML = "";
-      caption.append(K.h("span.fs-n" + (n.n ? "" : ".blank"), null, n.n ? String(n.n) : ""), K.h("div", null, [K.h("b", null, n.title), K.h("span", null, n.say)]));
-      caption.classList.add("on");
+      caption.add(n.n ? String(n.n).padStart(2, "0") : "··", `<b>${n.title}</b> ${n.say}`, n.tone === "bad" ? "bad" : n.tone === "ok" ? "ok" : "");
     };
     const els = {};
     Object.values(byId).forEach((n) => {
@@ -77,7 +75,7 @@
         ]);
       } else {
         el = K.h(`button.fnode.card.tone-${n.tone || "main"}`, { style }, [
-          K.h("div.fc-head", null, [n.n ? K.h("span.fc-n", null, String(n.n)) : null, K.h("span.fc-title", null, n.title)]),
+          K.h("div.fc-head", null, [n.n ? K.h("span.fc-n", null, String(n.n).padStart(2, "0")) : null, K.h("span.fc-title", null, n.title)]),
           n.media ? K.h("div.fc-media", null, n.media()) : null,
           n.sub ? K.h("div.fc-sub", null, n.sub) : null,
         ]);

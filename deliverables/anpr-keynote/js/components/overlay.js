@@ -101,6 +101,7 @@
       const fr = frameAt(t);
       if (fr === last) return;
       last = fr;
+      if (fr && opts.onFrame) opts.onFrame(fr.f);
       Object.values(pool).forEach((it) => { it.g.style.display = "none"; it.tag.style.display = "none"; });
       if (!fr) { path.length = 0; trail.setAttribute("points", ""); return; }
       let seen = false;

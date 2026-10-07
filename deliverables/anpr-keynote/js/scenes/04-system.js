@@ -1,4 +1,4 @@
-/* The system around the reader (a live flowchart, then the console), what comes next, and the close. */
+/* The system around the reader (a live schematic, then the console on a monitor), and the close. */
 (function () {
   const K = window.K;
   const h = K.h;
@@ -6,7 +6,7 @@
 
   /* ---------------------------------------------------------------- system */
   K.scene({
-    id: "system", act: "The system", title: "How the pieces connect",
+    id: "system", act: "The system", title: "How the pieces connect", src: "Schematic · Vigentra deployment · services/edge-worker · services/central-api",
     build(ctx) {
       const E = K.EVIDENCE || { plate: "" };
       const X = [260, 713, 1166, 1620];
@@ -14,44 +14,45 @@
       const nodes = [
         { id: "cams", n: 1, x: X[0], y: R, tone: "io", title: "Cameras", sub: "the grid · Delhi",
           media: () => h("div.mosaic", null, ["wall_cam04", "wall_cam12", "wall_cam15", "delhi_raw"].map((k) => K.media.video(k, { cls: "media-cover" }))),
-          say: "The department's own cameras, unchanged. Vigentra reads the video they already stream." },
+          say: "the department's own cameras, unchanged" },
         { id: "reader", n: 2, x: X[1], y: R, title: "Vigentra reader", sub: "find · follow · read", media: () => S.carThumb({ plate: true }),
-          say: "Reads the plates. Only a confirmed plate leaves it, as text: no image, no video." },
+          say: "reads the plates; only a confirmed plate leaves it, as text" },
         { id: "central", n: 3, x: X[2], y: R, title: "Vigentra central", sub: "plate records · watchlist",
           media: () => h("div.fc-rec", null, [h("div", null, E.plate), h("span", null, "plate · time · camera")]),
-          say: "Stores every plate record and checks it against the watchlist the moment it arrives." },
+          say: "stores the record, checks the watchlist as it arrives" },
         { id: "console", n: 4, x: X[3], y: R, tone: "ok", title: "Console", sub: "search · trace · report", media: () => K.media.img("app_trace", { cls: "media-cover" }),
-          say: "Officers search plates, trace a vehicle across cameras and run reports. What they do is audited." },
-        { id: "list", type: "decision", x: X[2], y: R2, w: 260, h: 170, title: "On the watchlist?", say: "Every new plate record is checked against the watchlist as it arrives." },
-        { id: "alert", type: "end", tone: "bad", x: X[3], y: R2, w: 300, h: 110, title: "Alert", sub: "critical · high · review", say: "A listed plate raises an alert in the console, by priority." },
-        { id: "kept", type: "end", tone: "io", x: X[1], y: R2, w: 300, h: 110, title: "Kept for search", sub: "and for tracing later", say: "Otherwise the record is kept, to be searched and traced later." },
-        { id: "live", type: "end", tone: "video", x: 940, y: 300, w: 400, h: 100, title: "Live video", sub: "only with the owning unit's permission", say: "Another unit sees a camera's live video only when the unit that owns it has granted access." },
+          say: "search, trace, report; what operators do is audited" },
+        { id: "list", type: "decision", x: X[2], y: R2, w: 260, h: 170, title: "On the watchlist?", say: "every new plate record is checked" },
+        { id: "alert", type: "end", tone: "bad", x: X[3], y: R2, w: 300, h: 110, title: "Alert", sub: "critical · high · review", say: "a listed plate raises an alert, by priority" },
+        { id: "kept", type: "end", tone: "io", x: X[1], y: R2, w: 300, h: 110, title: "Kept for search", sub: "and for tracing later", say: "otherwise the record is kept for search and trace" },
+        { id: "live", type: "end", tone: "video", x: 940, y: 300, w: 400, h: 100, title: "Live video", sub: "only with the owning unit's permission", say: "another unit sees live video only when the owner grants it" },
       ];
       const edges = [
-        { from: "cams", to: "reader", label: "video", at: [X[0] + 172, R - 14] },
-        { from: "reader", to: "central", label: "text", at: [X[1] + 172, R - 14] },
+        { from: "cams", to: "reader", label: "VIDEO", at: [X[0] + 166, R - 14] },
+        { from: "reader", to: "central", label: "TEXT", at: [X[1] + 170, R - 14] },
         { from: "central", to: "console" },
         { from: "central", to: "list", out: "bottom", in: "top" },
-        { from: "list", to: "alert", kind: "yes", label: "Yes", at: [X[2] + 150, R2 - 14] },
+        { from: "list", to: "alert", kind: "yes", label: "YES", at: [X[2] + 146, R2 - 14] },
         { from: "alert", to: "console", out: "top", in: "bottom", kind: "alert" },
-        { from: "list", to: "kept", out: "left", in: "right", kind: "no", label: "No", at: [X[2] - 200, R2 - 14] },
+        { from: "list", to: "kept", out: "left", in: "right", kind: "no", label: "NO", at: [X[2] - 196, R2 - 14] },
         { from: "cams", to: "live", out: "top", in: "left", via: [[X[0], 300]], kind: "video" },
         { from: "live", to: "console", out: "right", in: "top", via: [[X[3], 300]], kind: "video" },
       ];
-      const caption = h("div.flow-say", null, [h("span.fs-n.blank"), h("div", null, [h("b", null, "Video in, text out"), h("span", null, "Follow the dots. Click any box to read what it does.")])]);
-      const chart = K.ui.flow({ nodes, edges, caption });
+      const log = S.log({ max: 2 });
+      log.add("··", "<b>Video in, text out</b> follow the squares; click any box for what it does");
+      const chart = K.ui.flow({ nodes, edges, caption: log });
       ctx.el.append(
         S.title("The system", "How the pieces connect."),
-        S.at(1060, 92, 760, null, h("div.r", { id: "say" }, caption)),
+        S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
         chart,
-        h("div.cap-bottom", null, h("div.h3.r.soft", { id: "text" }, "Plates travel as text. Video is shared only with its owner's permission.")),
+        S.banner("By design", "Plates travel as text. Video is shared only with its owner's permission.", { id: "b1" }),
         S.tech(["<b>Plate record</b> plate, camera, time, confidence and boxes; no image, no video", "<b>Unconfirmed readings</b> not sent (ANPR_EMIT_UNCONFIRMED=false)", "<b>Video</b> central oversight roles need the owning unit's grant"], "services/edge-worker/app/worker.py · services/central-api (access model)")
       );
       return [
         async () => {
           ctx.auto(22);
-          await chart.reveal(ctx, { gap: 170 });
-          await ctx.in("#say");
+          ctx.in("#lp");
+          await chart.reveal(ctx, { gap: 160 });
           chart.run(ctx, [
             { path: ["cams", "reader", "central", "console"], every: 9500, main: true },
             { path: ["cams", "reader", "central", "list", "alert", "console"], every: 14000, offset: 4000, cls: "bad" },
@@ -59,14 +60,14 @@
             { path: ["cams", "live", "console"], every: 9000, offset: 2000, cls: "video" },
           ]);
         },
-        () => { ctx.auto(5); return ctx.in("#text"); },
+        () => { ctx.auto(5); chart.classList.add("dimmed"); return S.show(ctx, "#b1"); },
       ];
     },
   });
 
   /* ---------------------------------------------------------------- console */
   K.scene({
-    id: "console", act: "The system", title: "The Vigentra console",
+    id: "console", act: "The system", title: "The Vigentra console", src: "SRC Vigentra console · screen recording · 1:15–1:24 and 1:28–2:42",
     build(ctx) {
       // The useful parts of the recording: live CAM06 detection (1:15.5-1:24) and the console pages
       // (1:28.5-2:42.6). Skipped: the camera wall at 1:24 and the closing card at 2:43, which show and
@@ -74,52 +75,41 @@
       const PARTS = [["Live detection on a grid feed", 75.5, 83.9], ["Search every detection", 88.5, 108.6],
         ["Trace one vehicle", 108.6, 132.1], ["Plate report", 132.1, 148], ["Audit log", 148, 162.6]];
       const video = K.media.video("app_demo", { start: 75.5, loop: false, cls: "media-fit" });
-      const screen = S.framed(video, 120, 250, 1320, 743, "console tilt");
-      const chips = PARTS.map(([name], i) => h("span.fchip.r", { style: { top: `${300 + i * 130}px` } }, name));
+      const items = PARTS.map(([name], i) => h("div.feat", null, [h("span.feat-n.num", null, String(i + 1).padStart(2, "0")), h("span", null, name)]));
       if (video.tagName === "VIDEO") {
         video.addEventListener("timeupdate", () => {
           const t = video.currentTime;
           if (t >= 83.9 && t < 88.5) video.currentTime = 88.6;
           if (t >= 162.6) video.pause();
-          chips.forEach((c, i) => c.classList.toggle("now", t >= PARTS[i][1] && t < PARTS[i][2]));
+          items.forEach((c, i) => c.classList.toggle("now", t >= PARTS[i][1] && t < PARTS[i][2]));
         });
       }
       ctx.el.append(
-        S.title("The Vigentra console", "From a plate to an answer, in a browser."),
-        screen,
-        h("div.chips", null, chips),
+        S.panel(40, 70, 1380, 816, "Vigentra console · State Joint Control Room", h("div.fill", null, video), { id: "cp", right: S.rec() }),
+        S.panel(1440, 70, 440, 816, "On screen now", h("div.feats", null, items), { id: "fp" }),
+        S.banner("The console", "From a plate to an answer, in a browser.", { id: "b1" }),
         S.tech(["<b>Console</b> Next.js; detections, trace, report and audit log as shown; watchlist and camera-health alerts"], "deliverables/Vigentra_Demo_Short.mp4 (screen recording, 1:15-1:24 and 1:28-2:42)")
       );
       return [
         // 83 s: the two parts of the recording, back to back
-        async () => { ctx.auto(83); await ctx.wait(200); screen.classList.add("in"); await ctx.wait(900); await ctx.in(".fchip", { stagger: 260 }); },
+        async () => {
+          ctx.auto(83);
+          ctx.in("#cp");
+          await ctx.in("#fp");
+          await S.show(ctx, "#b1");
+          await ctx.wait(4000);
+          S.hide(ctx, "#b1");
+        },
       ];
     },
   });
 
-  /* ---------------------------------------------------------------- next */
+  /* ---------------------------------------------------------------- close */
   K.scene({
-    id: "next", act: "What's next", title: "What still doesn't work",
-    build(ctx) {
-      const items = [
-        ["Night and glare", "Plates are found after dark, but rarely legible."],
-        ["Small, distant plates", "Under 22 pixels wide, Vigentra will not read a plate."],
-        ["GPU servers for every feed", "One laptop keeps pace with one camera; all thirty would need GPU servers."],
-      ];
-      ctx.el.append(
-        S.title("What's next", "What still doesn't work, honestly."),
-        S.at(140, 330, 1640, null, h("div.nexts", null, items.map(([a, b], i) => h("div.nx.r", null, [h("span.nx-n.num", null, String(i + 1)), h("div", null, [h("div.h3", null, a), h("div.lede", null, b)])]))))
-      );
-      return [() => ctx.in(".nx", { stagger: 450 })];
-    },
-  });
-
-  /* ---------------------------------------------------------------- finale */
-  K.scene({
-    id: "finale", act: "Vigentra", title: "From pixels to information", cls: "black nobrand",
+    id: "close", act: "Vigentra", title: "From pixels to information", cls: "black nochrome", src: "",
     build(ctx) {
       const live = S.replay(ctx, { rate: 0.5, ids: true, plate: true });
-      const layer = h("div.fill.r.slow.media-layer.finale-bg", null, live.el);
+      const layer = h("div.fill.r.slow.media-layer.finale-bg", null, S.monitor(live.el, { tl: "CAM06 · replay", tr: S.rec(), full: true }));
       ctx.el.append(
         layer,
         h("div.center", null, h("div.stack.final-type", null, [h("div.hero.r.soft", { id: "fp" }, "From pixels"), h("div.hero.r.soft.c-track", { id: "ti" }, "to information.")])),

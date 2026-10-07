@@ -48,7 +48,7 @@
     state.index = index;
     state.steps = (def.build && def.build(ctx)) || [];
     // headlines and statements arrive word by word (css/scenes.css .words)
-    el.querySelectorAll(".title-tl.auto > :last-child, .h1.r.soft, .h2.r.soft, .h3.r.soft").forEach((x) => ctx.words(x));
+    el.querySelectorAll(".title-tl.auto > :last-child, .h1.r.soft, .h2.r.soft, .h3.r.soft, .stmt.r.soft").forEach((x) => ctx.words(x));
     if (!state.steps.length) state.steps = [() => {}];
 
     // Fast-forward silently to the requested step, with transitions off. A scene reached by
@@ -161,7 +161,11 @@
     const stepShare = state.steps.length > 1 ? state.step / (state.steps.length - 1) : 1;
     bar.style.width = `${((state.index + stepShare) / total) * 100}%`;
     document.getElementById("hud-act").textContent = def.act || "";
-    document.body.classList.toggle("nobrand", /\bnobrand\b/.test(def.cls || ""));
+    // the control room's own bars: channel, scene number, the source of what is on screen
+    document.body.classList.toggle("nochrome", /\bnochrome\b/.test(def.cls || ""));
+    document.getElementById("tb-ch").textContent = `CH ${String(state.index + 1).padStart(2, "0")} · ${def.act || ""}`;
+    document.getElementById("tb-n").textContent = `${String(state.index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
+    document.getElementById("bb-src").textContent = def.src || "";
     document.getElementById("hud-count").textContent = `${state.index + 1} / ${total}`;
     history.replaceState(null, "", `#${state.index + 1}`);
     renderNotes();
@@ -330,6 +334,10 @@
     document.getElementById("nav-grid").addEventListener("click", () => toggleGrid());
     document.getElementById("nav-tech").addEventListener("click", () => document.body.classList.toggle("tech"));
     document.getElementById("nav-auto").addEventListener("click", toggleAuto);
+    const clock = document.getElementById("tb-clock");
+    const tick = () => { clock.textContent = new Date().toLocaleTimeString("en-GB"); };
+    tick();
+    setInterval(tick, 1000);
     if (!K.autoOn) { K.autoOn = true; toggleAuto(); }
     try {
       channel = new BroadcastChannel("anpr-keynote");

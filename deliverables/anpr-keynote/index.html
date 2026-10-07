@@ -11,7 +11,12 @@
 </head>
 <body>
 <div id="viewport"><main id="stage" aria-live="polite">
-  <div id="brandbug" aria-hidden="true"><img src="brand/vigentra-mark.png" alt=""><img src="brand/vigentra-wordmark.png" alt=""></div>
+  <div id="topbar" aria-hidden="true">
+    <span class="tb-brand"><img src="brand/vigentra-mark.png" alt=""><img src="brand/vigentra-wordmark.png" alt=""></span>
+    <span class="tb-sep"></span><span>Control room</span><span class="tb-sep"></span><span id="tb-ch"></span>
+    <span class="tb-right"><span id="tb-n"></span><span id="tb-clock"></span></span>
+  </div>
+  <div id="botbar" aria-hidden="true"><span id="bb-src"></span></div>
 </main></div>
 
 <div id="hud">
@@ -47,7 +52,7 @@
 <script src="js/components/flow.js"></script>
 <!-- scenes, in story order -->
 <script src="js/scenes/helpers.js"></script>
-<script src="js/scenes/01-problem.js"></script>
+<script src="js/scenes/01-room.js"></script>
 <script src="js/scenes/02-reading.js"></script>
 <script src="js/scenes/03-proof.js"></script>
 <script src="js/scenes/04-system.js"></script>

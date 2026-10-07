@@ -132,7 +132,11 @@
                 else frag.appendChild(K.h("span.w", { style: { "--i": i++ } }, part));
               });
               n.replaceWith(frag);
-            } else if (n.nodeType === 1 && !n.classList.contains("num")) walk(n);
+            } else if (n.nodeType === 1 && n.classList.contains("num")) {
+              const w = K.h("span.w", { style: { "--i": i++ } }); // a number moves as one word
+              n.replaceWith(w);
+              w.appendChild(n);
+            } else if (n.nodeType === 1) walk(n);
           });
         };
         walk(el);

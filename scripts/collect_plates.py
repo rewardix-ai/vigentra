@@ -150,7 +150,8 @@ def main() -> int:
     cams = cameras()
     assert set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
     slots = [{"name": f"reader{i + 1}", "camera": None, "proc": None, "log": logs / f"reader{i + 1}.log", "restart_at": None} for i in range(READERS)]
-    state = {"next": 0}
+    rot_file = logs / "rotation.txt"   # where the rotation stands, kept across supervisor restarts
+    state = {"next": int(rot_file.read_text()) if rot_file.exists() else 0}
 
     def launch(slot, camera):
         cmd = [sys.executable, "-m", "app.worker", "--forever", "--sample-interval", "2", "--cycle-seconds", "120", "--camera", cams[camera][0]]
@@ -167,13 +168,16 @@ def main() -> int:
                 slot["proc"].kill()
             slot["proc"] = None
 
-    def new_window(restarted: bool):
-        chosen = []
+    def new_window(restarted: bool, same: bool = False):
+        chosen = [s_["camera"] for s_ in slots] if same and all(s_["camera"] for s_ in slots) else []
         while len(chosen) < READERS:
             cam = ROTATION[state["next"] % len(ROTATION)]
             state["next"] += 1
             if cam not in chosen:
                 chosen.append(cam)
+        rot_file.write_text(str(state["next"]))
+        for s_ in slots:   # count refusals from now on, not the log's history
+            offsets[s_["name"]] = s_["log"].stat().st_size if s_["log"].exists() else 0
         if restarted:
             subprocess.run(PG + ["-c", f"INSERT INTO camera_plates.grid_restarts VALUES ('{dt.datetime.now(IST):%Y-%m-%d %H:%M:%S}') ON CONFLICT DO NOTHING"], capture_output=True)
         # read the chosen cameras' clocks first: the grid gives one stream per camera, so a clock read
@@ -200,22 +204,47 @@ def main() -> int:
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     log(f"collecting until {deadline:%d %b %H:%M} IST, {READERS} readers rotating over {len(set(ROTATION))} cameras; logs in {logs}")
-    probe_env = envs["traffic_vms"]
-    refused = not grid_accepts(probe_env)
+    # Grid accounts, used one at a time for RTSP only (never the HTTPS sign-in, so central-api's session is
+    # untouched). The grid blocks one account at a time for a while; when the one in use is refused, the
+    # readers move to the other. A second account is optional (.env: SENTINEL_GRID_EMAIL_1 / _PASSWORD_1).
+    accounts = [{}]
+    if dot.get("SENTINEL_GRID_EMAIL_1") and dot.get("SENTINEL_GRID_PASSWORD_1"):
+        accounts.append({"SENTINEL_GRID_EMAIL": dot["SENTINEL_GRID_EMAIL_1"], "SENTINEL_GRID_PASSWORD": dot["SENTINEL_GRID_PASSWORD_1"]})
+    base_envs = {k: dict(v) for k, v in envs.items()}
+    acct = {"i": 0}
+
+    def use_account(i):
+        acct["i"] = i
+        for k in envs:
+            envs[k] = dict(base_envs[k], **accounts[i])
+
+    def accepting_account():
+        for i in [acct["i"]] + [j for j in range(len(accounts)) if j != acct["i"]]:
+            if grid_accepts(dict(base_envs["traffic_vms"], **accounts[i])):
+                return i
+        return None
+
+    offsets = {}
+    first = accepting_account()
+    refused = first is None
+    if first is not None:
+        use_account(first)
     if refused:
         log("grid refusing our login: waiting for the next restart")
     else:
         new_window(restarted=False)
-    offsets = {}
     last_probe = last_progress = 0.0
     while not stopping and dt.datetime.now(IST) < deadline:
         now = time.time()
         if refused:
             if now - last_probe >= PROBE_SECONDS:
                 last_probe = now
-                if grid_accepts(probe_env):
+                i = accepting_account()
+                if i is not None:
+                    use_account(i)
                     refused = False
                     offsets = {s_["name"]: (s_["log"].stat().st_size if s_["log"].exists() else 0) for s_ in slots}
+                    log(f"grid accepting account {i + 1}")
                     new_window(restarted=True)
         else:
             refusals = 0
@@ -226,9 +255,16 @@ def main() -> int:
                         refusals += f.read().decode(errors="ignore").count(REFUSED)
                         offsets[slot["name"]] = f.tell()
             if refusals >= 4:
-                log(f"grid refusing our login ({refusals} x RTSP 401): server restarting; readers stopped")
+                log(f"grid refusing account {acct['i'] + 1} ({refusals} x RTSP 401); readers stopped")
                 stop_all()
-                refused, last_probe = True, now
+                other = [j for j in range(len(accounts)) if j != acct["i"]]
+                if other and grid_accepts(dict(base_envs["traffic_vms"], **accounts[other[0]])):
+                    use_account(other[0])
+                    offsets = {s_["name"]: (s_["log"].stat().st_size if s_["log"].exists() else 0) for s_ in slots}
+                    log(f"switched to account {other[0] + 1}")
+                    new_window(restarted=False, same=True)   # same recordings, same moment: carry on
+                else:
+                    refused, last_probe = True, now
             else:
                 for slot in slots:
                     p = slot["proc"]

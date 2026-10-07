@@ -42,8 +42,10 @@ def ocr_binary() -> Path:
     return OCR_BIN
 
 
-def parse(text: str):
-    """The first date and time in the OCR text, as a naive camera-local datetime, or None."""
+def parse(text: str, last_date=None):
+    """The first date and time in the OCR text, as a naive camera-local datetime, or None. When only
+    the time is legible, the date of the camera's last good sample is used."""
+    text = re.sub(r"\s*([-/.:])\s*", r"\1", text)   # OCR puts stray spaces around separators
     t = TIME.search(text)
     if not t:
         return None
@@ -54,7 +56,9 @@ def parse(text: str):
             y, m, day = (a, b, c) if order == "ymd" else (c, b, a)
             break
     else:
-        return None
+        if last_date is None:
+            return None
+        y, m, day = last_date.year, last_date.month, last_date.day
     h, mi, s = int(t.group(1)), int(t.group(2)), int(t.group(3))
     if t.group(4):
         h = h % 12 + (12 if t.group(4).upper() == "PM" else 0)
@@ -64,7 +68,7 @@ def parse(text: str):
         return None
 
 
-def read_clock(url: str, ocr: Path):
+def read_clock(url: str, ocr: Path, last_date=None):
     """Two frames ~3 s apart from one session; returns (wall_ist, video_time) or None if they disagree."""
     import cv2
     cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
@@ -72,16 +76,20 @@ def read_clock(url: str, ocr: Path):
         return None
     shots, start = [], time.time()
     with tempfile.TemporaryDirectory() as tmp:
-        while time.time() - start < 12 and len(shots) < 2:
+        while time.time() - start < 15 and len(shots) < 2:
             ok, frame = cap.read()
             if not ok:
                 continue
             elapsed = time.time() - start
-            if (not shots and elapsed > 2.0) or (shots and elapsed - shots[0][0] > 3.0):
+            # the gateway first replays a buffered burst faster than real time: drain it before reading
+            if (not shots and elapsed > 4.0) or (shots and elapsed - shots[0][0] > 3.0):
                 if frame.std() < 12:          # grey smear before the first keyframe: no clock to read
                     continue
                 path = Path(tmp) / f"{len(shots)}.png"
-                cv2.imwrite(str(path), frame)  # temporary, deleted with the directory
+                # the clock sits in a corner: OCR the top and bottom strips, enlarged, not the whole frame
+                h = frame.shape[0]
+                strips = cv2.vconcat([frame[: h * 18 // 100], frame[h * 82 // 100:]])
+                cv2.imwrite(str(path), cv2.resize(strips, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC))  # temporary
                 shots.append((elapsed, dt.datetime.now(IST).replace(tzinfo=None), path))
         cap.release()
         if len(shots) < 2:
@@ -89,11 +97,11 @@ def read_clock(url: str, ocr: Path):
         out = subprocess.run([str(ocr)] + [str(p) for _, _, p in shots], capture_output=True, text=True).stdout
         texts = {str(p): " ".join(line.split("\t", 1)[1] for line in out.splitlines() if line.startswith(str(p))) for _, _, p in shots}
     (e1, w1, p1), (e2, w2, p2) = shots
-    v1, v2 = parse(texts[str(p1)]), parse(texts[str(p2)])
+    v1, v2 = parse(texts[str(p1)], last_date), parse(texts[str(p2)], last_date)
     if not v1 or not v2:
         return None
     # the two readings must advance like the wall clock (camera clocks tick in whole seconds)
-    if abs((v2 - v1).total_seconds() - (w2 - w1).total_seconds()) > 2:
+    if abs((v2 - v1).total_seconds() - (w2 - w1).total_seconds()) > 3:
         return None
     return w2, v2
 
@@ -112,8 +120,10 @@ def sample(cams=None) -> dict:
     results = {}
     for cid in cams or sorted(catalogue):
         got = None
+        last = sql(f"SELECT video_time FROM camera_plates.video_clock WHERE camera = '{cid}' ORDER BY id DESC LIMIT 1")
+        last_date = dt.datetime.fromisoformat(last).date() if last else None
         for _ in range(3):   # a smeared frame or a missed digit: try again before giving up
-            got = read_clock(catalogue[cid].rtsp_url, ocr)
+            got = read_clock(catalogue[cid].rtsp_url, ocr, last_date)
             if got:
                 break
             time.sleep(2)

@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import { api, signOut } from "@/lib/api";
-import { BrandLockup } from "./Brand";
+import { BrandLockup, VigentraMark } from "./Brand";
 import type { Operator, PlatformHealth } from "@/lib/types";
 import { Spinner } from "./ui";
 
@@ -180,37 +180,53 @@ export function Shell({ children }: { children: React.ReactNode }) {
         ? { dot: "bg-warn", label: "Degraded — a department system is unreachable" }
         : health?.status === "down"
           ? { dot: "bg-bad", label: "Central registry unavailable" }
-          : { dot: "bg-idle", label: "Checking status…" };
+          : { dot: "bg-faint", label: "Checking status…" };
 
   return (
     <div className="flex min-h-screen flex-col">
       {/* ---------------------------------------------------------------- */}
-      <header className="sticky top-0 z-30 border-b border-navy-900 bg-navy-800 text-white">
-        <div className="flex h-14 items-center gap-4 px-4">
+      {/* The navigation is a stadium that floats clear of the viewport edge,
+          with the page canvas visibly wrapping it. The strip it sits in is
+          white and sticky, so a scrolling table disappears behind the canvas
+          rather than showing through the pill's rounded ends. */}
+      <header className="sticky top-0 z-30 bg-canvas px-4 pb-2 pt-3">
+        <div className="mx-auto flex h-14 w-full max-w-[1760px] items-center gap-2 rounded-full bg-canvas-soft pl-2 pr-2 lg:pl-5">
           <button
-            className="rounded p-1.5 text-white/70 hover:bg-white/10 lg:hidden"
+            className="btn btn-icon btn-soft lg:hidden"
             onClick={() => setMenuOpen((open) => !open)}
             aria-label="Toggle navigation"
+            aria-expanded={menuOpen}
           >
-            <Menu className="h-5 w-5" strokeWidth={1.6} aria-hidden />
+            <Menu className="h-5 w-5" strokeWidth={1.8} aria-hidden />
           </button>
 
-          <Link href="/" className="flex items-center gap-2.5">
-            <BrandLockup tone="onDark" />
+          <Link href="/" className="flex shrink-0 items-center rounded-full">
+            {/* The pill tightens to the mark alone where the lockup will not fit. */}
+            <span className="sm:hidden">
+              <VigentraMark labelled className="h-8 w-auto" />
+            </span>
+            <span className="hidden sm:block">
+              <BrandLockup />
+            </span>
           </Link>
 
-          <div className="ml-auto flex items-center gap-4">
-            <div className="hidden items-center gap-2 md:flex" title={
+          {/* What the pill carries is decided by what fits: the status line
+              joins once the rail is beside the page rather than behind the menu
+              button, the operator's name a step before that. */}
+          <div className="ml-auto flex min-w-0 items-center gap-4">
+            <div className="hidden shrink-0 items-center gap-2 lg:flex" title={
               health?.dependencies.map((d) => `${d.name}: ${d.status}`).join("\n") ?? ""
             }>
               <span className={`h-2 w-2 rounded-full ${statusTone.dot}`} aria-hidden />
-              <span className="text-2xs text-white/80">{statusTone.label}</span>
+              <span className="text-caption text-ink/65">{statusTone.label}</span>
             </div>
 
-            <div className="flex items-center gap-3 border-l border-white/15 pl-4">
-              <div className="hidden text-right leading-tight sm:block">
-                <div className="text-[13px] font-medium">{operator?.display_name ?? "…"}</div>
-                <div className="text-2xs text-white/60">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="hidden min-w-0 text-right md:block">
+                <div className="truncate text-body-sm font-semibold leading-tight text-ink">
+                  {operator?.display_name ?? "…"}
+                </div>
+                <div className="truncate text-caption text-ink/65">
                   {operator
                     ? `${operator.role.replace(/_/g, " ")} · ${
                         operator.department === "*" ? "all departments" : operator.department
@@ -218,10 +234,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     : ""}
                 </div>
               </div>
-              <button
-                className="rounded border border-white/25 px-2 py-1 text-2xs font-medium text-white/85 hover:bg-white/10"
-                onClick={handleSignOut}
-              >
+              <button className="btn shrink-0" onClick={handleSignOut}>
                 Sign out
               </button>
             </div>
@@ -229,89 +242,96 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="mx-auto flex w-full max-w-[1792px] flex-1 flex-col px-4 lg:flex-row">
         {/* -------------------------------------------------------------- */}
         <nav
-          className={`${
-            menuOpen ? "block" : "hidden"
-          } w-full shrink-0 border-r border-navy-900 bg-navy-700 lg:block lg:w-56`}
+          className={`${menuOpen ? "block" : "hidden"} w-full shrink-0 lg:block lg:w-64`}
           aria-label="Sections"
         >
-          <div className="sticky top-14 py-3">
+          {/* Scrolls on its own: the rail is taller than a laptop screen once an
+              account can see every section. 4.75rem is the header above it
+              (0.75 + 3.5 + 0.5), in rem so it follows the console's size. */}
+          <div className="sticky top-[4.75rem] max-h-[calc(100vh-4.75rem)] overflow-y-auto pb-8 pt-2 lg:pr-4">
             {NAV.map((section) => ({
               ...section,
               items: section.items.filter((item) => can(item.permission)),
             }))
-              // Resolve the visible sections before rendering, so the rule sits
+              // Resolve the visible sections before rendering, so the gap sits
               // between them rather than above whichever section happens to be
               // first once the operator's permissions have filtered the rail.
               .filter((section) => section.items.length > 0)
               .map((section, index) => (
-                <div
-                  key={section.group}
-                  className={
-                    index === 0
-                      ? "mb-4"
-                      : "mb-4 border-t border-white/10 pt-4"
-                  }
-                >
-                  <div className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wider text-white/40">
-                    {section.group}
+                <div key={section.group} className={index === 0 ? "" : "mt-6"}>
+                  <div className="px-4 pb-2 text-caption text-muted">{section.group}</div>
+                  <div className="space-y-0.5">
+                    {section.items.map((item) => {
+                      const active = isActive(pathname, item.href);
+                      const Icon = item.icon;
+                      const count = item.badge ? badges[item.badge] ?? 0 : 0;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMenuOpen(false)}
+                          aria-current={active ? "page" : undefined}
+                          // The current section is ink on the tint; everything
+                          // else is muted on white. The icon takes the label's
+                          // colour, so the two always change together.
+                          className={`flex items-center gap-3 rounded-sm px-4 py-2 text-body-sm transition-colors duration-150 ${
+                            active
+                              ? "bg-canvas-soft font-semibold text-ink"
+                              : "text-muted hover:bg-canvas-soft hover:text-ink"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden />
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          {/* The one place the accent is spent: a queue with
+                              something in it is asking for a decision. */}
+                          {count > 0 && (
+                            <span
+                              className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-label tabular-nums text-on-primary"
+                              aria-label={`${count} outstanding`}
+                            >
+                              {count > 99 ? "99+" : count}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
-                  {section.items.map((item) => {
-                    const active = isActive(pathname, item.href);
-                    const Icon = item.icon;
-                    const count = item.badge ? badges[item.badge] ?? 0 : 0;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMenuOpen(false)}
-                        aria-current={active ? "page" : undefined}
-                        className={`flex items-center gap-2.5 border-l-[3px] px-4 py-1.5 text-[13px] transition ${
-                          active
-                            ? "border-l-white bg-navy-600 font-medium text-white"
-                            : "border-l-transparent text-white/70 hover:bg-navy-600/60 hover:text-white"
-                        }`}
-                      >
-                        <Icon
-                          className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-white/55"}`}
-                          strokeWidth={1.6}
-                          aria-hidden
-                        />
-                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                        {count > 0 && (
-                          <span
-                            className="shrink-0 rounded-full bg-white/15 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-white"
-                            aria-label={`${count} outstanding`}
-                          >
-                            {count > 99 ? "99+" : count}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
                 </div>
               ))}
-
           </div>
         </nav>
 
         {/* -------------------------------------------------------------- */}
-        <main className="min-w-0 flex-1">
-          <div className="mx-auto max-w-[1500px] px-4 py-5">{children}</div>
-          <footer className="border-t border-line px-4 py-3 text-2xs text-ink-400">
-            Vigentra · All times are shown in IST
-          </footer>
-        </main>
+        <main className="min-w-0 flex-1 pb-section pt-2 lg:pl-4">{children}</main>
       </div>
+
+      <PageFooter />
     </div>
+  );
+}
+
+/**
+ * Every page ends on the same inverted band - ink where the rest is white,
+ * rounded where it meets the canvas. Shared with the sign-in page, which has
+ * no shell around it but should still end the way the console does.
+ */
+export function PageFooter() {
+  return (
+    <footer className="mx-auto w-full max-w-[1792px] px-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 rounded-t-md bg-ink px-6 py-6 sm:px-8">
+        <BrandLockup tone="onDark" />
+        <p className="text-caption text-faint">All times are shown in IST</p>
+      </div>
+    </footer>
   );
 }
 
 export function LoadingPanel({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-10 text-[13px] text-ink-500">
+    <div className="flex items-center gap-2 py-12 text-body-sm text-muted">
       <Spinner /> {label}…
     </div>
   );

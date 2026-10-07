@@ -126,7 +126,7 @@ export default function AlertsPage() {
         subtitle="Vehicles on the watchlist seen by a camera, and cameras that stopped answering."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         {permissions.includes("health:read") && (
@@ -143,7 +143,7 @@ export default function AlertsPage() {
         </Notice>
 
         <Card title="Filter">
-          <div className="flex flex-wrap items-end gap-3 px-3 py-3">
+          <div className="flex flex-wrap items-start gap-3 px-6 py-5">
             <FloatSelect
               label="Time window"
                 value={sinceHours}
@@ -156,7 +156,7 @@ export default function AlertsPage() {
                 <option value="720">Last 30 days</option>
             </FloatSelect>
 
-            <label className="flex items-center gap-2 pb-1 text-[13px]">
+            <label className="flex h-12 items-center gap-2 text-body-sm">
               <input
                 type="checkbox"
                 checked={unacknowledgedOnly}
@@ -166,7 +166,7 @@ export default function AlertsPage() {
             </label>
 
             <label
-              className="flex items-center gap-2 pb-1 text-[13px]"
+              className="flex h-12 items-center gap-2 text-body-sm"
               title="Near matches are how a misread plate still reaches you. Hiding them is a choice, not a default."
             >
               <input
@@ -177,12 +177,12 @@ export default function AlertsPage() {
               Hide near matches
             </label>
 
-            <button className="btn" onClick={() => void load()} disabled={busy}>
+            <button className="btn btn-lg" onClick={() => void load()} disabled={busy}>
               {busy ? <Spinner /> : <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Refresh
             </button>
 
             {refreshedAt && (
-              <span className="text-2xs text-ink-500">
+              <span className="text-caption leading-[3rem] text-muted">
                 Updated {relative(refreshedAt)} · re-checks every 5s
               </span>
             )}
@@ -190,7 +190,7 @@ export default function AlertsPage() {
         </Card>
 
         {rows !== null && (
-          <div className="flex flex-wrap gap-2 text-[13px]">
+          <div className="flex flex-wrap gap-2 text-body-sm">
             <Pill tone={open.length ? "bad" : "ok"}>
               {open.length} open {open.length === 1 ? "alert" : "alerts"}
             </Pill>
@@ -202,15 +202,15 @@ export default function AlertsPage() {
 
         {rows === null ? (
           <Card title="Loading">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               <Spinner /> Checking for watchlist hits…
             </div>
           </Card>
         ) : rows.length === 0 ? (
           <Card title="No alerts">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               <p>Nothing on the watchlist has been seen in this window.</p>
-              <p className="mt-2 text-2xs">
+              <p className="mt-2 text-caption">
                 That is the expected state. If you were expecting a hit, check that the vehicle is
                 on the{" "}
                 <Link className="link" href="/watchlist">
@@ -243,7 +243,7 @@ export default function AlertsPage() {
                     <tr key={row.alert_id} className={row.acknowledged ? "opacity-60" : ""}>
                       <td className="whitespace-nowrap">
                         <div>{ist(row.timestamp_utc)}</div>
-                        <div className="text-2xs text-ink-500">{relative(row.timestamp_utc)}</div>
+                        <div className="text-caption text-muted">{relative(row.timestamp_utc)}</div>
                       </td>
                       <td className="whitespace-nowrap">
                         <Pill tone={PRIORITY_TONE[row.priority] ?? "idle"}>{row.priority}</Pill>{" "}
@@ -251,7 +251,7 @@ export default function AlertsPage() {
                       </td>
                       <td className="mono">
                         {row.plate_withheld ? (
-                          <span className="italic text-ink-400" title="Withheld for your role">
+                          <span className="italic text-muted" title="Withheld for your role">
                             withheld
                           </span>
                         ) : (
@@ -260,7 +260,7 @@ export default function AlertsPage() {
                       </td>
                       <td className="mono">
                         {row.plate_withheld ? (
-                          <span className="italic text-ink-400">withheld</span>
+                          <span className="italic text-muted">withheld</span>
                         ) : (
                           row.seen_plate
                         )}
@@ -272,7 +272,7 @@ export default function AlertsPage() {
                           <>
                             <Pill tone="warn">near</Pill>
                             <span
-                              className="ml-1 text-2xs text-ink-500"
+                              className="ml-1 text-caption text-muted"
                               title="Confusion-weighted edit distance. One classic misread scores 0.35."
                             >
                               {row.distance.toFixed(2)}
@@ -284,7 +284,7 @@ export default function AlertsPage() {
                         <Link className="link" href={`/registry/${encodeURIComponent(row.camera_id)}`}>
                           {row.camera_name ?? row.camera_id}
                         </Link>
-                        <div className="text-2xs text-ink-500">
+                        <div className="text-caption text-muted">
                           {[row.district, row.city].filter(Boolean).join(" · ") || row.camera_id}
                         </div>
                       </td>
@@ -299,7 +299,7 @@ export default function AlertsPage() {
                             <Pill tone={row.dismissed_reason ? "idle" : "ok"}>
                               {row.dismissed_reason ? "dismissed" : "acknowledged"}
                             </Pill>
-                            <div className="text-2xs text-ink-500">
+                            <div className="text-caption text-muted">
                               by {row.acknowledged_by}
                               {row.dismissed_reason ? ` — ${row.dismissed_reason}` : ""}
                             </div>
@@ -336,7 +336,7 @@ export default function AlertsPage() {
                               <div className="flex gap-1">
                                 <FloatInput
                                   label="What did the frame actually show?"
-                                  inputClassName="text-2xs"
+                                  inputClassName="text-caption"
                                   value={dismissReason}
                                   onChange={(event) => setDismissReason(event.target.value)}
                                 />
@@ -353,7 +353,7 @@ export default function AlertsPage() {
                         )}
                         {!row.plate_withheld && row.seen_plate && (
                           <Link
-                            className="link mt-1 block text-2xs"
+                            className="link mt-1 block text-caption"
                             href={`/plates?q=${encodeURIComponent(row.seen_plate)}`}
                           >
                             Trace this vehicle →

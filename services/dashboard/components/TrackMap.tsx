@@ -35,8 +35,8 @@ import { ist } from "@/lib/format";
 
 const GUJARAT: LatLngExpression = [22.66, 71.75];
 
-const EXACT_COLOUR = "#1b4f9c";
-const NEAR_COLOUR = "#a2680a";
+const EXACT_COLOUR = "#141414";
+const NEAR_COLOUR = "#946000";
 const IMPLAUSIBLE_COLOUR = "#b3261e";
 
 interface Placed {
@@ -97,16 +97,16 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline-soft px-6 py-4">
         <div>
-          <div className="text-[13px] font-semibold">
+          <div className="card-title">
             Movement of <span className="mono">{plate}</span> ·{" "}
-            <span className="tabular font-mono text-ink-500">
+            <span className="tabular font-mono text-muted">
               {placed.length}/{points.length}
             </span>{" "}
             plotted
           </div>
-          <p className="mt-0.5 text-2xs text-ink-500">
+          <p className="mt-1 max-w-[80ch] text-caption text-muted">
             The dashed line joins cameras that read the plate, in time order. It is not the path
             the vehicle drove — what happened between two cameras is unknown.
             {unplaced > 0 && (
@@ -121,7 +121,7 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
         <TrackLegend />
       </div>
 
-      <div className="relative h-[460px] w-full bg-[#eaeef3]">
+      <div className="relative h-[460px] w-full bg-canvas-soft">
         <MapContainer
           center={GUJARAT}
           zoom={7}
@@ -171,7 +171,7 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
               }}
             >
               <Popup>
-                <div className="space-y-1 text-[12px]">
+                <div className="space-y-1 text-caption">
                   <div className="font-semibold">
                     {entry.order}. {entry.point.camera_name ?? entry.point.camera_id}
                   </div>
@@ -191,7 +191,7 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
                   </div>
                   {entry.point.road_or_junction && <div>{entry.point.road_or_junction}</div>}
                   {[entry.point.district, entry.point.city].filter(Boolean).length > 0 && (
-                    <div className="text-ink-500">
+                    <div className="text-muted">
                       {[entry.point.district, entry.point.city].filter(Boolean).join(" · ")}
                     </div>
                   )}
@@ -203,7 +203,7 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
                     </div>
                   )}
                   {entry.point.coverage_description && (
-                    <div className="text-ink-500">{entry.point.coverage_description}</div>
+                    <div className="text-muted">{entry.point.coverage_description}</div>
                   )}
                 </div>
               </Popup>
@@ -217,7 +217,7 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
 
 function TrackLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-2xs text-ink-600">
+    <div className="flex flex-wrap items-center gap-3 text-caption text-muted">
       <span className="inline-flex items-center gap-1.5">
         <span
           className="inline-block h-3 w-3 rounded-full"
@@ -227,7 +227,7 @@ function TrackLegend() {
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span
-          className="inline-block h-3 w-3 rounded-full bg-white"
+          className="inline-block h-3 w-3 rounded-full bg-canvas"
           style={{ border: `2px solid ${NEAR_COLOUR}` }}
         />
         near match

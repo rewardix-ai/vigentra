@@ -11,6 +11,7 @@ import {
   Spinner,
 } from "@/components/ui";
 import { BrandLockup } from "@/components/Brand";
+import { PageFooter } from "@/components/Shell";
 
 /**
  * Where to go after signing in: `next`, but only ever a path on this site.
@@ -55,16 +56,23 @@ function SignInForm() {
     }
   }
 
+  // No card: the form stands directly on the canvas, under a heading at full
+  // weight and a line set light beside it. That pairing - 652 against 300 - is
+  // the whole of the page's decoration.
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-5 py-10">
-      <div className="card w-full max-w-sm px-7 py-8">
-        <div className="mb-7 flex justify-center">
-          <BrandLockup size="lg" />
-        </div>
+    <div className="flex min-h-screen flex-col bg-canvas">
+      <header className="px-6 pt-6 sm:px-8">
+        <BrandLockup />
+      </header>
 
-        <h1 className="text-lg font-semibold text-ink-900">Sign in</h1>
+      <main className="flex flex-1 items-center justify-center px-6 py-section">
+        <div className="w-full max-w-[26rem]">
+          <h1 className="text-h2 text-ink sm:text-h1">Sign in.</h1>
+          <p className="mt-4 text-body-lg text-muted">
+            Unified AI video intelligence for safer cities.
+          </p>
 
-          <form className="mt-4 space-y-3" onSubmit={submit}>
+          <form className="mt-10 space-y-3" onSubmit={submit}>
             {/* The leading icons are gone rather than combined with the label:
                 at rest the label sits exactly where the icon did, and running
                 both pushes the label off the field's text baseline. */}
@@ -88,19 +96,22 @@ function SignInForm() {
 
             {error && <Notice tone="bad">{error}</Notice>}
 
-            <button className="btn btn-primary w-full" type="submit" disabled={busy}>
-              {busy ? <Spinner /> : <LogIn className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />}
+            <button className="btn btn-primary btn-lg w-full" type="submit" disabled={busy}>
+              {busy ? <Spinner /> : <LogIn className="h-4 w-4" strokeWidth={2} aria-hidden />}
               {busy ? "Signing in…" : "Sign in"}
             </button>
           </form>
-      </div>
+        </div>
+      </main>
+
+      <PageFooter />
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-[13px] text-ink-500">Loading…</div>}>
+    <Suspense fallback={<div className="p-8 text-body-sm text-muted">Loading…</div>}>
       <SignInForm />
     </Suspense>
   );

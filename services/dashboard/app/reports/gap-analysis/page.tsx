@@ -37,11 +37,11 @@ function CoverageBar({ row }: { row: GapAnalysis["districts_covered"][number] })
   const total = Math.max(1, row.cameras);
   const seg = (part: number) => (part / total) * 100;
   return (
-    <div className="flex h-2.5 overflow-hidden rounded-sm border border-line" title={`${row.cameras} cameras`}>
-      <span style={{ width: `${seg(row.online)}%`, background: "var(--ok, #1a7f47)" }} />
-      <span style={{ width: `${seg(row.degraded)}%`, background: "var(--warn, #a2680a)" }} />
-      <span style={{ width: `${seg(row.offline)}%`, background: "var(--bad, #b3261e)" }} />
-      <span style={{ width: `${seg(row.unavailable)}%`, background: "var(--idle, #7b858f)" }} />
+    <div className="flex h-2 overflow-hidden rounded-full bg-canvas-soft" title={`${row.cameras} cameras`}>
+      <span className="bg-ok" style={{ width: `${seg(row.online)}%` }} />
+      <span className="bg-warn" style={{ width: `${seg(row.degraded)}%` }} />
+      <span className="bg-bad" style={{ width: `${seg(row.offline)}%` }} />
+      <span className="bg-faint" style={{ width: `${seg(row.unavailable)}%` }} />
     </div>
   );
 }
@@ -156,16 +156,15 @@ export default function GapAnalysisPage() {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Thresholds */}
         <Card title="Thresholds">
-          <div className="grid gap-3 px-4 py-3 md:grid-cols-2">
+          <div className="grid gap-3 px-6 py-5 md:grid-cols-2">
             <FloatInput
               label="A district is thin when active cameras are below…"
               type="number"
               min={1}
               max={200}
-              inputClassName="max-w-[8rem]"
               value={minCameras}
               onChange={(event) => setMinCameras(Math.max(1, Number(event.target.value) || 1))}
             />
@@ -174,7 +173,6 @@ export default function GapAnalysisPage() {
               type="number"
               min={1}
               max={40}
-              inputClassName="max-w-[8rem]"
               value={ageingYears}
               onChange={(event) => setAgeingYears(Math.max(1, Number(event.target.value) || 1))}
             />
@@ -182,7 +180,7 @@ export default function GapAnalysisPage() {
         </Card>
 
         {/* Totals */}
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Stat label="Cameras in registry" value={report.totals.cameras} />
           <Stat
             label="Active cameras"
@@ -214,7 +212,7 @@ export default function GapAnalysisPage() {
         <Card
           title="District coverage"
           action={
-            <span className="text-2xs text-ink-500">
+            <span className="text-caption text-muted">
               Bar segments: <span className="mono">online</span> ·{" "}
               <span className="mono">degraded</span> · <span className="mono">offline</span> ·{" "}
               <span className="mono">unavailable</span>
@@ -242,16 +240,16 @@ export default function GapAnalysisPage() {
                 <tbody>
                   {report.districts_covered.map((row) => (
                     <tr key={row.district}>
-                      <td className="font-medium">{row.district}</td>
+                      <td className="font-semibold">{row.district}</td>
                       <td className="tabular text-right">{row.cameras}</td>
                       <td className="tabular text-right">{row.online}</td>
                       <td className="tabular text-right">{row.degraded}</td>
                       <td className="tabular text-right">{row.offline}</td>
                       <td className="tabular text-right">{row.unavailable}</td>
-                      <td className="min-w-[180px]">
+                      <td className="min-w-[11.25rem]">
                         <CoverageBar row={row} />
                       </td>
-                      <td className="text-2xs text-ink-500">
+                      <td className="text-caption text-muted">
                         {Object.entries(row.by_department)
                           .map(([dept, count]) => `${dept}: ${count}`)
                           .join(" · ") || "—"}
@@ -269,7 +267,7 @@ export default function GapAnalysisPage() {
         <Card
           title="Ageing infrastructure"
           action={
-            <span className="text-2xs text-ink-500">
+            <span className="text-caption text-muted">
               {report.ageing_cameras.length} camera(s) older than{" "}
               {report.thresholds.ageing_years} years
             </span>
@@ -299,7 +297,7 @@ export default function GapAnalysisPage() {
                     <tr key={row.camera_id}>
                       <td>
                         <Link
-                          className="font-medium text-brand-600 hover:underline"
+                          className="link-quiet"
                           href={`/registry/${encodeURIComponent(row.camera_id)}`}
                         >
                           {row.name}
@@ -308,7 +306,7 @@ export default function GapAnalysisPage() {
                       <td className="mono">{row.camera_id}</td>
                       <td>{row.owning_department}</td>
                       <td>{row.district}</td>
-                      <td className="text-ink-500">{calendarDate(row.installation_date)}</td>
+                      <td className="text-muted">{calendarDate(row.installation_date)}</td>
                       <td className="tabular text-right">{row.age_years?.toFixed(1) ?? "—"}</td>
                       <td>
                         <HealthPill status={row.health_status} />
@@ -321,7 +319,7 @@ export default function GapAnalysisPage() {
           )}
         </Card>
 
-        <p className="text-2xs leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           Thresholds are advisory — adjust them for your own coverage standard. The report is
           scoped by your role: a departmental account sees only its own department, a statewide
           account sees every federated department.

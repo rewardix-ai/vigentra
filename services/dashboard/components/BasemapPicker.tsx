@@ -161,29 +161,26 @@ export function BasemapPicker({
   const active = BASEMAPS.find((b) => b.id === value) ?? BASEMAPS[0];
   // One chrome, whatever the basemap. The console is a light interface and
   // the picker is part of it, not part of the map: changing the basemap
-  // changes the CARTOGRAPHY. Controls, department colours, health rings and
+  // changes the CARTOGRAPHY. It floats over tiles rather than sitting on the
+  // page, which is why it is one of the few surfaces here with a shadow. Controls, department colours, health rings and
   // coverage wedges keep their meaning across every style, because a legend
   // that reads differently depending on which tiles loaded is not a legend.
   return (
-    <div className="absolute right-3 top-3 z-[1000] rounded border border-line bg-white/95 p-1 shadow-sm backdrop-blur">
-      <div className="flex gap-0.5">
+    <div className="absolute right-3 top-3 z-[1000] flex flex-col items-end gap-2">
+      <div role="group" aria-label="Basemap" className="segmented shadow-overlay">
         {BASEMAPS.map((basemap) => (
           <button
             key={basemap.id}
             type="button"
+            aria-pressed={basemap.id === value}
             onClick={() => onChange(basemap.id)}
-            className={
-              "rounded px-2 py-1 text-2xs font-medium transition " +
-              (basemap.id === value
-                ? "bg-navy-800 text-white"
-                : "text-ink-600 hover:bg-brand-50")
-            }
+            className="segmented-item h-7 text-caption"
           >
             {basemap.label}
           </button>
         ))}
       </div>
-      <p className="px-2 pb-0.5 pt-1 text-[10px] leading-tight text-ink-400">
+      <p className="rounded-full bg-canvas px-3 py-1 text-caption text-muted shadow-overlay">
         {active.purpose}
       </p>
     </div>

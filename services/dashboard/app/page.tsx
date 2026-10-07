@@ -97,13 +97,13 @@ export default function OverviewPage() {
         }
       />
 
-      <div className="space-y-4">
+      <div className="space-y-8">
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
 
         {/* Registry counts */}
         <div>
-          <h2 className="section-label mb-2">Camera register</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <h2 className="section-label mb-3">Camera register</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
             <Stat
               label="Registered cameras"
               value={overview?.total_cameras ?? "—"}
@@ -139,10 +139,10 @@ export default function OverviewPage() {
         </div>
 
         {/* Pipeline + health */}
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-x-4 gap-y-8 lg:grid-cols-2">
           <div>
-            <h2 className="section-label mb-2">Onboarding pipeline</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <h2 className="section-label mb-3">Onboarding pipeline</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
               <Stat
                 label="Not yet in registry"
                 value={overview?.pending_installation_requests ?? "—"}
@@ -166,8 +166,8 @@ export default function OverviewPage() {
           </div>
 
           <div>
-            <h2 className="section-label mb-2">Camera health</h2>
-            <div className="grid grid-cols-4 gap-3">
+            <h2 className="section-label mb-3">Camera health</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Stat label="Online" value={overview?.online ?? "—"} tone="ok" />
               <Stat
                 label="Degraded"
@@ -192,7 +192,7 @@ export default function OverviewPage() {
         <Card
           title="Federated department systems"
           action={
-            <span className="text-2xs text-ink-500">
+            <span className="text-caption text-muted">
               Last metadata synchronisation: {ist(overview?.last_metadata_sync_at)}
             </span>
           }
@@ -220,11 +220,11 @@ export default function OverviewPage() {
                       <td>
                         <DepartmentTag department={source.department} />
                       </td>
-                      <td className="font-medium">{source.display_name}</td>
-                      <td className="text-ink-500">
+                      <td className="whitespace-nowrap font-semibold">{source.display_name}</td>
+                      <td className="whitespace-nowrap text-muted">
                         {source.adapter} v{source.adapter_version}
                       </td>
-                      <td className="mono text-ink-500">{source.endpoint}</td>
+                      <td className="mono text-muted">{source.endpoint}</td>
                       <td className="tabular text-right">{source.camera_count}</td>
                       <td className="tabular text-right">{source.pending_requests}</td>
                       <td>
@@ -232,13 +232,13 @@ export default function OverviewPage() {
                           {source.status}
                         </Pill>
                         {result_ && result_.skipped_unregistered > 0 && (
-                          <div className="mt-1 text-2xs text-ink-500">
+                          <div className="mt-1 text-caption text-muted">
                             {result_.skipped_unregistered} not yet registered
                           </div>
                         )}
                       </td>
-                      <td className="tabular text-ink-500">{latency(source.latency_ms)}</td>
-                      <td className="text-ink-500" title={ist(source.last_sync_at)}>
+                      <td className="tabular whitespace-nowrap text-muted">{latency(source.latency_ms)}</td>
+                      <td className="whitespace-nowrap text-muted" title={ist(source.last_sync_at)}>
                         {relative(source.last_sync_at)}
                       </td>
                     </tr>
@@ -246,7 +246,7 @@ export default function OverviewPage() {
                 })}
                 {sources.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-ink-500">
+                    <td colSpan={9} className="py-8 text-center text-muted">
                       No department systems registered.
                     </td>
                   </tr>
@@ -255,7 +255,7 @@ export default function OverviewPage() {
             </table>
           </div>
           {sources.some((source) => source.last_error) && (
-            <div className="border-t border-line p-3">
+            <div className="space-y-3 border-t border-hairline-soft px-6 py-5">
               {sources
                 .filter((source) => source.last_error)
                 .map((source) => (

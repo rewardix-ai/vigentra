@@ -22,14 +22,14 @@ function AccessRow({
   description: string;
 }) {
   return (
-    <div className="flex items-start gap-4 border-b border-line px-4 py-3 last:border-b-0">
+    <div className="flex items-start gap-4 border-b border-hairline-soft px-6 py-5 last:border-b-0">
       <div className="w-52 shrink-0">
-        <div className="text-[13px] font-medium text-ink-900">{label}</div>
+        <div className="text-body-sm font-semibold text-ink">{label}</div>
       </div>
       <div className="w-40 shrink-0">
         <Pill tone={tone}>{state}</Pill>
       </div>
-      <p className="text-[13px] text-ink-500">{description}</p>
+      <p className="text-body-sm text-muted">{description}</p>
     </div>
   );
 }
@@ -78,17 +78,17 @@ export default function AccessPolicyPage() {
         subtitle={`${policy.owning_department} · policy version ${policy.policy_version}`}
       />
 
-      <div className="space-y-3">
-        <div className="flex items-start gap-2.5 rounded border border-line border-l-4 border-l-navy-700 bg-white px-3.5 py-2.5">
+      <div className="space-y-4">
+        <div className="panel flex items-start gap-3 px-4 py-3">
           <LockIcon className="mt-0.5 shrink-0" />
-          <div className="text-[13px]">
-            <div className="font-semibold text-ink-900">
+          <div className="text-body-sm">
+            <div className="font-semibold text-ink">
               Video access through Vigentra:{" "}
-              {policy.vigentra_video_access ? "PERMITTED BY THE OWNER" : "NOT PERMITTED"}
+              {policy.vigentra_video_access ? "permitted by the owner" : "not permitted"}
             </div>
-            <p className="mt-0.5 text-ink-500">{policy.vigentra_video_access_note}</p>
-            <p className="mt-1 text-ink-500">
-              Footage owner: <strong className="text-ink-900">{policy.footage_custodian}</strong>
+            <p className="mt-0.5 text-ink-soft">{policy.vigentra_video_access_note}</p>
+            <p className="mt-1 text-ink-soft">
+              Footage owner: <strong className="text-ink">{policy.footage_custodian}</strong>
             </p>
           </div>
         </div>
@@ -112,15 +112,15 @@ export default function AccessPolicyPage() {
 
         <Card title="Roles permitted to view footage in the owning department's VMS">
           {policy.permitted_local_roles.length === 0 ? (
-            <p className="px-4 py-4 text-[13px] text-ink-500">
+            <p className="px-6 py-5 text-body-sm text-muted">
               No local viewing roles recorded for this camera.
             </p>
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-y divide-hairline-soft">
               {policy.permitted_local_roles.map((role) => (
-                <li key={role} className="flex items-center gap-3 px-4 py-2.5">
+                <li key={role} className="flex items-center gap-3 px-6 py-4">
                   <Pill tone="idle">{role.replace(/_/g, " ")}</Pill>
-                  <span className="text-[13px] text-ink-500">
+                  <span className="text-body-sm text-muted">
                     may view this camera&rsquo;s footage inside {policy.footage_custodian}&rsquo;s
                     own system
                   </span>
@@ -128,7 +128,7 @@ export default function AccessPolicyPage() {
               ))}
             </ul>
           )}
-          <p className="border-t border-line px-4 py-2 text-2xs leading-relaxed text-ink-500">
+          <p className="border-t border-hairline-soft px-6 py-4 text-caption leading-relaxed text-muted">
             This is a record of the owning department&rsquo;s policy, not a grant. These role names
             belong to that department&rsquo;s VMS and are unrelated to Vigentra roles. Vigentra
             provides no link, token or route to footage for any of them.
@@ -136,7 +136,7 @@ export default function AccessPolicyPage() {
         </Card>
 
         <Card title="Policy provenance">
-          <div className="grid gap-x-5 gap-y-3.5 px-4 py-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">
             <Field label="Camera" mono>
               {policy.camera_id}
             </Field>

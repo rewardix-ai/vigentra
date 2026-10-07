@@ -256,13 +256,13 @@ export function VideoPlayer({
   if (!session) {
     return (
       <form
-        className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3 [--field-bg:#f7f8fa]"
+        className="panel space-y-3 p-6"
         onSubmit={(event) => {
           event.preventDefault(); // Enter in the password opens the camera
           if (canOpen) void open();
         }}
       >
-        <div className="text-[13px] font-semibold text-ink-900">
+        <div className="text-body font-semibold text-ink">
           {isPlayback ? "Request recorded footage" : "Open a live session"} · {cameraName}
         </div>
 
@@ -292,7 +292,7 @@ export function VideoPlayer({
                   onChange={(event) => setToTime(event.target.value)}
               />
             </div>
-            <p className="text-2xs text-ink-500">
+            <p className="text-caption text-muted">
               {retentionDays
                 ? `${cameraName} keeps ${retentionDays} days of footage. Anything older is gone, not withheld.`
                 : "Times are read in your own timezone and sent as UTC."}
@@ -330,7 +330,7 @@ export function VideoPlayer({
             hint="FIR 214/2026"
         />
 
-        <p className="text-2xs text-ink-500">
+        <p className="text-caption text-muted">
           Your password is re-checked at this point: a signed-in tab left unattended must not be
           enough to open a camera. The session is short-lived, watermarked with your username, and
           written to the audit trail. The owning unit can end it at any time.
@@ -353,26 +353,26 @@ export function VideoPlayer({
       : "";
 
   return (
-    <div className="space-y-2 rounded border border-line bg-white p-3">
+    <div className="card space-y-4 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[13px] font-semibold text-ink-900">
+        <div className="flex items-center gap-3 text-body font-semibold text-ink">
           {!isPlayback && !expired && (
-            <span className="inline-flex items-center gap-1.5 rounded bg-bad-bg px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-bad">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bad" />
+            <span className="pill text-bad">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bad motion-reduce:animate-none" />
               Live
             </span>
           )}
           <span>
             {cameraName}
             {isPlayback && session.start_time_utc && (
-              <span className="ml-1 font-normal text-ink-500">
+              <span className="ml-1 font-normal text-muted">
                 · {windowLabel(session.start_time_utc, session.end_time_utc)}
               </span>
             )}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-2xs tabular-nums ${expired ? "text-bad" : "text-ink-500"}`}>
+          <span className={`text-caption tabular-nums ${expired ? "text-bad" : "text-muted"}`}>
             {expired ? "session expired" : `expires in ${formatCountdown(remaining)}`}
           </span>
           {isPlayback && (
@@ -392,7 +392,7 @@ export function VideoPlayer({
           audited separately.
         </Notice>
       ) : (
-        <div className="relative overflow-hidden rounded border border-line bg-black">
+        <div className="relative overflow-hidden rounded-sm bg-black">
           <video
             ref={setVideoEl}
             key={session.session_id}
@@ -409,7 +409,7 @@ export function VideoPlayer({
             loop={!isPlayback && !isHls}
             onError={() => void explainFailure(session)}
           />
-          <div className="pointer-events-none absolute right-2 top-2 rounded bg-black/55 px-2 py-1 text-2xs text-white">
+          <div className="badge-overlay pointer-events-none absolute right-3 top-3 font-normal">
             {session.watermark}
           </div>
           {/* Inside the video box so the boxes scale with the picture. */}
@@ -421,7 +421,7 @@ export function VideoPlayer({
 
       {error && <Notice tone="bad">{error}</Notice>}
 
-      <dl className="grid gap-x-4 gap-y-1 text-2xs text-ink-500 sm:grid-cols-4">
+      <dl className="grid gap-x-6 gap-y-3 text-body-sm text-ink sm:grid-cols-4">
         <div>
           <dt className="field-label">Custodian</dt>
           <dd>{session.department}</dd>

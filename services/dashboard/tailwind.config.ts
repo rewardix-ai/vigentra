@@ -1,68 +1,112 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Government / enterprise asset-registry palette.
- * Restrained on purpose: navy chrome, neutral paper, status colour used only
- * where a status is actually being communicated.
+ * The console's design tokens: a gallery-white, monochrome system.
+ *
+ * Near-black ink on a white canvas, structure carried by a ladder of barely
+ * there neutral tints rather than by shadows or colour, stadium-pill controls
+ * and 24px cards. One electric blue is the only chromatic accent, and it is
+ * spent on things that are asking somebody for a decision. Everything else
+ * that is coloured on screen is content: the map, the video, a status.
+ *
+ * The colour, radius, shadow, type-size and weight scales are REPLACED rather
+ * than extended. With Tailwind's defaults still present, `rounded-lg`,
+ * `shadow-md` or `text-gray-500` would all compile, and a system that only
+ * holds while nobody reaches past it does not hold.
  */
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
+    colors: {
+      transparent: "transparent",
+      current: "currentColor",
+      white: "#ffffff",
+      black: "#000000",
+
+      // Brand. The identity IS the ink: every primary action is an ink pill.
+      primary: "#141414",
+      "on-primary": "#ffffff",
+
+      // Text.
+      ink: { DEFAULT: "#141414", soft: "#262626" },
+      muted: "#707070",
+      // Decoration only - separators, resting icons, the footer's quiet line.
+      // At 2.3:1 on white it is not a colour for anything that must be read.
+      faint: "#adadad",
+
+      // Surfaces: the tint ladder that stands in for elevation.
+      canvas: { DEFAULT: "#ffffff", soft: "#f3f3f3" },
+      field: "#f0f0f0",
+      hairline: { DEFAULT: "#e0e0e0", soft: "#f0f0f0" },
+
+      accent: "#0066ff",
+
+      // State. The source system defines no success/warning/error palette - it
+      // describes marketing pages, which have nothing to report. An operations
+      // console does, so these three exist, and they are held to one job: the
+      // icon and label of a status. They never fill a surface.
+      ok: "#1a7f47",
+      warn: "#946000",
+      bad: "#b3261e",
+    },
+    // A bare `border` is a control edge, not the text colour.
+    borderColor: ({ theme }) => ({ ...theme("colors"), DEFAULT: "#e0e0e0" }),
+    borderRadius: {
+      none: "0px",
+      sm: "16px", // inputs, media tiles, callouts, nav rows
+      md: "24px", // content cards
+      full: "9999px", // every control: buttons, pills, toggles, badges
+    },
+    // Shadow-free by design. Elevation is fill difference and hairlines; these
+    // two are the exceptions the system itself makes - the lifted segment of a
+    // segmented control, and a surface floating over a map or a video, which
+    // has no page tint to separate it from what is underneath.
+    boxShadow: {
+      none: "none",
+      segment: "0 1px 2px rgba(20, 20, 20, 0.12)",
+      overlay: "0 2px 8px rgba(20, 20, 20, 0.16)",
+    },
+    // Saans' signature positions on the weight axis. There is no 500 and no
+    // 700: text is 456, emphasis and controls are 600, headings are 652.
+    fontWeight: {
+      light: "300",
+      normal: "456",
+      semibold: "600",
+      heading: "652",
+    },
+    // Each size carries its own leading and, where the role fixes one, its
+    // weight - so `text-h3` is the whole heading, not a third of it. The sizes
+    // are the design system's own, in rem at a 16px root; how large a rem is on
+    // screen is a single setting at the top of globals.css.
+    fontSize: {
+      display: ["5rem", { lineHeight: "1", fontWeight: "652" }],
+      h1: ["3.5rem", { lineHeight: "1", fontWeight: "652" }],
+      h2: ["2.75rem", { lineHeight: "1.13", fontWeight: "652" }],
+      h3: ["2rem", { lineHeight: "1.13", fontWeight: "652" }],
+      h4: ["1.5rem", { lineHeight: "1.25", fontWeight: "652" }],
+      title: ["1.25rem", { lineHeight: "1.3", fontWeight: "600" }],
+      "body-lg": ["1.25rem", { lineHeight: "1.38", fontWeight: "300" }],
+      body: ["1rem", { lineHeight: "1.38" }],
+      "body-sm": ["0.875rem", { lineHeight: "1.43" }],
+      label: ["0.75rem", { lineHeight: "1.33", fontWeight: "600" }],
+      caption: ["0.75rem", { lineHeight: "1.33" }],
+    },
     extend: {
-      colors: {
-        navy: {
-          900: "#0e1e33",
-          800: "#12233d",
-          700: "#1b2f4b",
-          600: "#25405f",
-          500: "#2f5480",
-        },
-        brand: {
-          700: "#153f7d",
-          600: "#1b4f9c",
-          500: "#2463b8",
-          100: "#e3edf9",
-          50: "#f1f6fc",
-        },
-        paper: "#f4f6f8",
-        line: {
-          DEFAULT: "#d8dee6",
-          strong: "#bcc6d2",
-        },
-        ink: {
-          900: "#1f2933",
-          700: "#3b4753",
-          500: "#5b6670",
-          400: "#7b858f",
-        },
-        ok: { DEFAULT: "#1a7f47", bg: "#e7f4ec" },
-        warn: { DEFAULT: "#a2680a", bg: "#fdf3e0" },
-        bad: { DEFAULT: "#b3261e", bg: "#fbeae9" },
-        idle: { DEFAULT: "#5b6670", bg: "#eef1f4" },
-      },
       fontFamily: {
+        // Saans is commercial and not shipped here; a machine that has it
+        // installed uses it. Everyone else gets Inter, self-hosted as a
+        // variable font so 652 and 456 are real positions, not rounded ones.
         sans: [
-          "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto",
-          "Helvetica Neue", "Arial", "sans-serif",
+          "Saans", '"Inter Variable"', "Inter", "-apple-system", "BlinkMacSystemFont",
+          '"Helvetica Neue"', "Arial", "sans-serif",
         ],
+        // Not part of the source system. Kept for identifiers, coordinates and
+        // registration numbers, where 0/O and 1/l must not be confusable.
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
-      /**
-       * Apple-style radii: the corner grows with the surface rather than one
-       * value doing every job. A 16px card around a 10px button reads as
-       * concentric; the same 10px on both reads as a mistake.
-       */
-      borderRadius: {
-        sm: "6px",
-        DEFAULT: "10px",
-        lg: "16px",
-      },
-      boxShadow: {
-        card: "0 1px 2px rgba(16, 30, 51, 0.06)",
-        raised: "0 2px 8px rgba(16, 30, 51, 0.10)",
-      },
-      fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "1rem" }],
+      spacing: {
+        section: "5rem", // 80px between major blocks
+        "section-lg": "7.5rem", // 120px between acts
       },
     },
   },

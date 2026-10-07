@@ -53,16 +53,16 @@ function RequestRow({
   return (
     <tr>
       <td className="whitespace-nowrap">
-        <Link className="font-medium text-brand-600 hover:underline" href={`/registry/${encodeURIComponent(record.camera_id)}`}>
+        <Link className="link-quiet" href={`/registry/${encodeURIComponent(record.camera_id)}`}>
           {record.camera_name ?? record.camera_id}
         </Link>
-        <div className="text-2xs text-ink-500">{record.camera_id}</div>
+        <div className="text-caption text-muted">{record.camera_id}</div>
       </td>
       <td>
         {role === "owner" ? (
           <>
             <div>{record.requested_by}</div>
-            <div className="text-2xs text-ink-500">{record.requester_department}</div>
+            <div className="text-caption text-muted">{record.requester_department}</div>
           </>
         ) : (
           <DepartmentTag department={record.owning_department} />
@@ -70,19 +70,19 @@ function RequestRow({
       </td>
       <td className="max-w-[22rem]">
         <div className="break-words">{record.reason}</div>
-        {record.case_id && <div className="text-2xs text-ink-500">Case {record.case_id}</div>}
+        {record.case_id && <div className="text-caption text-muted">Case {record.case_id}</div>}
       </td>
-      <td className="whitespace-nowrap text-2xs">{record.allowed_modes.join(" + ") || "—"}</td>
+      <td className="whitespace-nowrap text-caption">{record.allowed_modes.join(" + ") || "—"}</td>
       <td className="whitespace-nowrap">
         <GrantStatusPill status={record.status} />
         {record.status === "granted" && (
-          <div className="text-2xs text-ink-500">{relative(record.expires_at)}</div>
+          <div className="text-caption text-muted">{relative(record.expires_at)}</div>
         )}
         {record.decision_note && (
-          <div className="text-2xs text-ink-500">{record.decision_note}</div>
+          <div className="text-caption text-muted">{record.decision_note}</div>
         )}
       </td>
-      <td className="whitespace-nowrap text-2xs text-ink-500">
+      <td className="whitespace-nowrap text-caption text-muted">
         {ist(record.requested_at)}
         {record.decided_by && (
           <div>
@@ -95,14 +95,14 @@ function RequestRow({
           {role === "owner" && record.status === "requested" && (
             <>
               <button
-                className="btn btn-primary"
+                className="btn btn-sm btn-primary"
                 disabled={busy}
                 onClick={() => onDecide(record.grant_id, "grant")}
               >
                 {busy ? <Spinner /> : <Check className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Grant
               </button>
               <button
-                className="btn btn-danger"
+                className="btn btn-sm btn-danger"
                 disabled={busy}
                 onClick={() => onDecide(record.grant_id, "deny")}
               >
@@ -112,12 +112,12 @@ function RequestRow({
             </>
           )}
           {record.status === "granted" && (
-            <button className="btn" disabled={busy} onClick={() => onRevoke(record.grant_id)}>
+            <button className="btn btn-sm" disabled={busy} onClick={() => onRevoke(record.grant_id)}>
               {role === "owner" ? "Revoke" : "Withdraw"}
             </button>
           )}
           {role === "requester" && record.status === "requested" && (
-            <button className="btn" disabled={busy} onClick={() => onRevoke(record.grant_id)}>
+            <button className="btn btn-sm" disabled={busy} onClick={() => onRevoke(record.grant_id)}>
               Withdraw
             </button>
           )}
@@ -206,7 +206,7 @@ export default function AccessRequestsPage() {
         subtitle="Requests to view another unit's cameras, and requests for yours."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
         {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}
 
@@ -292,7 +292,7 @@ export default function AccessRequestsPage() {
           )}
         </Card>
 
-        <p className="text-2xs leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           A grant is personal, time-boxed and revocable: it names one officer, one camera and which
           of live and playback they may open. Every session opened under it is watermarked and
           recorded in the audit log, and revoking a grant stops any session already running at its

@@ -180,7 +180,7 @@ export function DetectionBoxes({ state }: { state: Moments }) {
           }}
         >
           <span
-            className="absolute left-0 top-0 -translate-y-full whitespace-nowrap px-1 text-2xs font-medium"
+            className="absolute left-0 top-0 -translate-y-full whitespace-nowrap px-1 text-caption font-semibold"
             style={{ background: box.colour, color: "#0b1220" }}
           >
             {box.label}
@@ -197,7 +197,7 @@ export function DetectionControls({ state }: { state: Moments }) {
   const { moments, moment, boxes, index, setIndex, shown, setShown, busy, error, load } = state;
   return (
     <>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-2xs">
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-caption">
         <button className="btn btn-sm" type="button" onClick={() => void load()} disabled={busy}>
           {busy ? "Loading…" : shown ? "Reload detections" : "Show what was detected"}
         </button>
@@ -220,7 +220,7 @@ export function DetectionControls({ state }: { state: Moments }) {
             >
               older →
             </button>
-            <span className="text-ink-500">
+            <span className="text-muted">
               frame {index + 1} of {moments.length} · {boxes.length} object
               {boxes.length === 1 ? "" : "s"}
               {moment?.pts != null && (
@@ -240,7 +240,7 @@ export function DetectionControls({ state }: { state: Moments }) {
       </div>
 
       {shown && (
-        <p className="mt-1 text-2xs leading-relaxed text-ink-400">
+        <p className="mt-1 text-caption leading-relaxed text-muted">
           Boxes are what the edge worker recorded at the media time shown, drawn in the
           coordinates it measured them in. They are <strong>not</strong> aligned to the frame
           playing above — a live stream&apos;s position is a buffer offset, not the
@@ -248,7 +248,7 @@ export function DetectionControls({ state }: { state: Moments }) {
         </p>
       )}
 
-      {error && <p className="mt-1 text-2xs text-ink-500">{error}</p>}
+      {error && <p className="mt-1 text-caption text-muted">{error}</p>}
     </>
   );
 }

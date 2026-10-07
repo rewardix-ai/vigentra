@@ -7,121 +7,263 @@ body {
   @apply h-full;
 }
 
+/* The console runs the whole scale one step down wherever there is a mouse.
+   Every size in the system is a rem - type, spacing, control heights - so this
+   one figure shrinks them together and the proportions hold. The tokens in
+   tailwind.config.ts keep the design system's own numbers (a 2rem heading is
+   its 32px); this decides how large a rem is on screen.
+
+   A percentage, not a pixel size, so a reader's own browser font setting still
+   applies. And only for a fine pointer: on a touch screen the same step would
+   take a 40px button to 35px, which is under what a fingertip needs. */
+@media (pointer: fine) {
+  html {
+    font-size: 87.5%;
+  }
+}
+
+/* The console sets its running text at body-sm: tables and field grids are
+   most of what is on screen, and the larger body step is kept for prose. */
 body {
-  @apply bg-paper text-ink-900 antialiased;
-  font-size: 14px;
+  @apply bg-canvas text-body-sm font-normal text-ink antialiased;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* Native boxes, in ink. A custom-drawn checkbox would be a second thing to
+     keep accessible; the accent colour is all the system needs from it. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply h-4 w-4 shrink-0;
+    accent-color: theme("colors.ink.DEFAULT");
+  }
+
+  /* The browser's own "Choose file" button, as an outline pill. */
+  input[type="file"]::file-selector-button {
+    @apply mr-3 h-10 cursor-pointer rounded-full border border-solid border-hairline bg-canvas
+           px-4 text-body-sm font-semibold text-ink transition-colors hover:bg-canvas-soft;
+  }
+
+  ::selection {
+    background: theme("colors.ink.DEFAULT");
+    color: theme("colors.on-primary");
+  }
 }
 
 @layer components {
   /* --- surfaces ------------------------------------------------------- */
-  /* overflow-hidden is load-bearing at this radius: a full-bleed table or
-     header inside the card would otherwise square off its own corners and
-     poke through the card's rounding. */
+  /* A card is a hairline on white, never a shadow. overflow-hidden is
+     load-bearing at this radius: a full-bleed table or header inside the card
+     would otherwise square off its own corners and poke through the rounding. */
   .card {
-    @apply overflow-hidden rounded-lg border border-line bg-white shadow-card;
+    @apply overflow-hidden rounded-md border border-hairline-soft bg-canvas;
   }
 
   .card-header {
-    @apply flex items-center justify-between gap-3 border-b border-line px-4 py-2.5;
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-hairline-soft px-6 py-4;
   }
 
   .card-title {
-    @apply text-[13px] font-semibold text-ink-900;
+    @apply text-body font-semibold text-ink;
   }
 
-  /* The in-text link style already used verbatim across the registry and
-     detection tables, named once so new pages do not re-type it and drift. */
+  /* A tinted panel: the level-1 surface for something set inside a page or a
+     card - a request form, a callout. Fields inside it turn white, because a
+     field-tint input on this fill would have no edge at all. */
+  .panel {
+    @apply rounded-sm bg-canvas-soft;
+    --field-bg: theme("colors.canvas.DEFAULT");
+  }
+
+  /* Muted grey is 4.95:1 on white and 4.46:1 on this tint - just short. On any
+     tinted surface, secondary text steps to ink at 65%, which reads the same
+     and clears the line. */
+  .panel .text-muted,
+  .bg-canvas-soft .text-muted {
+    @apply text-ink/65;
+  }
+
+  /* In running text a link has no colour to be recognised by, so it carries an
+     underline at rest. In a table column of names that would be a ruled page;
+     there the weight says it is a link and the underline arrives on hover. */
   .link {
-    @apply font-medium text-brand-600 hover:underline;
+    @apply font-semibold text-ink underline decoration-faint underline-offset-4 transition-colors
+           hover:decoration-ink;
+  }
+
+  .link-quiet {
+    @apply font-semibold text-ink underline-offset-4 hover:underline;
   }
 
   .section-label {
-    @apply text-2xs font-semibold uppercase tracking-wider text-ink-500;
+    @apply text-body-sm font-semibold text-ink;
   }
 
   /* --- data ----------------------------------------------------------- */
   .field-label {
-    @apply text-2xs font-semibold uppercase tracking-wider text-ink-500;
+    @apply text-caption text-muted;
   }
 
   .field-value {
-    @apply mt-0.5 text-[13px] text-ink-900;
+    @apply mt-1 text-body-sm text-ink;
   }
 
   .data-table {
-    @apply w-full border-collapse text-left text-[13px];
+    @apply w-full border-collapse text-left text-body-sm;
   }
 
+  /* Muted grey would sit at 4.46:1 on this tint, so the header takes ink at
+     reduced opacity instead: the same quiet weight, and it clears 4.5:1. */
   .data-table thead th {
-    @apply border-b border-line bg-[#eef1f5] px-3 py-2 text-2xs font-semibold
-           uppercase tracking-wider text-ink-500;
+    @apply whitespace-nowrap bg-canvas-soft px-3 py-3 text-caption font-normal text-ink/65;
   }
 
+  /* 12px between columns rather than 16. The registry runs to ten of them and
+     every 4px here is 80px of table. */
   .data-table tbody td {
-    @apply border-b border-line/70 px-3 py-2 align-top;
+    @apply border-b border-hairline-soft px-3 py-3 align-top;
+  }
+
+  /* A count or a duration that breaks across two lines is harder to scan
+     than the column being a little wider. */
+  .data-table .tabular {
+    @apply whitespace-nowrap;
+  }
+
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
   }
 
   .data-table tbody tr:hover {
-    @apply bg-brand-50;
+    @apply bg-canvas-soft/60;
+  }
+
+  /* The outer columns line up with the card's own 24px padding. */
+  .data-table th:first-child,
+  .data-table td:first-child {
+    @apply pl-6;
+  }
+
+  .data-table th:last-child,
+  .data-table td:last-child {
+    @apply pr-6;
   }
 
   /* --- controls ------------------------------------------------------- */
+  /* Every button is a stadium. The base is the outline pill; `btn-primary` is
+     the ink pill and there is exactly one of those per decision. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded border border-line-strong
-           bg-white px-3 py-1.5 text-[13px] font-medium text-ink-900 transition
-           hover:bg-[#eef1f5] focus:outline-none focus-visible:ring-2
-           focus-visible:ring-brand-500/50 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full
+           border border-hairline bg-canvas px-4 text-body-sm font-semibold text-ink
+           transition-colors duration-150 hover:bg-canvas-soft active:bg-field
+           disabled:pointer-events-none disabled:opacity-40;
   }
 
   .btn-primary {
-    @apply border-brand-700 bg-brand-600 text-white hover:bg-brand-700;
+    @apply border-primary bg-primary text-on-primary hover:border-ink-soft hover:bg-ink-soft
+           active:border-ink-soft active:bg-ink-soft;
   }
 
+  /* Tertiary: no edge, just the tint. */
+  .btn-soft {
+    @apply border-transparent bg-canvas-soft hover:bg-field;
+  }
+
+  /* Destructive is said in the label's colour, not by filling the pill red. */
   .btn-danger {
-    @apply border-bad bg-white text-bad hover:bg-bad-bg;
+    @apply text-bad;
   }
 
   .btn-sm {
-    @apply px-2 py-1 text-2xs;
+    @apply h-8 gap-1.5 px-3 text-label;
   }
 
+  .btn-lg {
+    @apply h-12 px-6 text-body;
+  }
+
+  /* A square pill for an icon on its own. */
+  .btn-icon {
+    @apply w-10 px-0;
+  }
+
+  /* Fields are a tint with no border at rest; the only edge they ever get is
+     the 2px ink focus ring. Drawn as an outline, not a box-shadow ring, so it
+     cannot collide with the inset shadow that repaints an autofilled field. */
   .input,
   .select,
   .textarea {
-    @apply w-full rounded border border-line-strong bg-white px-2.5 py-1.5 text-[13px]
-           text-ink-900 placeholder:text-ink-400 focus:border-brand-500
-           focus:outline-none focus:ring-1 focus:ring-brand-500/40
-           disabled:bg-[#f4f6f8] disabled:text-ink-500;
+    @apply w-full rounded-sm border-0 px-4 py-3 text-body-sm text-ink placeholder:text-ink/65
+           disabled:cursor-not-allowed disabled:text-muted;
+    background-color: var(--field-bg, theme("colors.field"));
+    outline: 2px solid transparent;
+    outline-offset: 0;
+    transition: outline-color 150ms ease-out;
   }
 
-  .input-error {
-    @apply border-bad focus:border-bad focus:ring-bad/30;
+  .input:focus,
+  .select:focus,
+  .textarea:focus {
+    outline-color: theme("colors.ink.DEFAULT");
+    outline-offset: 0;
+  }
+
+  .input-error,
+  .input-error:focus {
+    outline-color: theme("colors.bad");
+  }
+
+  .select {
+    @apply appearance-none pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23707070' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 1rem center;
+    background-repeat: no-repeat;
   }
 
   /* --- floating labels ------------------------------------------------- */
-  /* The label starts as the field's own placeholder and rises onto the top
-     border once the field is focused or filled, so a filled form still says
-     what each value is - a placeholder-only field loses its own question the
-     moment someone types into it.
+  /* The label starts as the field's own placeholder and rises to the top of
+     the field once it is focused or filled, so a filled form still says what
+     each value is - a placeholder-only field loses its own question the moment
+     someone types into it.
 
      Driven entirely by :placeholder-shown, so there is no React state to keep
      in sync and browser autofill floats the label like any other input. Every
      control therefore needs placeholder=" " - a real placeholder would make
      the field permanently "filled" and pin the label up.
 
-     The label sits ON the border, so it paints a notch in it using the
-     surface colour behind the field. That defaults to white (cards); on any
-     other surface set --field-bg to match, or the notch shows as a smear. */
+     The label stays INSIDE the field. These fields have a fill and no border,
+     so there is no edge for a label to sit on. */
   .float {
     @apply relative;
-    --field-bg: #fff;
+  }
+
+  /* Room above the value for the raised label: 22 + 20 + 6 = a 48px field at
+     full scale, the same height as `btn-lg`, so a toolbar of fields and a
+     button lines up along both edges. */
+  .float > .input,
+  .float > .select,
+  .float > .textarea {
+    @apply pb-1.5 pt-[1.375rem];
   }
 
   .float-label {
-    @apply pointer-events-none absolute left-1.5 top-1/2 z-10 -translate-y-1/2 px-1
-           text-[13px] font-normal normal-case tracking-normal text-ink-400
-           transition-all duration-150;
-    background: var(--field-bg);
+    @apply pointer-events-none absolute left-4 top-3.5 max-w-[calc(100%-2rem)] truncate
+           text-body-sm text-ink/65 transition-all duration-150 motion-reduce:transition-none;
+  }
+
+  .float > .select ~ .float-label {
+    @apply max-w-[calc(100%-3.5rem)];
+  }
+
+  /* A select sizes itself to its options, and "All" is narrower than most of
+     the labels that sit above it. The floor leaves room for the label. */
+  .float > .select {
+    @apply min-w-[12rem];
   }
 
   /* Raised: focused, filled, autofilled, or a select (always holds a value).
@@ -136,50 +278,31 @@ body {
   .float > .textarea:not(:placeholder-shown) ~ .float-label,
   .float > .textarea:-webkit-autofill ~ .float-label,
   .float > .select ~ .float-label {
-    @apply top-0 text-[11px] font-medium text-ink-500;
+    @apply top-1.5 text-caption;
   }
 
   .float > .input:focus ~ .float-label,
   .float > .textarea:focus ~ .float-label,
   .float > .select:focus ~ .float-label {
-    @apply text-brand-600;
-  }
-
-  /* A textarea is taller than one line, so its label pins to the top rather
-     than to the vertical centre. */
-  .float > .textarea ~ .float-label {
-    @apply top-3.5;
-  }
-
-  .float > .textarea:focus ~ .float-label,
-  .float > .textarea:not(:placeholder-shown) ~ .float-label {
-    @apply top-0;
-  }
-
-  /* Room for the label to sit inside the field at rest. */
-  .float > .input,
-  .float > .select,
-  .float > .textarea {
-    @apply py-2.5;
+    @apply text-ink;
   }
 
   .float > .input-error ~ .float-label {
     @apply text-bad;
   }
 
-  /* Chrome paints its own blue over an autofilled field, which the label's
-     notch (painted in --field-bg) then sits on as a visible white patch.
-     background-color is ignored on :-webkit-autofill, so the surface has to
-     be repainted with an inset shadow. */
-  .float > .input:-webkit-autofill,
-  .float > .input:-webkit-autofill:hover,
-  .float > .input:-webkit-autofill:focus,
-  .float > .textarea:-webkit-autofill,
-  .float > .select:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 1000px var(--field-bg) inset;
-    box-shadow: 0 0 0 1000px var(--field-bg) inset;
-    -webkit-text-fill-color: #1f2933;
-    caret-color: #1f2933;
+  /* Chrome paints its own blue over an autofilled field. background-color is
+     ignored on :-webkit-autofill, so the surface has to be repainted with an
+     inset shadow in the field's own tint. */
+  .input:-webkit-autofill,
+  .input:-webkit-autofill:hover,
+  .input:-webkit-autofill:focus,
+  .textarea:-webkit-autofill,
+  .select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--field-bg, theme("colors.field")) inset;
+    box-shadow: 0 0 0 1000px var(--field-bg, theme("colors.field")) inset;
+    -webkit-text-fill-color: theme("colors.ink.DEFAULT");
+    caret-color: theme("colors.ink.DEFAULT");
   }
 
   /* Chrome's preview state has its own internal selector, which older engines
@@ -187,23 +310,50 @@ body {
      to parse one selector discards the whole comma-separated list with it. */
   .float > .input:-internal-autofill-previewed ~ .float-label,
   .float > .input:-internal-autofill-selected ~ .float-label {
-    @apply top-0 text-[11px] font-medium text-ink-500;
+    @apply top-1.5 text-caption;
   }
 
-  .float > .input:-internal-autofill-previewed,
-  .float > .input:-internal-autofill-selected {
-    -webkit-box-shadow: 0 0 0 1000px var(--field-bg) inset;
-    box-shadow: 0 0 0 1000px var(--field-bg) inset;
-    -webkit-text-fill-color: #1f2933;
+  .input:-internal-autofill-previewed,
+  .input:-internal-autofill-selected {
+    -webkit-box-shadow: 0 0 0 1000px var(--field-bg, theme("colors.field")) inset;
+    box-shadow: 0 0 0 1000px var(--field-bg, theme("colors.field")) inset;
+    -webkit-text-fill-color: theme("colors.ink.DEFAULT");
+  }
+
+  /* --- segmented control ---------------------------------------------- */
+  /* A tinted stadium track holding pill options; the chosen one lifts off it
+     as a white pill - the one place in the system a shadow is allowed. */
+  .segmented {
+    @apply inline-flex shrink-0 items-center gap-0.5 rounded-full bg-canvas-soft p-1;
+  }
+
+  .segmented-item {
+    @apply inline-flex h-8 items-center gap-2 whitespace-nowrap rounded-full px-3 text-body-sm
+           font-semibold text-ink/65 transition-colors duration-150 hover:text-ink;
+  }
+
+  .segmented-item[aria-pressed="true"],
+  .segmented-item[aria-current] {
+    @apply bg-canvas text-ink shadow-segment;
   }
 
   /* --- status --------------------------------------------------------- */
-  /* Capsule rather than a small rounded rectangle - a status badge is the one
-     place Apple goes fully round, and it separates "state" from "control" at a
-     glance now that buttons are rounded too. */
+  /* One neutral capsule for every state. What the state IS travels in the
+     icon and the colour of the label, never in a coloured fill - a table of
+     green, amber and red lozenges is a page of coloured bands. */
   .pill {
-    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border
-           px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide;
+    @apply inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full
+           bg-canvas-soft px-2.5 text-label text-ink;
+  }
+
+  /* A label laid over a picture: a video frame, a snapshot. The grey is
+     translucent, so on a bright daytime frame white text would wash out; the
+     backdrop is darkened and blurred underneath to keep it readable. */
+  .badge-overlay {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-label text-on-primary;
+    background: rgba(115, 115, 115, 0.56);
+    -webkit-backdrop-filter: blur(12px) brightness(0.55);
+    backdrop-filter: blur(12px) brightness(0.55);
   }
 }
 
@@ -213,13 +363,13 @@ body {
 }
 
 .mono {
-  @apply font-mono text-[12px];
+  @apply font-mono text-caption;
 }
 
-/* Visible focus ring for keyboard users on every interactive element. */
+/* Focus is signalled in ink, like everything else. */
 :focus-visible {
-  outline: 2px solid #2463b8;
-  outline-offset: 1px;
+  outline: 2px solid theme("colors.ink.DEFAULT");
+  outline-offset: 2px;
 }
 
 ::-webkit-scrollbar {
@@ -227,15 +377,92 @@ body {
   height: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: #eef1f5;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c3ccd7;
-  border: 3px solid #eef1f5;
-  border-radius: 8px;
+  background: theme("colors.hairline.DEFAULT");
+  border: 3px solid theme("colors.canvas.DEFAULT");
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #aab6c4;
+  background: theme("colors.faint");
+}
+
+/* --- maps ---------------------------------------------------------------- */
+/* Leaflet's stylesheet is bundled with the map components and loads after
+   this file, so each rule here is one class more specific than the one it
+   replaces. The chrome Leaflet draws over a map joins the same system as the
+   rest of the console: pills and 16px surfaces in ink on white. A popup or a
+   zoom control floats over tiles, not over the page tint, so these are the
+   surfaces that do carry a shadow. */
+.leaflet-container {
+  font: inherit;
+  background: theme("colors.canvas.soft");
+}
+
+.leaflet-container .leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  box-shadow: theme("boxShadow.overlay");
+  color: theme("colors.ink.DEFAULT");
+}
+
+.leaflet-container .leaflet-popup-content {
+  margin: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.43;
+}
+
+.leaflet-container .leaflet-popup-tip {
+  box-shadow: none;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  top: 0.5rem;
+  right: 0.5rem;
+  color: theme("colors.muted");
+}
+
+.leaflet-container .leaflet-bar {
+  overflow: hidden;
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: theme("boxShadow.overlay");
+}
+
+.leaflet-container .leaflet-bar a {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-bottom-color: theme("colors.hairline.soft");
+  color: theme("colors.ink.DEFAULT");
+  line-height: 2.25rem;
+}
+
+.leaflet-container .leaflet-bar a:hover {
+  background: theme("colors.canvas.soft");
+}
+
+.leaflet-container .leaflet-tooltip {
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: theme("boxShadow.overlay");
+  color: theme("colors.ink.DEFAULT");
+  padding: 0.25rem 0.75rem;
+}
+
+/* The arrow would need redrawing to meet a pill; the tooltip already sits on
+   the shape it describes. */
+.leaflet-container .leaflet-tooltip::before {
+  display: none;
+}
+
+.leaflet-container .leaflet-control-attribution {
+  border-top-left-radius: 16px;
+  color: theme("colors.muted");
+  padding: 2px 10px;
+}
+
+.leaflet-container .leaflet-control-attribution a {
+  color: theme("colors.ink.DEFAULT");
 }
 
 /* Muted basemap.

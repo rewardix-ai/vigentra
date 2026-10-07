@@ -36,7 +36,7 @@ const RegistryMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="card flex h-[520px] items-center justify-center text-[13px] text-ink-500">
+      <div className="card flex h-[520px] items-center justify-center text-body-sm text-muted">
         Loading map…
       </div>
     ),
@@ -159,20 +159,12 @@ function Registry() {
         subtitle="Every department's cameras in one place."
         actions={
           <>
-            <div
-              role="group"
-              aria-label="Registry view"
-              className="inline-flex overflow-hidden rounded border border-line"
-            >
+            <div role="group" aria-label="Registry view" className="segmented">
               <button
                 type="button"
                 aria-pressed={view === "table"}
                 onClick={() => setView("table")}
-                className={`px-3 py-1.5 text-[13px] transition ${
-                  view === "table"
-                    ? "bg-brand-600 text-white"
-                    : "bg-white text-ink-700 hover:bg-brand-50"
-                }`}
+                className="segmented-item"
               >
                 Table
               </button>
@@ -180,11 +172,7 @@ function Registry() {
                 type="button"
                 aria-pressed={view === "map"}
                 onClick={() => setView("map")}
-                className={`border-l border-line px-3 py-1.5 text-[13px] transition ${
-                  view === "map"
-                    ? "bg-brand-600 text-white"
-                    : "bg-white text-ink-700 hover:bg-brand-50"
-                }`}
+                className="segmented-item"
               >
                 Map
               </button>
@@ -202,11 +190,11 @@ function Registry() {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         {/* Filters */}
-        <div className="card px-3 py-2.5">
+        <div className="card px-6 py-5">
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
             <FloatInput
               label="Search"
@@ -265,10 +253,10 @@ function Registry() {
                 ))}
             </FloatSelect>
           </div>
-          <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2">
-            <span className="text-2xs text-ink-500">
-              Showing <span className="tabular font-medium text-ink-900">{visible.length}</span> of{" "}
-              <span className="tabular font-medium text-ink-900">{cameras.length}</span> registered
+          <div className="mt-5 flex min-h-8 flex-wrap items-center justify-between gap-3 border-t border-hairline-soft pt-4">
+            <span className="text-caption text-muted">
+              Showing <span className="tabular font-semibold text-ink">{visible.length}</span> of{" "}
+              <span className="tabular font-semibold text-ink">{cameras.length}</span> registered
               cameras
             </span>
             {dirty && (
@@ -304,18 +292,18 @@ function Registry() {
                   {visible.map((camera) => (
                     <tr key={camera.camera_id}>
                       <td className="mono whitespace-nowrap">{camera.camera_id}</td>
-                      <td className="min-w-[14rem]">
+                      <td className="min-w-[12rem]">
                         <Link
                           href={`/registry/${encodeURIComponent(camera.camera_id)}`}
-                          className="font-medium text-brand-600 hover:underline"
+                          className="link-quiet"
                         >
                           {camera.name}
                         </Link>
-                        <div className="mono text-ink-400">{camera.external_camera_id}</div>
+                        <div className="mono text-muted">{camera.external_camera_id}</div>
                       </td>
                       <td>
                         <DepartmentTag department={camera.owning_department} />
-                        <div className="mono mt-0.5 text-ink-400">{camera.source_system}</div>
+                        <div className="mono mt-0.5 text-muted">{camera.source_system}</div>
                       </td>
                       <td>{camera.location.district}</td>
                       <td>
@@ -328,7 +316,7 @@ function Registry() {
                         <HealthPill status={camera.health.status} />
                       </td>
                       <td
-                        className="whitespace-nowrap text-ink-500"
+                        className="whitespace-nowrap text-muted"
                         title={ist(camera.vigentra_sync.synced_at_utc)}
                       >
                         {relative(camera.vigentra_sync.synced_at_utc)}
@@ -364,7 +352,7 @@ function Registry() {
           </Card>
         )}
 
-        <p className="text-2xs text-ink-400">Map tiles &copy; OpenStreetMap contributors.</p>
+        <p className="text-caption text-muted">Map tiles &copy; OpenStreetMap contributors.</p>
       </div>
     </>
   );

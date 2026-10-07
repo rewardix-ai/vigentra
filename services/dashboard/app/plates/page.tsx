@@ -39,7 +39,7 @@ import type { PlateSearchHit, Track } from "@/lib/types";
 const TrackMap = dynamic(() => import("@/components/TrackMap").then((mod) => mod.TrackMap), {
   ssr: false,
   loading: () => (
-    <div className="card flex h-[460px] items-center justify-center text-[13px] text-ink-500">
+    <div className="card flex h-[460px] items-center justify-center text-body-sm text-muted">
       <Spinner /> Loading map…
     </div>
   ),
@@ -115,7 +115,7 @@ export default function PlatesPage() {
         subtitle="Where a registration number has been seen, across every camera you may read."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         <Notice tone="warn" title="This query is recorded against your account">
@@ -129,8 +129,8 @@ export default function PlatesPage() {
         </Notice>
 
         <Card title="Find the vehicle">
-          <div className="space-y-3 px-3 py-3">
-            <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-3 px-6 py-5">
+            <div className="flex flex-wrap items-start gap-3">
               <FloatInput
                 label="Registration number"
                 className="min-w-[16rem] flex-1"
@@ -166,7 +166,7 @@ export default function PlatesPage() {
               </FloatSelect>
 
               <button
-                className="btn btn-primary"
+                className="btn btn-primary btn-lg"
                 onClick={() => void search()}
                 disabled={busy || query.trim().length < 3}
               >
@@ -182,7 +182,7 @@ export default function PlatesPage() {
                 hint="e.g. FIR 118/2026 — stolen vehicle, last seen Sarkhej"
               />
               {reason.length > 0 && !reasonReady && (
-                <span className="mt-1 block text-2xs text-warn">
+                <span className="mt-1.5 block px-4 text-caption text-warn">
                   A little more detail — a case number or what happened.
                 </span>
               )}
@@ -192,12 +192,12 @@ export default function PlatesPage() {
 
         {hits !== null && hits.length === 0 && (
           <Card title="No sightings">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               <p>
                 No camera you may read has seen a plate close to{" "}
                 <span className="mono">{query}</span> in this window.
               </p>
-              <p className="mt-2 text-2xs">
+              <p className="mt-2 text-caption">
                 Widen the time window or the match tolerance. Remember that a vehicle whose plate
                 was never read is not here at all — the network sees plates, not vehicles.
               </p>
@@ -230,7 +230,7 @@ export default function PlatesPage() {
                         ) : (
                           <>
                             <Pill tone="warn">near</Pill>
-                            <span className="ml-1 text-2xs text-ink-500">
+                            <span className="ml-1 text-caption text-muted">
                               {hit.distance.toFixed(2)}
                             </span>
                           </>
@@ -238,8 +238,8 @@ export default function PlatesPage() {
                       </td>
                       <td className="tabular">{hit.sightings}</td>
                       <td className="tabular">{hit.camera_count}</td>
-                      <td className="whitespace-nowrap text-2xs">{ist(hit.first_seen)}</td>
-                      <td className="whitespace-nowrap text-2xs">{ist(hit.last_seen)}</td>
+                      <td className="whitespace-nowrap text-caption">{ist(hit.first_seen)}</td>
+                      <td className="whitespace-nowrap text-caption">{ist(hit.last_seen)}</td>
                       <td>
                         <button
                           className="btn btn-sm btn-primary"
@@ -264,7 +264,7 @@ export default function PlatesPage() {
 
         {track && track.points.length === 0 && (
           <Card title="Nothing to plot">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               No sightings of <span className="mono">{track.query}</span> in this window.
             </div>
           </Card>
@@ -272,7 +272,7 @@ export default function PlatesPage() {
 
         {track && track.points.length > 0 && (
           <>
-            <div className="flex flex-wrap gap-2 text-[13px]">
+            <div className="flex flex-wrap gap-2 text-body-sm">
               <Pill tone="info">{track.points.length} sightings</Pill>
               <Pill tone="info">{track.cameras_seen} cameras</Pill>
               <Pill tone={track.exact_reads === track.points.length ? "ok" : "warn"}>
@@ -320,12 +320,12 @@ export default function PlatesPage() {
                     {track.points.map((point, index) => (
                       <tr
                         key={point.sighting_id}
-                        className={point.implausible_leg ? "bg-bad-bg" : ""}
+                        className={point.implausible_leg ? "bg-canvas-soft" : ""}
                       >
                         <td className="tabular">{index + 1}</td>
                         <td className="whitespace-nowrap">
                           <div>{ist(point.timestamp_utc)}</div>
-                          <div className="text-2xs text-ink-500">
+                          <div className="text-caption text-muted">
                             {relative(point.timestamp_utc)}
                           </div>
                         </td>
@@ -337,13 +337,13 @@ export default function PlatesPage() {
                             {point.camera_name ?? point.camera_id}
                           </Link>
                         </td>
-                        <td className="text-2xs">
+                        <td className="text-caption">
                           {[point.road_or_junction, point.district, point.city]
                             .filter(Boolean)
                             .join(" · ") || "—"}
                           {point.latitude === null && (
                             <div
-                              className="text-ink-400"
+                              className="text-muted"
                               title="This camera has no recorded coordinates, so it is on the timeline but not on the map."
                             >
                               not plottable
@@ -358,7 +358,7 @@ export default function PlatesPage() {
                         <td className="mono whitespace-nowrap">
                           {point.plate_read}
                           {!point.exact && (
-                            <span className="ml-1 text-2xs text-warn">
+                            <span className="ml-1 text-caption text-warn">
                               ~{point.match_distance.toFixed(2)}
                             </span>
                           )}
@@ -367,14 +367,14 @@ export default function PlatesPage() {
                           {point.observations}
                           {point.observations === 1 && (
                             <span
-                              className="ml-1 text-2xs text-warn"
+                              className="ml-1 text-caption text-warn"
                               title="A single-frame read has no agreement behind it."
                             >
                               single frame
                             </span>
                           )}
                         </td>
-                        <td className="whitespace-nowrap text-2xs">
+                        <td className="whitespace-nowrap text-caption">
                           {point.seconds_from_previous === null ? (
                             "—"
                           ) : (
@@ -382,7 +382,7 @@ export default function PlatesPage() {
                               <div>{formatGap(point.seconds_from_previous)}</div>
                               {point.distance_from_previous_km !== null && (
                                 <div
-                                  className={point.implausible_leg ? "text-bad" : "text-ink-500"}
+                                  className={point.implausible_leg ? "text-bad" : "text-muted"}
                                 >
                                   {point.distance_from_previous_km} km
                                   {point.implied_speed_kmh !== null &&

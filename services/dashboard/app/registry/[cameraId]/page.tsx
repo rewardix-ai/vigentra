@@ -34,7 +34,7 @@ import type {
 } from "@/lib/types";
 
 function Grid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-x-5 gap-y-3.5 px-4 py-3.5 sm:grid-cols-2 lg:grid-cols-3">{children}</div>;
+  return <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">{children}</div>;
 }
 
 export default function CameraDetailPage() {
@@ -194,7 +194,7 @@ export default function CameraDetailPage() {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <FootageNotice custodian={camera.owning_department} state={camera.video_access}>
           {!watching && (canWatchLive || canWatchPlayback) && (
             <div className="flex flex-wrap gap-2">
@@ -213,7 +213,7 @@ export default function CameraDetailPage() {
           {camera.video_access === "needs_unit_approval" &&
             (canRequestVideo ? (
               asking ? (
-                <div className="space-y-2 rounded border border-line bg-[#f7f8fa] p-3 [--field-bg:#f7f8fa]">
+                <div className="space-y-3 rounded-sm bg-canvas p-4 [--field-bg:theme(colors.field)]">
                   <FloatTextarea
                     label="Why do you need this footage?"
                     required
@@ -229,7 +229,7 @@ export default function CameraDetailPage() {
                       onChange={(event) => setAskCase(event.target.value)}
                       hint="FIR 214/2026"
                   />
-                  <p className="text-2xs text-ink-500">
+                  <p className="text-caption text-muted">
                     This reason is shown to {camera.owning_department} and written to the audit
                     trail. It is the record of why the footage was looked at.
                   </p>
@@ -252,7 +252,7 @@ export default function CameraDetailPage() {
                 </button>
               )
             ) : (
-              <p className="text-2xs text-ink-500">
+              <p className="text-caption text-muted">
                 Your role cannot raise footage requests. An operator in your unit can.
               </p>
             ))}
@@ -323,7 +323,7 @@ export default function CameraDetailPage() {
             <Field label="Installation request" mono>
               {camera.installation.installation_request_id ? (
                 <Link
-                  className="text-brand-600 hover:underline"
+                  className="link-quiet"
                   href={`/installations/${encodeURIComponent(camera.installation.installation_request_id)}`}
                 >
                   {camera.installation.installation_request_id}
@@ -354,7 +354,7 @@ export default function CameraDetailPage() {
             </Field>
             <Field label="Footage custodian">{camera.access_policy_summary.footage_custodian}</Field>
           </Grid>
-          <p className="border-t border-line px-4 py-2 text-2xs text-ink-500">
+          <p className="border-t border-hairline-soft px-6 py-4 text-caption text-muted">
             Local administrator contact details are held by the owning department and are masked
             before they leave that system — Vigentra never receives them in full.
           </p>
@@ -400,14 +400,14 @@ export default function CameraDetailPage() {
             </Field>
             <Field label="Timezone">{camera.technical_summary.timezone}</Field>
           </Grid>
-          <p className="border-t border-line px-4 py-2 text-2xs text-ink-500">
+          <p className="border-t border-hairline-soft px-6 py-4 text-caption text-muted">
             These describe how the <strong>owning department</strong> records and retains footage.
             Vigentra stores the description; it holds no address, credential or stream for any of it.
           </p>
         </Card>
 
         {/* Installation and approval */}
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card title="Installation and commissioning">
             <Grid>
               <Field label="Installed on">{calendarDate(camera.installation.installation_date)}</Field>
@@ -432,7 +432,7 @@ export default function CameraDetailPage() {
         </div>
 
         {/* Health and sync */}
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card title="Current health">
             <Grid>
               <Field label="Status">
@@ -445,11 +445,11 @@ export default function CameraDetailPage() {
               <Field label="Checked at">{ist(health?.checked_at ?? null)}</Field>
             </Grid>
             {health && Object.keys(health.detail).length > 0 && (
-              <div className="grid gap-x-5 gap-y-2 border-t border-line px-4 py-2.5 sm:grid-cols-3">
+              <div className="grid gap-x-6 gap-y-3 border-t border-hairline-soft px-6 py-4 sm:grid-cols-3">
                 {Object.entries(health.detail).map(([key, value]) => (
                   <div key={key} className="min-w-0">
                     <div className="field-label">{key.replace(/_/g, " ")}</div>
-                    <div className="truncate text-2xs text-ink-700">{String(value)}</div>
+                    <div className="truncate text-caption text-ink-soft">{String(value)}</div>
                   </div>
                 ))}
               </div>
@@ -479,7 +479,7 @@ export default function CameraDetailPage() {
           action={
             canReadPolicy && (
               <Link
-                className="text-2xs font-medium text-brand-600 hover:underline"
+                className="text-caption link-quiet"
                 href={`/registry/${encodeURIComponent(camera.camera_id)}/policy`}
               >
                 Full policy →
@@ -519,11 +519,11 @@ export default function CameraDetailPage() {
         {/* Attachments */}
         <Card title="Installation documents">
           {withheld.has("attachments") ? (
-            <p className="px-4 py-4 text-[13px] italic text-ink-400">
+            <p className="px-6 py-5 text-body-sm italic text-muted">
               Document references are withheld for your role.
             </p>
           ) : camera.attachments.length === 0 ? (
-            <p className="px-4 py-4 text-[13px] text-ink-500">
+            <p className="px-6 py-5 text-body-sm text-muted">
               No document references recorded for this camera.
             </p>
           ) : (
@@ -541,14 +541,14 @@ export default function CameraDetailPage() {
                   <tr key={item.reference}>
                     <td>{titleise(item.document_type)}</td>
                     <td className="mono">{item.reference}</td>
-                    <td className="text-ink-500">{orDash(item.filename)}</td>
-                    <td className="text-ink-500">{orDash(item.custodian)}</td>
+                    <td className="text-muted">{orDash(item.filename)}</td>
+                    <td className="text-muted">{orDash(item.custodian)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-          <p className="border-t border-line px-4 py-2 text-2xs text-ink-500">
+          <p className="border-t border-hairline-soft px-6 py-4 text-caption text-muted">
             Vigentra records document <strong>references</strong> only. The documents themselves stay
             with the owning department, and no CCTV footage is ever attached to a registry record.
           </p>
@@ -558,7 +558,7 @@ export default function CameraDetailPage() {
         {canReadAudit && (
           <Card title="Audit history for this camera">
             {history.length === 0 ? (
-              <p className="px-4 py-4 text-[13px] text-ink-500">No recorded activity yet.</p>
+              <p className="px-6 py-5 text-body-sm text-muted">No recorded activity yet.</p>
             ) : (
               <table className="data-table">
                 <thead>
@@ -572,7 +572,7 @@ export default function CameraDetailPage() {
                 <tbody>
                   {history.map((entry) => (
                     <tr key={entry.audit_id}>
-                      <td className="whitespace-nowrap text-ink-500">{ist(entry.timestamp_utc)}</td>
+                      <td className="whitespace-nowrap text-muted">{ist(entry.timestamp_utc)}</td>
                       <td>{entry.username}</td>
                       <td>{entry.action.replace(/_/g, " ")}</td>
                       <td>{entry.outcome}</td>

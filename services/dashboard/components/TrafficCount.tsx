@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { CLASS_COLOUR } from "@/lib/constants";
 import { ist } from "@/lib/format";
 import type { CameraTrafficSummary } from "@/lib/types";
 
@@ -67,24 +66,22 @@ export function TrafficCount({ cameraId }: { cameraId: string }) {
 
   return (
     <div className="card">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+      <div className="card-header">
         <div>
-          <div className="text-[13px] font-semibold">Vehicles counted</div>
-          <p className="mt-0.5 text-2xs text-ink-500">
+          <div className="card-title">Vehicles counted</div>
+          <p className="mt-1 max-w-[70ch] text-caption text-muted">
             Everything the edge worker has recognised at this camera. Counts only —
             no registration numbers are shown here.
           </p>
         </div>
-        <div className="flex gap-0.5">
+        <div role="group" aria-label="Counting window" className="segmented">
           {WINDOWS.map((w) => (
             <button
               key={w.hours}
               type="button"
+              aria-pressed={w.hours === hours}
               onClick={() => setHours(w.hours)}
-              className={
-                "rounded px-2 py-1 text-2xs font-medium transition " +
-                (w.hours === hours ? "bg-navy-800 text-white" : "text-ink-600 hover:bg-brand-50")
-              }
+              className="segmented-item"
             >
               {w.label}
             </button>
@@ -92,11 +89,11 @@ export function TrafficCount({ cameraId }: { cameraId: string }) {
         </div>
       </div>
 
-      <div className="p-4">
-        {error && <p className="text-2xs text-ink-500">{error}</p>}
+      <div className="px-6 py-5">
+        {error && <p className="text-caption text-muted">{error}</p>}
 
         {!error && data && data.total_detections === 0 && (
-          <p className="text-2xs text-ink-500">
+          <p className="text-caption text-muted">
             Nothing counted here in this window. The edge worker records what it sees
             while it is running against this camera; if it has not run, there is
             nothing to show rather than a zero that means something.
@@ -105,41 +102,40 @@ export function TrafficCount({ cameraId }: { cameraId: string }) {
 
         {!error && data && data.total_detections > 0 && (
           <>
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+            <div className="mb-6 flex flex-wrap items-baseline gap-x-10 gap-y-3">
               <div>
-                <div className="tabular text-2xl font-semibold text-ink-900">
+                <div className="tabular text-h3 text-ink">
                   {data.total_vehicles.toLocaleString()}
                 </div>
-                <div className="text-2xs text-ink-500">vehicles</div>
+                <div className="text-caption text-muted">vehicles</div>
               </div>
               <div>
-                <div className="tabular text-base font-medium text-ink-700">
+                <div className="tabular text-title text-ink">
                   {data.total_detections.toLocaleString()}
                 </div>
-                <div className="text-2xs text-ink-500">all objects</div>
+                <div className="text-caption text-muted">all objects</div>
               </div>
               <div>
-                <div className="tabular text-base font-medium text-ink-700">
+                <div className="tabular text-title text-ink">
                   {data.plates_read.toLocaleString()}
                 </div>
-                <div className="text-2xs text-ink-500">distinct plates</div>
+                <div className="text-caption text-muted">distinct plates</div>
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            {/* One ink for every class. Each bar is labelled, so a colour per
+                class would be saying what the label already says. */}
+            <div className="space-y-2">
               {[...vehicles, ...others].map((row) => (
-                <div key={row.class_name} className="flex items-center gap-2">
-                  <div className="w-24 shrink-0 text-2xs text-ink-600">{row.class_name}</div>
-                  <div className="h-3 flex-1 overflow-hidden rounded-sm bg-[#eef1f5]">
+                <div key={row.class_name} className="flex items-center gap-3">
+                  <div className="w-24 shrink-0 text-caption text-muted">{row.class_name}</div>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-canvas-soft">
                     <div
-                      className="h-full rounded-sm"
-                      style={{
-                        width: `${(row.count / peak) * 100}%`,
-                        background: CLASS_COLOUR[row.class_name] ?? "#94a3b8",
-                      }}
+                      className="h-full rounded-full bg-ink"
+                      style={{ width: `${(row.count / peak) * 100}%` }}
                     />
                   </div>
-                  <div className="tabular w-14 shrink-0 text-right font-mono text-2xs text-ink-700">
+                  <div className="tabular w-14 shrink-0 text-right font-mono text-caption text-ink-soft">
                     {row.count.toLocaleString()}
                   </div>
                 </div>
@@ -147,7 +143,7 @@ export function TrafficCount({ cameraId }: { cameraId: string }) {
             </div>
 
             {data.last_seen_utc && (
-              <p className="mt-3 border-t border-line pt-2 text-2xs text-ink-400">
+              <p className="mt-6 border-t border-hairline-soft pt-4 text-caption text-muted">
                 Counted between {ist(data.first_seen_utc)} and {ist(data.last_seen_utc)}.
                 Stored centrally, so these totals survive a reload.
               </p>
@@ -155,7 +151,7 @@ export function TrafficCount({ cameraId }: { cameraId: string }) {
           </>
         )}
 
-        {busy && !data && <p className="text-2xs text-ink-500">Counting…</p>}
+        {busy && !data && <p className="text-caption text-muted">Counting…</p>}
       </div>
     </div>
   );

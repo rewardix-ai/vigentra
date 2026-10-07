@@ -95,12 +95,12 @@ export default function DetectionsPage() {
         subtitle="Objects recognised at the edge, with number plates where ANPR is enabled."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         <Card title="Ask for detections">
-          <div className="space-y-3 px-3 py-3">
-            <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-3 px-6 py-5">
+            <div className="flex flex-wrap items-start gap-3">
               <FloatSelect
                 label="Class"
                   value={className}
@@ -153,7 +153,7 @@ export default function DetectionsPage() {
                 </button>
               )}
               {askedAt && (
-                <span className="text-2xs text-ink-500">Retrieved {ist(askedAt)}</span>
+                <span className="text-caption text-muted">Retrieved {ist(askedAt)}</span>
               )}
             </div>
           </div>
@@ -161,12 +161,12 @@ export default function DetectionsPage() {
 
         {rows === null ? (
           <Card title="Nothing retrieved">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               <p>
                 Set a filter and choose <strong>Show detections</strong>. This page holds nothing
                 until you ask for it.
               </p>
-              <p className="mt-2 text-2xs">
+              <p className="mt-2 text-caption">
                 Detections describe what a camera saw at a place and time. They are department
                 scoped, and reading them is not a substitute for viewing the footage — which is a
                 separate, audited decision.
@@ -175,7 +175,7 @@ export default function DetectionsPage() {
           </Card>
         ) : rows.length === 0 ? (
           <Card title="No detections match">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               Nothing in that window matched. Widen the time range, drop the confidence floor, or
               check that an edge worker has run against the camera.
             </div>
@@ -207,17 +207,17 @@ export default function DetectionsPage() {
                       </td>
                       <td className="mono whitespace-nowrap tabular-nums">
                         {footageTime(row.provenance?.pts_seconds) ?? (
-                          <span className="text-ink-400">—</span>
+                          <span className="text-muted">—</span>
                         )}
                         {typeof row.provenance?.frame_index === "number" && (
-                          <div className="text-2xs text-ink-500">
+                          <div className="text-caption text-muted">
                             frame {row.provenance.frame_index as number}
                           </div>
                         )}
                       </td>
                       <td>
                         <Link
-                          className="font-medium text-brand-600 hover:underline"
+                          className="link-quiet"
                           href={`/registry/${encodeURIComponent(row.camera_id)}`}
                         >
                           {row.camera_name ?? row.camera_id}
@@ -234,37 +234,37 @@ export default function DetectionsPage() {
                       <td className="whitespace-nowrap">
                         {row.plate_text ? (
                           <>
-                            <span className="mono font-semibold tracking-wide text-ink-900">
+                            <span className="mono font-semibold text-ink">
                               {row.plate_text}
                             </span>
                             {(row.plate_district || row.plate_rto) && (
-                              <div className="text-2xs text-ink-500">
+                              <div className="text-caption text-muted">
                                 {row.plate_district
                                   ? `${row.plate_district} · ${row.plate_rto}`
                                   : `${row.plate_state ?? ""} ${row.plate_rto ?? ""}`.trim()}
                               </div>
                             )}
                             {row.plate_confidence != null && (
-                              <div className="text-2xs tabular-nums text-ink-500">
+                              <div className="text-caption tabular-nums text-muted">
                                 {row.plate_confidence.toFixed(2)}
                               </div>
                             )}
                           </>
                         ) : row.plate_withheld ? (
-                          <span className="text-2xs italic text-ink-400">
+                          <span className="text-caption italic text-muted">
                             withheld for your role
                           </span>
                         ) : (
-                          <span className="text-2xs text-ink-400">&mdash;</span>
+                          <span className="text-caption text-muted">&mdash;</span>
                         )}
                       </td>
                       <td className="tabular-nums">{row.confidence.toFixed(2)}</td>
-                      <td className="mono whitespace-nowrap text-2xs text-ink-500">
+                      <td className="mono whitespace-nowrap text-caption text-muted">
                         {row.bbox_xyxy.map((value) => Math.round(value)).join(", ")}
                       </td>
-                      <td className="text-2xs text-ink-500">{row.frame_quality ?? "normal"}</td>
-                      <td className="mono text-2xs text-ink-500">{row.model_version}</td>
-                      <td className="text-2xs text-ink-500">{row.source_mode}</td>
+                      <td className="text-caption text-muted">{row.frame_quality ?? "normal"}</td>
+                      <td className="mono text-caption text-muted">{row.model_version}</td>
+                      <td className="text-caption text-muted">{row.source_mode}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -275,7 +275,7 @@ export default function DetectionsPage() {
 
         {health && rows !== null && (
           <Card title="Detector">
-            <div className="grid gap-x-5 gap-y-2 px-4 py-3 text-[13px] sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-x-6 gap-y-3 px-6 py-5 text-body-sm sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <div className="field-label">Model</div>
                 <div className="mono field-value">{health.model_version ?? health.model_name}</div>
@@ -293,13 +293,13 @@ export default function DetectionsPage() {
                 <div className="field-value">every {health.frame_sample_interval} frames</div>
               </div>
             </div>
-            <p className="border-t border-line px-4 py-2 text-2xs leading-relaxed text-ink-500">
+            <p className="border-t border-hairline-soft px-6 py-4 text-caption leading-relaxed text-muted">
               {health.accuracy_disclaimer}
             </p>
           </Card>
         )}
 
-        <p className="text-2xs leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           Detections are generic objects — person, vehicle class, bicycle — plus a registration
           number where the owning unit has enabled ANPR. A plate is personal data: it is readable
           only with the <span className="mono">plate:read</span> permission, is retained on a

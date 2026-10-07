@@ -144,7 +144,7 @@ export default function LiveWallPage() {
   if (!cameras) return <LoadingPanel />;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="Live wall"
         subtitle={`${watchable.length} camera${watchable.length === 1 ? "" : "s"} your account may watch`}
@@ -153,7 +153,7 @@ export default function LiveWallPage() {
       {!started ? (
         <Card>
           <form
-            className="space-y-3 px-4 py-3"
+            className="space-y-3 px-6 py-5"
             onSubmit={(event) => {
               event.preventDefault(); // Enter in the password starts the wall
               if (canStart) setStarted(true);
@@ -177,13 +177,14 @@ export default function LiveWallPage() {
               onChange={(event) => setPassword(event.target.value)}
               hint="Re-enter to open the wall"
             />
-            <p className="text-2xs text-ink-500">
+            <p className="text-caption text-muted">
               Every tile opens its own watermarked session, audited under this reason. Feeds start
               a few at a time and only while a tile is on screen.
             </p>
-            <label className="flex items-center gap-2 text-2xs text-ink-600">
+            <label className="flex items-start gap-3 text-body-sm text-ink-soft">
               <input
                 type="checkbox"
+                className="mt-0.5"
                 checked={snapshot}
                 onChange={(event) => setSnapshot(event.target.checked)}
               />
@@ -191,14 +192,14 @@ export default function LiveWallPage() {
               with the edge&apos;s vehicle detection drawn in. Uncheck for full-motion
               video, which the grid CDN is currently too slow to serve.
             </label>
-            <button className="btn btn-primary" type="submit" disabled={!canStart}>
+            <button className="btn btn-primary btn-lg" type="submit" disabled={!canStart}>
               Start {shown.length} feed{shown.length === 1 ? "" : "s"}
             </button>
           </form>
         </Card>
       ) : (
         <Card>
-          <div className="flex flex-wrap items-end gap-3 px-4 py-3">
+          <div className="flex flex-wrap items-start gap-3 px-6 py-5">
             <FloatSelect
               label="Department"
                 value={department}
@@ -223,8 +224,8 @@ export default function LiveWallPage() {
                   </option>
                 ))}
             </FloatSelect>
-            <div className="ml-auto flex items-center gap-2">
-              <span className="text-2xs text-ink-500">
+            <div className="ml-auto flex h-12 items-center gap-3">
+              <span className="text-caption text-muted">
                 showing {shown.length} of {watchable.length}
               </span>
               <QueueStatus />
@@ -252,14 +253,14 @@ export default function LiveWallPage() {
       )}
 
       {started && !wall && plates.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 text-2xs">
-          <span className="font-semibold text-ink-700">Latest plate reads</span>
+        <div className="flex flex-wrap items-center gap-2 text-caption">
+          <span className="font-semibold text-ink">Latest plate reads</span>
           {plates.slice(0, 8).map((p) => (
-            <span key={p.sighting_id} className="rounded border border-line bg-white px-1.5 py-0.5">
+            <span key={p.sighting_id} className="rounded-full bg-canvas-soft px-3 py-1">
               <span className="font-mono font-semibold">
                 {p.plate_withheld ? "withheld" : p.plate_text}
               </span>{" "}
-              <span className="text-ink-500">
+              <span className="text-ink/65">
                 {p.camera_name ?? p.camera_id} · {Math.round(p.confidence * 100)}% ·{" "}
                 {relative(p.timestamp_utc)}
               </span>
@@ -278,8 +279,8 @@ export default function LiveWallPage() {
           <div
             className={
               wall
-                ? "fixed inset-0 z-[70] grid h-screen w-screen gap-0.5 bg-black p-0.5"
-                : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+                ? "fixed inset-0 z-[70] !mt-0 grid h-screen w-screen gap-0.5 bg-black p-0.5"
+                : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
             }
             style={
               wall
@@ -306,7 +307,7 @@ export default function LiveWallPage() {
         ))}
 
       {started && wall && (
-        <div className="fixed right-2 top-2 z-[80] flex items-center gap-2 rounded bg-black/70 px-2 py-1 text-2xs text-white">
+        <div className="fixed right-3 top-3 z-[80] !mt-0 flex items-center gap-3 rounded-full bg-black/70 py-1 pl-4 pr-1 text-caption text-white">
           <span>
             {shown.length} feed{shown.length === 1 ? "" : "s"} · {columns} per row
           </span>
@@ -357,7 +358,7 @@ function QueueStatus() {
 
   if (state.starting === 0 && state.pending === 0) return null;
   return (
-    <span className="rounded bg-brand-50 px-2 py-0.5 text-2xs text-ink-600">
+    <span className="pill text-ink/65">
       {state.starting} starting
       {state.pending > 0 ? ` · ${state.pending} queued` : ""}
     </span>

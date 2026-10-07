@@ -156,16 +156,16 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline-soft px-6 py-4">
         <div>
-          <div className="text-[13px] font-semibold">
+          <div className="card-title">
             Registry map ·{" "}
-            <span className="tabular font-mono text-ink-500">
+            <span className="tabular font-mono text-muted">
               {points.length}/{cameras.length}
             </span>{" "}
             plotted
           </div>
-          <p className="mt-0.5 text-2xs text-ink-500">
+          <p className="mt-1 max-w-[80ch] text-caption text-muted">
             Cameras with recorded coordinates. Fill by department, ring by health.
             Wedges show where a camera looks; a dashed ring means steerable, so it
             points nowhere in particular. Range is indicative, not surveyed.{" "}
@@ -175,7 +175,7 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-1.5 text-2xs text-ink-600">
+          <label className="flex cursor-pointer items-center gap-2 text-body-sm text-ink">
             <input
               type="checkbox"
               checked={showCoverage}
@@ -186,7 +186,7 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
           <MapLegend />
         </div>
       </div>
-      <div ref={containerRef} className="relative h-[520px] w-full bg-[#eaeef3]">
+      <div ref={containerRef} className="relative h-[520px] w-full bg-canvas-soft">
         <BasemapPicker value={basemapId} onChange={setBasemapId} />
         <MapContainer
           center={AHMEDABAD}
@@ -232,13 +232,13 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
                 }}
               >
                 <Popup>
-                  <div className="min-w-[240px] font-sans">
+                  <div className="min-w-[15rem] font-sans">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-[13px] font-semibold text-ink-900">
+                        <div className="text-body-sm font-semibold text-ink">
                           {camera.name}
                         </div>
-                        <div className="mono text-2xs text-ink-500">{camera.camera_id}</div>
+                        <div className="mono text-caption text-muted">{camera.camera_id}</div>
                       </div>
                       <HealthPill status={camera.health.status} />
                     </div>
@@ -246,23 +246,23 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
                       <DepartmentTag department={camera.owning_department} />
                       <InstallationPill status={camera.installation.installation_status} />
                     </div>
-                    <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-2xs text-ink-700">
-                      <dt className="text-ink-400">Type</dt>
+                    <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-caption text-ink-soft">
+                      <dt className="text-muted">Type</dt>
                       <dd>{titleise(camera.camera_type)}</dd>
-                      <dt className="text-ink-400">Location</dt>
+                      <dt className="text-muted">Location</dt>
                       <dd>{camera.location.road_or_junction ?? "—"}</dd>
-                      <dt className="text-ink-400">Coordinates</dt>
+                      <dt className="text-muted">Coordinates</dt>
                       <dd className="mono">
                         {lat.toFixed(5)}, {lng.toFixed(5)}
                       </dd>
-                      <dt className="text-ink-400">Commissioned</dt>
+                      <dt className="text-muted">Commissioned</dt>
                       <dd>{calendarDate(camera.installation.commissioning_date)}</dd>
-                      <dt className="text-ink-400">Last frame</dt>
+                      <dt className="text-muted">Last frame</dt>
                       <dd>{relative(camera.health.last_frame_utc)}</dd>
                     </dl>
                     <Link
                       href={`/registry/${encodeURIComponent(camera.camera_id)}`}
-                      className="mt-3 inline-block text-2xs font-semibold text-brand-600 hover:underline"
+                      className="link mt-3 inline-block text-caption"
                     >
                       Open full record →
                     </Link>
@@ -274,7 +274,7 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
         </MapContainer>
       </div>
       {points.length === 0 && (
-        <div className="border-t border-line px-4 py-6 text-center text-[13px] text-ink-500">
+        <div className="border-t border-hairline-soft px-6 py-6 text-center text-body-sm text-muted">
           No cameras with coordinates in the current filter.
         </div>
       )}
@@ -284,14 +284,14 @@ export function RegistryMap({ cameras }: { cameras: Camera[] }) {
 
 function MapLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-2xs">
-      <span className="flex items-center gap-1.5 text-ink-500">
-        <span className="mono uppercase tracking-wider text-ink-400">Dept:</span>
+    <div className="flex flex-wrap items-center gap-3 text-caption">
+      <span className="flex items-center gap-1.5 text-muted">
+        <span className="text-muted">Department</span>
         <Dot fill="#1b4f9c" /> Traffic
         <Dot fill="#7a3fa1" /> Municipal
       </span>
-      <span className="flex items-center gap-1.5 text-ink-500">
-        <span className="mono uppercase tracking-wider text-ink-400">Health:</span>
+      <span className="flex items-center gap-1.5 text-muted">
+        <span className="text-muted">Health</span>
         <Ring color="#1a7f47" /> online
         <Ring color="#a2680a" /> degraded
         <Ring color="#b3261e" /> offline

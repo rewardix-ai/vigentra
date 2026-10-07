@@ -291,7 +291,7 @@ function Area({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-x-5 gap-y-3.5 px-4 py-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">
       <div className="sm:col-span-2 lg:col-span-3">
         <h3 className="section-label">{title}</h3>
       </div>
@@ -401,10 +401,11 @@ export function InstallationForm({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
 
-      {/* Stepper */}
-      <nav aria-label="Form steps" className="card flex flex-wrap gap-1 px-2 py-2">
+      {/* Stepper: a segmented track, the current step lifted off it. Only the
+          current step is named until there is room to name all five. */}
+      <nav aria-label="Form steps" className="segmented">
         {STEPS.map((label, index) => {
           const active = index === step;
           const done = touchedSteps.includes(index) && index < step;
@@ -414,20 +415,17 @@ export function InstallationForm({
               type="button"
               onClick={() => goTo(index)}
               aria-current={active ? "step" : undefined}
-              className={`flex items-center gap-2 rounded px-2.5 py-1.5 text-[13px] transition ${
-                active
-                  ? "bg-brand-600 font-medium text-white"
-                  : "text-ink-700 hover:bg-brand-50"
-              }`}
+              aria-label={`Step ${index + 1}: ${label}`}
+              className="segmented-item pl-1.5"
             >
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold ${
-                  active ? "bg-white text-brand-700" : done ? "bg-ok text-white" : "bg-idle-bg text-ink-500"
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-label ${
+                  active ? "bg-ink text-on-primary" : done ? "bg-field text-ok" : "bg-field text-ink/65"
                 }`}
               >
                 {done ? "✓" : index + 1}
               </span>
-              <span className="hidden sm:inline">{label}</span>
+              <span className={active ? "inline" : "hidden xl:inline"}>{label}</span>
             </button>
           );
         })}
@@ -474,7 +472,7 @@ export function InstallationForm({
               <Text label="Installation vendor" field="installation_vendor" values={values} errors={errors} onChange={change} />
             </Section>
 
-            <div className="border-t border-line" />
+            <div className="border-t border-hairline-soft" />
 
             <Section title="Location and orientation">
               <Text label="District" field="district" values={values} errors={errors} onChange={change} required placeholder="Ahmedabad" />
@@ -505,16 +503,16 @@ export function InstallationForm({
               <Text label="Commissioning date" field="commissioning_date" values={values} errors={errors} onChange={change} type="date" hint="Set on approval if left blank" />
             </Section>
 
-            <div className="border-t border-line" />
+            <div className="border-t border-hairline-soft" />
 
-            <div className="px-4 py-4">
+            <div className="px-6 py-5">
               <h3 className="section-label">Local recording capability</h3>
-              <p className="mt-1 text-2xs text-ink-500">
+              <p className="mt-1 text-caption text-muted">
                 Recorded so the access policy can describe what your department&rsquo;s system
                 offers. Vigentra exposes no viewing link either way.
               </p>
               <div className="mt-2.5 flex flex-wrap gap-4">
-                <label className="flex items-center gap-2 text-[13px]">
+                <label className="flex items-center gap-2 text-body-sm">
                   <input
                     type="checkbox"
                     checked={values.supports_live}
@@ -522,7 +520,7 @@ export function InstallationForm({
                   />
                   Supports live view in the local VMS
                 </label>
-                <label className="flex items-center gap-2 text-[13px]">
+                <label className="flex items-center gap-2 text-body-sm">
                   <input
                     type="checkbox"
                     checked={values.supports_playback}
@@ -538,26 +536,26 @@ export function InstallationForm({
         {/* Step 4 --------------------------------------------------------- */}
         {step === 3 && (
           <>
-            <div className="px-4 py-4">
+            <div className="px-6 py-5">
               <h3 className="section-label">
                 Roles permitted to view this camera&rsquo;s footage in your department&rsquo;s VMS{" "}
                 <span className="text-bad">*</span>
               </h3>
-              <p className="mt-1 text-2xs text-ink-500">
+              <p className="mt-1 text-caption text-muted">
                 These permissions apply to the owning department&rsquo;s local CCTV/VMS. Vigentra
                 stores and displays the permission policy summary but does not provide video access.
               </p>
               {errors.permitted_local_roles && (
-                <p className="mt-1.5 text-2xs font-medium text-bad">{errors.permitted_local_roles}</p>
+                <p className="mt-1.5 text-caption font-semibold text-bad">{errors.permitted_local_roles}</p>
               )}
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {LOCAL_ROLES.map((role) => (
                   <label
                     key={role.value}
-                    className={`flex cursor-pointer items-start gap-2.5 rounded border px-3 py-2 transition ${
+                    className={`flex cursor-pointer items-start gap-3 rounded-sm border px-4 py-3 transition-colors duration-150 ${
                       values.permitted_local_roles.includes(role.value)
-                        ? "border-brand-500 bg-brand-50"
-                        : "border-line hover:bg-[#f7f9fb]"
+                        ? "border-transparent bg-canvas-soft"
+                        : "border-hairline hover:bg-canvas-soft"
                     }`}
                   >
                     <input
@@ -567,21 +565,21 @@ export function InstallationForm({
                       onChange={() => toggleRole(role.value)}
                     />
                     <span>
-                      <span className="block text-[13px] font-medium text-ink-900">
+                      <span className="block text-body-sm font-semibold text-ink first-letter:uppercase">
                         {role.value.replace(/_/g, " ")}
                       </span>
-                      <span className="block text-2xs text-ink-500">{role.help}</span>
+                      <span className="block text-caption text-ink/65">{role.help}</span>
                     </span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="border-t border-line px-4 py-4">
+            <div className="border-t border-hairline-soft px-6 py-5">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="section-label">Supporting document references</h3>
-                  <p className="mt-1 text-2xs text-ink-500">
+                  <p className="mt-1 text-caption text-muted">
                     References only. Do not upload CCTV footage or credentials — documents stay with
                     your department.
                   </p>
@@ -592,9 +590,9 @@ export function InstallationForm({
               </div>
 
               {values.attachments.length > 0 && (
-                <div className="mt-3 space-y-2">
+                <div className="mt-4 space-y-3">
                   {values.attachments.map((item, index) => (
-                    <div key={index} className="grid gap-2 sm:grid-cols-[12rem_1fr_1fr_auto]">
+                    <div key={index} className="grid items-start gap-3 sm:grid-cols-[12rem_1fr_1fr_auto]">
                       <FloatSelect
                         label="Document type"
                         value={item.document_type}
@@ -622,7 +620,7 @@ export function InstallationForm({
                       />
                       <button
                         type="button"
-                        className="btn btn-danger btn-sm"
+                        className="btn btn-danger btn-lg"
                         onClick={() => removeAttachment(index)}
                       >
                         Remove
@@ -637,14 +635,14 @@ export function InstallationForm({
 
         {/* Step 5 --------------------------------------------------------- */}
         {step === 4 && (
-          <div className="px-4 py-4">
+          <div className="px-6 py-5">
             <h3 className="section-label">Review</h3>
-            <p className="mt-1 text-2xs text-ink-500">
+            <p className="mt-1 text-caption text-muted">
               Saving creates a DRAFT in {values.owning_department}&rsquo;s register. Submitting sends
               it for that department&rsquo;s validation and approval.
             </p>
 
-            <dl className="mt-3 grid gap-x-5 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            <dl className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 ["Camera name", values.camera_name],
                 ["Department camera ID", values.external_camera_id],
@@ -669,7 +667,7 @@ export function InstallationForm({
               ))}
             </dl>
 
-            <div className="mt-4 border-t border-line pt-3">
+            <div className="mt-4 border-t border-hairline-soft pt-3">
               <div className="field-label">Local viewing roles</div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {values.permitted_local_roles.map((role) => (
@@ -678,14 +676,14 @@ export function InstallationForm({
                   </Pill>
                 ))}
                 {values.permitted_local_roles.length === 0 && (
-                  <span className="text-[13px] text-bad">None selected</span>
+                  <span className="text-body-sm text-bad">None selected</span>
                 )}
               </div>
             </div>
 
-            <div className="mt-3 border-t border-line pt-3">
+            <div className="mt-3 border-t border-hairline-soft pt-3">
               <div className="field-label">Document references</div>
-              <div className="mt-1 text-[13px]">
+              <div className="mt-1 text-body-sm">
                 {values.attachments.length === 0
                   ? "—"
                   : values.attachments
@@ -697,7 +695,7 @@ export function InstallationForm({
         )}
 
         {/* Navigation ----------------------------------------------------- */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline-soft px-6 py-5">
           <button type="button" className="btn" onClick={() => goTo(step - 1)} disabled={step === 0 || busy}>
             Back
           </button>

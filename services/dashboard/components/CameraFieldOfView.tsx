@@ -183,7 +183,7 @@ export function CameraFieldOfView({
         }}
       >
         <Tooltip direction="top" offset={[0, -6]} opacity={0.95}>
-          <span className="text-2xs">
+          <span className="text-caption">
             {label} · {camera.camera_type} · steerable, no fixed bearing
           </span>
         </Tooltip>
@@ -206,7 +206,7 @@ export function CameraFieldOfView({
       }}
     >
       <Tooltip direction="top" offset={[0, -6]} opacity={0.95}>
-        <span className="text-2xs">
+        <span className="text-caption">
           {label} · facing {camera.location?.view_direction} · indicative extent
         </span>
       </Tooltip>

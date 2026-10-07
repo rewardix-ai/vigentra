@@ -98,14 +98,14 @@ export default function EventsPage() {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         {/* Filters */}
-        <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">
+        <div className="card flex flex-wrap items-start gap-3 px-6 py-5">
           <FloatInput
             label="Time window (hrs)"
-            inputClassName="max-w-[7rem]"
+            className="w-44"
               type="number"
               min={1}
               max={168}
@@ -138,9 +138,9 @@ export default function EventsPage() {
                 </option>
               ))}
           </FloatSelect>
-          <div className="ml-auto text-2xs text-ink-500">
-            <span className="tabular font-medium text-ink-900">{events.length}</span> event(s) in
-            the last <span className="tabular font-medium text-ink-900">{sinceHours}</span>h
+          <div className="ml-auto text-caption leading-[3rem] text-muted">
+            <span className="tabular font-semibold text-ink">{events.length}</span> event(s) in
+            the last <span className="tabular font-semibold text-ink">{sinceHours}</span>h
           </div>
         </div>
 
@@ -149,7 +149,7 @@ export default function EventsPage() {
           <Card
             title="Cross-camera correlation"
             action={
-              <span className="text-2xs text-ink-500">
+              <span className="text-caption text-muted">
                 Pairs within {correlation.window_seconds}s and {correlation.radius_m}m ·
                 {" "}
                 {correlation.considered} event(s) considered
@@ -171,26 +171,26 @@ export default function EventsPage() {
                 <tbody>
                   {correlation.pairs.slice(0, 30).map((pair, index) => (
                     <tr key={`${pair.a.event_id}-${pair.b.event_id}-${index}`}>
-                      <td className="mono whitespace-nowrap text-ink-500">
+                      <td className="mono whitespace-nowrap text-muted">
                         {ist(pair.a.timestamp_utc)}
                       </td>
                       <td>
                         <Link
-                          className="font-medium text-brand-600 hover:underline"
+                          className="link-quiet"
                           href={`/registry/${encodeURIComponent(pair.a.camera_id)}`}
                         >
                           {pair.a.camera_name ?? pair.a.camera_id}
                         </Link>
-                        <div className="text-2xs text-ink-500">{humanise(pair.a.event_type)}</div>
+                        <div className="text-caption text-muted">{humanise(pair.a.event_type)}</div>
                       </td>
                       <td>
                         <Link
-                          className="font-medium text-brand-600 hover:underline"
+                          className="link-quiet"
                           href={`/registry/${encodeURIComponent(pair.b.camera_id)}`}
                         >
                           {pair.b.camera_name ?? pair.b.camera_id}
                         </Link>
-                        <div className="text-2xs text-ink-500">{humanise(pair.b.event_type)}</div>
+                        <div className="text-caption text-muted">{humanise(pair.b.event_type)}</div>
                       </td>
                       <td className="tabular text-right">{pair.delta_seconds.toFixed(1)}</td>
                       <td className="tabular text-right">
@@ -238,19 +238,19 @@ export default function EventsPage() {
                   {events.map((event) => (
                     <tr key={event.event_id}>
                       <td
-                        className="mono whitespace-nowrap text-ink-500"
+                        className="mono whitespace-nowrap text-muted"
                         title={ist(event.timestamp_utc)}
                       >
                         {relative(event.timestamp_utc)}
                       </td>
                       <td>
                         <Link
-                          className="font-medium text-brand-600 hover:underline"
+                          className="link-quiet"
                           href={`/registry/${encodeURIComponent(event.camera_id)}`}
                         >
                           {event.camera_name ?? event.camera_id}
                         </Link>
-                        <div className="mono text-2xs text-ink-400">{event.camera_id}</div>
+                        <div className="mono text-caption text-muted">{event.camera_id}</div>
                       </td>
                       <td>
                         {event.owning_department ? (
@@ -264,7 +264,7 @@ export default function EventsPage() {
                       <td>
                         <Pill tone={eventTone(event)}>{orDash(event.severity)}</Pill>
                       </td>
-                      <td className="text-2xs text-ink-500">
+                      <td className="text-caption text-muted">
                         {Object.entries((event.payload.attributes as Record<string, unknown>) ?? {})
                           .map(([key, value]) => `${key}: ${value}`)
                           .join(" · ") ||
@@ -278,7 +278,7 @@ export default function EventsPage() {
           )}
         </Card>
 
-        <p className="text-2xs leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           Events are pulled from each department system on refresh. Every record is deterministic
           — the same source event always produces the same canonical event_id — so re-syncing
           updates rather than duplicates.

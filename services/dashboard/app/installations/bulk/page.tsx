@@ -557,7 +557,7 @@ export default function BulkOnboardingPage() {
         }
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <Notice tone="info" title="How this works">
           Every row becomes a separate installation request in{" "}
           <strong>{operator?.department}</strong>&rsquo;s own system. The same validation and
@@ -566,13 +566,13 @@ export default function BulkOnboardingPage() {
         </Notice>
 
         <Card title="Upload CSV">
-          <div className="px-4 py-4">
+          <div className="px-6 py-5">
             <label className="flex flex-col items-start gap-2">
               <span className="field-label">CSV file</span>
               <input
                 type="file"
                 accept=".csv,text/csv"
-                className="text-[13px]"
+                className="text-body-sm"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   // Cleared so re-selecting the same corrected file fires
@@ -582,7 +582,7 @@ export default function BulkOnboardingPage() {
                 }}
               />
             </label>
-            <label className="mt-3 flex items-center gap-2 text-[13px]">
+            <label className="mt-3 flex items-center gap-2 text-body-sm">
               <input
                 type="checkbox"
                 checked={submitOnUpload}
@@ -590,7 +590,7 @@ export default function BulkOnboardingPage() {
               />
               Validate and register each valid row immediately (uncheck to keep as drafts)
             </label>
-            <p className="mt-2 text-2xs text-ink-500">
+            <p className="mt-2 text-caption text-muted">
               The template covers every accepted column. Required columns are:{" "}
               <span className="mono">{REQUIRED.join(", ")}</span>.
               Local roles can be pipe- or comma-separated (e.g.{" "}
@@ -599,7 +599,7 @@ export default function BulkOnboardingPage() {
           </div>
 
           {rows.length > 0 && (
-            <div className="border-t border-line px-4 py-3">
+            <div className="border-t border-hairline-soft px-6 py-5">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex gap-1.5">
                   <Pill tone="info">{summary.total} data entries</Pill>
@@ -641,19 +641,19 @@ export default function BulkOnboardingPage() {
                   <tbody>
                     {rows.map((row) => (
                       <tr key={row.line}>
-                        <td className="mono text-ink-500">{row.line}</td>
-                        <td className="font-medium">{row.raw.camera_name || "—"}</td>
+                        <td className="mono text-muted">{row.line}</td>
+                        <td className="font-semibold">{row.raw.camera_name || "—"}</td>
                         <td className="mono">{row.raw.external_camera_id || "—"}</td>
                         <td>{row.raw.district || "—"}</td>
-                        <td className="mono text-ink-500">
+                        <td className="mono text-muted">
                           {row.raw.latitude || "—"}, {row.raw.longitude || "—"}
                         </td>
-                        <td className="text-ink-500">{row.raw.permitted_local_roles || "—"}</td>
+                        <td className="text-muted">{row.raw.permitted_local_roles || "—"}</td>
                         <td>
                           {row.errors.length === 0 ? (
                             <Pill tone="ok">OK</Pill>
                           ) : (
-                            <span className="text-2xs text-bad">{row.errors.join("; ")}</span>
+                            <span className="text-caption text-bad">{row.errors.join("; ")}</span>
                           )}
                         </td>
                       </tr>
@@ -693,7 +693,7 @@ export default function BulkOnboardingPage() {
                 <tbody>
                   {outcomes.map((outcome) => (
                     <tr key={`${outcome.line}-${outcome.external_camera_id}`}>
-                      <td className="mono text-ink-500">{outcome.line}</td>
+                      <td className="mono text-muted">{outcome.line}</td>
                       <td>{outcome.camera_name || "—"}</td>
                       <td className="mono">{outcome.external_camera_id || "—"}</td>
                       <td>
@@ -708,7 +708,7 @@ export default function BulkOnboardingPage() {
                       <td className="mono">
                         {outcome.request_id ? (
                           <Link
-                            className="text-brand-600 hover:underline"
+                            className="link-quiet"
                             href={`/installations/${encodeURIComponent(outcome.request_id)}`}
                           >
                             {outcome.request_id}
@@ -717,7 +717,7 @@ export default function BulkOnboardingPage() {
                           "—"
                         )}
                       </td>
-                      <td className="text-ink-500">{outcome.message ?? "—"}</td>
+                      <td className="text-muted">{outcome.message ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>

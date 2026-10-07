@@ -127,7 +127,7 @@ export default function WatchlistPage() {
         subtitle="Registration numbers this network flags on sight."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
         {saved && <Notice tone="ok">{saved}</Notice>}
 
@@ -142,8 +142,8 @@ export default function WatchlistPage() {
         </Notice>
 
         <Card title="Add a vehicle">
-          <div className="space-y-3 px-3 py-3">
-            <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-3 px-6 py-5">
+            <div className="flex flex-wrap items-start gap-3">
               <FloatInput
                 label="Registration number"
                 inputClassName="mono"
@@ -164,7 +164,7 @@ export default function WatchlistPage() {
                     </option>
                   ))}
                 </FloatSelect>
-                <span className="mt-1 block text-2xs text-ink-500">
+                <span className="mt-1.5 block px-4 text-caption text-muted">
                   {CATEGORIES.find((item) => item.value === category)?.hint}
                 </span>
               </div>
@@ -197,7 +197,7 @@ export default function WatchlistPage() {
           </div>
         </Card>
 
-        <label className="flex items-center gap-2 text-[13px]">
+        <label className="flex items-center gap-2 text-body-sm">
           <input
             type="checkbox"
             checked={showInactive}
@@ -208,13 +208,13 @@ export default function WatchlistPage() {
 
         {rows === null ? (
           <Card title="Loading">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               <Spinner /> Reading the watchlist…
             </div>
           </Card>
         ) : rows.length === 0 ? (
           <Card title="Nothing is being watched">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               The watchlist is empty, so no plate read anywhere on this network will raise an
               alert. Add a vehicle above.
             </div>
@@ -243,15 +243,15 @@ export default function WatchlistPage() {
                       <td>
                         <Pill tone={CATEGORY_TONE[row.category] ?? "idle"}>{row.category}</Pill>
                       </td>
-                      <td className="max-w-[22rem] text-2xs">{row.reason}</td>
-                      <td className="text-2xs">{row.case_reference ?? "—"}</td>
-                      <td className="text-2xs">
+                      <td className="max-w-[22rem] text-caption">{row.reason}</td>
+                      <td className="text-caption">{row.case_reference ?? "—"}</td>
+                      <td className="text-caption">
                         <div>{row.added_by}</div>
                         {row.created_at && (
-                          <div className="text-ink-500">{relative(row.created_at)}</div>
+                          <div className="text-muted">{relative(row.created_at)}</div>
                         )}
                       </td>
-                      <td className="whitespace-nowrap text-2xs">
+                      <td className="whitespace-nowrap text-caption">
                         {row.expires_at ? (
                           ist(row.expires_at)
                         ) : (
@@ -275,7 +275,7 @@ export default function WatchlistPage() {
                         ) : (
                           <>
                             <Pill tone="idle">stood down</Pill>
-                            <div className="text-2xs text-ink-500">by {row.deactivated_by}</div>
+                            <div className="text-caption text-muted">by {row.deactivated_by}</div>
                           </>
                         )}
                       </td>
@@ -296,7 +296,7 @@ export default function WatchlistPage() {
                             {standingDown === row.entry_id && (
                               <div className="flex gap-1">
                                 <FloatInput
-                                  inputClassName="text-2xs"
+                                  inputClassName="text-caption"
                                   label="Why? e.g. vehicle recovered"
                                   value={standDownReason}
                                   onChange={(event) => setStandDownReason(event.target.value)}

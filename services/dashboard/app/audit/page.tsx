@@ -102,7 +102,7 @@ export default function AuditPage() {
         subtitle="Every onboarding step, approval decision, metadata read and video-access attempt."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         {denied.length > 0 && (
@@ -113,7 +113,7 @@ export default function AuditPage() {
           </Notice>
         )}
 
-        <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">
+        <div className="card flex flex-wrap items-start gap-3 px-6 py-5">
           <FloatInput
             label="Search"
             className="min-w-[16rem] flex-1"
@@ -146,10 +146,10 @@ export default function AuditPage() {
               <option value="denied">denied</option>
               <option value="error">error</option>
           </FloatSelect>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-2xs text-ink-500">
-              <span className="tabular font-medium text-ink-900">{visible.length}</span> of{" "}
-              <span className="tabular font-medium text-ink-900">{entries.length}</span> entries
+          <div className="ml-auto flex h-12 items-center gap-3">
+            <span className="text-caption text-muted">
+              <span className="tabular font-semibold text-ink">{visible.length}</span> of{" "}
+              <span className="tabular font-semibold text-ink">{entries.length}</span> entries
             </span>
             {(action || outcome || query) && (
               <button
@@ -186,14 +186,14 @@ export default function AuditPage() {
                   <tr key={entry.audit_id}>
                     <td className="mono whitespace-nowrap">{ist(entry.timestamp_utc)}</td>
                     <td className="whitespace-nowrap">{entry.username}</td>
-                    <td className="whitespace-nowrap text-ink-500">
+                    <td className="whitespace-nowrap text-muted">
                       {entry.role.replace(/_/g, " ")}
                     </td>
                     <td className="whitespace-nowrap">{humanise(entry.action)}</td>
                     <td className="mono">
                       {entry.resource_type ? (
                         <>
-                          <span className="text-ink-400">{entry.resource_type}:</span>{" "}
+                          <span className="text-muted">{entry.resource_type}:</span>{" "}
                           {orDash(entry.resource_id)}
                         </>
                       ) : (
@@ -204,7 +204,7 @@ export default function AuditPage() {
                     <td>
                       <OutcomePill outcome={entry.outcome} />
                     </td>
-                    <td className="text-ink-500">{orDash(entry.case_or_reason)}</td>
+                    <td className="text-muted">{orDash(entry.case_or_reason)}</td>
                   </tr>
                 ))}
               </tbody>

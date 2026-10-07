@@ -92,7 +92,7 @@ function RequestList() {
         subtitle="CCTV installation records from each department."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         {(counts.VALIDATION_FAILED ?? 0) > 0 && (
@@ -115,7 +115,7 @@ function RequestList() {
         )}
 
         {/* Filters */}
-        <div className="card flex flex-wrap items-end gap-3 px-3 py-2.5">
+        <div className="card flex flex-wrap items-start gap-3 px-6 py-5">
           <FloatInput
             label="Search"
             className="min-w-[14rem] flex-1"
@@ -137,10 +137,10 @@ function RequestList() {
                 </option>
               ))}
           </FloatSelect>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-2xs text-ink-500">
-              <span className="tabular font-medium text-ink-900">{visible.length}</span> of{" "}
-              <span className="tabular font-medium text-ink-900">{records.length}</span> records
+          <div className="ml-auto flex h-12 items-center gap-3">
+            <span className="text-caption text-muted">
+              <span className="tabular font-semibold text-ink">{visible.length}</span> of{" "}
+              <span className="tabular font-semibold text-ink">{records.length}</span> records
             </span>
             {(status || query) && (
               <button
@@ -178,30 +178,30 @@ function RequestList() {
                     <td>
                       <Link
                         href={`/installations/${encodeURIComponent(record.request_id)}`}
-                        className="font-medium text-brand-600 hover:underline"
+                        className="link-quiet"
                       >
                         {orDash(record.camera_name)}
                       </Link>
-                      <div className="mono text-ink-400">{orDash(record.external_camera_id)}</div>
+                      <div className="mono text-muted">{orDash(record.external_camera_id)}</div>
                     </td>
                     <td>
                       <DepartmentTag department={record.owning_department} />
                     </td>
-                    <td className="text-ink-500">
+                    <td className="text-muted">
                       {orDash(record.submitted_by ?? record.created_by)}
                     </td>
-                    <td className="whitespace-nowrap text-ink-500" title={ist(record.created_at)}>
+                    <td className="whitespace-nowrap text-muted" title={ist(record.created_at)}>
                       {relative(record.created_at)}
                     </td>
                     <td>
                       <RequestStatusPill status={record.status} />
                       {record.validation_errors.length > 0 && (
-                        <div className="mt-1 text-2xs text-bad">
+                        <div className="mt-1 text-caption text-bad">
                           {record.validation_errors.length} validation issue(s)
                         </div>
                       )}
                     </td>
-                    <td className="whitespace-nowrap text-ink-500" title={ist(record.updated_at)}>
+                    <td className="whitespace-nowrap text-muted" title={ist(record.updated_at)}>
                       {relative(record.updated_at)}
                     </td>
                     <td>
@@ -225,7 +225,7 @@ function RequestList() {
           )}
         </Card>
 
-        <p className="text-2xs leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           These records live in each department&rsquo;s own system. Vigentra mirrors them so the
           pipeline is visible and auditable centrally, and publishes camera metadata to the registry
           as soon as a form passes its own department&rsquo;s validation &mdash; there is no approval

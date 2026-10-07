@@ -50,12 +50,12 @@ export function HealthAlerts({ canAcknowledge }: { canAcknowledge: boolean }) {
     <Card title={`Camera health — ${down.length ? `${down.length} down` : "all answering"}`}>
       {error && <Notice tone="bad">{error}</Notice>}
       {rows && rows.length === 0 ? (
-        <p className="px-3 py-3 text-[13px] text-ink-2">
+        <p className="px-6 py-5 text-body-sm text-muted">
           No camera or department system has stopped answering in the last 24 hours.
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>State</th>
@@ -71,22 +71,22 @@ export function HealthAlerts({ canAcknowledge }: { canAcknowledge: boolean }) {
                     <Pill tone={row.open ? "bad" : "ok"}>{row.open ? "down" : "recovered"}</Pill>
                   </td>
                   <td>
-                    <div className="font-medium">
+                    <div className="font-semibold">
                       {row.kind === "SOURCE_UNREACHABLE"
                         ? `Department system ${row.source_system} unreachable`
                         : row.camera_name ?? row.camera_id}
                     </div>
-                    <div className="text-ink-2">{row.detail}</div>
+                    <div className="text-muted">{row.detail}</div>
                   </td>
                   <td className="whitespace-nowrap" title={ist(row.raised_at)}>
                     {relative(row.raised_at)}
-                    {row.recovered_at && <div className="text-ink-2">back {relative(row.recovered_at)}</div>}
+                    {row.recovered_at && <div className="text-muted">back {relative(row.recovered_at)}</div>}
                   </td>
                   <td className="whitespace-nowrap">
                     {row.acknowledged ? (
-                      <span className="text-ink-2">by {row.acknowledged_by}</span>
+                      <span className="text-muted">by {row.acknowledged_by}</span>
                     ) : row.open && canAcknowledge ? (
-                      <button className="btn" disabled={busy === row.alert_id} onClick={() => void take(row)}>
+                      <button className="btn btn-sm" disabled={busy === row.alert_id} onClick={() => void take(row)}>
                         I&apos;m on it
                       </button>
                     ) : (

@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 
+// Inter, self-hosted as a variable font with its optical-size axis. Bundled
+// from node_modules at build time, so the console never asks a font CDN for
+// anything - it has to render on a network that reaches nothing but itself.
+import "@fontsource-variable/inter/opsz.css";
+import "@fontsource-variable/inter/opsz-italic.css";
+
 import { AppFrame } from "@/components/AppFrame";
 import "./globals.css";
 

@@ -43,18 +43,31 @@ import type {
 
 type Tone = "ok" | "warn" | "bad" | "idle" | "info";
 
+/**
+ * A tone colours the pill's icon and label, never its fill. `idle` is ink at
+ * reduced opacity rather than the muted grey, which falls just short of 4.5:1
+ * on the pill's own tint; `info` is plain ink - the electric blue is not a
+ * status colour and is not spent here.
+ */
 const TONE_CLASS: Record<Tone, string> = {
-  ok: "border-ok/30 bg-ok-bg text-ok",
-  warn: "border-warn/30 bg-warn-bg text-warn",
-  bad: "border-bad/30 bg-bad-bg text-bad",
-  idle: "border-line-strong bg-idle-bg text-idle",
-  info: "border-brand-500/30 bg-brand-100 text-brand-700",
+  ok: "text-ok",
+  warn: "text-warn",
+  bad: "text-bad",
+  idle: "text-ink/65",
+  info: "text-ink",
 };
+
+/** Tones that report a condition, and so lead with a mark even with no icon. */
+const SIGNAL_TONES = new Set<Tone>(["ok", "warn", "bad"]);
 
 /**
  * State is carried by icon *and* colour *and* text, never colour alone - these
  * pills are read in dense tables, and a red/amber difference is exactly what a
  * colour-blind operator or a washed-out control-room monitor loses first.
+ *
+ * Labels are set in sentence case: the first letter is raised here, so a
+ * caller can pass "online" or "3 open alerts" as it has them. A value that
+ * arrives in capitals (an enum from the API) should come through `humanise`.
  */
 export function Pill({
   tone,
@@ -67,8 +80,14 @@ export function Pill({
 }) {
   return (
     <span className={`pill ${TONE_CLASS[tone]}`}>
-      {Icon && <Icon className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />}
-      {children}
+      {Icon ? (
+        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+      ) : (
+        SIGNAL_TONES.has(tone) && (
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden />
+        )
+      )}
+      <span className="inline-block first-letter:uppercase">{children}</span>
     </span>
   );
 }
@@ -85,7 +104,7 @@ export function HealthPill({ status }: { status: CameraHealthStatus | string }) 
   const [tone, icon] = HEALTH_META[status as CameraHealthStatus] ?? ["idle", CircleHelp];
   return (
     <Pill tone={tone} icon={icon}>
-      {status}
+      {humanise(status)}
     </Pill>
   );
 }
@@ -104,7 +123,7 @@ export function RequestStatusPill({ status }: { status: RequestStatus | string }
   const [tone, icon] = REQUEST_META[status as RequestStatus] ?? ["idle", CircleHelp];
   return (
     <Pill tone={tone} icon={icon}>
-      {String(status).replace(/_/g, " ")}
+      {humanise(String(status))}
     </Pill>
   );
 }
@@ -121,7 +140,7 @@ export function GrantStatusPill({ status }: { status: GrantStatus | string }) {
   const [tone, icon] = GRANT_META[status as GrantStatus] ?? ["idle", CircleHelp];
   return (
     <Pill tone={tone} icon={icon}>
-      {status}
+      {humanise(status)}
     </Pill>
   );
 }
@@ -162,7 +181,7 @@ export function InstallationPill({ status }: { status: InstallationStatus | stri
   const [tone, icon] = INSTALLATION_META[status as InstallationStatus] ?? ["idle", CircleHelp];
   return (
     <Pill tone={tone} icon={icon}>
-      {String(status).replace(/_/g, " ")}
+      {humanise(String(status))}
     </Pill>
   );
 }
@@ -178,7 +197,7 @@ export function SyncPill({ status }: { status: SyncStatus | string }) {
   const [tone, icon] = SYNC_META[status as SyncStatus] ?? ["idle", CircleHelp];
   return (
     <Pill tone={tone} icon={icon}>
-      {String(status)}
+      {humanise(String(status))}
     </Pill>
   );
 }
@@ -199,19 +218,13 @@ export function OutcomePill({ outcome }: { outcome: string }) {
   );
 }
 
+/**
+ * Which department, as a plain capsule. The name is the whole message, so the
+ * two departments are no longer told apart by a colour that meant nothing
+ * without a key - on the map, where colour does separate them, the legend says so.
+ */
 export function DepartmentTag({ department }: { department: string }) {
-  const isTraffic = department === "Traffic Police";
-  return (
-    <span
-      className={`pill ${
-        isTraffic
-          ? "border-brand-500/30 bg-brand-100 text-brand-700"
-          : "border-navy-500/25 bg-[#eceff5] text-navy-600"
-      }`}
-    >
-      {department}
-    </span>
-  );
+  return <span className="pill">{department}</span>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -254,7 +267,7 @@ export function Stat({
   href?: string;
 }) {
   const colour = {
-    plain: "text-ink-900",
+    plain: "text-ink",
     ok: "text-ok",
     warn: "text-warn",
     bad: "text-bad",
@@ -263,22 +276,24 @@ export function Stat({
   const body = (
     <>
       <div className="field-label">{label}</div>
-      <div className={`tabular mt-1 text-[26px] font-semibold leading-none ${colour}`}>{value}</div>
-      {hint && <div className="mt-1.5 text-2xs text-ink-500">{hint}</div>}
+      <div className={`tabular mt-2 text-h3 ${colour}`}>{value}</div>
+      {hint && <div className="mt-2 text-caption text-muted">{hint}</div>}
     </>
   );
 
+  // A figure that leads somewhere says so by taking the tint on hover - the
+  // system's only way to raise a surface.
   if (href) {
     return (
       <Link
         href={href}
-        className="card block px-4 py-3 transition hover:border-brand-500 hover:shadow-raised"
+        className="card block px-6 py-5 transition-colors duration-150 hover:bg-canvas-soft"
       >
         {body}
       </Link>
     );
   }
-  return <div className="card px-4 py-3">{body}</div>;
+  return <div className="card px-6 py-5">{body}</div>;
 }
 
 export function Field({
@@ -296,7 +311,7 @@ export function Field({
     <div className="min-w-0">
       <div className="field-label">{label}</div>
       {redacted ? (
-        <div className="field-value italic text-ink-400" title="Withheld for your role">
+        <div className="field-value italic text-muted" title="Withheld for your role">
           withheld for your role
         </div>
       ) : (
@@ -317,16 +332,22 @@ export function PageHeader({
   actions?: ReactNode;
   breadcrumb?: { label: string; href?: string }[];
 }) {
+  // The title is the page's one loud thing: a 652-weight heading on white, with
+  // the subtitle set quietly under it. No rule, no band - whitespace separates
+  // the header from what follows.
   return (
-    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-      <div>
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+      <div className="min-w-0">
         {breadcrumb && (
-          <nav className="mb-1 flex items-center gap-1.5 text-2xs text-ink-500" aria-label="Breadcrumb">
+          <nav
+            className="mb-3 flex flex-wrap items-center gap-1.5 text-caption text-muted"
+            aria-label="Breadcrumb"
+          >
             {breadcrumb.map((crumb, index) => (
               <span key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
-                {index > 0 && <ChevronRight className="h-3 w-3 text-ink-400" strokeWidth={2} aria-hidden />}
+                {index > 0 && <ChevronRight className="h-3 w-3 text-faint" strokeWidth={2} aria-hidden />}
                 {crumb.href ? (
-                  <Link href={crumb.href} className="hover:text-brand-600 hover:underline">
+                  <Link href={crumb.href} className="underline-offset-4 hover:text-ink hover:underline">
                     {crumb.label}
                   </Link>
                 ) : (
@@ -336,8 +357,8 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        <h1 className="text-lg font-semibold text-ink-900">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-[13px] text-ink-500">{subtitle}</p>}
+        <h1 className="text-h4 text-ink sm:text-h3">{title}</h1>
+        {subtitle && <p className="mt-2 max-w-[70ch] text-body text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -360,26 +381,31 @@ export function Spinner() {
  */
 export function EmptyState({ message, hint }: { message: string; hint?: string }) {
   return (
-    <div className="px-4 py-10 text-center">
+    <div className="px-6 py-12 text-center">
       <Inbox
-        className="mx-auto mb-2 h-7 w-7 text-ink-300"
+        className="mx-auto mb-3 h-7 w-7 text-faint"
         strokeWidth={1.4}
         aria-hidden
       />
-      <p className="text-[13px] text-ink-500">{message}</p>
-      {hint && <p className="mt-1 text-2xs text-ink-400">{hint}</p>}
+      <p className="text-body text-ink">{message}</p>
+      {hint && <p className="mx-auto mt-1 max-w-[60ch] text-body-sm text-muted">{hint}</p>}
     </div>
   );
 }
 
-const NOTICE_META: Record<Tone, [string, LucideIcon, string]> = {
-  ok: ["border-l-ok bg-ok-bg", CircleCheck, "text-ok"],
-  warn: ["border-l-warn bg-warn-bg", TriangleAlert, "text-warn"],
-  bad: ["border-l-bad bg-bad-bg", CircleAlert, "text-bad"],
-  idle: ["border-l-idle bg-idle-bg", Info, "text-idle"],
-  info: ["border-l-brand-600 bg-brand-50", Info, "text-brand-600"],
+const NOTICE_META: Record<Tone, [LucideIcon, string]> = {
+  ok: [CircleCheck, "text-ok"],
+  warn: [TriangleAlert, "text-warn"],
+  bad: [CircleAlert, "text-bad"],
+  idle: [Info, "text-ink/65"],
+  info: [Info, "text-ink"],
 };
 
+/**
+ * A callout. Every tone sits on the same tinted panel; the icon is what says
+ * which kind it is. Tinting the panel itself per tone would put a coloured
+ * band across the page for every warning on it.
+ */
 export function Notice({
   tone = "info",
   title,
@@ -389,19 +415,13 @@ export function Notice({
   title?: string;
   children: ReactNode;
 }) {
-  const [border, Icon, iconColour] = NOTICE_META[tone];
+  const [Icon, iconColour] = NOTICE_META[tone];
   return (
-    <div
-      className={`flex items-start gap-2 rounded border border-line border-l-4 px-3 py-2 text-[13px] ${border}`}
-    >
-      <Icon
-        className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${iconColour}`}
-        strokeWidth={2}
-        aria-hidden
-      />
+    <div className="panel flex items-start gap-3 px-4 py-3 text-body-sm">
+      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColour}`} strokeWidth={2} aria-hidden />
       <div className="min-w-0 flex-1">
-        {title && <div className="font-semibold">{title}</div>}
-        <div className={title ? "mt-0.5 text-ink-700" : "text-ink-700"}>{children}</div>
+        {title && <div className="font-semibold text-ink">{title}</div>}
+        <div className={title ? "mt-0.5 text-ink-soft" : "text-ink-soft"}>{children}</div>
       </div>
     </div>
   );
@@ -457,7 +477,7 @@ export function FootageNotice({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 rounded border border-line bg-[#eef1f5] px-3 py-1.5 text-2xs text-ink-700">
+      <div className="panel flex items-center gap-2 px-4 py-2 text-caption text-ink-soft">
         <LockIcon />
         <span>
           <strong className="font-semibold">{headline}.</strong>
@@ -468,12 +488,12 @@ export function FootageNotice({
   }
 
   return (
-    <div className="flex items-start gap-2.5 rounded border border-line border-l-4 border-l-navy-700 bg-white px-3.5 py-2.5">
+    <div className="panel flex items-start gap-3 px-4 py-3">
       <LockIcon className="mt-0.5 shrink-0" />
-      <div className="min-w-0 flex-1 text-[13px]">
-        <div className="font-semibold text-ink-900">{headline}</div>
-        <p className="mt-0.5 text-ink-500">{body}</p>
-        {children && <div className="mt-2">{children}</div>}
+      <div className="min-w-0 flex-1 text-body-sm">
+        <div className="font-semibold text-ink">{headline}</div>
+        <p className="mt-0.5 text-ink-soft">{body}</p>
+        {children && <div className="mt-3">{children}</div>}
       </div>
     </div>
   );
@@ -603,18 +623,19 @@ export function FloatTextarea({
   );
 }
 
+/** Set in from the field's own edge, so it lines up with the text above it. */
 function FieldFoot({ id, error, hint }: { id: string; error?: string | null; hint?: string }) {
   if (error) {
     return (
-      <p id={`${id}-error`} className="mt-1 text-2xs font-medium text-bad">
+      <p id={`${id}-error`} className="mt-1.5 px-4 text-caption font-semibold text-bad">
         {error}
       </p>
     );
   }
-  if (hint) return <p className="mt-1 text-2xs text-ink-400">{hint}</p>;
+  if (hint) return <p className="mt-1.5 px-4 text-caption text-muted">{hint}</p>;
   return null;
 }
 
 export function LockIcon({ className = "" }: { className?: string }) {
-  return <Lock className={`h-3.5 w-3.5 text-navy-700 ${className}`} strokeWidth={1.6} aria-hidden />;
+  return <Lock className={`h-4 w-4 text-ink ${className}`} strokeWidth={1.8} aria-hidden />;
 }

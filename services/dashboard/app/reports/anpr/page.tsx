@@ -71,11 +71,11 @@ export default function AnprReportPage() {
         subtitle="Plates read, with the camera, the place and the timestamp."
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
         <Card title="Generate">
-          <div className="flex flex-wrap items-end gap-3 px-3 py-3">
+          <div className="flex flex-wrap items-start gap-3 px-6 py-5">
             <FloatSelect
               label="Time window"
                 value={sinceHours}
@@ -96,13 +96,13 @@ export default function AnprReportPage() {
                 hint="VIGENTRA-TRAFFIC-AHM-0001"
             />
 
-            <button className="btn btn-primary" onClick={() => void generate()} disabled={busy}>
+            <button className="btn btn-primary btn-lg" onClick={() => void generate()} disabled={busy}>
               {busy ? <Spinner /> : <FileBarChart2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />} Generate report
             </button>
 
             {rows !== null && rows.length > 0 && (
               <a
-                className="btn"
+                className="btn btn-lg"
                 href={api.anprReportCsvUrl({
                   camera_id: cameraId.trim() || undefined,
                   since_hours: sinceHours,
@@ -114,13 +114,13 @@ export default function AnprReportPage() {
             )}
 
             {generatedAt && (
-              <span className="text-2xs text-ink-500">Generated {ist(generatedAt)}</span>
+              <span className="text-caption leading-[3rem] text-muted">Generated {ist(generatedAt)}</span>
             )}
           </div>
         </Card>
 
         {rows !== null && rows.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-[13px]">
+          <div className="flex flex-wrap gap-2 text-body-sm">
             <Pill tone="info">{rows.length} reads</Pill>
             <Pill tone={hits ? "bad" : "ok"}>{hits} watchlist hits</Pill>
             {withheld > 0 && (
@@ -133,15 +133,15 @@ export default function AnprReportPage() {
 
         {rows === null ? (
           <Card title="No report yet">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               Choose a window and generate. Nothing is loaded until you ask.
             </div>
           </Card>
         ) : rows.length === 0 ? (
           <Card title="No plates read">
-            <div className="px-4 py-6 text-[13px] text-ink-500">
+            <div className="px-6 py-6 text-body-sm text-muted">
               <p>No plates were read in that window.</p>
-              <p className="mt-2 text-2xs">
+              <p className="mt-2 text-caption">
                 Check that an edge worker ran with <span className="mono">ANPR_ENABLE=true</span>{" "}
                 against a camera in scope. On wide overview footage a low yield is expected — see{" "}
                 <span className="mono">docs/anpr.md</span>.
@@ -171,7 +171,7 @@ export default function AnprReportPage() {
                       <td className="mono font-semibold">
                         {row.plate ?? (
                           <span
-                            className="italic font-normal text-ink-400"
+                            className="italic font-normal text-muted"
                             title="Past this deployment's plate retention period"
                           >
                             withheld
@@ -186,8 +186,8 @@ export default function AnprReportPage() {
                           {row.camera_name ?? row.camera_id}
                         </Link>
                       </td>
-                      <td className="text-2xs">{row.location ?? "—"}</td>
-                      <td className="mono text-2xs">
+                      <td className="text-caption">{row.location ?? "—"}</td>
+                      <td className="mono text-caption">
                         {row.latitude !== null && row.longitude !== null
                           ? `${row.latitude.toFixed(5)}, ${row.longitude.toFixed(5)}`
                           : "—"}
@@ -196,14 +196,14 @@ export default function AnprReportPage() {
                       <td className="tabular">
                         {row.observations}
                         {row.observations === 1 && (
-                          <span className="ml-1 text-2xs text-warn">single frame</span>
+                          <span className="ml-1 text-caption text-warn">single frame</span>
                         )}
                       </td>
                       <td>
                         {row.watchlist_hit ? (
                           <Pill tone="bad">{row.watchlist_category}</Pill>
                         ) : (
-                          <span className="text-2xs text-ink-400">—</span>
+                          <span className="text-caption text-muted">—</span>
                         )}
                       </td>
                     </tr>

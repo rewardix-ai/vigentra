@@ -101,7 +101,7 @@ export default function IncidentsPage() {
   const open = (rows ?? []).filter((r) => r.status === "CANDIDATE" || r.status === "REVIEWING");
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="Incident review"
         subtitle="Traffic events detected by the cameras, for review."
@@ -114,7 +114,7 @@ export default function IncidentsPage() {
       </Notice>
 
       <Card>
-        <div className="flex flex-wrap items-end gap-3 px-4 py-3">
+        <div className="flex flex-wrap items-start gap-3 px-6 py-5">
           <FloatSelect label="Type" value={kind} onChange={(e) => setKind(e.target.value)}>
             <option value="">All types</option>
             {Object.entries(KIND_LABEL).map(([k, label]) => (
@@ -143,7 +143,7 @@ export default function IncidentsPage() {
             <option value="168">Last 7 days</option>
             <option value="720">Last 30 days</option>
           </FloatSelect>
-          <div className="ml-auto text-2xs text-ink-500">
+          <div className="ml-auto text-caption leading-[3rem] text-muted">
             {rows ? `${open.length} awaiting review · ${rows.length} shown` : "loading…"}
           </div>
         </div>
@@ -165,13 +165,13 @@ export default function IncidentsPage() {
           const reviewed = incident.status === "CONFIRMED" || incident.status === "DISMISSED";
           return (
             <Card key={incident.incident_id}>
-              <div className="flex flex-wrap items-start gap-3 px-4 py-3">
+              <div className="flex flex-wrap items-start gap-3 px-6 py-5">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill tone={SEVERITY_TONE[incident.severity] ?? "idle"}>
                       {incident.severity}
                     </Pill>
-                    <span className="text-[13px] font-semibold text-ink-900">
+                    <span className="text-body-sm font-semibold text-ink">
                       {KIND_LABEL[incident.kind] ?? incident.kind}
                     </span>
                     <Pill tone={STATUS_TONE[incident.status] ?? "idle"}>{incident.status}</Pill>
@@ -180,7 +180,7 @@ export default function IncidentsPage() {
                     )}
                   </div>
 
-                  <div className="text-2xs text-ink-600">
+                  <div className="text-caption text-muted">
                     <Link
                       className="mono hover:underline"
                       href={`/registry/${encodeURIComponent(incident.camera_id)}`}
@@ -194,10 +194,10 @@ export default function IncidentsPage() {
                       ` · vehicle track ${incident.track_ids.join(", ")}`}
                   </div>
 
-                  <p className="text-2xs leading-relaxed text-ink-500">{incident.reason}</p>
+                  <p className="text-caption leading-relaxed text-muted">{incident.reason}</p>
 
                   {Object.keys(incident.evidence ?? {}).length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-ink-400">
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-caption text-muted">
                       {Object.entries(incident.evidence)
                         .filter(([k]) => k !== "vehicle" && k !== "vehicles")
                         .map(([k, v]) => (
@@ -209,7 +209,7 @@ export default function IncidentsPage() {
                   )}
 
                   {incident.reviewed_by && (
-                    <div className="text-[10px] text-ink-400">
+                    <div className="text-caption text-muted">
                       reviewed by {incident.reviewed_by} · {ist(incident.reviewed_at)}
                     </div>
                   )}

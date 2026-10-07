@@ -224,7 +224,7 @@ export default function InstallationRequestPage() {
         actions={<div className="flex flex-wrap gap-2">{actions}</div>}
       />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
         {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}
 
@@ -234,7 +234,7 @@ export default function InstallationRequestPage() {
           {record.validation_errors.length > 0 && (
             <Pill tone="bad">{record.validation_errors.length} validation issue(s)</Pill>
           )}
-          <span className="text-2xs text-ink-500">Updated {ist(record.updated_at)}</span>
+          <span className="text-caption text-muted">Updated {ist(record.updated_at)}</span>
         </div>
 
         {record.validation_errors.length > 0 && (
@@ -244,7 +244,7 @@ export default function InstallationRequestPage() {
                 <li key={issue}>{issue}</li>
               ))}
             </ul>
-            <div className="mt-1 text-2xs text-ink-500">
+            <div className="mt-1 text-caption text-muted">
               Correct these fields and submit again. The record registers as soon
               as they pass.
             </div>
@@ -258,7 +258,7 @@ export default function InstallationRequestPage() {
 
         {prompt && (
           <Card title={`${ACTION_LABEL[prompt.kind]} — ${record.request_id}`}>
-            <div className="space-y-2.5 px-4 py-3">
+            <div className="space-y-2.5 px-6 py-5">
               <FloatTextarea
                 label="Reason"
                 required={prompt.requiresReason}
@@ -290,7 +290,7 @@ export default function InstallationRequestPage() {
 
         {/* Timeline */}
         <Card title="Lifecycle">
-          <div className="grid gap-x-5 gap-y-3.5 px-4 py-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">
             <Show label="Request ID">
               <span className="mono">{record.request_id}</span>
             </Show>
@@ -309,7 +309,7 @@ export default function InstallationRequestPage() {
 
         {/* Camera identity */}
         <Card title="Camera identity">
-          <div className="grid gap-x-5 gap-y-3.5 px-4 py-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">
             <Show label="Camera name">{formValue(record.form, "camera_name")}</Show>
             <Show label="Department camera ID">
               <span className="mono">{formValue(record.form, "external_camera_id")}</span>
@@ -326,7 +326,7 @@ export default function InstallationRequestPage() {
 
         {/* Ownership + location */}
         <Card title="Ownership and location">
-          <div className="grid gap-x-5 gap-y-3.5 px-4 py-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">
             <Show label="Owning department">{formValue(record.form, "owning_department")}</Show>
             <Show label="Owning unit">{formValue(record.form, "owning_unit")}</Show>
             <Show label="District">{formValue(record.form, "district")}</Show>
@@ -364,7 +364,7 @@ export default function InstallationRequestPage() {
 
         {/* Technical + local capability */}
         <Card title="Technical metadata">
-          <div className="grid gap-x-5 gap-y-3.5 px-4 py-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-5 px-6 py-5 sm:grid-cols-2 lg:grid-cols-3">
             <Show label="Feed type">{formValue(record.form, "source_type")}</Show>
             <Show label="VMS">{formValue(record.form, "vms_name")}</Show>
             <Show label="VMS vendor">{formValue(record.form, "vms_vendor")}</Show>
@@ -392,7 +392,7 @@ export default function InstallationRequestPage() {
 
         {/* Access policy */}
         <Card title="Local access policy declared on this form">
-          <div className="px-4 py-3.5">
+          <div className="px-6 py-5">
             <Show label="Roles permitted to view footage in the owning department's VMS">
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {Array.isArray(record.form.permitted_local_roles) && record.form.permitted_local_roles.length > 0
@@ -410,7 +410,7 @@ export default function InstallationRequestPage() {
         {/* Attachments */}
         <Card title="Supporting document references">
           {record.attachments.length === 0 ? (
-            <p className="px-4 py-4 text-[13px] text-ink-500">
+            <p className="px-6 py-5 text-body-sm text-muted">
               No documents recorded for this record.
             </p>
           ) : (
@@ -428,8 +428,8 @@ export default function InstallationRequestPage() {
                   <tr key={item.reference}>
                     <td>{titleise(item.document_type)}</td>
                     <td className="mono">{item.reference}</td>
-                    <td className="text-ink-500">{orDash(item.filename)}</td>
-                    <td className="text-ink-500">{orDash(item.custodian)}</td>
+                    <td className="text-muted">{orDash(item.filename)}</td>
+                    <td className="text-muted">{orDash(item.custodian)}</td>
                   </tr>
                 ))}
               </tbody>

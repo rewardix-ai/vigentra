@@ -350,7 +350,7 @@ export function LiveTile({
           ? "fixed inset-0 z-[75] overflow-hidden bg-black"
           : compact
             ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
-            : "overflow-hidden rounded border border-line bg-white"
+            : "overflow-hidden rounded-sm border border-hairline-soft bg-canvas"
       }
     >
       <div
@@ -371,16 +371,16 @@ export function LiveTile({
               autoPlay
               playsInline
             />
-            <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-white">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bad" />
+            <span className="badge-overlay pointer-events-none absolute left-2 top-2">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bad motion-reduce:animate-none" />
               Live
             </span>
-            <span className="pointer-events-none absolute bottom-1.5 right-1.5 max-w-[90%] truncate rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">
-              {session.watermark}
+            <span className="badge-overlay pointer-events-none absolute bottom-2 right-2 max-w-[90%] font-normal">
+              <span className="min-w-0 truncate">{session.watermark}</span>
             </span>
           </>
         ) : (
-          <div className="flex h-full items-center justify-center px-3 text-center text-2xs text-ink-500">
+          <div className="flex h-full items-center justify-center px-4 text-center text-caption text-white/70">
             {!watchable
               ? camera.video_access_reason ?? "Not viewable by this account"
               : statusText(phase, visible, error, attempt)}
@@ -391,28 +391,28 @@ export function LiveTile({
 
       {compact ? (
         <button
-          className="absolute bottom-1 left-1 max-w-[70%] truncate rounded bg-black/60 px-1.5 py-0.5 text-left text-[11px] font-semibold text-white hover:underline"
+          className="badge-overlay absolute bottom-2 left-2 max-w-[70%] hover:underline"
           title={camera.name}
           onClick={() => onOpenFull?.(camera.camera_id)}
         >
-          {camera.name}
+          <span className="min-w-0 truncate">{camera.name}</span>
         </button>
       ) : (
-      <div className="space-y-1 p-2">
+      <div className="space-y-1 px-4 py-3">
         <div className="flex items-start justify-between gap-2">
           <button
-            className="truncate text-left text-[13px] font-semibold text-ink-900 hover:underline"
+            className="truncate text-left text-body-sm font-semibold text-ink hover:underline"
             title={camera.name}
             onClick={() => onOpenFull?.(camera.camera_id)}
           >
             {camera.name}
           </button>
-          <span className="shrink-0 text-2xs uppercase text-ink-500">{camera.camera_type}</span>
+          <span className="shrink-0 text-caption text-muted">{camera.camera_type}</span>
         </div>
 
-        <div className="mono text-2xs text-ink-500">{camera.camera_id}</div>
+        <div className="mono text-caption text-muted">{camera.camera_id}</div>
 
-        <dl className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-2xs text-ink-500">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-caption text-muted">
           <div className="col-span-2 truncate" title={loc.road_or_junction ?? ""}>
             {loc.district}
             {loc.road_or_junction ? ` · ${loc.road_or_junction}` : ""}
@@ -541,7 +541,7 @@ function SnapshotTile({
           ? "fixed inset-0 z-[75] overflow-hidden bg-black"
           : compact
             ? "relative h-full min-h-0 w-full overflow-hidden bg-black"
-            : "overflow-hidden rounded border border-line bg-black"
+            : "overflow-hidden rounded-sm bg-black"
       }
     >
       <div
@@ -564,21 +564,25 @@ function SnapshotTile({
           />
         )}
         {!everLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center text-2xs text-ink-500">
+          <div className="absolute inset-0 flex items-center justify-center text-caption text-white/70">
             {visible ? (failed ? "waiting for first frame…" : "connecting…") : "scroll into view"}
           </div>
         )}
-        <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-white">
-          <span className={`h-1.5 w-1.5 rounded-full ${everLoaded && !failed ? "animate-pulse bg-bad" : "bg-ink-500"}`} />
+        <span className="badge-overlay pointer-events-none absolute left-2 top-2">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              everLoaded && !failed ? "animate-pulse bg-bad motion-reduce:animate-none" : "bg-white/50"
+            }`}
+          />
           Live
         </span>
         <PlateChips plates={plates} />
         <button
-          className="absolute bottom-1 left-1 max-w-[80%] truncate rounded bg-black/60 px-1.5 py-0.5 text-left text-[11px] font-semibold text-white hover:underline"
+          className="badge-overlay absolute bottom-2 left-2 max-w-[80%] hover:underline"
           title={camera.name}
           onClick={() => onOpenFull?.(camera.camera_id)}
         >
-          {camera.name}
+          <span className="min-w-0 truncate">{camera.name}</span>
         </button>
       </div>
     </div>
@@ -594,11 +598,11 @@ function SnapshotTile({
 function PlateChips({ plates }: { plates: Sighting[] }) {
   if (plates.length === 0) return null;
   return (
-    <div className="pointer-events-none absolute right-1.5 top-1.5 flex max-w-[65%] flex-col items-end gap-0.5">
+    <div className="pointer-events-none absolute right-2 top-2 flex max-w-[65%] flex-col items-end gap-1">
       {plates.slice(0, 3).map((p) => (
         <span
           key={p.sighting_id}
-          className={`max-w-full truncate rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white ${plateTone(p.confidence)}`}
+          className={`max-w-full truncate rounded-full px-2 py-0.5 font-mono text-caption font-semibold text-white ${plateTone(p.confidence)}`}
         >
           {p.plate_withheld ? "plate withheld" : p.plate_text} · {Math.round(p.confidence * 100)}% ·{" "}
           {relative(p.timestamp_utc)}

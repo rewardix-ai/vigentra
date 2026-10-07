@@ -1,4 +1,5 @@
-/* The system around the reader (a live schematic, then the console on a monitor), and the close. */
+/* The system around the reader (a live schematic, then the console on a monitor), what makes
+ * Vigentra different, what comes next, and the close. */
 (function () {
   const K = window.K;
   const h = K.h;
@@ -8,39 +9,10 @@
   K.scene({
     id: "system", act: "The system", title: "How the pieces connect", src: "Schematic · Vigentra deployment · services/edge-worker · services/central-api",
     build(ctx) {
-      const E = K.EVIDENCE || { plate: "" };
-      const X = [260, 713, 1166, 1620];
-      const [R, R2] = [540, 830];
-      const nodes = [
-        { id: "cams", n: 1, x: X[0], y: R, tone: "io", title: "Cameras", sub: "the grid · Delhi",
-          media: () => h("div.mosaic", null, ["wall_cam04", "wall_cam12", "wall_cam15", "delhi_raw"].map((k) => K.media.video(k, { cls: "media-cover" }))),
-          say: "the department's own cameras, unchanged" },
-        { id: "reader", n: 2, x: X[1], y: R, title: "Vigentra reader", sub: "find · follow · read", media: () => S.carThumb({ plate: true }),
-          say: "reads the plates; only a confirmed plate leaves it, as text" },
-        { id: "central", n: 3, x: X[2], y: R, title: "Vigentra central", sub: "plate records · watchlist",
-          media: () => h("div.fc-rec", null, [h("div", null, E.plate), h("span", null, "plate · time · camera")]),
-          say: "stores the record, checks the watchlist as it arrives" },
-        { id: "console", n: 4, x: X[3], y: R, tone: "ok", title: "Console", sub: "search · trace · report", media: () => K.media.img("app_trace", { cls: "media-cover" }),
-          say: "search, trace, report; what operators do is audited" },
-        { id: "list", type: "decision", x: X[2], y: R2, w: 260, h: 170, title: "On the watchlist?", say: "every new plate record is checked" },
-        { id: "alert", type: "end", tone: "bad", x: X[3], y: R2, w: 300, h: 110, title: "Alert", sub: "critical · high · review", say: "a listed plate raises an alert, by priority" },
-        { id: "kept", type: "end", tone: "io", x: X[1], y: R2, w: 300, h: 110, title: "Kept for search", sub: "and for tracing later", say: "otherwise the record is kept for search and trace" },
-        { id: "live", type: "end", tone: "video", x: 940, y: 300, w: 400, h: 100, title: "Live video", sub: "only with the owning unit's permission", say: "another unit sees live video only when the owner grants it" },
-      ];
-      const edges = [
-        { from: "cams", to: "reader", label: "VIDEO", at: [X[0] + 166, R - 14] },
-        { from: "reader", to: "central", label: "TEXT", at: [X[1] + 170, R - 14] },
-        { from: "central", to: "console" },
-        { from: "central", to: "list", out: "bottom", in: "top" },
-        { from: "list", to: "alert", kind: "yes", label: "YES", at: [X[2] + 146, R2 - 14] },
-        { from: "alert", to: "console", out: "top", in: "bottom", kind: "alert" },
-        { from: "list", to: "kept", out: "left", in: "right", kind: "no", label: "NO", at: [X[2] - 196, R2 - 14] },
-        { from: "cams", to: "live", out: "top", in: "left", via: [[X[0], 300]], kind: "video" },
-        { from: "live", to: "console", out: "right", in: "top", via: [[X[3], 300]], kind: "video" },
-      ];
+      const C = K.CHARTS.system();
       const log = S.log({ max: 2 });
-      log.add("··", "<b>Video in, text out</b> follow the squares; click any box for what it does");
-      const chart = K.ui.flow({ nodes, edges, caption: log });
+      log.add("··", C.intro);
+      const chart = K.ui.flow({ nodes: C.nodes, edges: C.edges, caption: log });
       ctx.el.append(
         S.title("The system", "How the pieces connect."),
         S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
@@ -53,12 +25,7 @@
           ctx.auto(22);
           ctx.in("#lp");
           await chart.reveal(ctx, { gap: 160 });
-          chart.run(ctx, [
-            { path: ["cams", "reader", "central", "console"], every: 9500, main: true },
-            { path: ["cams", "reader", "central", "list", "alert", "console"], every: 14000, offset: 4000, cls: "bad" },
-            { path: ["cams", "reader", "central", "list", "kept"], every: 14000, offset: 11000, cls: "dim" },
-            { path: ["cams", "live", "console"], every: 9000, offset: 2000, cls: "video" },
-          ]);
+          chart.run(ctx, C.routes);
         },
         () => { ctx.auto(5); chart.classList.add("dimmed"); return S.show(ctx, "#b1"); },
       ];
@@ -69,12 +36,12 @@
   K.scene({
     id: "console", act: "The system", title: "The Vigentra console", src: "SRC Vigentra console · screen recording · 1:15–1:24 and 1:28–2:42",
     build(ctx) {
-      // The useful parts of the recording: live CAM06 detection (1:15.5-1:24) and the console pages
+      // The useful parts of the recording: live CAM06 detection (1:16.2-1:24) and the console pages
       // (1:28.5-2:42.6). Skipped: the camera wall at 1:24 and the closing card at 2:43, which show and
       // credit the London feeds.
-      const PARTS = [["Live detection on a grid feed", 75.5, 83.9], ["Search every detection", 88.5, 108.6],
+      const PARTS = [["Live detection on a grid feed", 76.2, 83.9], ["Search every detection", 88.5, 108.6],
         ["Trace one vehicle", 108.6, 132.1], ["Plate report", 132.1, 148], ["Audit log", 148, 162.6]];
-      const video = K.media.video("app_demo", { start: 75.5, loop: false, cls: "media-fit" });
+      const video = K.media.video("app_demo", { start: 76.2, loop: false, cls: "media-fit" });
       const items = PARTS.map(([name], i) => h("div.feat", null, [h("span.feat-n.num", null, String(i + 1).padStart(2, "0")), h("span", null, name)]));
       if (video.tagName === "VIDEO") {
         video.addEventListener("timeupdate", () => {
@@ -93,7 +60,7 @@
       return [
         // 83 s: the two parts of the recording, back to back
         async () => {
-          ctx.auto(83);
+          ctx.auto(82);
           ctx.in("#cp");
           await ctx.in("#fp");
           await S.show(ctx, "#b1");
@@ -101,6 +68,41 @@
           S.hide(ctx, "#b1");
         },
       ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- different */
+  K.scene({
+    id: "different", act: "Why Vigentra", title: "What makes Vigentra different", src: "Each point is a design choice in the code, with its evidence on screen",
+    build(ctx) {
+      const D = K.DATA;
+      const cards = D.distinct.map(([title, line, proof], i) => S.panel(80 + (i % 3) * 600, 230 + Math.floor(i / 3) * 330, 570, 300, `${String(i + 1).padStart(2, "0")} · ${title}`,
+        h("div.dist", null, [h("p", null, line), h("span.dist-proof", null, proof)]), { id: `d${i}` }));
+      ctx.el.append(S.title("Why Vigentra", "What makes Vigentra different."), ...cards,
+        S.tech(D.distinct.map(([t, , , src]) => `<b>${t}</b> ${src}`), "Design choices, not claims about other products"));
+      return [
+        async () => { for (let i = 0; i < 3; i += 1) { ctx.$(`#d${i}`).classList.add("in"); await ctx.wait(220); } },
+        async () => { for (let i = 3; i < 6; i += 1) { ctx.$(`#d${i}`).classList.add("in"); await ctx.wait(220); } },
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- roadmap */
+  K.scene({
+    id: "roadmap", act: "Next", title: "What we will do next", src: "SRC docs/scalability.md · known limits from the project's own reports",
+    build(ctx) {
+      const D = K.DATA;
+      const rows = D.roadmap.map(([title, line, tag], i) => h("div.rm", { "data-i": i }, [
+        h("span.rm-n.num", null, String(i + 1).padStart(2, "0")),
+        h("div.rm-t", null, [h("b", null, title), h("span", null, line)]),
+        h("span.rm-tag" + (tag === "Next" ? ".next" : ""), null, tag),
+      ]));
+      ctx.el.append(
+        S.title("Next", "What we will do next."),
+        S.panel(80, 220, 1760, 760, "Deployment plan", h("div.rms", null, rows), { id: "rp", right: "from today's limits" }),
+        S.tech([D.roadmapSrc], "")
+      );
+      return [async () => { await ctx.in("#rp"); for (const r of ctx.$$(".rm")) { r.classList.add("in"); await ctx.wait(260); } }];
     },
   });
 

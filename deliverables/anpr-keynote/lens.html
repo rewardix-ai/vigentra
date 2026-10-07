@@ -3,20 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vigentra · From Pixels to Information</title>
+<title>Vigentra · Story Edition</title>
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/stage.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/scenes.css">
+<link rel="stylesheet" href="css/lens.css">
 </head>
-<body>
+<body class="lens">
 <div id="viewport"><main id="stage" aria-live="polite">
-  <div id="topbar" aria-hidden="true">
-    <span class="tb-brand"><img src="brand/vigentra-mark.png" alt=""><img src="brand/vigentra-wordmark.png" alt=""></span>
-    <span class="tb-sep"></span><span>Control room</span><span class="tb-sep"></span><span id="tb-ch"></span>
-    <span class="tb-right"><span id="tb-n"></span><span id="tb-clock"></span></span>
+  <div id="lnav" aria-hidden="true">
+    <span class="ln-brand"><img src="brand/vigentra-mark.png" alt=""><img src="brand/vigentra-wordmark.png" alt=""></span>
+    <span class="ln-right"><span id="tb-act" class="ln-pill"></span><span id="tb-n" class="ln-n"></span></span>
   </div>
-  <div id="botbar" aria-hidden="true"><span id="bb-src"></span></div>
 </main></div>
 
 <div id="hud">
@@ -50,13 +49,11 @@
 <script src="js/components/controls.js"></script>
 <script src="js/components/wall.js"></script>
 <script src="js/components/flow.js"></script>
-<!-- scenes, in story order -->
+<!-- story edition: the same engine, data and parts; its own scenes -->
 <script src="js/scenes/helpers.js"></script>
 <script src="js/scenes/charts.js"></script>
-<script src="js/scenes/01-room.js"></script>
-<script src="js/scenes/02-reading.js"></script>
-<script src="js/scenes/03-proof.js"></script>
-<script src="js/scenes/04-system.js"></script>
+<script src="js/lens/01-story.js"></script>
+<script src="js/lens/02-proof.js"></script>
 <script>K.start();</script>
 </body>
 </html>

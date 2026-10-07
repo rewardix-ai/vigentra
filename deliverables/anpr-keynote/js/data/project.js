@@ -27,6 +27,28 @@ K.DATA = {
     src: "services/edge-worker/reports/anpr_benchmark/final2/REPORT.md (cam06_noon 15/16, delhi_1080p 13/20, cam06_1080p 3/5, cam06 18:00 clip 5/6, cam07 0/1; 0 false everywhere)",
   },
 
+  // What sets Vigentra apart: its own design choices, each with where it is shown. Nothing here is
+  // a claim about other products.
+  distinct: [
+    ["Works on the cameras you have", "Reads the streams the department already runs; nothing is installed at the camera.", "RTSP · HLS fallback", "EW/app/grid.py"],
+    ["It doesn't guess", "A plate is saved only when many frames agree, in a valid Indian format.", "0 wrong · 36 of 48 read", "final2 benchmark"],
+    ["Video stays with its owner", "Plates travel as text; another unit sees video only with the owner's permission.", "text only", "worker.py · central-api access model"],
+    ["Built for Indian plates", "Standard, Delhi short, BH series, diplomatic, vintage and temporary formats.", "40 state codes · 39 Gujarat RTOs", "EW/anpr/plate_grammar.py · config/india_codes.yaml"],
+    ["Every act on record", "Searches, traces, reports and alerts are audited; alerts go out signed.", "audit log · HMAC-signed", "docs/scalability.md · alert_webhook.py"],
+    ["Knows when a camera goes dark", "A camera that misses two health checks in a row raises an alert, and clears itself on recovery.", "about 40 s", "services/health_alerts.py"],
+  ],
+
+  // What we intend to do next: each starts from a limit the project's own reports record.
+  roadmap: [
+    ["GPU servers at the edge", "One laptop keeps pace with one camera today; every grid feed live needs GPU hosts.", "Next"],
+    ["No record lost offline", "Hold plate records through a network outage and replay them; ingest already ignores duplicates.", "Planned"],
+    ["Indian vehicle types", "The current model has no auto-rickshaw or e-rickshaw class; train one on our own footage.", "Planned"],
+    ["Night and small plates", "Camera placement and IR guidance, and a small-plate detector trained on human-checked hard cases.", "Planned"],
+    ["State-scale monitoring", "Dashboards and alerts for cameras offline, ingest lag and reader speed.", "Planned"],
+    ["Recovery targets", "Design goals, not yet tested at scale: lose at most 5 minutes of data, back within an hour.", "Planned"],
+  ],
+  roadmapSrc: "docs/scalability.md (edge buffering, monitoring, HA/DR targets) · known limits from the benchmark and the CAM06 day study",
+
   // Paced like a live camera (frames arriving while busy are dropped), one Apple M1
   speed: {
     machine: "one Apple M1 laptop",

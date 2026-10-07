@@ -48,7 +48,7 @@
     state.index = index;
     state.steps = (def.build && def.build(ctx)) || [];
     // headlines and statements arrive word by word (css/scenes.css .words)
-    el.querySelectorAll(".title-tl.auto > :last-child, .h1.r.soft, .h2.r.soft, .h3.r.soft, .stmt.r.soft").forEach((x) => ctx.words(x));
+    el.querySelectorAll(".title-tl.auto > :last-child, .h1.r.soft, .h2.r.soft, .h3.r.soft, .stmt.r.soft, .disp.r.soft, .ldisp.r.soft, .mantra .r.soft").forEach((x) => ctx.words(x));
     if (!state.steps.length) state.steps = [() => {}];
 
     // Fast-forward silently to the requested step, with transitions off. A scene reached by
@@ -69,7 +69,18 @@
       other.classList.add("leaving");
       setTimeout(() => other.remove(), 900);
     });
-    el.classList.add("current", "on");
+    // The first scene on load has nothing to fade from: show it at once, so a direct link
+    // (index.html#13) never waits on a transition a hidden or headless window does not run.
+    const first = !stage.querySelector(".scene.leaving");
+    if (first && !state.opened) {
+      el.style.transition = "none";
+      el.classList.add("current", "on");
+      el.getBoundingClientRect();
+      el.style.transition = "";
+    } else {
+      el.classList.add("current", "on");
+    }
+    state.opened = true;
     state.step = target;
     updateHud();
     broadcast();
@@ -162,10 +173,14 @@
     bar.style.width = `${((state.index + stepShare) / total) * 100}%`;
     document.getElementById("hud-act").textContent = def.act || "";
     // the control room's own bars: channel, scene number, the source of what is on screen
+    // (each deck's page decides which of these it has; a light scene re-colours the bars)
     document.body.classList.toggle("nochrome", /\bnochrome\b/.test(def.cls || ""));
-    document.getElementById("tb-ch").textContent = `CH ${String(state.index + 1).padStart(2, "0")} · ${def.act || ""}`;
-    document.getElementById("tb-n").textContent = `${String(state.index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
-    document.getElementById("bb-src").textContent = def.src || "";
+    document.body.classList.toggle("light-scene", /\blight\b/.test(def.cls || ""));
+    const set = (id, text) => { const n = document.getElementById(id); if (n) n.textContent = text; };
+    set("tb-ch", `CH ${String(state.index + 1).padStart(2, "0")} · ${def.act || ""}`);
+    set("tb-act", def.act || "");
+    set("tb-n", `${String(state.index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`);
+    set("bb-src", def.src || "");
     document.getElementById("hud-count").textContent = `${state.index + 1} / ${total}`;
     history.replaceState(null, "", `#${state.index + 1}`);
     renderNotes();
@@ -335,9 +350,11 @@
     document.getElementById("nav-tech").addEventListener("click", () => document.body.classList.toggle("tech"));
     document.getElementById("nav-auto").addEventListener("click", toggleAuto);
     const clock = document.getElementById("tb-clock");
-    const tick = () => { clock.textContent = new Date().toLocaleTimeString("en-GB"); };
-    tick();
-    setInterval(tick, 1000);
+    if (clock) {
+      const tick = () => { clock.textContent = new Date().toLocaleTimeString("en-GB"); };
+      tick();
+      setInterval(tick, 1000);
+    }
     if (!K.autoOn) { K.autoOn = true; toggleAuto(); }
     try {
       channel = new BroadcastChannel("anpr-keynote");

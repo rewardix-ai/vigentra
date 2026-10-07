@@ -153,3 +153,18 @@
 /* ---- close ----------------------------------------------------------------------------------------- */
 .final-type { align-items: center; gap: 10px; }
 .finale-bg.in { opacity: 0.5; }
+
+/* ---- what makes Vigentra different ------------------------------------------------------------ */
+.dist { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 22px 22px 24px; }
+.dist p { margin: 0; font: 500 27px/1.35 var(--text); color: var(--ink); }
+.dist-proof { align-self: flex-start; padding: 7px 11px; border: 1px solid var(--track); font: 700 15px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--track); }
+
+/* ---- roadmap ------------------------------------------------------------------------------------ */
+.rms { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 22px 30px; }
+.rm { display: grid; grid-template-columns: 56px 1fr 120px; align-items: center; gap: 22px; padding: 14px 18px; border: 1px solid var(--line); opacity: 0; transform: translateX(-12px); transition: opacity 0.4s var(--ease), transform 0.4s var(--ease); }
+.rm.in { opacity: 1; transform: none; }
+.rm-n { font: 700 20px var(--mono); color: var(--mute); }
+.rm-t b { display: block; margin-bottom: 4px; font: 650 30px/1.15 var(--display); }
+.rm-t span { font: 500 21px/1.35 var(--text); color: var(--ink-2); }
+.rm-tag { justify-self: end; padding: 6px 10px; border: 1px solid var(--line-2); font: 700 14px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.rm-tag.next { border-color: var(--warn); color: var(--warn); }

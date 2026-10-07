@@ -149,10 +149,30 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** The Vigentra console on a monitor, playing the useful parts of the recording: live detection on grid CAM06, the detection search, tracing a vehicle, the plate report, the audit log. The matching item on the right lights up as each plays.
 - **Speaker narration.** This is what an operator uses. Live detection on a grid feed. Search every detection. Trace one vehicle across cameras. A plate report. And an audit log of what everyone does.
 - **Audience should understand.** It is a working system, not just a model.
-- **Transition.** 83 s (1:15-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
+- **Transition.** 82 s (1:16-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
 - **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
 
-## 16. From pixels to information
+## 16. What makes Vigentra different
+*Why Vigentra*
+
+- **Story purpose.** What sets Vigentra apart, as design choices with evidence.
+- **Visual.** Six panels: works on the cameras you have; it doesn't guess (0 wrong, 36 of 48); video stays with its owner; built for Indian plates (40 state codes, 39 Gujarat RTOs); every act on record (audit log, signed alerts); knows when a camera goes dark (about 40 s).
+- **Speaker narration.** So what makes Vigentra different? It works on the cameras you already have. It doesn't guess: zero wrong plates. Video stays with its owner; only text travels. It is built for Indian plates. Every act is on record, and alerts go out signed. And it knows within about forty seconds when a camera goes dark.
+- **Audience should understand.** Vigentra's choices: existing cameras, no guessing, federated video, Indian plates, accountability, health.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js (distinct, with sources)
+
+## 17. What we will do next
+*Next*
+
+- **Story purpose.** What we will do next, from today's limits.
+- **Visual.** A deployment plan: GPU servers at the edge (next); no record lost offline; Indian vehicle types; night and small plates; state-scale monitoring; recovery targets.
+- **Speaker narration.** And what's next. GPU servers at the edge, so every grid feed is read live. No record lost when the network drops. Vehicle types for Indian roads. Better reading at night and at a distance. Monitoring at state scale, and recovery targets of five minutes of data and one hour.
+- **Audience should understand.** A concrete plan, grounded in what the project measured.
+- **Transition.** You move on.
+- **Real asset.** docs/scalability.md; js/data/project.js (roadmap)
+
+## 18. From pixels to information
 *Vigentra*
 
 - **Story purpose.** Close on the idea and the name.

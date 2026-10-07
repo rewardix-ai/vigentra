@@ -1,11 +1,14 @@
-"""Render TECHNICAL.md as TECHNICAL.html: one standalone, styled page (logo embedded, no network
-needed) that reads well in a browser and prints cleanly to PDF. TECHNICAL.md stays the source.
+"""Render a Markdown document as one standalone, styled page (logo embedded, no network needed) that
+reads well in a browser and prints cleanly to PDF. The Markdown stays the source.
 
     /Users/uchit/Downloads/ANPR/.venv/bin/python deliverables/anpr-keynote/tools/technical_html.py
+        (TECHNICAL.md -> TECHNICAL.html)
+    ... technical_html.py docs/api-methods.md docs/api-methods.html "API reference · methods and reasons"
 """
 import base64
 import datetime
 import html
+import sys
 import re
 from pathlib import Path
 
@@ -97,7 +100,11 @@ def slug(text: str) -> str:
 
 
 def main() -> int:
-    src = (HERE / "TECHNICAL.md").read_text()
+    args = sys.argv[1:]
+    src_path = Path(args[0]) if args else HERE / "TECHNICAL.md"
+    out_path = Path(args[1]) if len(args) > 1 else HERE / "TECHNICAL.html"
+    kicker = args[2] if len(args) > 2 else "Technical brief · for the keynote's questions"
+    src = src_path.read_text()
     head, _, rest = src.partition("\n")
     lead, _, body = rest.strip().partition("\n## ")
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
@@ -121,13 +128,13 @@ def main() -> int:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vigentra · Technical choices</title>
+<title>Vigentra · {html.escape(title)}</title>
 <style>{CSS}</style>
 </head>
 <body>
 <header class="hero"><div class="hero-in">
   <div class="brand"><img class="mark" src="{data_uri(brand / 'vigentra-mark.png')}" alt="Vigentra"><img class="word" src="{data_uri(brand / 'vigentra-wordmark.png')}" alt=""></div>
-  <div class="kicker">Technical brief · for the keynote's questions</div>
+  <div class="kicker">{html.escape(kicker)}</div>
   <h1>{html.escape(title)}</h1>
   <div class="lead">{md.render(lead)}</div>
   <div class="meta"><span>{len(toc)} sections</span><span>Sources cited by file</span><span>Estimates marked as estimates</span><span>Updated {today.day} {today:%b %Y}</span></div>
@@ -136,14 +143,14 @@ def main() -> int:
   <nav class="toc" aria-label="Contents"><b>Contents</b>{nav}</nav>
   <main>
 {body_html}
-    <footer>Generated from TECHNICAL.md by tools/technical_html.py. Links to docs/ open from inside the repository.</footer>
+    <footer>Generated from {src_path.name} by deliverables/anpr-keynote/tools/technical_html.py. Links open from inside the repository.</footer>
   </main>
 </div>
 </body>
 </html>
 """
-    (HERE / "TECHNICAL.html").write_text(page)
-    print(f"TECHNICAL.html: {len(toc)} sections, {len(page) // 1024} KB")
+    out_path.write_text(page)
+    print(f"{out_path.name}: {len(toc)} sections, {len(page) // 1024} KB")
     return 0
 
 

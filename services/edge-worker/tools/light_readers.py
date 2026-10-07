@@ -11,7 +11,9 @@ coverage:
   lock around the engine, because PyTorch's Apple-GPU backend crashes when called from several threads;
 - vehicles detected at 640 px with YOLO11n: a vehicle near enough to carry a readable plate is still
   well over 30 px wide at that size, and the plate itself is read from the full-resolution frame;
-- the two CRNN readers only (the PaddleOCR text reader is too large to load thirty times);
+- all three readers, with one shared copy of the PaddleOCR text reader for every camera (it keeps no
+  state, and a copy per camera would not fit): it is the reader that recovers the hardest plates, the
+  night ones included;
 - attention: the GPU goes first to cameras that just showed a vehicle near enough to carry a readable
   plate (at least 96 px wide, the engine's own plate-search floor), so that vehicle gets frame after frame
   while it is in view; a camera with a vehicle approaching (48 px) is checked every second, and every
@@ -104,7 +106,6 @@ def light_config() -> Path:
     path = dst / "thresholds.yaml"
     cfg = yaml.safe_load(path.read_text())
     cfg["detector"]["vehicle_imgsz"] = int(os.environ.get("LIGHT_VEHICLE_IMGSZ", "640"))
-    cfg["reading"]["readers"] = [r for r in cfg["reading"].get("readers", ["crnn"]) if r != "awiros"] or ["crnn"]
     path.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return dst
 
@@ -138,6 +139,17 @@ def main() -> int:
     os.environ.setdefault("EDGE_CONTINUOUS", "true")
     os.environ.setdefault("EDGE_CONTINUOUS_PASS_FRAMES", "100000")
     share_model_weights()
+    from anpr.read import awiros
+
+    text_reader: dict = {}
+    original_reader = awiros.AwirosReader
+
+    def shared_reader(*a, **k):   # one PaddleOCR text reader for all cameras
+        if "one" not in text_reader:
+            text_reader["one"] = original_reader(*a, **k)
+        return text_reader["one"]
+
+    awiros.AwirosReader = shared_reader
 
     from app import anpr_engine, grid, worker
 

@@ -39,8 +39,10 @@ def main() -> int:
             break
         if i >= FIRST:
             times[i] = round(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000, 3)  # the frame's own timestamp
+            # the deployed settings (anpr/detect/vehicle.py, config/thresholds.yaml): class-agnostic NMS,
+            # so one vehicle gets one box, not a car box and a truck box; half precision on the GPU
             res = vehicles.track(frame, persist=True, tracker=str(EW / "config/bytetrack.yaml"), classes=VEHICLE_CLASSES,
-                                 conf=0.15, imgsz=1920, device="mps", verbose=False)[0]
+                                 conf=0.15, imgsz=1920, device="mps", half=True, agnostic_nms=True, verbose=False)[0]
             boxes = []
             if res.boxes is not None and res.boxes.id is not None:
                 for xyxy, tid, conf, cls in zip(res.boxes.xyxy.tolist(), res.boxes.id.tolist(), res.boxes.conf.tolist(), res.boxes.cls.tolist()):
@@ -92,7 +94,7 @@ def main() -> int:
         # every vehicle the deployed models saw, frame by frame, for the replay over the playing video:
         # [track id, class, confidence, x, y, w, h] with the box as fractions of the frame
         "replay": [{"f": f, "t": times[f], "boxes": [[b["id"], b["cls"], b["conf"], *norm(b["box"])] for b in rows[f]]} for f in sorted(rows)],
-        "models": "yolo11s.pt + ByteTrack (config/bytetrack.yaml), conf 0.15, imgsz 1920; plate_det_mix_n.pt at 640, conf 0.2",
+        "models": "yolo11s.pt + ByteTrack (config/bytetrack.yaml), conf 0.15, 1920 px, class-agnostic NMS; plate_det_mix_n.pt at 640, conf 0.2; the camera caption mask is not applied",
     }
     marker = "\nK.TRACK = "
     if marker in ev_js:

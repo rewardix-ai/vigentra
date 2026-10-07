@@ -77,8 +77,8 @@ Rebuild it on a machine with the footage:
 
 `build_assets.py` cuts the real clips (H.264, muted): grid cam01–cam16, CAM06 and the Delhi
 street clip; no London feeds. It also copies the evidence crops and picks the refused crops by
-their own measurements. `track_evidence.py` runs the deployed models (YOLO11s + ByteTrack, the
-YOLO11n plate detector) on CAM06 frames 1190–1335 and records every box with its frame's own
+their own measurements. `track_evidence.py` runs the deployed models with their deployed settings
+(YOLO11s with class-agnostic NMS + ByteTrack, the YOLO11n plate detector) on CAM06 frames 1190–1335 and records every box with its frame's own
 timestamp, which the replay draws over the playing video. Both write `js/data/evidence.js`.
 `brand/` holds the Vigentra mark, wordmark and tagline cut from the logo, and is committed.
 
@@ -100,8 +100,9 @@ stage, for example `[REAL CAM 06 FOOTAGE REQUIRED]`, rather than an invented sta
 
 Every number is in `js/data/project.js` with the file it came from. Footage, frames, crops,
 boxes, readings and refusals are the project's own. Two things are illustrations, and say so:
-the degradation slider (a demonstration on the real crop) and the dots in the flowcharts
-(they show the path a plate takes, not a recorded event). The vote's cloud of readings is drawn
+the degradation slider (a demonstration on the real crop), the dots in the flowcharts (they show
+the path a plate takes, not a recorded event) and the flicker of characters before each settles in
+the reading scene (the characters it settles on are the real reading). The vote's cloud of readings is drawn
 in proportion, one chip for every two real readings.
 
 Claims checked against the reports and left out: the "CAM06 night" clip is stamped 18:00 on a
@@ -111,3 +112,7 @@ training runs are not in the deck.
 
 Design rules from review: no glow effects anywhere, and no drawn (artificial) number plate:
 readings are plain characters beside the real crop they came from.
+
+Vehicle labels in the replay are the model's own class in each frame. It has no Indian vehicle
+types (COCO: car, motorcycle, bus, truck) and calls the evidence car, a small hatchback, a truck in
+49 of its 80 frames; the deck shows that as it is.

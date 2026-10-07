@@ -93,7 +93,22 @@
         h("div.center.over", null, say("reads", "h1", "Vigentra turns this video<br><span class='c-track'>into plates you can search.</span>"))
       );
       return [
-        () => { ctx.auto(7); return ctx.in(".wall-tile", { stagger: 70 }); },
+        async () => {
+          ctx.auto(7);
+          const tiles = ctx.$$(".wall-tile");
+          tiles.forEach((t) => t.classList.add("in"));
+          if (ctx.instant) return;
+          // start framed on the CAM06 tile (the 480p feed), full screen, then pull back to the wall
+          const tile = tiles[5];
+          const k = 1920 / tile.offsetWidth;
+          wallBox.style.transformOrigin = "0 0";
+          wallBox.style.transition = "none";
+          wallBox.style.transform = `translate(${-60 - k * tile.offsetLeft}px, ${-40 - k * tile.offsetTop}px) scale(${k})`;
+          wallBox.getBoundingClientRect();
+          await ctx.wait(900);
+          wallBox.style.transition = "transform 2.2s cubic-bezier(0.65, 0, 0.25, 1), opacity 0.9s var(--ease)";
+          wallBox.style.transform = "none";
+        },
         async () => {
           ctx.auto(4);
           wallBox.classList.add("dim");
@@ -163,8 +178,24 @@
             cuts.forEach((c, j) => c.classList.toggle("on", i === j));
             await ctx.wait(1500);
           }
+          if (ctx.instant || ctx.fast) { reel.classList.add("collage"); cuts.forEach((c) => c.classList.add("on")); return; }
+          // FLIP: each cut starts where it was (full screen) and flies to its place in the grid
+          const scale = document.getElementById("stage").getBoundingClientRect().width / 1920;
+          const first = cuts.map((c) => c.getBoundingClientRect());
           reel.classList.add("collage");
           cuts.forEach((c) => c.classList.add("on"));
+          cuts.forEach((c, i) => {
+            const f = first[i];
+            const l = c.getBoundingClientRect();
+            c.style.transformOrigin = "0 0";
+            c.style.transition = "none";
+            c.style.transform = `translate(${(f.left - l.left) / scale}px, ${(f.top - l.top) / scale}px) scale(${f.width / l.width}, ${f.height / l.height})`;
+          });
+          reel.getBoundingClientRect();
+          cuts.forEach((c, i) => {
+            c.style.transition = `transform 1s cubic-bezier(0.65, 0, 0.25, 1) ${i * 80}ms, opacity 0.3s`;
+            c.style.transform = "none";
+          });
         },
         async () => { ctx.auto(4); reel.classList.add("collage", "dim"); cuts.forEach((c) => c.classList.add("on")); await ctx.in("#real"); },
       ];

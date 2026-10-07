@@ -108,8 +108,8 @@
         const target = id === T.track_id;
         seen = seen || target;
         const kind = show.ids ? "track" : "vehicle";
-        const name = cls === "motorcycle" ? "motorcycle" : "vehicle";
-        place(item("v" + id, kind), [x, y, w, hgt], show.ids ? `ID ${id}` : `${name} ${conf.toFixed(2)}`);
+        // the model's own class in this frame (it calls the evidence car a truck in some frames)
+        place(item("v" + id, kind), [x, y, w, hgt], show.ids ? `${cls} · ID ${id}` : `${cls} ${conf.toFixed(2)}`);
         if (target) {
           if (path.length && path[path.length - 1].f >= fr.f) path.length = 0; // the video looped
           path.push({ f: fr.f, x: (x + w / 2) * 1000, y: (y + hgt) * 1000 });

@@ -32,11 +32,13 @@
         { id: "read", n: 5, x: X[1], y: R2, title: "Read the plate", sub: "character by character", media: () => h("div.fc-text", null, E.plate),
           say: "The readers turn the image into characters, each with its own confidence." },
         { id: "agree", type: "decision", x: X[2], y: R2, w: 260, h: 180, title: "Readings agree?", sub: "many frames · valid format",
-          say: "Readings from many frames must agree, and the plate must fit an Indian format." },
+          say: "Readings from many frames must agree, and the plate must fit an Indian format. If not, no plate is saved." },
         { id: "ok", n: 6, x: X[3], y: R2, tone: "ok", title: "Confirmed plate", sub: "plate · time · camera, never video", media: () => h("div.fc-text.c-ok", null, `✓ ${E.plate}`),
-          say: "Only now is a record made: the plate, the time and the camera. Never video." },
-        { id: "silent", type: "end", tone: "bad", x: X[0], y: R3, w: 340, h: 120, title: "Stay silent", sub: `e.g. this ${tiny.width_px || "?"} px crop`, media: crop(tiny.file) },
-        { id: "none", type: "end", tone: "bad", x: X[2], y: R3, w: 340, h: 120, title: "No record", sub: "e.g. this blurred plate", media: crop(blur.file) },
+          say: "Only now is the plate saved: the plate, the time and the camera. Never video." },
+        { id: "silent", type: "end", tone: "bad", x: X[0], y: R3, w: 340, h: 120, title: "Not read", sub: `too small: this crop is ${tiny.width_px || "?"} px`, media: crop(tiny.file),
+          say: "Below 22 pixels, or too blurred, Vigentra does not even try. No guess is made." },
+        { id: "none", type: "end", tone: "bad", x: X[2], y: R3, w: 340, h: 120, title: "No plate saved", sub: "not sure enough, like this one", media: crop(blur.file),
+          say: "The readings did not agree well enough, so no plate number is saved: nothing to search, no alert, no wrong record." },
         { id: "use", type: "end", tone: "io", x: X[3], y: R3, w: 340, h: 120, title: "Search · Trace · Alert", sub: "in the Vigentra console",
           say: "Officers search it, trace the car across cameras, and get an alert if it is on a watchlist." },
       ];
@@ -50,7 +52,7 @@
         { from: "agree", to: "none", out: "bottom", in: "top", kind: "no", label: "No", at: [X[2] + 14, R2 + 130] },
         { from: "ok", to: "use", out: "bottom", in: "top" },
       ];
-      const caption = h("div.flow-say", null, [h("span.fs-n.blank"), h("div", null, [h("b", null, `Follow the dot: one real car, ${E.plate}`), h("span", null, "Red dots are plates Vigentra refused. Click any box to read what it does.")])]);
+      const caption = h("div.flow-say", null, [h("span.fs-n.blank"), h("div", null, [h("b", null, `Follow the dot: one real car, ${E.plate}`), h("span", null, "Red dots are plates Vigentra would not guess. Click any box to read what it does.")])]);
       const chart = K.ui.flow({ nodes, edges, caption });
       const main = ["cam", "car", "plate", "best", "q", "read", "agree", "ok", "use"];
       ctx.el.append(
@@ -95,7 +97,7 @@
         ribbon,
         h("div.cap-left", null, [line("c1", "Find every vehicle."), line("c2", "Follow each one."), line("c3", "Find its plate.")]),
         h("div.replay-note.r", null, "Real output of Vigentra's models on CAM06, frame by frame · half speed"),
-        S.tech([`<b>Vehicles</b> ${P.vehicle}`, `<b>Tracking</b> ${P.tracker}`, `<b>Plates</b> ${P.plate}`], (K.TRACK && K.TRACK.models) || "")
+        S.tech([`<b>Vehicles</b> ${P.vehicle}`, `<b>Tracking</b> ${P.tracker}`, `<b>Plates</b> ${P.plate}`, "<b>Labels</b> the model's class in each frame: it has no Indian vehicle types, and calls this car a truck in many frames"], (K.TRACK && K.TRACK.models) || "")
       );
       return [
         async () => { ctx.auto(12.5); await ctx.in(".media-layer"); await ctx.in("#c1"); ctx.in(".replay-note"); },
@@ -111,8 +113,9 @@
     build(ctx) {
       const T = K.TRACK || { sequence: [] };
       const E = K.EVIDENCE || { frames: {} };
-      // the approach, up to the best frames; the two later crops are the detector's mistakes
-      const crops = T.sequence.filter((s) => s.file && s.frame <= 1304);
+      // the approach, where the plate detector was sure (the last pick, conf 0.37, is the
+      // dashboard after the car has passed)
+      const crops = T.sequence.filter((s) => s.file && s.plate_conf >= 0.5);
       const strip = h("div.grow", null, crops.map((s) => h("div.grow-item.r", null, [S.pixels(s.file, { scale: 1.25 }), h("div.caption.num", null, `${s.plate_px} px`)])));
       const ba = K.ui.beforeAfter(K.media.img("journey_best", { cls: "media-fit" }), K.media.img("journey_enhanced", { cls: "media-fit" }), ["One frame", `${E.frames.fused || 12} frames, combined and cleaned`]);
       ctx.el.append(
@@ -121,7 +124,7 @@
         S.at(140, 380, 1640, 420, strip),
         S.at(360, 330, 1200, 430, h("div.r.ba-wrap", { id: "ba" }, ba)),
         h("div.cap-bottom", null, h("div.h3.r.soft", { id: "best" }, "Vigentra keeps the best frames and combines them. It never invents detail.")),
-        S.tech([`<b>Crop bank</b> ${P.crops}`, "<b>Crops</b> the deployed plate detector's output, frames 1244–1304"], E.source || "")
+        S.tech([`<b>Crop bank</b> ${P.crops}`, "<b>Crops</b> the deployed plate detector's output where its confidence was at least 0.5"], E.source || "")
       );
       return [
         () => ctx.in(".grow-item", { stagger: 260 }),
@@ -141,7 +144,7 @@
       const cards = [
         { file: "assets/img/journey_best.png", scale: 2, name: `CAM06 · ${E.quality.width_px} px wide`, stamp: "READ", ok: true },
         { file: tiny.file, scale: 14, name: `Delhi · ${tiny.width_px} px wide`, stamp: "TOO SMALL", ok: false },
-        { file: blurred.file, scale: 6, name: `Delhi · ${blurred.width_px} px wide · blurred: the readers disagreed`, stamp: "NO RECORD", ok: false },
+        { file: blurred.file, scale: 6, name: `Delhi · ${blurred.width_px} px wide · blurred: readings disagreed`, stamp: "NOT SAVED", ok: false },
       ];
       ctx.el.append(
         S.ribbon(4),
@@ -183,7 +186,7 @@
         S.tech([`<b>Readers</b> ${P.readers}`], P.src)
       );
       return [
-        async () => { await ctx.in("#src"); await ctx.wait(400); await K.ui.revealChars(ctx, cols, 200); },
+        async () => { await ctx.in("#src"); await ctx.wait(400); await K.ui.revealChars(ctx, cols, 200, { scramble: true }); },
         async () => { cols.classList.add("conf"); await ctx.in("#conf-cap"); },
         async () => { ["#src", "#conf-cap"].forEach((s) => ctx.$(s).closest(".abs").classList.add("gone")); cols.classList.add("gone"); await ctx.in("#segs"); await ctx.in(".seg", { stagger: 300 }); },
       ];

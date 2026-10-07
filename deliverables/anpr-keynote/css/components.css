@@ -5,6 +5,7 @@
 .chars.big { font-size: 112px; }
 .ch { opacity: 0; transform: translateY(12px); transition: opacity 0.35s var(--ease), transform 0.35s var(--ease); }
 .ch.in { opacity: 1; transform: none; }
+.ch.deciding { color: var(--mute); }
 
 /* ---- boxes over footage -------------------------------------------------------------- */
 .boxes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
@@ -13,6 +14,8 @@
 .box-vehicle rect { stroke: var(--vehicle); }
 .box-plate rect { stroke: var(--plate); }
 .box-track rect { stroke: var(--track); }
+.boxes.live .box rect { transform-box: fill-box; transform-origin: center; animation: box-in 0.25s var(--ease); }
+@keyframes box-in { from { opacity: 0; transform: scale(1.06); } }
 .box-labels { position: absolute; inset: 0; pointer-events: none; }
 .box-tag {
   position: absolute; transform: translateY(calc(-100% - 8px)); padding: 6px 12px; border-radius: 8px;
@@ -73,6 +76,7 @@
 .card.tone-ok { border-color: rgba(69, 220, 152, 0.55); }
 .card.tone-io { border-color: rgba(57, 211, 191, 0.5); }
 .card.on { border-color: var(--track); background: #0f2422; }
+.fnode.card.in.on { transform: translateY(-6px); }
 .fc-head { display: flex; align-items: center; gap: 10px; }
 .fc-n { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #2b3545; color: var(--ink); font: 700 18px var(--display); transition: background-color 0.3s, color 0.3s; }
 .card.on .fc-n { background: var(--track); color: #04121d; }
@@ -87,6 +91,7 @@
 .fc-rec span { font: 500 16px var(--text); color: var(--ink-2); }
 .mosaic { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; }
 .mosaic video { width: 100%; height: 100%; object-fit: cover; }
+.thumb-tag { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 6px; background: var(--track); color: #04121d; font: 700 15px var(--mono); }
 .zoom169 { position: absolute; left: 50%; top: 50%; width: 100%; aspect-ratio: 16 / 9; transform: translate(-50%, -50%); overflow: hidden; }
 .decision svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .decision polygon { fill: #0e131b; stroke: var(--plate); stroke-width: 2.5; vector-effect: non-scaling-stroke; transition: fill 0.3s, stroke 0.3s; }

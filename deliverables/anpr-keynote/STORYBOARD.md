@@ -26,7 +26,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *The problem*
 
 - **Story purpose.** Why this matters: too much video for people.
-- **Visual.** Sixteen real feeds from the grid and Delhi fill the screen. The count of grid cameras rises to 30.
+- **Visual.** The CAM06 feed fills the screen, then the view pulls back to sixteen real feeds from the grid and Delhi. The count of grid cameras rises to 30.
 - **Speaker narration.** These are recordings from our grid cameras. Thirty on the grid alone. [pause] Nobody can watch them all. [pause] So Vigentra turns this video into plates you can search.
 - **Audience should understand.** The value is turning video into searchable records.
 - **Transition.** The 20-s feeds play once through the scene (18.5 s), then one picture. Moves on by itself (press A to hold).
@@ -46,7 +46,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *The problem*
 
 - **Story purpose.** Show the real conditions.
-- **Visual.** Fast cuts: night, headlights, a distant view, a low-resolution stream, a hand-held camera, a crowded junction. Then all six at once.
+- **Visual.** Fast cuts: night, headlights, a distant view, a low-resolution stream, a hand-held camera, a crowded junction. Then the six fly into one grid.
 - **Speaker narration.** And that was a good frame. This is what the cameras really give us: night, headlights, distance, low resolution, movement, crowds. [pause] This is the real input.
 - **Audience should understand.** Real footage is hard, and every camera is different.
 - **Transition.** Six 1.5-s cuts and the collage (10.5 s), the line (4 s), then the flowchart. Moves on by itself (press A to hold).
@@ -56,8 +56,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** The whole method on one live flowchart, before the details.
-- **Visual.** A flowchart of six numbered steps, each card showing the real data at that step (the video, the car with its box, the plate crop, the combined image, the characters, the confirmed record), two Yes/No decisions, and outcomes with real refused plates. A dot follows one car; the caption beside the title explains each step as the dot reaches it. Red dots take the No arrows.
-- **Speaker narration.** Here is the whole journey, on one real car. Camera; find and follow the car; find its plate; combine its best frames. [beat] Enough pixels? If not, Vigentra stays silent, like this 10-pixel plate. Read the characters. Do the readings agree? If not, no record. Only then a confirmed plate: plate, time, camera. Never video.
+- **Visual.** A flowchart of six numbered steps, each card showing the real data at that step, two Yes/No decisions, and outcomes with real examples: Not read (a 10-pixel crop) and No plate saved (a blurred plate). A dot follows one car; the caption beside the title explains each step as the dot reaches it. Red dots take the No arrows.
+- **Speaker narration.** Here is the whole journey, on one real car. Camera; track the car; find its plate; combine its best frames. [beat] Enough pixels? If not, it is not read, like this 10-pixel crop. Read the plate. Do the readings agree? If not, no plate is saved: nothing to search, no alert, no wrong record. Only then a confirmed plate: plate, time, camera. Never video.
 - **Audience should understand.** The steps, and that Vigentra refuses rather than guesses.
 - **Transition.** One full journey of the dot, 23 s, then each step on one car. Moves on by itself (press A to hold).
 - **Real asset.** assets/img/plate_1299.png (the packet's crop)
@@ -66,8 +66,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** Detection and tracking, live, on real output.
-- **Visual.** CAM06 plays at half speed with Vigentra's real boxes on every vehicle; then identities and a trail; then the plate box.
-- **Speaker narration.** First, find every vehicle. [beat] Then follow each one, so one car stays one car. [beat] Then, inside that car, find the plate. These boxes are our models' real output, frame by frame.
+- **Visual.** CAM06 plays at half speed with the deployed models' real boxes. Each box says what the model thinks it is (car, motorcycle; it calls this small car a truck in some frames), then its tracking ID with a trail, then the plate box.
+- **Speaker narration.** First, find every vehicle, and what kind it is. [beat] Then follow each one, so one car stays one car: each gets an ID. [beat] Then, inside that car, find the plate. These boxes are our models' real output, frame by frame.
 - **Audience should understand.** Vigentra finds the vehicle first, follows it, then looks for its plate.
 - **Transition.** Replay 12.5 s, tracking 8.5 s, plate 8.5 s: 29.5 s, then the plate's frames. Moves on by itself (press A to hold).
 - **Real asset.** assets/video/cam06_1080p.mp4; K.TRACK.replay (tools/track_evidence.py, deployed YOLO11s + ByteTrack + plate detector)
@@ -86,8 +86,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** Refusing is part of the job.
-- **Visual.** Three real crops. The CAM06 plate is stamped READ; a 10-pixel Delhi crop TOO SMALL; a blurred Delhi plate, 62 px wide, NO RECORD: the readers disagreed, so nothing was sent.
-- **Speaker narration.** Before we read, we ask: is there enough here? This one, yes. This one is ten pixels wide: we don't even try. This one is a plate, but blurred: the readers disagree, so there is no record. [pause] If the pixels aren't there, Vigentra doesn't guess.
+- **Visual.** Three real crops. The CAM06 plate is stamped READ; a 10-pixel Delhi crop TOO SMALL; a blurred Delhi plate, 62 px wide, NOT SAVED: the readings disagreed, so no plate number was saved.
+- **Speaker narration.** Before we read, we ask: is there enough here? This one, yes. This one is ten pixels wide: we don't even try. This one is a plate, but blurred: the readings disagree, so no plate number is saved. [pause] If the pixels aren't there, Vigentra doesn't guess.
 - **Audience should understand.** A refusal is better than a wrong plate.
 - **Transition.** Now read the good one.
 - **Real asset.** assets/img/journey_best.png, fail_tiny_plate.png, fail_blurred_plate.png (picked by tools/build_assets.py)
@@ -96,7 +96,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** OCR, and the plate format.
-- **Visual.** The enhanced crop; under it the characters appear one by one, each with a bar for how sure Vigentra is; then the plate splits into State, RTO, Series, Number.
+- **Visual.** The enhanced crop; under it each character flickers through other characters before it settles, with a bar for how sure Vigentra is; then the plate splits into State, RTO, Series, Number.
 - **Speaker narration.** Now we read it, character by character, with a confidence for each. [beat] And Indian plates follow a pattern: state, RTO, series, number. A 6 where a letter must be is read as G. The pattern catches mistakes.
 - **Audience should understand.** Reading uses both the image and the rules of Indian plates.
 - **Transition.** But one reading is not enough.
@@ -106,7 +106,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** Many readings, one confirmed answer.
-- **Visual.** A cloud of real readings of this plate, in proportion; they collapse into one answer, GJ23H1546 in plain characters, stamped CONFIRMED, with three checks.
+- **Visual.** A cloud of real readings of this plate, in proportion. The minority readings fall away; the majority gathers into one answer, GJ23H1546, stamped CONFIRMED, with three checks.
 - **Speaker narration.** Across all the frames, our readers produced 136 readings of this plate. 73 of them say GJ 23 H 1546. [beat] Only when the readings agree, the format is valid and the crops hold real characters do we confirm.
 - **Audience should understand.** Vigentra confirms by agreement, not by a single guess.
 - **Transition.** Does it work on real footage?

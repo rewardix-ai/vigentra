@@ -13,9 +13,9 @@ body.idle { cursor: none; }
 body.blackout #stage > * { opacity: 0 !important; transition: opacity 0.6s; }
 
 /* Scenes cross-fade; their content reveals with `.r` + `.in`. */
-.scene { position: absolute; inset: 0; opacity: 0; transition: opacity 0.9s var(--ease); }
-.scene.on { opacity: 1; }
-.scene.leaving { opacity: 0; pointer-events: none; }
+.scene { position: absolute; inset: 0; opacity: 0; transform: scale(1.025); transition: opacity 0.9s var(--ease), transform 1.2s var(--ease); }
+.scene.on { opacity: 1; transform: none; }
+.scene.leaving { opacity: 0; transform: scale(0.985); pointer-events: none; }
 .scene.instant, .scene.instant * { transition: none !important; animation: none !important; }
 
 .r { opacity: 0; transform: translateY(26px); transition: opacity var(--mid) var(--ease), transform var(--mid) var(--ease), filter var(--mid) var(--ease); }

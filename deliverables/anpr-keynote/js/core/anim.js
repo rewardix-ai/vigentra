@@ -119,6 +119,26 @@
         return ctx.wait(dur).then(() => nodes.forEach((node) => { node.style.strokeDasharray = ""; node.style.strokeDashoffset = ""; }));
       },
 
+      /** Wrap each word of an element's text in a span (--i = its order) so CSS can stagger them. */
+      words(el) {
+        let i = 0;
+        const walk = (node) => {
+          [...node.childNodes].forEach((n) => {
+            if (n.nodeType === 3) {
+              const frag = document.createDocumentFragment();
+              n.textContent.split(/(\s+)/).forEach((part) => {
+                if (!part) return;
+                if (/^\s+$/.test(part)) frag.appendChild(document.createTextNode(part));
+                else frag.appendChild(K.h("span.w", { style: { "--i": i++ } }, part));
+              });
+              n.replaceWith(frag);
+            } else if (n.nodeType === 1 && !n.classList.contains("num")) walk(n);
+          });
+        };
+        walk(el);
+        el.classList.add("words");
+      },
+
       /** Move on by itself after `sec` seconds (a step that plays video): see K.autoNext. */
       auto(sec) {
         if (!ctx.instant && K.autoNext) K.autoNext(sec * 1000);

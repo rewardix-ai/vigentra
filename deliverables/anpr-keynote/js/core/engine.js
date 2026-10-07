@@ -47,6 +47,8 @@
     state.ctx = ctx;
     state.index = index;
     state.steps = (def.build && def.build(ctx)) || [];
+    // headlines and statements arrive word by word (css/scenes.css .words)
+    el.querySelectorAll(".title-tl.auto > :last-child, .h1.r.soft, .h2.r.soft, .h3.r.soft").forEach((x) => ctx.words(x));
     if (!state.steps.length) state.steps = [() => {}];
 
     // Fast-forward silently to the requested step, with transitions off. A scene reached by

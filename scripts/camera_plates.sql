@@ -56,18 +56,28 @@ DO $$ DECLARE r record; BEGIN
     END LOOP;
 END $$;
 
+-- Exact: a sample of the camera in the same server run. Otherwise, because every restart replays
+-- the same recording, the camera's offset from the restart is the same in every run: a sample from
+-- any run, moved by the difference between the two restarts (accurate to how fast a restart is seen).
 CREATE OR REPLACE FUNCTION camera_plates.video_time_for(cam text, at timestamp) RETURNS timestamp
 LANGUAGE sql STABLE AS $$
     WITH run AS (
         SELECT (SELECT max(resumed_ist) FROM camera_plates.grid_restarts WHERE resumed_ist <= at) AS run_start,
-               (SELECT min(resumed_ist) FROM camera_plates.grid_restarts WHERE resumed_ist > at) AS run_end)
-    SELECT at + make_interval(secs => v.offset_seconds)
-    FROM camera_plates.video_clock v, run
-    WHERE v.camera = cam
-      AND (run.run_start IS NULL OR v.wall_ist >= run.run_start)
-      AND (run.run_end IS NULL OR v.wall_ist < run.run_end)
-    ORDER BY abs(extract(epoch FROM v.wall_ist - at))
-    LIMIT 1
+               (SELECT min(resumed_ist) FROM camera_plates.grid_restarts WHERE resumed_ist > at) AS run_end),
+    exact AS (
+        SELECT at + make_interval(secs => v.offset_seconds) AS t
+        FROM camera_plates.video_clock v, run
+        WHERE v.camera = cam AND (run.run_start IS NULL OR v.wall_ist >= run.run_start)
+          AND (run.run_end IS NULL OR v.wall_ist < run.run_end)
+        ORDER BY abs(extract(epoch FROM v.wall_ist - at)) LIMIT 1),
+    moved AS (
+        SELECT v.video_time + (at - run.run_start) - (v.wall_ist - r.resumed_ist) AS t
+        FROM camera_plates.video_clock v
+        JOIN LATERAL (SELECT max(resumed_ist) AS resumed_ist FROM camera_plates.grid_restarts WHERE resumed_ist <= v.wall_ist) r ON true, run
+        WHERE v.camera = cam AND run.run_start IS NOT NULL AND r.resumed_ist IS NOT NULL
+          AND v.wall_ist - r.resumed_ist < interval '25 minutes'
+        ORDER BY v.id DESC LIMIT 1)
+    SELECT coalesce((SELECT t FROM exact), (SELECT t FROM moved))
 $$;
 
 -- fill read_at_video wherever a sample now covers a reading; clock.py calls this after sampling

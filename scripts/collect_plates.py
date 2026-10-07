@@ -58,7 +58,7 @@ OTHERS = ["cam06", "cam17", "cam18", "cam16", "cam30", "cam03", "cam12", "cam19"
           "cam21", "cam22", "cam23", "cam24", "cam25", "cam26", "cam27"]
 ROTATION = SAME_EVENING + OTHERS[:8] + SAME_EVENING + OTHERS[8:]
 READERS = 3          # a fourth pushed a 16 GB Mac into swap with the stack running
-PROBE_SECONDS = 60   # one test login a minute while refused: a restart is caught within a minute
+PROBE_SECONDS = 20   # one test login every 20 s while refused: a restart is caught within 20 s
 
 
 def log(msg: str) -> None:
@@ -176,11 +176,18 @@ def main() -> int:
                 chosen.append(cam)
         if restarted:
             subprocess.run(PG + ["-c", f"INSERT INTO camera_plates.grid_restarts VALUES ('{dt.datetime.now(IST):%Y-%m-%d %H:%M:%S}') ON CONFLICT DO NOTHING"], capture_output=True)
+        # read the chosen cameras' clocks first: the grid gives one stream per camera, so a clock read
+        # while a reader holds the camera gets nothing. In parallel, at most 30 s of the replay.
+        clocks = [subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py"), cam], cwd=REPO,
+                                   stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT) for cam in chosen]
+        t0 = time.time()
+        while time.time() - t0 < 30 and any(c.poll() is None for c in clocks):
+            time.sleep(1)
+        for c in clocks:
+            if c.poll() is None:
+                c.kill()
         for slot, cam in zip(slots, chosen):
             launch(slot, cam)
-        # the clocks of exactly the cameras being read, for their time in the video
-        subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py"), *chosen], cwd=REPO,
-                         stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
         log(("restart: " if restarted else "") + "reading " + " ".join(chosen))
 
     caffeinate = subprocess.Popen(["caffeinate", "-i", "-s", "-w", str(os.getpid())])

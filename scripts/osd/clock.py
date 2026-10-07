@@ -111,7 +111,12 @@ def sample(cams=None) -> dict:
     catalogue = grid.fallback_catalogue(os.environ.get("SENTINEL_GRID_BASE_URL", ""))
     results = {}
     for cid in cams or sorted(catalogue):
-        got = read_clock(catalogue[cid].rtsp_url, ocr)
+        got = None
+        for _ in range(3):   # a smeared frame or a missed digit: try again before giving up
+            got = read_clock(catalogue[cid].rtsp_url, ocr)
+            if got:
+                break
+            time.sleep(2)
         if got:
             wall, video = got
             offset = round((video - wall).total_seconds())

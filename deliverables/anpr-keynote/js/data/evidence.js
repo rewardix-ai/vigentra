@@ -1929,6 +1929,13 @@ K.TRACK = {
    "file": null
   }
  ],
+ "types": {
+  "1": "motorcycle",
+  "2": "motorcycle",
+  "3": "car",
+  "4": "motorcycle",
+  "5": "motorcycle"
+ },
  "others_at_best": [
   {
    "id": 3,

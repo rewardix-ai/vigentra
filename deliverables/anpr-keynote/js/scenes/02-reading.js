@@ -97,7 +97,7 @@
         ribbon,
         h("div.cap-left", null, [line("c1", "Find every vehicle."), line("c2", "Follow each one."), line("c3", "Find its plate.")]),
         h("div.replay-note.r", null, "Real output of Vigentra's models on CAM06, frame by frame · half speed"),
-        S.tech([`<b>Vehicles</b> ${P.vehicle}`, `<b>Tracking</b> ${P.tracker}`, `<b>Plates</b> ${P.plate}`, "<b>Labels</b> the model's class in each frame: it has no Indian vehicle types, and calls this car a truck in many frames"], (K.TRACK && K.TRACK.models) || "")
+        S.tech([`<b>Vehicles</b> ${P.vehicle}`, `<b>Tracking</b> ${P.tracker}`, `<b>Plates</b> ${P.plate}`, "<b>Type</b> one per vehicle: the class of its most confident detection over its track (this car: car 0.91; frame by frame the model also said truck, at most 0.84)"], (K.TRACK && K.TRACK.models) || "")
       );
       return [
         async () => { ctx.auto(12.5); await ctx.in(".media-layer"); await ctx.in("#c1"); ctx.in(".replay-note"); },

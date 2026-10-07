@@ -113,6 +113,6 @@ training runs are not in the deck.
 Design rules from review: no glow effects anywhere, and no drawn (artificial) number plate:
 readings are plain characters beside the real crop they came from.
 
-Vehicle labels in the replay are the model's own class in each frame. It has no Indian vehicle
-types (COCO: car, motorcycle, bus, truck) and calls the evidence car, a small hatchback, a truck in
-49 of its 80 frames; the deck shows that as it is.
+Vehicle labels in the replay give one type per vehicle: the class of its most confident detection
+over its track. The model's class flips frame to frame (it has no Indian vehicle types); for the
+evidence car, a small hatchback, its most confident detection says car (0.91), so it is labelled car.

@@ -84,7 +84,8 @@
         h("div.fill", { html: `<svg class="boxes" viewBox="0 0 1000 1000" preserveAspectRatio="none">${rect(v, "track")}${plate ? rect(p, "plate") : ""}</svg>` }),
       ]);
       if (v) zoom.style.transform = K.ui.zoomTo(v, { fill: 0.55 });
-      return h("div.zoom169", null, [zoom, h("span.thumb-tag", null, `ID ${(K.TRACK || {}).track_id}`)]);
+      const T = K.TRACK || {};
+      return h("div.zoom169", null, [zoom, h("span.thumb-tag", null, `${(T.types && T.types[T.track_id]) || "vehicle"} · ID ${T.track_id}`)]);
     },
 
     /** "How Vigentra reads a plate": where this scene sits in the pipeline. */

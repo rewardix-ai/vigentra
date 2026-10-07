@@ -66,7 +66,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** Detection and tracking, live, on real output.
-- **Visual.** CAM06 plays at half speed with the deployed models' real boxes. Each box says what the model thinks it is (car, motorcycle; it calls this small car a truck in some frames), then its tracking ID with a trail, then the plate box.
+- **Visual.** CAM06 plays at half speed with the deployed models' real boxes. Each box says what kind of vehicle it is (car, motorcycle), then its tracking ID with a trail, then the plate box.
 - **Speaker narration.** First, find every vehicle, and what kind it is. [beat] Then follow each one, so one car stays one car: each gets an ID. [beat] Then, inside that car, find the plate. These boxes are our models' real output, frame by frame.
 - **Audience should understand.** Vigentra finds the vehicle first, follows it, then looks for its plate.
 - **Transition.** Replay 12.5 s, tracking 8.5 s, plate 8.5 s: 29.5 s, then the plate's frames. Moves on by itself (press A to hold).

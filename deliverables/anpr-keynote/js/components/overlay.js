@@ -108,8 +108,9 @@
         const target = id === T.track_id;
         seen = seen || target;
         const kind = show.ids ? "track" : "vehicle";
-        // the model's own class in this frame (it calls the evidence car a truck in some frames)
-        place(item("v" + id, kind), [x, y, w, hgt], show.ids ? `${cls} · ID ${id}` : `${cls} ${conf.toFixed(2)}`);
+        // one type per vehicle: the class of its most confident detection (track_evidence.py)
+        const type = (T.types && T.types[id]) || cls;
+        place(item("v" + id, kind), [x, y, w, hgt], show.ids ? `${type} · ID ${id}` : type);
         if (target) {
           if (path.length && path[path.length - 1].f >= fr.f) path.length = 0; // the video looped
           path.push({ f: fr.f, x: (x + w / 2) * 1000, y: (y + hgt) * 1000 });

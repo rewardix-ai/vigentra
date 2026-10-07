@@ -90,6 +90,10 @@ def main() -> int:
                       "plate_conf": s["plate"]["conf"] if s["plate"] else None,
                       "plate_px": s["plate"]["width_px"] if s["plate"] else None,
                       "file": s["plate"].get("file") if s["plate"] else None} for s in seq],
+        # one type per vehicle: the class of its most confident detection over its track (the model's
+        # class flips frame to frame; for the evidence car: car 0.91 at best, truck 0.84 at best)
+        "types": {str(tid): max((b for f in rows for b in rows[f] if b["id"] == tid), key=lambda b: b["conf"])["cls"]
+                  for tid in {b["id"] for f in rows for b in rows[f]}},
         "others_at_best": [{"id": b["id"], "class": b["cls"], "conf": b["conf"], "box": norm(b["box"])} for b in rows[BEST]],
         # every vehicle the deployed models saw, frame by frame, for the replay over the playing video:
         # [track id, class, confidence, x, y, w, h] with the box as fractions of the frame

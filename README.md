@@ -327,7 +327,7 @@ services ship an `app` package, and one interpreter can import only one of them.
 pytest services/edge-worker/tests
 ```
 
-332 tests (201 in the platform suite, 131 in the edge worker's) cover installation onboarding and validation, ownership and
+338 test functions (209 in the platform suite, 129 in the edge worker's) cover installation onboarding and validation, ownership and
 permission, registration-gated sync, source-outage isolation, canonical
 normalisation, redaction depth, the full video permission matrix, cross-unit
 grants, recorded-playback windows and retention, detection ingestion and
@@ -348,7 +348,7 @@ those are placed under `data/videos/`.
 ## Repository layout
 
 ```
-vigentra-module1/
+vigentra/
 ├── services/
 │   ├── central-api/          # Vigentra middleware (FastAPI + SQLAlchemy 2)
 │   ├── traffic-vms/          # Mock Traffic Police department system
@@ -357,14 +357,20 @@ vigentra-module1/
 │   │   ├── app/              # worker, grid capture, detectors, engine adapter
 │   │   └── anpr/             # vendored consensus ANPR engine
 │   └── dashboard/            # Next.js 14 registry console
-├── docs/                     # Access model, adapter contract, API, ANPR, grid,
-│                             # scalability, demo script, YOLO setup
+├── docs/                     # HLD, access model, adapter contract, API, ANPR, grid,
+│                             # scalability, demo script, YOLO setup, submission tracker
+├── deliverables/             # submission documents; anpr-keynote/ is the on-stage keynote
+│                             # (index.html, lens.html) and its technical brief
+├── scripts/                  # reports, plate collection on the grid (collect_plates.py)
+│                             # and the per-camera plate tables (camera_plates.sql)
 ├── tests/                    # pytest suite
 ├── docker-compose.yml
 └── .env.example
 ```
 
-Every input, every camera and every account in this repository is synthetic and
-labelled as such. Vigentra does not connect to any real government CCTV system,
-and the official-source provider refuses rather than guesses until authorised
+Every account, watchlist entry and mock-department camera in this repository is synthetic
+and labelled as such. The real feeds are the Sentinel grid's cameras, read-only with the
+team's registered account (credentials only in `.env`, never committed), the public TfL
+JamCams and the team's own recorded clips. Vigentra connects to no other government
+system, and the official-source provider refuses rather than guesses until authorised
 access is configured.

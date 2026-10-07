@@ -4,7 +4,8 @@ A keynote about how Vigentra reads number plates, built as a Vigentra control ro
 real footage, the deployed models' real boxes, event logs that narrate what the system does, and
 live schematics. Everything shown is the project's own footage, model output and measured
 results. 21 scenes, about 16 minutes. Storyboard and speaker notes: [STORYBOARD.md](STORYBOARD.md).
-Every technical choice, why it was made and what it beats, for the questions: [TECHNICAL.md](TECHNICAL.md).
+Every technical choice, why it was made and what it beats, for the questions: [TECHNICAL.md](TECHNICAL.md), also as a
+standalone styled page, `TECHNICAL.html` (rebuild it with `tools/technical_html.py` after editing the Markdown).
 
 A second deck, the **story edition** (`lens.html`), tells the same story in an editorial,
 cinematic look after datalense.app: dark chapters of real footage under a night-indigo tint with
@@ -122,7 +123,7 @@ stage, for example `[REAL CAM 06 FOOTAGE REQUIRED]`, rather than an invented sta
 | `js/lens/` | the story edition's 19 scenes |
 | `js/data/` | `project.js` (every number, with its source), `assets.js`, `evidence.js` (generated), `storyboard.js` (notes) |
 | `css/` | `theme.css` design tokens, `stage.css` (stage, bars, HUD), `components.css`, `scenes.css`; `lens.css` for the story edition |
-| `tools/` | asset builders, the storyboard renderer, the local server |
+| `tools/` | asset builders, the storyboard and TECHNICAL.html renderers, the local server |
 
 ## What is real, and what is a demonstration
 

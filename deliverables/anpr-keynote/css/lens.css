@@ -180,3 +180,16 @@ body.nochrome #lnav { opacity: 0; }
 .lfeat.now b { color: var(--lav); }
 .big .of { font-size: 52px; letter-spacing: -0.02em; color: var(--l-ink-3); }
 .lcard .nums b { color: var(--l-ink); }
+
+/* ---- under the hood: tables on paper ---------------------------------------------------------- */
+.lens .tbl { position: static; flex: 1; gap: 0; padding: 0 6px; justify-content: center; }
+.lens .tr { padding: 18px 4px; border: 0; border-bottom: 1px solid var(--l-line); }
+.lens .tr:last-child { border-bottom: 0; }
+.lens .tr span { color: var(--l-ink-2); }
+.lens .tr span:first-child { font: 600 25px/1.2 var(--display); letter-spacing: -0.01em; color: var(--l-ink); }
+.lens .tr.th { padding-bottom: 10px; border-bottom: 1px solid var(--l-line); }
+.lens .tr.th span { font: 500 15px var(--mono); letter-spacing: 0.08em; color: var(--l-ink-3); }
+.lens .tbl.choices .tr:not(.th) span:nth-child(2) { color: var(--iris); }
+.lens .tbl.choices .tr:not(.th) span:nth-child(3) { color: var(--l-ink-3); }
+.lens .tbl.dropped .tr:not(.th) span:nth-child(2) { color: var(--rose); }
+.lens .tbl.dropped .tr:not(.th) span:nth-child(3) { color: var(--mint); }

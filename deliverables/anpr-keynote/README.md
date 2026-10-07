@@ -3,7 +3,8 @@
 A keynote about how Vigentra reads number plates, built as a Vigentra control room: monitors of
 real footage, the deployed models' real boxes, event logs that narrate what the system does, and
 live schematics. Everything shown is the project's own footage, model output and measured
-results. 18 scenes, about 14 minutes. Storyboard and speaker notes: [STORYBOARD.md](STORYBOARD.md).
+results. 21 scenes, about 16 minutes. Storyboard and speaker notes: [STORYBOARD.md](STORYBOARD.md).
+Every technical choice, why it was made and what it beats, for the questions: [TECHNICAL.md](TECHNICAL.md).
 
 A second deck, the **story edition** (`lens.html`), tells the same story in an editorial,
 cinematic look after datalense.app: dark chapters of real footage under a night-indigo tint with
@@ -59,7 +60,7 @@ auto-advance off (for questions). Scenes without video wait for you.
 | 11 Field test | Vigentra's result videos | 52 s (CAM06 from 0:29, 24 · Delhi 0:00–0:28, 28) |
 | 14 The system | four feeds in the first stage | 27 s (schematic 22 · line 5) |
 | 15 The console | screen recording | 82 s (1:16–1:24 and 1:28–2:42; the camera wall and closing card, which show the London feeds, are skipped) |
-| 18 Close | CAM06 replay behind the logo | stays: the end |
+| 21 Close | CAM06 replay behind the logo | stays: the end |
 
 Story edition (`lens.html`):
 
@@ -73,7 +74,7 @@ Story edition (`lens.html`):
 | 10 Proof | Vigentra's result videos | 52 s (CAM06 24 · Delhi 28) |
 | 13 The system | four feeds in the first stage | 27 s |
 | 14 The console | screen recording | 82 s |
-| 16 Close | CAM06 replay behind the logo | stays: the end |
+| 19 Close | CAM06 replay behind the logo | stays: the end |
 
 ## The story
 
@@ -86,6 +87,7 @@ Story edition (`lens.html`):
 | Field test | CAM06 and Delhi · 36 of 48 legible plates, 0 wrong |
 | Known limits | the camera decides (a demonstration) · three limits |
 | The system | a live schematic of how the pieces connect · the Vigentra console |
+| Under the hood | what it is built with · why this, not that · what we tested and dropped |
 | Why Vigentra | six design choices, each with its evidence |
 | Next | the deployment plan, each item starting from a limit the project measured |
 
@@ -116,8 +118,8 @@ stage, for example `[REAL CAM 06 FOOTAGE REQUIRED]`, rather than an invented sta
 |---|---|
 | `js/core/` | engine (scenes, steps, navigation, notes, auto-advance, the control-room bars), animation helpers bound to a scene, media slots |
 | `js/components/` | plain-character readings, boxes and the live replay, sliders, the camera wall, the live schematic |
-| `js/scenes/` | the control-room deck's 18 scenes, one file per part; `helpers.js` (panels, monitors, banners, event logs) and `charts.js` (both schematics) are shared |
-| `js/lens/` | the story edition's 16 scenes |
+| `js/scenes/` | the control-room deck's 21 scenes, one file per part; `helpers.js` (panels, monitors, banners, event logs) and `charts.js` (both schematics) are shared |
+| `js/lens/` | the story edition's 19 scenes |
 | `js/data/` | `project.js` (every number, with its source), `assets.js`, `evidence.js` (generated), `storyboard.js` (notes) |
 | `css/` | `theme.css` design tokens, `stage.css` (stage, bars, HUD), `components.css`, `scenes.css`; `lens.css` for the story edition |
 | `tools/` | asset builders, the storyboard renderer, the local server |

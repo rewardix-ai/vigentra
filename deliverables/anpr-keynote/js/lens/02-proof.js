@@ -1,5 +1,5 @@
 /* Story edition, part 2: proof on real footage, what makes Vigentra different, the system, the
- * console, what we will do next, and the close. */
+ * console, under the hood, what we will do next, and the close. */
 (function () {
   const K = window.K;
   const h = K.h;
@@ -128,6 +128,48 @@
       ctx.el.append(L.head("The console", "From a plate to an answer, in a browser.", { sm: true }), browser,
         h("div.lfeats", { style: { left: "1380px", top: "250px", width: "444px" } }, items));
       return [async () => { ctx.auto(82); await ctx.in("#bw"); }];
+    },
+  });
+
+  /* ---------------------------------------------------------------- under the hood: the stack */
+  K.scene({
+    id: "stack", act: "Under the hood", title: "What Vigentra is built with", cls: "paper light",
+    build(ctx) {
+      ctx.el.append(
+        L.head("Under the hood", "What Vigentra is built with."),
+        ...D.stack.map(([layer, choice, why], i) => L.card(96 + (i % 4) * 438, 300 + Math.floor(i / 4) * 350, 414, 326, [L.pill(layer, "line"), h("h3", null, choice), h("p", null, why)], { id: `k${i}` })),
+        S.tech([D.stackSrc], "All open source: no licence fee, vendor account or API key")
+      );
+      return [
+        async () => { for (let i = 0; i < 4; i += 1) { ctx.$(`#k${i}`).classList.add("in"); await ctx.wait(160); } },
+        async () => { for (let i = 4; i < 8; i += 1) { ctx.$(`#k${i}`).classList.add("in"); await ctx.wait(160); } },
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- under the hood: why this, not that */
+  K.scene({
+    id: "choices", act: "Under the hood", title: "Why this, not that", cls: "paper light",
+    build(ctx) {
+      const table = S.table(["Decision", "We use", "Instead of", "Why it is better"], D.choices, "240px 390px 320px 1fr", { cls: "choices" });
+      ctx.el.append(L.head("Under the hood", "Why this, not that."), L.card(96, 280, 1728, 730, [table], { id: "cc" }), S.tech([D.choicesSrc], ""));
+      return [
+        async () => { await ctx.in("#cc"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 4); },
+        () => S.rows(ctx, 4, D.choices.length),
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- under the hood: tested and dropped */
+  K.scene({
+    id: "dropped", act: "Under the hood", title: "What we tested and dropped", cls: "paper light",
+    build(ctx) {
+      const table = S.table(["We tried", "What happened", "So we kept"], D.dropped, "580px 1fr 460px", { cls: "dropped" });
+      ctx.el.append(L.head("Under the hood", "What we tested and dropped."), L.card(96, 280, 1728, 730, [table], { id: "dc" }), S.tech([D.droppedSrc], ""));
+      return [
+        async () => { await ctx.in("#dc"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 3); },
+        () => S.rows(ctx, 3, D.dropped.length),
+      ];
     },
   });
 

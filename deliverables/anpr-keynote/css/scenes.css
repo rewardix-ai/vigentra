@@ -168,3 +168,19 @@
 .rm-t span { font: 500 21px/1.35 var(--text); color: var(--ink-2); }
 .rm-tag { justify-self: end; padding: 6px 10px; border: 1px solid var(--line-2); font: 700 14px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
 .rm-tag.next { border-color: var(--warn); color: var(--warn); }
+
+/* ---- under the hood ----------------------------------------------------------------------------- */
+.stk { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 16px; padding: 24px 22px; }
+.stk b { font: 650 31px/1.15 var(--display); color: var(--ink); }
+.stk p { margin: 0; font: 500 23px/1.38 var(--text); color: var(--ink-2); }
+.tbl { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 18px 26px; }
+.tr { display: grid; align-items: center; gap: 24px; padding: 13px 16px; border: 1px solid var(--line); opacity: 0; transform: translateX(-12px); transition: opacity 0.4s var(--ease), transform 0.4s var(--ease); }
+.tr.in { opacity: 1; transform: none; }
+.tr span { font: 500 22px/1.3 var(--text); color: var(--ink-2); }
+.tr span:first-child { font: 650 24px/1.2 var(--display); color: var(--ink); }
+.tr.th { padding-top: 0; padding-bottom: 0; border-color: transparent; }
+.tr.th span { font: 700 14px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute); }
+.tbl.choices .tr:not(.th) span:nth-child(2) { color: var(--track); font-weight: 600; }
+.tbl.choices .tr:not(.th) span:nth-child(3) { color: var(--mute); }
+.tbl.dropped .tr:not(.th) span:nth-child(2) { color: var(--warn); }
+.tbl.dropped .tr:not(.th) span:nth-child(3) { color: var(--track); font-weight: 600; }

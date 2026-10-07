@@ -71,6 +71,54 @@
     },
   });
 
+  /* ---------------------------------------------------------------- under the hood: the stack */
+  K.scene({
+    id: "stack", act: "Under the hood", title: "What Vigentra is built with", src: "All open source · the reasoning for each part is in TECHNICAL.md",
+    build(ctx) {
+      const D = K.DATA;
+      const cards = D.stack.map(([layer, choice, why], i) => S.panel(80 + (i % 4) * 445, 230 + Math.floor(i / 4) * 340, 420, 310, `${String(i + 1).padStart(2, "0")} · ${layer}`,
+        h("div.stk", null, [h("b", null, choice), h("p", null, why)]), { id: `k${i}` }));
+      ctx.el.append(S.title("Under the hood", "What Vigentra is built with."), ...cards,
+        S.tech([D.stackSrc], "All open source: no licence fee, vendor account or API key"));
+      return [
+        async () => { for (let i = 0; i < 4; i += 1) { ctx.$(`#k${i}`).classList.add("in"); await ctx.wait(180); } },
+        async () => { for (let i = 4; i < 8; i += 1) { ctx.$(`#k${i}`).classList.add("in"); await ctx.wait(180); } },
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- under the hood: why this, not that */
+  K.scene({
+    id: "choices", act: "Under the hood", title: "Why this, not that", src: "SRC docs/scalability.md · docs/anpr.md · final2 benchmark · docs/hld.md",
+    build(ctx) {
+      const D = K.DATA;
+      const table = S.table(["Decision", "We use", "Instead of", "Why it is better"], D.choices, "250px 400px 330px 1fr", { cls: "choices" });
+      ctx.el.append(S.title("Under the hood", "Why this, not that."),
+        S.panel(80, 220, 1760, 770, "Design decisions", table, { id: "cp", right: `${D.choices.length} decisions` }),
+        S.tech([D.choicesSrc], ""));
+      return [
+        async () => { await ctx.in("#cp"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 4); },
+        () => S.rows(ctx, 4, D.choices.length),
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- under the hood: tested and dropped */
+  K.scene({
+    id: "dropped", act: "Under the hood", title: "What we tested and dropped", src: "SRC docs/anpr-optimisation.md · EW/config/thresholds.yaml · docs/anpr.md",
+    build(ctx) {
+      const D = K.DATA;
+      const table = S.table(["We tried", "What happened", "So we kept"], D.dropped, "600px 1fr 470px", { cls: "dropped" });
+      ctx.el.append(S.title("Under the hood", "What we tested and dropped."),
+        S.panel(80, 220, 1760, 770, "Measured on the same clips", table, { id: "dp", right: "every change replayed" }),
+        S.tech([D.droppedSrc], ""));
+      return [
+        async () => { await ctx.in("#dp"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 3); },
+        () => S.rows(ctx, 3, D.dropped.length),
+      ];
+    },
+  });
+
   /* ---------------------------------------------------------------- different */
   K.scene({
     id: "different", act: "Why Vigentra", title: "What makes Vigentra different", src: "Each point is a design choice in the code, with its evidence on screen",

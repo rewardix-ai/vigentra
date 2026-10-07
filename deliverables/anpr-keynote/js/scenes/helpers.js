@@ -18,6 +18,20 @@
       return h("div.title-tl.auto", null, [h("div.kicker", null, kicker), h(`div.${size}`, { style: { marginTop: "18px" }, html: text })]);
     },
 
+    /** A table whose rows fade in one at a time (.tr.in); `widths` is the CSS grid template. */
+    table(cols, rows, widths, { id = null, cls = "" } = {}) {
+      const row = (cells, extra, i) => h(`div.tr${extra}`, { "data-i": i, style: { gridTemplateColumns: widths } }, cells.map((c) => h("span", { html: c })));
+      return h("div.tbl" + (cls ? "." + cls : ""), { id }, [row(cols, ".th", -1), ...rows.map((r, i) => row(r, "", i))]);
+    },
+
+    /** Reveals table rows from..to (exclusive), one after another. */
+    async rows(ctx, from, to, gap = 200) {
+      for (const r of ctx.$$(".tr")) {
+        const i = Number(r.dataset.i);
+        if (i >= from && i < to) { r.classList.add("in"); await ctx.wait(gap); }
+      }
+    },
+
     /** The technical layer: only visible with T. */
     tech(lines, src) {
       return h("div.tech.tech-panel", null, [...lines.map((l) => h("div", { html: l })), src ? h("span.src", null, src) : null]);

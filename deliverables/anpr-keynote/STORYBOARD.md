@@ -152,7 +152,37 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** 82 s (1:16-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
 - **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
 
-## 16. What makes Vigentra different
+## 16. What Vigentra is built with
+*Under the hood*
+
+- **Story purpose.** What Vigentra is built on, with one line of reason per layer.
+- **Visual.** Eight panels: capture (RTSP over TCP), vehicles (YOLO11s + ByteTrack), plates (YOLO11n inside each vehicle), reading (two CRNN readers + PaddleOCR), deciding (votes, plate rules, glyph check), central (FastAPI, PostgreSQL), console (Next.js, Leaflet, OpenStreetMap), delivery (Docker).
+- **Speaker narration.** Under the hood, it is all open source. Video comes in over RTSP, the protocol the cameras already speak. YOLO11 finds the vehicles and ByteTrack gives each one an identity, so a plate is decided once per vehicle. The plate detector looks only inside the vehicle. Two kinds of reader read it, because different readers make different mistakes. Then the vote, the Indian plate rules and the glyph check decide. The centre is FastAPI and PostgreSQL, with no video and no camera passwords. The console is Next.js on OpenStreetMap, and it all ships in Docker.
+- **Audience should understand.** Every part is a deliberate, open choice.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js (stack) · TECHNICAL.md
+
+## 17. Why this, not that
+*Under the hood*
+
+- **Story purpose.** Why each big choice beats the obvious alternative, with its evidence.
+- **Visual.** A table of seven decisions: what Vigentra uses, instead of what, and why it is better.
+- **Speaker narration.** Why these choices? The AI runs next to the video, not in one centre: forty to two hundred and fifty times less network. A plate is read once per vehicle, from all its frames: the single-frame reader we started with got one plate from sixty-seven vehicles. Only what many frames agree on is saved: zero wrong. Two kinds of reader: sixteen plates instead of thirteen. ByteTrack, because fixed cameras need no camera-motion step. Watchlist matching priced by real OCR errors, so one wrong character still raises an alert. And video is brokered, so revoking access stops a stream within one segment.
+- **Audience should understand.** Each choice is measured or reasoned, not fashion.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js (choices) · TECHNICAL.md
+
+## 18. What we tested and dropped
+*Under the hood*
+
+- **Story purpose.** Engineering discipline: what we tried, measured and dropped.
+- **Visual.** Six rows: confirming on 3 crops (a wrong plate on Delhi), 20 crops (no gain), two CRNNs backing each other (shared mistakes), frames enlarged to 1920 px (half the vehicles, slower), a plate box up to 0.9 of its vehicle (a hoarding read), one frame at a time (1 plate from 67 vehicles).
+- **Speaker narration.** We also measured what not to do. Confirming on three crops instead of four let a wrong plate through, so it is four. Twenty crops instead of twelve found nothing more. Our two CRNN readers share mistakes, so they cannot vouch for each other. Enlarging frames halved the vehicles found. A wide plate box let a hoarding be read. And reading one frame at a time found one plate in sixty-seven vehicles. Every change was replayed on the same clips before we kept it.
+- **Audience should understand.** Every threshold has a measured reason.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js (dropped) · docs/anpr-optimisation.md
+
+## 19. What makes Vigentra different
 *Why Vigentra*
 
 - **Story purpose.** What sets Vigentra apart, as design choices with evidence.
@@ -162,7 +192,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (distinct, with sources)
 
-## 17. What we will do next
+## 20. What we will do next
 *Next*
 
 - **Story purpose.** What we will do next, from today's limits.
@@ -172,7 +202,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** docs/scalability.md; js/data/project.js (roadmap)
 
-## 18. From pixels to information
+## 21. From pixels to information
 *Vigentra*
 
 - **Story purpose.** Close on the idea and the name.

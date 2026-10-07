@@ -444,14 +444,14 @@ the account with the plate and the time.
 | Sessions are brokered and opaque | Short-lived, watermarked, re-authorised **per segment**. |
 | Three-dimensional scope | Department, city, zone — checked per request, plus the camera's own policy. |
 | Cross-unit access is asked for | Personal, time-boxed, revocable grants. The operator who runs a unit's cameras is the approver; there is no separate approval role to route around. |
-| Least privilege, finely split | 13 roles, 22 permissions. `plate:read`, `watchlist:read`, `watchlist:manage`, `alert:read`, `alert:acknowledge` and `track:read` are all separate — the edge account that *ingests* plates holds none of the read permissions, because a worker that can read the watchlist back is a worker that can exfiltrate it. |
+| Least privilege, finely split | 13 roles, 25 permissions. `plate:read`, `watchlist:read`, `watchlist:manage`, `alert:read`, `alert:acknowledge` and `track:read` are all separate — the edge account that *ingests* plates holds none of the read permissions, because a worker that can read the watchlist back is a worker that can exfiltrate it. |
 | Field-level redaction | Three visibility depths. Cross-department reads are capped so a unit's internal operational data stays its own. |
 | Withheld, not refused | An account without `plate:read` still gets the alert, with `plate_withheld: true`. The operational fact and the identifying fact are separable, so they are separated. |
 | Retention enforced on read | Plates have their own shorter clock, applied at read time as well as by any purge — so a failed purge cannot quietly extend availability. |
 | Complete audit trail | Every onboarding step, sync, metadata read, footage request, decision, session, refusal, plate disclosure, watchlist change, alert raised and trace run. Rows commit independently of the request that produced them, because a denied attempt is the record you most want to survive. |
 | Machine decisions audited too | `watchlist_alert_raised` is written by the matcher, not by a person. The trail shows what the system concluded as well as what people did. |
 
-Verified by 295 automated tests (192 platform, 103 edge worker), including a permission matrix that asserts
+Verified by 338 automated test functions (209 platform, 129 edge worker), including a permission matrix that asserts
 refusals as carefully as it asserts successes, and a secret-scanner that fails
 the build if an RTSP URL, credential or internal hostname appears in any
 client-facing payload.

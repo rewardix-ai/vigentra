@@ -49,6 +49,42 @@ K.DATA = {
   ],
   roadmapSrc: "docs/scalability.md (edge buffering, monitoring, HA/DR targets) · known limits from the benchmark and the CAM06 day study",
 
+  // Under the hood: each layer, what it runs on, and why. TECHNICAL.md has the full reasoning.
+  stack: [
+    ["Capture", "RTSP over TCP · FFmpeg", "Reads the streams cameras already send, timed by the stream's own clock."],
+    ["Vehicles", "YOLO11s + ByteTrack", "One identity per vehicle, so its plate is decided once."],
+    ["Plates", "YOLO11n, inside each vehicle", "A small search: small plates found, hoardings never proposed."],
+    ["Reading", "2 CRNN readers + PaddleOCR", "Different kinds of reader make different mistakes."],
+    ["Deciding", "Votes · plate rules · glyph check", "A plate is right or absent, never a guess."],
+    ["Central", "FastAPI · PostgreSQL", "No video and no camera passwords at the centre."],
+    ["Console", "Next.js · Leaflet · OpenStreetMap", "The login token stays out of page scripts; no map licence."],
+    ["Delivery", "Docker · three image sizes", "A site installs only what it runs: 120 MB to 3.5 GB."],
+  ],
+  stackSrc: "docs/hld.md §3, §10 · docs/scalability.md §2 · EW/config/thresholds.yaml · TECHNICAL.md",
+
+  // Why this, not that: [decision, what we use, instead of, why it is better]
+  choices: [
+    ["Where the AI runs", "Next to the video", "All video sent to one centre", "40–250× less network; no central store of footage"],
+    ["When a plate is read", "Once per vehicle, from all its frames", "Each frame on its own", "The single-frame reader got 1 plate from 67 vehicles"],
+    ["What may be saved", "Only what many frames agree on", "The best single reading", "36 of 48 read, 0 wrong"],
+    ["Readers", "Two kinds of reader", "One OCR model", "16 of 26 plates instead of 13, still 0 wrong"],
+    ["Tracker", "ByteTrack", "DeepSORT · BoT-SORT", "No appearance network or camera-motion step to pay for on fixed cameras"],
+    ["Watchlist match", "Priced by real OCR errors", "Exact match", "A one-character misread still alerts, marked review"],
+    ["Video for people", "Brokered, checked every segment", "Camera links in the browser", "Revoked access stops within a segment; no camera password leaves"],
+  ],
+  choicesSrc: "docs/scalability.md §3 · docs/anpr.md §8 · final2 REPORT.md · docs/anpr-optimisation.md · docs/hld.md §5, §7",
+
+  // Tested and dropped, each measured on the same clips: [what we tried, what happened, what we kept]
+  dropped: [
+    ["Confirm on 3 crops instead of 4", "A wrong plate confirmed on Delhi", "4 crops"],
+    ["The best 20 crops instead of 12", "No more plates, more reading", "12 crops"],
+    ["Two CRNNs backing each other", "They share mistakes", "Only another kind of reader backs"],
+    ["Frames enlarged to 1920 px", "Half the vehicles, 1.5–9× slower", "Each frame's own size"],
+    ["Plate box up to 0.9 of its vehicle", "A hoarding read as a plate", "0.60 of the vehicle"],
+    ["One frame at a time (EasyOCR)", "1 plate from 67 vehicles", "Reading whole tracks"],
+  ],
+  droppedSrc: "docs/anpr-optimisation.md (tested and rejected) · EW/config/thresholds.yaml · docs/anpr.md §8 · docs/submission.md (16 Sep)",
+
   // Paced like a live camera (frames arriving while busy are dropped), one Apple M1
   speed: {
     machine: "one Apple M1 laptop",

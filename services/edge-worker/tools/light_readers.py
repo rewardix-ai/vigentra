@@ -141,6 +141,12 @@ def main() -> int:
 
     from app import anpr_engine, grid, worker
 
+    # With thirty streams on one machine the gateway re-sends a few seconds of buffered video now and then:
+    # PTS steps back ~6 s. The capture took any step back over 5 s for a scene cut and reset tracking,
+    # losing every plate vote in progress (cam25: 20 resets in 15 min). A real loop lands near zero and is
+    # still caught by LOOP_RESTART_MS; only steps back over 30 s count as a cut otherwise.
+    grid.ReconnectingCapture.LOOP_TOLERANCE_MS = 30000.0
+
     gpu = Attention()
     frames: dict[str, int] = {}   # frames each camera got through the engine since the last stats line
     spent = {"hot": [0.0, 0], "cold": [0.0, 0]}   # engine seconds and frames, by whether a near vehicle was in view

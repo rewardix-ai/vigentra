@@ -1,6 +1,6 @@
 """Read plates on every grid camera with the Mac's GPU until a deadline, and keep the readers alive.
 
-Runs one continuous ANPR reader process per camera group (`app.worker --forever` with long passes),
+Runs continuous ANPR readers (one camera each, rotating) (`app.worker --forever` with long passes),
 on the host so the engine can use the Apple GPU (Docker on macOS has none). Each reader signs in to
 central-api with its department's AI account, the same account the Docker workers use: traffic.ai for
 Traffic Police cameras, municipal.ai for Municipal Corporation cameras. Credentials and grid settings
@@ -16,9 +16,10 @@ see it, and the camera_plates trigger copies it into the camera's own table (scr
 What it does on its own:
 - a reader that exits is restarted after 60 s, and after 10 min if it keeps failing (no retry storms
   against the gateway or the audit log);
-- the grid refuses our login in recurring windows (RTSP 401, often 15-20 min). When the readers start
-  hitting 401s, all of them are frozen (SIGSTOP) and one test login is made every few minutes (3, then 6,
-  12, at most 15) until the grid accepts again; then they resume (SIGCONT);
+- the grid refuses our login while its server restarts (RTSP 401, ~20 min), after which every
+  recording plays again from its start. The readers are stopped while refused, one test login is
+  made a minute, and each restart opens a window: each reader takes the next camera in ROTATION from
+  the first minute of the replay, and that camera's on-screen clock is sampled (scripts/osd/clock.py);
 - at the deadline (IST) it stops every reader and starts the Docker containers named by --restore-docker;
 - it holds a macOS caffeinate assertion while it runs, so an idle Mac on power does not sleep;
 - once an hour it appends each camera table's row count to progress.log.
@@ -47,15 +48,17 @@ PROBE = ("import os, cv2\nfrom app import grid\ngrid._force_tcp_transport()\n"
          "cap = cv2.VideoCapture(grid.fallback_catalogue(os.environ.get('SENTINEL_GRID_BASE_URL', ''))['cam06'].rtsp_url, cv2.CAP_FFMPEG)\n"
          "ok, _ = cap.read() if cap.isOpened() else (False, None)\nprint('ACCEPTED' if ok else 'REFUSED')\ncap.release()")
 
-# Reading time follows yield: the cameras whose plates are legible share a reader between few cameras,
-# the wide overview cameras share one between many. Each group must sit in one department.
-GROUPS = [
-    ["cam06", "cam05", "cam16"],
-    # three readers, not four: a fourth pushed a 16 GB Mac into swap with the stack running
-    ["cam01", "cam02", "cam04", "cam07", "cam12", "cam13", "cam14", "cam15",
-     "cam08", "cam09", "cam10", "cam11", "cam23", "cam24", "cam25", "cam26", "cam27", "cam28", "cam29", "cam30"],
-    ["cam03", "cam17", "cam18", "cam19", "cam20", "cam21", "cam22"],
-]
+# The grid replays the same opening minutes of every recording after each server restart, so each
+# window gives every reader one camera from the restart on, rotating through all 30. Cameras on the
+# shared 13 June 21:00 recording get two turns per rotation: only cameras showing the same moment can
+# share a vehicle, and their video times line up across windows.
+SAME_EVENING = ["cam04", "cam13", "cam15", "cam01", "cam02", "cam05", "cam14", "cam07",
+                "cam08", "cam09", "cam10", "cam11", "cam28", "cam29"]
+OTHERS = ["cam06", "cam17", "cam18", "cam16", "cam30", "cam03", "cam12", "cam19", "cam20",
+          "cam21", "cam22", "cam23", "cam24", "cam25", "cam26", "cam27"]
+ROTATION = SAME_EVENING + OTHERS[:8] + SAME_EVENING + OTHERS[8:]
+READERS = 3          # a fourth pushed a 16 GB Mac into swap with the stack running
+PROBE_SECONDS = 60   # one test login a minute while refused: a restart is caught within a minute
 
 
 def log(msg: str) -> None:
@@ -120,24 +123,6 @@ def grid_accepts(env: dict) -> bool:
     return "ACCEPTED" in out
 
 
-def new_run(logs: Path, clock_proc, restarted: bool = True):
-    """The grid has just come back, which means a server restart: every recording is at its start again.
-    Record the restart and read each camera's on-screen clock in the background (scripts/osd/clock.py),
-    so the readings of this run get their time in the video."""
-    if restarted:
-        subprocess.run(PG + ["-c", f"INSERT INTO camera_plates.grid_restarts VALUES ('{dt.datetime.now(IST):%Y-%m-%d %H:%M:%S}') ON CONFLICT DO NOTHING"], capture_output=True)
-    if clock_proc is not None and clock_proc.poll() is None:
-        return clock_proc
-    return subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py")], cwd=REPO,
-                            stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
-
-
-def signal_all(readers: list, sig: int) -> None:
-    for r in readers:
-        if r["proc"] is not None and r["proc"].poll() is None:
-            os.kill(r["proc"].pid, sig)
-
-
 def progress(logs: Path) -> None:
     sql = ("SELECT string_agg(table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from camera_plates.%I', table_name), false, true, '')))[1]::text, ' ' ORDER BY table_name) "
            "FROM information_schema.tables WHERE table_schema = 'camera_plates' AND table_name LIKE 'cam%'")
@@ -159,19 +144,44 @@ def main() -> int:
     compose = yaml.safe_load((REPO / "docker-compose.yml").read_text())
     dot = dotenv()
     base = service_env(compose, "edge-worker", dot)
-    accounts = {"traffic_vms": base, "municipal_vms": service_env(compose, "detector-municipal", dot)}
+    envs = {"traffic_vms": reader_env(base, base), "municipal_vms": reader_env(base, service_env(compose, "detector-municipal", dot))}
+    for env in envs.values():
+        env["EDGE_CONTINUOUS_PASS_FRAMES"] = "1000000"   # one pass per window: read the whole replay
     cams = cameras()
+    assert set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
+    slots = [{"name": f"reader{i + 1}", "camera": None, "proc": None, "log": logs / f"reader{i + 1}.log", "restart_at": None} for i in range(READERS)]
+    state = {"next": 0}
 
-    readers = []
-    for i, group in enumerate(GROUPS, 1):
-        depts = {cams[c][1] for c in group}
-        if len(depts) != 1:
-            raise SystemExit(f"group {i} mixes departments: {sorted(depts)}")
-        cmd = [sys.executable, "-m", "app.worker", "--forever", "--sample-interval", "2", "--cycle-seconds", "120"]
-        for c in group:
-            cmd += ["--camera", cams[c][0]]
-        readers.append({"name": f"reader{i}", "cameras": group, "cmd": cmd, "env": reader_env(base, accounts[depts.pop()]),
-                        "proc": None, "next_start": 0.0, "starts": [], "log": logs / f"reader{i}.log"})
+    def launch(slot, camera):
+        cmd = [sys.executable, "-m", "app.worker", "--forever", "--sample-interval", "2", "--cycle-seconds", "120", "--camera", cams[camera][0]]
+        slot["camera"], slot["restart_at"] = camera, None
+        slot["proc"] = subprocess.Popen(cmd, cwd=EDGE, env=envs[cams[camera][1]], stdout=open(slot["log"], "a"), stderr=subprocess.STDOUT)
+
+    def stop_all():
+        for slot in slots:
+            if slot["proc"] and slot["proc"].poll() is None:
+                slot["proc"].terminate()
+        time.sleep(10)
+        for slot in slots:
+            if slot["proc"] and slot["proc"].poll() is None:
+                slot["proc"].kill()
+            slot["proc"] = None
+
+    def new_window(restarted: bool):
+        chosen = []
+        while len(chosen) < READERS:
+            cam = ROTATION[state["next"] % len(ROTATION)]
+            state["next"] += 1
+            if cam not in chosen:
+                chosen.append(cam)
+        if restarted:
+            subprocess.run(PG + ["-c", f"INSERT INTO camera_plates.grid_restarts VALUES ('{dt.datetime.now(IST):%Y-%m-%d %H:%M:%S}') ON CONFLICT DO NOTHING"], capture_output=True)
+        for slot, cam in zip(slots, chosen):
+            launch(slot, cam)
+        # the clocks of exactly the cameras being read, for their time in the video
+        subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py"), *chosen], cwd=REPO,
+                         stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
+        log(("restart: " if restarted else "") + "reading " + " ".join(chosen))
 
     caffeinate = subprocess.Popen(["caffeinate", "-i", "-s", "-w", str(os.getpid())])
     stopping = False
@@ -182,69 +192,52 @@ def main() -> int:
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    log(f"collecting until {deadline:%d %b %H:%M} IST with {len(readers)} readers; logs in {logs}")
-    last_progress = 0.0
-    offsets = {r["name"]: (r["log"].stat().st_size if r["log"].exists() else 0) for r in readers}
-    paused_until, backoff = None, 180
-    probe_env = readers[0]["env"]
-    clock_proc = new_run(logs, None, restarted=False)  # starting mid-run: sample, but no restart
+    log(f"collecting until {deadline:%d %b %H:%M} IST, {READERS} readers rotating over {len(set(ROTATION))} cameras; logs in {logs}")
+    probe_env = envs["traffic_vms"]
+    refused = not grid_accepts(probe_env)
+    if refused:
+        log("grid refusing our login: waiting for the next restart")
+    else:
+        new_window(restarted=False)
+    offsets = {}
+    last_probe = last_progress = 0.0
     while not stopping and dt.datetime.now(IST) < deadline:
         now = time.time()
-        if paused_until is not None:
-            if now >= paused_until:
+        if refused:
+            if now - last_probe >= PROBE_SECONDS:
+                last_probe = now
                 if grid_accepts(probe_env):
-                    for r in readers:
-                        offsets[r["name"]] = r["log"].stat().st_size if r["log"].exists() else 0
-                    signal_all(readers, signal.SIGCONT)
-                    clock_proc = new_run(logs, clock_proc)
-                    log("grid accepting our login again (server restarted): readers resumed, clocks being sampled")
-                    paused_until, backoff = None, 180
-                else:
-                    paused_until = now + backoff
-                    log(f"grid still refusing: next test login in {backoff // 60} min")
-                    backoff = min(backoff * 2, 900)
-            time.sleep(30)
-            continue
-        refusals = 0
-        for r in readers:
-            if r["log"].exists():
-                with open(r["log"], "rb") as f:
-                    f.seek(offsets[r["name"]])
-                    refusals += f.read().decode(errors="ignore").count(REFUSED)
-                    offsets[r["name"]] = f.tell()
-        if refusals >= 4:
-            signal_all(readers, signal.SIGSTOP)
-            paused_until = now + backoff
-            log(f"grid refusing our login ({refusals} x RTSP 401 in 30 s): readers frozen, test login in {backoff // 60} min")
-            backoff = min(backoff * 2, 900)
-            continue
-        for r in readers:
-            p = r["proc"]
-            if p is not None and p.poll() is not None:
-                log(f"{r['name']} exited with {p.returncode}")
-                r["proc"] = None
-                recent = [t for t in r["starts"] if now - t < 600]
-                r["next_start"] = now + (600 if len(recent) >= 3 else 60)
-            if r["proc"] is None and now >= r["next_start"]:
-                r["proc"] = subprocess.Popen(r["cmd"], cwd=EDGE, env=r["env"], stdout=open(r["log"], "a"), stderr=subprocess.STDOUT)
-                r["starts"].append(now)
-                log(f"{r['name']} started (pid {r['proc'].pid}): {' '.join(r['cameras'])}")
+                    refused = False
+                    offsets = {s_["name"]: (s_["log"].stat().st_size if s_["log"].exists() else 0) for s_ in slots}
+                    new_window(restarted=True)
+        else:
+            refusals = 0
+            for slot in slots:
+                if slot["log"].exists():
+                    with open(slot["log"], "rb") as f:
+                        f.seek(offsets.get(slot["name"], 0))
+                        refusals += f.read().decode(errors="ignore").count(REFUSED)
+                        offsets[slot["name"]] = f.tell()
+            if refusals >= 4:
+                log(f"grid refusing our login ({refusals} x RTSP 401): server restarting; readers stopped")
+                stop_all()
+                refused, last_probe = True, now
+            else:
+                for slot in slots:
+                    p = slot["proc"]
+                    if p is not None and p.poll() is not None and slot["restart_at"] is None:
+                        log(f"{slot['name']} ({slot['camera']}) exited with {p.returncode}; restarting in 30 s")
+                        slot["restart_at"] = now + 30
+                    if slot["restart_at"] is not None and now >= slot["restart_at"]:
+                        launch(slot, slot["camera"])
         if now - last_progress >= 3600:
             progress(logs)
             last_progress = now
-        (logs / "status.json").write_text(json.dumps({r["name"]: {"pid": r["proc"].pid if r["proc"] else None, "cameras": r["cameras"],
-                                                                  "starts": len(r["starts"])} for r in readers}, indent=1))
-        time.sleep(30)
+        (logs / "status.json").write_text(json.dumps({"refused": refused, "readers": {s_["name"]: {"camera": s_["camera"], "pid": s_["proc"].pid if s_["proc"] else None} for s_ in slots}}, indent=1))
+        time.sleep(15)
 
     log("deadline reached" if not stopping else "stop requested")
-    signal_all(readers, signal.SIGCONT)
-    for r in readers:
-        if r["proc"] and r["proc"].poll() is None:
-            r["proc"].terminate()
-    time.sleep(15)
-    for r in readers:
-        if r["proc"] and r["proc"].poll() is None:
-            r["proc"].kill()
+    stop_all()
     progress(logs)
     if not stopping and args.restore_docker:
         subprocess.run(["docker", "start", *args.restore_docker])

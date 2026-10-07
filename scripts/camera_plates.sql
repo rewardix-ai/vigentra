@@ -76,7 +76,7 @@ LANGUAGE plpgsql AS $$
 DECLARE r record; n integer := 0; k integer;
 BEGIN
     FOR r IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'camera_plates' AND table_name ~ '^cam[0-9]+$' LOOP
-        EXECUTE format('UPDATE camera_plates.%I SET read_at_video = camera_plates.video_time_for(%L, read_at_ist) WHERE read_at_video IS NULL', r.table_name, r.table_name);
+        EXECUTE format('UPDATE camera_plates.%I SET read_at_video = camera_plates.video_time_for(%L, read_at_ist) WHERE read_at_video IS NULL AND camera_plates.video_time_for(%L, read_at_ist) IS NOT NULL', r.table_name, r.table_name, r.table_name);
         GET DIAGNOSTICS k = ROW_COUNT; n := n + k;
     END LOOP;
     RETURN n;

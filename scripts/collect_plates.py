@@ -120,6 +120,18 @@ def grid_accepts(env: dict) -> bool:
     return "ACCEPTED" in out
 
 
+def new_run(logs: Path, clock_proc, restarted: bool = True):
+    """The grid has just come back, which means a server restart: every recording is at its start again.
+    Record the restart and read each camera's on-screen clock in the background (scripts/osd/clock.py),
+    so the readings of this run get their time in the video."""
+    if restarted:
+        subprocess.run(PG + ["-c", f"INSERT INTO camera_plates.grid_restarts VALUES ('{dt.datetime.now(IST):%Y-%m-%d %H:%M:%S}') ON CONFLICT DO NOTHING"], capture_output=True)
+    if clock_proc is not None and clock_proc.poll() is None:
+        return clock_proc
+    return subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py")], cwd=REPO,
+                            stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
+
+
 def signal_all(readers: list, sig: int) -> None:
     for r in readers:
         if r["proc"] is not None and r["proc"].poll() is None:
@@ -175,6 +187,7 @@ def main() -> int:
     offsets = {r["name"]: (r["log"].stat().st_size if r["log"].exists() else 0) for r in readers}
     paused_until, backoff = None, 180
     probe_env = readers[0]["env"]
+    clock_proc = new_run(logs, None, restarted=False)  # starting mid-run: sample, but no restart
     while not stopping and dt.datetime.now(IST) < deadline:
         now = time.time()
         if paused_until is not None:
@@ -183,7 +196,8 @@ def main() -> int:
                     for r in readers:
                         offsets[r["name"]] = r["log"].stat().st_size if r["log"].exists() else 0
                     signal_all(readers, signal.SIGCONT)
-                    log("grid accepting our login again: readers resumed")
+                    clock_proc = new_run(logs, clock_proc)
+                    log("grid accepting our login again (server restarted): readers resumed, clocks being sampled")
                     paused_until, backoff = None, 180
                 else:
                     paused_until = now + backoff

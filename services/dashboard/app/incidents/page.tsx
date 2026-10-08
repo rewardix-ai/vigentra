@@ -39,6 +39,7 @@ const KIND_LABEL: Record<string, string> = {
   INTRUSION: "Intrusion in a restricted zone",
   NO_PLATE_VISIBLE: "Vehicle without a visible number plate",
   CROWD_GATHERING: "Crowd gathering",
+  NO_HELMET: "Rider without a helmet",
 };
 
 type Tone = "ok" | "warn" | "bad" | "idle" | "info";

@@ -50,6 +50,7 @@ try:
 except Exception:  # pragma: no cover - analytics extras absent
     AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
+from . import helmet as helmet_check
 from .no_plate import NoPlateWatch
 from .plates import PLATE_BEARING_CLASSES
 
@@ -768,6 +769,7 @@ def run(
     processed = skipped = produced = 0
     started = time.perf_counter()
     no_plate = None
+    helmet = None
 
     try:
         for frame_index, frame, pts_seconds, discontinuity in frames:
@@ -890,6 +892,14 @@ def run(
                     incident_batch.extend(no_plate.closed(anpr.closed_without_plate(), frame.shape[1]))
                 except Exception as exc:  # pragma: no cover - a side check never stops the pass
                     logger.warning("no-plate check failed: %s", exc)
+                # Two-wheeler riders who appear bare-headed (app/helmet.py), when the classifier is installed.
+                if helmet is None and helmet_check.available():
+                    helmet = helmet_check.HelmetWatch(camera_id)
+                if helmet is not None:
+                    try:
+                        incident_batch.extend(helmet.observe(frame, detections, pts_seconds))
+                    except Exception as exc:  # pragma: no cover
+                        logger.warning("helmet check failed: %s", exc)
 
             # Incident detection from the same boxes. `detections` carry the
             # tracker's id in `extra`; only tracked vehicles can be judged for

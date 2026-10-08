@@ -122,6 +122,7 @@ so the live shortfall is frames per camera, not reading.
 | Component | What it is | Why |
 |---|---|---|
 | On-screen clock reader | Apple Vision OCR (`scripts/osd/ocr.swift`), on-device | Each grid camera prints its own date and time; reading it puts every sighting on the footage's timeline. Runs every 30 min per camera. |
+| Helmet classifier | YOLO11n-cls (1.5 M parameters) trained on 750 of our own grid rider crops labelled by eye (`app/helmet.py`, `models/helmet_cls.pt`) | Flags bare-headed two-wheeler riders as LOW candidates at score >= 0.9: ~9 in 10 right on held-out crops, no helmeted rider above 0.77; a free downloaded helmet model found nothing on our footage. |
 | Incident detector | Rules over tracker boxes (`anpr/incidents.py`): wrong way, sudden stop, stopped in lane, collision candidate, person on carriageway, intrusion; plus vehicle without a visible plate (`app/no_plate.py`, from the plate detector's own misses) | No incident footage exists to train a model on, so the rules are explicit and every incident carries its evidence and a snapshot. Rebuilt 8 Oct: direction learned per region of the frame, only dense continuous tracks judged; a 6-hour replay went from 416 incidents to 71. |
 | Frame quality router | Blur (Laplacian variance) and darkness checks | Skips frames nothing could be read from; brightens dark ones. |
 | Cross-camera matching | Confusion-weighted plate distance (`scripts/cross_camera.py`) | The same plate misread on two cameras (O/0, B/8, D/0) still links the route. |

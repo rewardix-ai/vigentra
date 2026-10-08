@@ -23,6 +23,8 @@ WEIGHTS = Path(os.getenv("HELMET_CLS_WEIGHTS", str(Path(__file__).resolve().pare
 THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.9"))
 MIN_WIDTH = 70.0            # px: a narrower two-wheeler's rider head is a handful of pixels
 END_AFTER_S = 3.0           # a track unseen this long has ended
+MIN_TRAVEL_W = 1.0          # it must move at least its own width while tracked: a parked scooter with
+                            # someone sitting beside it is not a rider (cam25, 8 Oct, the first live miss)
 CLASSES = frozenset({"motorcycle"})
 
 _model = None
@@ -68,8 +70,11 @@ class HelmetWatch:
             seen.add(tid)
             x1, y1, x2, y2 = d.bbox_xyxy
             bw, bh = x2 - x1, y2 - y1
-            v = self.views.setdefault(tid, {"first_pts": pts, "max_w": 0.0, "crop": None, "jpeg": None})
+            c = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+            v = self.views.setdefault(tid, {"first_pts": pts, "max_w": 0.0, "crop": None, "jpeg": None,
+                                            "first_c": c, "travel": 0.0})
             v["last_pts"] = pts
+            v["travel"] = max(v["travel"], ((c[0] - v["first_c"][0]) ** 2 + (c[1] - v["first_c"][1]) ** 2) ** 0.5 / max(bw, 1.0))
             if bw < MIN_WIDTH or bw <= v["max_w"]:
                 continue
             up = max(0.5 * bh, 1.2 * bw)   # high enough that the rider's head is in the crop
@@ -94,8 +99,8 @@ class HelmetWatch:
         out = []
         for tid in [t for t, v in self.views.items() if t not in seen and pts - v["last_pts"] > END_AFTER_S]:
             v = self.views.pop(tid)
-            if v["crop"] is None:
-                continue
+            if v["crop"] is None or v["travel"] < MIN_TRAVEL_W:
+                continue   # never seen close, or never moved: not a rider on the road
             try:
                 score = no_helmet_score(v["crop"])
             except Exception as exc:  # pragma: no cover - a side check never stops the pass

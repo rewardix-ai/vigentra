@@ -17,7 +17,7 @@ def run(monkeypatch, score):
     frame = np.full((720, 1280, 3), 90, np.uint8)
     w, out = helmet.HelmetWatch("cam-h"), []
     for i in range(8):
-        out += w.observe(frame, [bike(4, 500, 300 + 10 * i)], float(i))
+        out += w.observe(frame, [bike(4, 500, 200 + 25 * i)], float(i))
     out += w.observe(frame, [], 20.0)   # gone: the track has ended
     return out
 
@@ -29,3 +29,13 @@ def test_a_bare_headed_rider_is_raised_once_with_a_snapshot(monkeypatch):
 
 def test_below_the_threshold_nothing_is_raised(monkeypatch):
     assert not run(monkeypatch, 0.6)
+
+
+def test_a_parked_two_wheeler_is_not_a_rider(monkeypatch):
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.99)
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(8):   # the same spot every frame
+        out += w.observe(frame, [bike(9, 500, 300)], float(i))
+    out += w.observe(frame, [], 20.0)
+    assert not out

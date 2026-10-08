@@ -5,9 +5,10 @@ The ANPR engine already knows when a vehicle's track closed without a single pla
 front was lost in headlight glare. It is worth an operator's look only when the plate SHOULD have been
 seen, so a candidate needs all of:
 
-- a car, bus or truck (two-wheeler plates are small and often hidden by the rider's legs);
-- big in the frame: at its widest at least MIN_WIDTH_FRAC of the frame width, seen in at least
-  MIN_FRAMES frames at a useful size;
+- any vehicle (car, bus, truck, two-wheeler; autos are detected as one of these), big enough in the
+  frame that its plate would be readable: at its widest at least MIN_WIDTH_FRAC[class] of the frame
+  width (a two-wheeler's plate is about a third of its width, a car's about a quarter), seen in at
+  least MIN_FRAMES frames at a useful size;
 - moving towards or away from the camera, so its front or rear (where plates are) faces the lens,
   not crossing the frame side-on;
 - a usable picture: the widest view neither dark nor blown out by glare, and sharp.
@@ -19,16 +20,18 @@ from __future__ import annotations
 
 import base64
 import logging
+import re
 from collections import Counter
 
 import numpy as np
 
 logger = logging.getLogger("vigentra.edge.no_plate")
 
-CLASSES = frozenset({"car", "bus", "truck"})
-MIN_WIDTH_FRAC = 0.22       # ~280 px on a 1280 px frame: a plate there is >= ~35 px, readable size
-USEFUL_WIDTH_FRAC = 0.15    # frames at least this wide count toward MIN_FRAMES
-MIN_FRAMES = 6
+#: per class, the width (fraction of the frame) at which its plate is >= ~40 px on a 1280 px frame
+MIN_WIDTH_FRAC = {"car": 0.18, "bus": 0.22, "truck": 0.22, "motorcycle": 0.11}
+CLASSES = frozenset(MIN_WIDTH_FRAC)
+USEFUL_SHARE = 0.7          # frames at least this share of that width count toward MIN_FRAMES
+MIN_FRAMES = 4              # light mode samples a busy camera a few times a second
 TOWARDS_RATIO = 1.5         # vertical travel at least this many times the horizontal
 MIN_LUMA, MAX_LUMA = 55, 205   # median brightness of the vehicle at its widest
 MIN_SHARPNESS = 40.0        # Laplacian variance of that view
@@ -42,7 +45,7 @@ def candidate(view: dict, frame_w: float) -> tuple[bool, str]:
     """Should a closed track with no plate box become a candidate? (decision, why not)"""
     if view.get("label") not in CLASSES:
         return False, "class"
-    if view["max_w"] < MIN_WIDTH_FRAC * frame_w:
+    if view["max_w"] < MIN_WIDTH_FRAC[view["label"]] * frame_w:
         return False, "too_small"
     if view["useful_frames"] < MIN_FRAMES:
         return False, "too_few_frames"
@@ -70,7 +73,7 @@ class NoPlateWatch:
         h, w = frame.shape[:2]
         for d in detections:
             tid = (getattr(d, "extra", None) or {}).get("track_id")
-            if tid is None:
+            if tid is None or d.class_name not in CLASSES:
                 continue
             x1, y1, x2, y2 = d.bbox_xyxy
             bw = x2 - x1
@@ -80,9 +83,10 @@ class NoPlateWatch:
                 v = self.views[tid] = {"label": d.class_name, "max_w": 0.0, "useful_frames": 0,
                                        "first_c": c, "first_pts": pts, "jpeg": None}
             v["last_c"], v["last_pts"] = c, pts
-            if bw >= USEFUL_WIDTH_FRAC * w:
+            need = MIN_WIDTH_FRAC[v["label"]] * w
+            if bw >= USEFUL_SHARE * need:
                 v["useful_frames"] += 1
-            if bw > v["max_w"] and bw >= MIN_WIDTH_FRAC * w:
+            if bw > v["max_w"] and bw >= need:
                 v["max_w"] = bw
                 crop = frame[int(max(0, y1)):int(y2), int(max(0, x1)):int(x2)]
                 if crop.size:
@@ -93,7 +97,7 @@ class NoPlateWatch:
                     t = max(2, w // 400)
                     cv2.rectangle(snap, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), t + 1)
                     cv2.rectangle(snap, (0, 0), (w, 18 * t + 8), (0, 0, 0), -1)
-                    cv2.putText(snap, f"NO PLATE VISIBLE  LOW  {self.camera_id}", (8, 14 * t),
+                    cv2.putText(snap, f"NO PLATE VISIBLE  {v['label'].upper()}  {self.camera_id}", (8, 14 * t),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45 * t, (255, 255, 255), max(1, t // 2))
                     if w > 960:
                         snap = cv2.resize(snap, (960, int(h * 960 / w)), interpolation=cv2.INTER_AREA)
@@ -108,10 +112,11 @@ class NoPlateWatch:
         """Incident payloads for tracks the engine closed without a plate box, where one should show."""
         out = []
         for rec in records:
-            try:
-                tid = int(str(rec.get("track_id", "")).rsplit("_", 1)[-1])
-            except ValueError:
+            # the engine keys a track "<camera>_s<segment>_t<n>"; the detections carry n
+            tail = re.search(r"\d+$", str(rec.get("track_id", "")))
+            if tail is None:
                 continue
+            tid = int(tail.group())
             v = self.views.pop(tid, None)
             if v is None:
                 continue

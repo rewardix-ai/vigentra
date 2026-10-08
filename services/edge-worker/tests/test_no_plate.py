@@ -30,7 +30,7 @@ def drive(watch, tid, *, towards=True, width=360, cls="car", level=120, n=10):
 
 
 def closed(tid):
-    return [{"track_id": f"cam_{tid}", "reason": "no_plate_detected"}]
+    return [{"track_id": f"cam06_s0_t{tid}", "reason": "no_plate_detected"}]
 
 
 def test_a_close_car_facing_the_camera_with_no_plate_is_raised_with_its_frame():
@@ -41,8 +41,9 @@ def test_a_close_car_facing_the_camera_with_no_plate_is_raised_with_its_frame():
     assert out[0]["snapshot_jpeg_b64"]
 
 
-def test_side_on_small_dark_or_two_wheeler_is_not_raised():
-    for kwargs in ({"towards": False}, {"width": 150}, {"level": 15}, {"cls": "motorcycle"}):
+def test_side_on_small_or_dark_is_not_raised():
+    for kwargs in ({"towards": False}, {"width": 150}, {"level": 15}, {"cls": "motorcycle", "width": 100},
+                   {"cls": "person"}):
         w = NoPlateWatch("cam-x")
         drive(w, 2, **kwargs)
         assert not w.closed(closed(2), W), kwargs
@@ -52,3 +53,11 @@ def test_the_rule_says_why_not():
     view = {"label": "car", "max_w": 400, "useful_frames": 2, "first_c": (0, 0), "last_c": (0, 300),
             "luma": 120, "sharpness": 100.0}
     assert candidate(view, W) == (False, "too_few_frames")
+
+
+def test_every_vehicle_type_close_enough_is_raised():
+    for cls, width in (("motorcycle", 160), ("bus", 320), ("truck", 320), ("car", 260)):
+        w = NoPlateWatch("cam-x")
+        drive(w, 3, cls=cls, width=width)
+        out = w.closed(closed(3), W)
+        assert len(out) == 1 and out[0]["evidence"]["vehicle"] == cls, cls

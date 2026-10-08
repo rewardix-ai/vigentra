@@ -4,12 +4,13 @@ The COCO vehicle detector knows car, motorcycle, bus and truck only. On the grid
 systematic way (480 grid vehicles labelled by eye, 8 Oct): its "truck" was an auto-rickshaw 45 times,
 a car 19 times and a truck 6 times, and its "motorcycle" never separates scooters from motorbikes.
 
-So each track is classified by a small YOLO11n classifier trained on those grid crops
+So each track is classified by a small YOLO11n classifier trained on 960 grid crops labelled by eye
 (models/vtype_cls.pt; ANPR research repo tools/vehicle_crops.py, vtype_ds.py, vtype_eval.py), on its
 widest view so far, again whenever the view grows by half (a closer look), at most MAX_LOOKS times.
 Only a confident call replaces the detector's class (CONFIDENT); "unclear" and weak calls keep it.
-Held out by camera: the detector's class was right for 46 of 83 vehicles, classifier where confident
-plus the detector otherwise for 66 of 83, and the classifier's own confident calls 40 of 44.
+Held out by camera (146 vehicles of a clear type): the detector's class was right for 88, classifier
+where confident plus the detector otherwise for 130, and the classifier's own confident calls for 108
+of 113 (v2, 8 Oct; v1, trained on half the crops, managed 117).
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from pathlib import Path
 logger = logging.getLogger("vigentra.edge.vehicle_type")
 
 WEIGHTS = Path(os.getenv("VEHICLE_TYPE_WEIGHTS", str(Path(__file__).resolve().parent.parent / "models" / "vtype_cls.pt")))
-CONFIDENT = float(os.getenv("VEHICLE_TYPE_CONFIDENT", "0.8"))
+CONFIDENT = float(os.getenv("VEHICLE_TYPE_CONFIDENT", "0.7"))
 MIN_WIDTH = 60.0        # px: a narrower vehicle is a few pixels of colour
 GROW = 1.5              # look again when the vehicle is this much wider than at the last look
 MAX_LOOKS = 3

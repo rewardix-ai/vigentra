@@ -322,8 +322,8 @@ so the live shortfall is frames per camera, not reading.</p>
 </tr>
 <tr>
 <td>Vehicle-type classifier</td>
-<td>YOLO11n-cls trained on 480 grid vehicles labelled by eye (<code>app/vehicle_type.py</code>, <code>models/vtype_cls.pt</code>): auto-rickshaw, bus, car, motorcycle, scooter, truck</td>
-<td>The COCO detector called autos &quot;truck&quot; (45 of 70 clear &quot;trucks&quot; were autos, 6 were trucks) and never separates scooters. A confident call (&gt;= 0.8) replaces the detector's class; held out by camera, types right went from 46 of 83 to 66 of 83.</td>
+<td>YOLO11n-cls trained on 960 grid vehicles labelled by eye (<code>app/vehicle_type.py</code>, <code>models/vtype_cls.pt</code>): auto-rickshaw, bus, car, motorcycle, scooter, truck</td>
+<td>The COCO detector called autos &quot;truck&quot; (45 of 70 clear &quot;trucks&quot; were autos, 6 were trucks) and never separates scooters. A confident call (&gt;= 0.7) replaces the detector's class; held out by camera, types right went from 88 of 146 (detector) to 130 of 146; its confident calls are right 108 of 113.</td>
 </tr>
 <tr>
 <td>Incident detector</td>

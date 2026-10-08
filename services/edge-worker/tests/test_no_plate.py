@@ -27,7 +27,7 @@ def drive(watch, tid, *, towards=True, width=360, cls="car", level=120, n=10):
     aspect = ASPECT.get(cls, 1.2)
     for i in range(n):
         if towards:   # coming down the frame, growing: its front faces the camera
-            x1, y1, wi = 400, 100 + 40 * i, width * (0.8 + 0.02 * i)
+            x1, y1, wi = 400, 40 + 25 * i, width * (0.8 + 0.02 * i)   # stays inside the frame
         else:         # crossing the frame side-on
             x1, y1, wi = 100 + 80 * i, 300, width
         watch.observe(f, [det(tid, (x1, y1, x1 + wi, y1 + wi / aspect), cls)], float(i))

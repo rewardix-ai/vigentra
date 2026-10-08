@@ -291,11 +291,13 @@ class IncidentDetector:
 
     @staticmethod
     def _trusted(st: _State) -> bool:
-        """Dense, continuous recent motion: no long gap, no jump an identity swap would make."""
+        """Dense, continuous motion over EVERY sample that heading and deceleration are computed
+        from: no long gap, no jump an identity swap would make. (Checking only the last few let a
+        swap earlier in the window through: cam01, 8 Oct, a bus-to-car jump read as wrong way.)"""
         if len(st.times) < TRUST_SAMPLES:
             return False
-        times, centres, heights = list(st.times)[-TRUST_SAMPLES:], list(st.centres)[-TRUST_SAMPLES:], list(st.heights)[-TRUST_SAMPLES:]
-        for i in range(1, TRUST_SAMPLES):
+        times, centres, heights = list(st.times), list(st.centres), list(st.heights)
+        for i in range(1, len(times)):
             if times[i] - times[i - 1] > TRUST_MAX_GAP_S:
                 return False
             step = math.hypot(centres[i][0] - centres[i - 1][0], centres[i][1] - centres[i - 1][1])
@@ -412,7 +414,14 @@ class IncidentDetector:
         # near-stationary afterwards costs nothing on a real stop and rejects the
         # artefacts, which do not leave a stationary vehicle behind.
         stopped_now = sp < STOP_SPEED * 2.0
-        if (decel is not None and decel >= HARD_DECEL and stopped_now
+        # "far harder than traffic around it": braking in a queue is not an incident, so other
+        # trusted vehicles in view must still be moving (cam01, 8 Oct: a car braking behind a bus)
+        others_moving = sum(
+            1 for t in tracks
+            if t.track_id != tid and (o := self._tracks.get(t.track_id)) is not None
+            and o.label in VEHICLE_LABELS and o.speeds and o.speeds[-1][1] > MOVING_SPEED
+            and self._trusted(o))
+        if (decel is not None and decel >= HARD_DECEL and stopped_now and others_moving >= 2
                 and self._fire((tid, "SUDDEN_STOP"), now)):
             out.append(Incident(
                 self.camera_id, "SUDDEN_STOP", "MEDIUM", [tid], st.first_seen, now,
@@ -589,6 +598,17 @@ class IncidentDetector:
                 if not (sa.speeds and sb.speeds
                         and sa.speeds[-1][1] < MOVING_SPEED
                         and sb.speeds[-1][1] < MOVING_SPEED):
+                    continue
+                # a queue at a signal is two overlapping vehicles slowing together too: a
+                # collision leaves traffic around it moving (cam01-cam30, 8 Oct: 32 "collisions"
+                # in 6 h with the same overlap-and-slow signature)
+                flowing = sum(
+                    1 for t in tracks
+                    if t.track_id not in (a.track_id, b.track_id)
+                    and (o := self._tracks.get(t.track_id)) is not None
+                    and o.label in VEHICLE_LABELS and o.speeds and o.speeds[-1][1] > MOVING_SPEED
+                    and self._trusted(o))
+                if flowing < 2:
                     continue
                 key = (min(a.track_id, b.track_id), max(a.track_id, b.track_id),
                        "COLLISION")

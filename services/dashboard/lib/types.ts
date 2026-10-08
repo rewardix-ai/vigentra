@@ -696,6 +696,9 @@ export interface TrackPoint {
   /** A leg no road vehicle could have driven — usually one of the two reads
    * belongs to a different car. Shown, never silently dropped. */
   implausible_leg: boolean;
+  /** Date and time printed on the footage at this read (grid cameras whose
+   * clock has been sampled), as on screen: no time zone. */
+  video_time: string | null;
 }
 
 export interface Track {

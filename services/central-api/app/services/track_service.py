@@ -23,7 +23,7 @@ import math
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Camera as CameraRow
@@ -99,6 +99,11 @@ class TrackPoint:
     #: True when the implied speed is not physically plausible for a road
     #: vehicle - a strong hint that one of the two reads is a different car.
     implausible_leg: bool = False
+    #: The date and time printed on the footage at this read, where the grid
+    #: camera's clock has been sampled (scripts/camera_plates.sql); None
+    #: elsewhere. The route is ordered by read time, which the grid keeps on
+    #: one common timeline; this is what a viewer of the footage would see.
+    video_time: datetime | None = None
 
 
 @dataclass
@@ -205,6 +210,35 @@ def _compute_legs(points: list[TrackPoint]) -> None:
             current.implausible_leg = speed > IMPLAUSIBLE_SPEED_KMH
 
 
+async def _fill_video_time(db: AsyncSession, points: list[TrackPoint]) -> None:
+    """Each point's on-footage time, from the clock samples. Postgres only, and
+    only where that layer is installed: elsewhere the field stays empty."""
+    if not points or db.get_bind().dialect.name != "postgresql":
+        return
+    installed = await db.execute(
+        text("SELECT to_regprocedure('camera_plates.video_time_for(text,timestamp without time zone)')")
+    )
+    if installed.scalar() is None:
+        return
+    for point in points:
+        point.video_time = (
+            await db.execute(
+                # only near a sample of this camera's clock taken in the same grid run:
+                # across a restart or loop the estimate drifts, and no time beats a wrong one
+                text(
+                    "WITH r AS (SELECT camera_plates.table_for(:camera) AS cam,"
+                    " CAST(:at AS timestamptz) AT TIME ZONE 'Asia/Kolkata' AS at)"
+                    " SELECT camera_plates.video_time_for(r.cam, r.at) FROM r"
+                    " WHERE EXISTS (SELECT 1 FROM camera_plates.video_clock v WHERE v.camera = r.cam"
+                    " AND abs(extract(epoch FROM v.wall_ist - r.at)) < 3600"
+                    " AND NOT EXISTS (SELECT 1 FROM camera_plates.grid_restarts g"
+                    " WHERE g.resumed_ist > least(v.wall_ist, r.at) AND g.resumed_ist <= greatest(v.wall_ist, r.at)))"
+                ),
+                {"camera": point.camera_id, "at": point.timestamp_utc},
+            )
+        ).scalar()
+
+
 async def reconstruct(
     db: AsyncSession,
     plate: str,
@@ -293,6 +327,7 @@ async def reconstruct(
     points.sort(key=lambda point: point.timestamp_utc)
     points = _collapse_same_pass(points)[:limit]
     _compute_legs(points)
+    await _fill_video_time(db, points)
     track.points = points
 
     if track.implausible_legs:

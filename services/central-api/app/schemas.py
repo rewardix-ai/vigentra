@@ -1545,6 +1545,9 @@ class TrackPointOut(BaseModel):
     #: it usually means one of the two reads belongs to a different vehicle,
     #: and that is a finding, not noise.
     implausible_leg: bool = False
+    #: The date and time printed on the footage at this read (grid cameras whose
+    #: clock has been sampled); shown as on screen, with no time zone.
+    video_time: datetime | None = None
 
     @field_serializer("timestamp_utc")
     def _ser_time(self, value: datetime) -> str | None:

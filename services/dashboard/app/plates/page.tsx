@@ -325,6 +325,11 @@ export default function PlatesPage() {
                         <td className="tabular">{index + 1}</td>
                         <td className="whitespace-nowrap">
                           <div>{ist(point.timestamp_utc)}</div>
+                          {point.video_time && (
+                            <div className="text-2xs">
+                              On footage {point.video_time.replace("T", " ").slice(0, 19)}
+                            </div>
+                          )}
                           <div className="text-2xs text-ink-500">
                             {relative(point.timestamp_utc)}
                           </div>

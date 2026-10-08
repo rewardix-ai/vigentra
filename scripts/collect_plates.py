@@ -66,6 +66,8 @@ PROBE_SECONDS = 20   # one test login every 20 s while refused: a restart is cau
 IDLE_LIMIT = 5
 IDLE_LINES = 3
 IDLE_GRACE_SECONDS = 300
+CLOCK_SECONDS = 1800  # light mode re-reads every camera's on-screen clock this often: a route point shows its
+                      # footage time only near a sample from the same grid run (track_service._fill_video_time)
 IDLE_LINE = re.compile(r"frames/min .*\| idle: (.*)$")
 
 
@@ -189,6 +191,19 @@ def main() -> int:
                 slot["proc"].kill()
             slot["proc"] = None
 
+    clock = {"proc": None, "at": 0.0}
+
+    def sample_clocks():
+        """Every camera's on-screen clock, through the other account so no clock read competes with a
+        reader for a stream. One sampling at a time."""
+        other = [j for j in range(len(accounts)) if j != acct["i"]]
+        if not other or (clock["proc"] and clock["proc"].poll() is None):
+            return
+        clock["at"] = time.time()
+        clock["proc"] = subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py")], cwd=REPO,
+                                         env=dict(base_envs["traffic_vms"], **accounts[other[0]]),
+                                         stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
+
     def new_window(restarted: bool, same: bool = False):
         if light:
             if restarted:
@@ -196,12 +211,7 @@ def main() -> int:
             for s_ in slots:
                 offsets[s_["name"]] = s_["log"].stat().st_size if s_["log"].exists() else 0
             launch(slots[0], "all")
-            # every camera's clock, through the other account so no clock read competes with a reader for a stream
-            other = [j for j in range(len(accounts)) if j != acct["i"]]
-            if other:
-                subprocess.Popen([sys.executable, str(REPO / "scripts" / "osd" / "clock.py")], cwd=REPO,
-                                 env=dict(base_envs["traffic_vms"], **accounts[other[0]]),
-                                 stdout=open(logs / "clock.log", "a"), stderr=subprocess.STDOUT)
+            sample_clocks()
             log(("restart: " if restarted else "") + f"light mode on all grid cameras (account {acct['i'] + 1})")
             return
         chosen = [s_["camera"] for s_ in slots] if same and all(s_["camera"] for s_ in slots) else []
@@ -334,6 +344,8 @@ def main() -> int:
                 if light and watchdog(slots[0], now):
                     stop_all()
                     launch(slots[0], "all")
+                if light and now - clock["at"] >= CLOCK_SECONDS:
+                    sample_clocks()
         if now - last_progress >= 3600:
             progress(logs)
             last_progress = now

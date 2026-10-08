@@ -7,7 +7,8 @@
  * credential or an internal hostname; the only video URLs it builds
  * (streamUrl, snapshotUrl) are paths on that same proxy.
  */
-import type { Incident,
+import type {
+  Pursuit, Incident,
   HealthAlert,
   CameraTrafficSummary,
   AccessPolicy,
@@ -286,6 +287,13 @@ export const api = {
    * most revealing query here, and an unexplained trace is the one that should
    * never have been run. It is recorded against the account.
    */
+  pursuits: () => request<{ pursuits: Pursuit[] }>("/api/v1/pursuits"),
+  startPursuit: (plate: string, reason: string) =>
+    post<{ id: number; plate: string }>("/api/v1/pursuits", { plate, reason }),
+  endPursuit: (id: number) => post<{ id: number; active: boolean }>(`/api/v1/pursuits/${id}/end`),
+  /** The plate crop behind a possible sighting (JPEG). Each view is audited. */
+  pursuitEvidenceUrl: (sightingId: string) =>
+    `${BASE}/api/v1/pursuits/evidence/${encodeURIComponent(sightingId)}`,
   plateTrack: (
     plate: string,
     params: { reason: string; max_distance?: string; since_hours?: string },

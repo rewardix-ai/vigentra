@@ -699,6 +699,18 @@ export interface TrackPoint {
   /** Date and time printed on the footage at this read (grid cameras whose
    * clock has been sampled), as on screen: no time zone. */
   video_time: string | null;
+  /** A pursuit's "is this the plate?" match, not a reading: confirm it from the crop. */
+  possible: boolean;
+}
+
+/** A designated vehicle being followed across the cameras right now. */
+export interface Pursuit {
+  id: number;
+  plate: string;
+  started_by: string;
+  started_at: string;
+  /** Where it was seen in the last few minutes, and their nearest neighbours. */
+  hot_cameras: string[];
 }
 
 export interface Track {

@@ -948,3 +948,45 @@ class HealthAlert(Base):
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class DemoVehicleOwner(Base):
+    """DEMO stand-in for the state owner registry (VAHAN), used only to rehearse the e-challan flow.
+
+    Kept apart from `Vehicle` on purpose: the reference registry never holds owner details. In a real
+    deployment the challan service asks the state e-challan / VAHAN service, which holds the legal
+    basis for linking a registration to its owner (MV Act s.136A; CMVR rule 167A). Every row here is
+    fictional and flagged so; mobile numbers start with 0, so no real phone can match one.
+    """
+
+    __tablename__ = "demo_vehicle_owners"
+
+    plate_normalised: Mapped[str] = mapped_column(String(32), primary_key=True)
+    owner_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    mobile: Mapped[str] = mapped_column(String(20), nullable=False)
+    is_demo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class Challan(Base):
+    """An e-challan issued after an operator confirmed an incident and typed the plate they saw."""
+
+    __tablename__ = "challans"
+
+    challan_no: Mapped[str] = mapped_column(String(40), primary_key=True)
+    incident_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    plate_normalised: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    offence: Mapped[str] = mapped_column(String(32), nullable=False)
+    section: Mapped[str] = mapped_column(String(80), nullable=False)
+    fine_rupees: Mapped[int] = mapped_column(Integer, nullable=False)
+    owner_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    #: only the masked number is kept with the challan
+    mobile_masked: Mapped[str] = mapped_column(String(20), nullable=False)
+    owner_source: Mapped[str] = mapped_column(String(32), nullable=False)
+    sms_text: Mapped[str] = mapped_column(Text, nullable=False)
+    #: SENT by a gateway, SIMULATED when none is configured, FAILED otherwise
+    sms_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    sms_provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    issued_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

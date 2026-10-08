@@ -817,3 +817,27 @@ export interface HealthAlert {
   /** True until the camera or system answers again. */
   open: boolean;
 }
+
+/** Owner and challan preview for a plate (POST /incidents/{id}/challan/lookup). */
+export interface ChallanPreview {
+  plate: string;
+  owner_name: string;
+  mobile_masked: string;
+  owner_source: string;
+  demo: boolean;
+  offence: string;
+  section: string;
+  fine_rupees: number;
+  fine_note: string;
+  verify: string;
+  sms_text: string;
+  sms_provider: string;
+  camera: string | null;
+}
+
+/** An issued e-challan (POST /incidents/{id}/challan). */
+export interface ChallanIssued extends ChallanPreview {
+  challan_no: string;
+  sms_status: "SENT" | "SIMULATED" | "FAILED";
+  issued_at: string;
+}

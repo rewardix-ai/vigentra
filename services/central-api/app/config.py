@@ -113,6 +113,10 @@ class Permission:
     # holding it is a deliberate grant rather than a side effect of any role.
     VEHICLE_REGISTRY_READ = "vehicle:read"
 
+    #: Confirm an incident as an offence, look up the owner of the plate the operator read on the
+    #: evidence, and issue an e-challan. Traffic enforcement only: municipal roles never hold it.
+    CHALLAN_ISSUE = "challan:issue"
+
     # plate identity - watchlist, alerts and cross-camera movement.
     #
     # Four permissions rather than one, because they are four different acts.
@@ -170,6 +174,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     },
     Role.DEPARTMENT_ADMIN: {
         Permission.PLATE_READ,
+        Permission.CHALLAN_ISSUE,
         Permission.WATCHLIST_READ,
         Permission.WATCHLIST_MANAGE,
         Permission.ALERT_READ,
@@ -190,6 +195,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # does not identify their owners.
     Role.TRAFFIC_OPERATOR: {
         Permission.PLATE_READ,
+        Permission.CHALLAN_ISSUE,
         Permission.WATCHLIST_READ,
         Permission.WATCHLIST_MANAGE,
         Permission.ALERT_READ,

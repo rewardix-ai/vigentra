@@ -13,6 +13,7 @@ import {
   Pill,
   Spinner,
 } from "@/components/ui";
+import { ChallanDialog } from "@/components/ChallanDialog";
 import { api } from "@/lib/api";
 import { ist, relative } from "@/lib/format";
 import type { Incident } from "@/lib/types";
@@ -55,6 +56,9 @@ const STATUS_TONE: Record<string, Tone> = {
   DISMISSED: "idle",
 };
 
+/** Offences: Confirm opens the e-challan popup (central routers/challans.py). */
+const CHALLAN_KINDS = new Set(["NO_HELMET", "NO_PLATE_VISIBLE", "WRONG_WAY"]);
+
 export default function IncidentsPage() {
   const [rows, setRows] = useState<Incident[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +66,7 @@ export default function IncidentsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [sinceHours, setSinceHours] = useState("24");
   const [acting, setActing] = useState<string | null>(null);
+  const [challanFor, setChallanFor] = useState<Incident | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -246,7 +251,11 @@ export default function IncidentsPage() {
                     <button
                       className="btn btn-sm btn-primary"
                       disabled={acting === incident.incident_id}
-                      onClick={() => review(incident.incident_id, "CONFIRMED")}
+                      onClick={() =>
+                        CHALLAN_KINDS.has(incident.kind)
+                          ? setChallanFor(incident)
+                          : review(incident.incident_id, "CONFIRMED")
+                      }
                     >
                       Confirm
                     </button>
@@ -257,6 +266,23 @@ export default function IncidentsPage() {
           );
         })}
       </div>
+
+      {challanFor && (
+        <ChallanDialog
+          incident={challanFor}
+          snapshotUrl={challanFor.has_snapshot ? api.incidentSnapshotUrl(challanFor.incident_id) : null}
+          onClose={() => setChallanFor(null)}
+          onIssued={(c) =>
+            setRows((prev) =>
+              (prev ?? []).map((r) =>
+                r.incident_id === challanFor.incident_id
+                  ? { ...r, status: "CONFIRMED", review_note: `Challan ${c.challan_no} to ${c.plate}` }
+                  : r,
+              ),
+            )
+          }
+        />
+      )}
     </div>
   );
 }

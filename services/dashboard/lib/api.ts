@@ -8,6 +8,8 @@
  * (streamUrl, snapshotUrl) are paths on that same proxy.
  */
 import type {
+  ChallanIssued,
+  ChallanPreview,
   Pursuit, Incident,
   HealthAlert,
   CameraTrafficSummary,
@@ -199,6 +201,12 @@ export const api = {
 
   reviewIncident: (incidentId: string, status: string, note?: string) =>
     patch<Incident>(`/api/v1/incidents/${encodeURIComponent(incidentId)}`, { status, note }),
+  /** Owner and challan preview for the plate the operator read on the evidence (audited). */
+  challanLookup: (incidentId: string, plate: string) =>
+    post<ChallanPreview>(`/api/v1/incidents/${encodeURIComponent(incidentId)}/challan/lookup`, { plate }),
+  /** Issue the e-challan: owner looked up, SMS sent (simulated until a gateway is configured). */
+  issueChallan: (incidentId: string, plate: string) =>
+    post<ChallanIssued>(`/api/v1/incidents/${encodeURIComponent(incidentId)}/challan`, { plate }),
 
   detections: (filters: {
     camera_id?: string;

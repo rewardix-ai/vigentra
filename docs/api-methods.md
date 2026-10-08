@@ -1,6 +1,6 @@
 # Vigentra API: every endpoint, its HTTP method, and why
 
-This covers the central API (`services/central-api`, 63 operations), the browser-facing proxy, and the two mock
+This covers the central API (`services/central-api`, 66 operations), the browser-facing proxy, and the two mock
 department systems. For each endpoint it gives the method, what the endpoint does, why that method fits, and
 why the alternatives do not. The full request and response shapes are in [api.md](api.md); the live list is
 the OpenAPI page at `http://localhost:8000/docs`.
@@ -116,6 +116,9 @@ The form lives in the department's own system; Vigentra relays it.
 | GET | `/api/v1/incidents` | Incident candidates, newest first | Read. |
 | GET | `/api/v1/incidents/{incident_id}/snapshot` | The frame the incident was raised on (JPEG): vehicles boxed, paths drawn | Read, returns an image rather than JSON. GET because viewing changes nothing in the incident; the view itself is audited (`incident_snapshot_viewed`) as a server-side side effect, which is still safe to repeat. |
 | PATCH | `/api/v1/incidents/{incident_id}` | An operator records a review: REVIEWING, CONFIRMED or DISMISSED, with a note | **PATCH:** it sets two fields (status and note) on an existing incident, and a reviewer can change their mind (REVIEWING → CONFIRMED). The rest of the incident (what the edge saw) must not change, which PUT could not guarantee. Contrast with alert acknowledgement (below), which is a one-way event and so a POST. |
+| POST | `/api/v1/incidents/{incident_id}/challan/lookup` | Owner (masked mobile), section, fine and SMS text for the plate the operator read on the evidence | **POST, not GET:** the plate is personal data and must not sit in a URL (logs, history); the lookup is audited (`challan_owner_lookup`) and creates the demo owner on first use. Repeating it returns the same answer. |
+| POST | `/api/v1/incidents/{incident_id}/challan` → **201** | Issue the e-challan: record it, send the SMS (simulated until a gateway is configured), confirm the incident | **POST:** creates a challan with a number the server assigns; a second attempt for the same incident is **409**, so a double click never issues two. |
+| GET | `/api/v1/challans` | Challans issued, newest first, within the cameras the account may read | Read. |
 
 ## 5. Video access, sessions and streams
 
@@ -185,7 +188,7 @@ central API's method rules stay the same whatever the vendor does.
 
 ## Benefits, in one place
 
-- **Safety of reads.** 41 of 63 operations are GET and can never change data. Caches, retries, prefetching and
+- **Safety of reads.** 41 of 66 operations are GET and can never change data. Caches, retries, prefetching and
   shared links are all harmless.
 - **Retries without duplicates.** Edge workers send batches by POST, made safe to repeat with deterministic
   IDs. A dropped connection never double-counts a vehicle or a plate.

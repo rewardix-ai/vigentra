@@ -42,8 +42,12 @@ its own flow. Until then it reports nothing rather than guessing.
 """
 from __future__ import annotations
 
+import json
 import math
+import os
+import re
 import time
+from pathlib import Path
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -87,6 +91,15 @@ TRUST_MAX_STEP_VH = 1.5    # no step longer than this many vehicle heights (an i
 # directions; one camera-wide mean put the whole oncoming lane "against the flow" (86 % of the
 # 547 wrong-way tracks on 8 Oct moved the way at least 15 % of vehicles in their own region did).
 FLOW_GRID = (4, 3)
+# 8 Oct, by eye on 48 live snapshots, none could be confirmed real. Sudden stops were mostly vehicles a
+# few pixels tall (box jitter reads as braking) or cut off at the frame edge (a box shrinking as the
+# vehicle leaves reads as a stop); wrong ways were mostly junction turns in regions that had learned
+# 12-21 vehicles since the last restart. So motion is judged only on vehicles that are big enough and
+# wholly in view, and wrong way only where a region has a clear, well-learned direction.
+JUDGE_MIN_HEIGHT_FRAC = 0.06   # box at least this share of the frame height
+EDGE_MARGIN_FRAC = 0.02        # box this close to any frame edge is cut off: not judged
+WRONG_WAY_MIN_REGION = 50      # vehicles a region must have learned before it judges direction
+WRONG_WAY_DOMINANT = 0.6       # ...and at least this share of them must go one way (not a junction)
 WRONG_WAY_SHARE = 0.05     # wrong way = a direction under 5 % of this region's traffic (within 45 deg)
 WRONG_WAY_STRAIGHTNESS = 1.3   # path length / displacement above this is a turn, not a wrong way
 
@@ -161,6 +174,10 @@ class _State:
     first_seen: float = 0.0
     last_seen: float = 0.0
     label: str = "?"
+    #: big enough and wholly in view on the latest frame (see IncidentDetector._in_view)
+    in_view: bool = False
+    #: regions this vehicle has already voted a direction in: one vote per vehicle per region
+    voted: set = field(default_factory=set)
 
 
 def _in_polygon(x: float, y: float, poly) -> bool:
@@ -203,6 +220,21 @@ class IncidentDetector:
         self._flow_count = 0
         self._cells: dict[tuple[int, int], deque] = {}   # region -> recent headings there
         self._extent = [1.0, 1.0]                         # frame size when none is given
+        self._frame = None
+        #: INCIDENT_FLOW_DIR (opt-in): learned directions are kept per camera across restarts. The
+        #: light reader restarts at every grid refusal window, and each restart used to start blind.
+        self._flow_file = None
+        flow_dir = os.environ.get("INCIDENT_FLOW_DIR")
+        if flow_dir:
+            self._flow_file = Path(flow_dir) / (re.sub(r"[^A-Za-z0-9_.-]", "_", camera_id) + ".json")
+            try:
+                saved = json.loads(self._flow_file.read_text())
+                for key, hs in saved.items():
+                    cx, cy = (int(v) for v in key.split(","))
+                    self._cells[(cx, cy)] = deque(hs, maxlen=300)
+            except (OSError, ValueError):
+                pass
+        self._learned = 0
         self._cooldown: dict[tuple, float] = {}
 
     def reset(self, *, keep_flow: bool = True) -> None:
@@ -305,6 +337,27 @@ class IncidentDetector:
                 return False
         return True
 
+    def _in_view(self, box, frame_size) -> bool:
+        """Big enough that box jitter is not motion, and not cut off by a frame edge. Without a known
+        frame size there is no edge to judge against, so everything counts as in view."""
+        if not frame_size:
+            return True
+        w, h = frame_size
+        x1, y1, x2, y2 = box
+        mx, my = EDGE_MARGIN_FRAC * w, EDGE_MARGIN_FRAC * h
+        return (y2 - y1) >= JUDGE_MIN_HEIGHT_FRAC * h and x1 > mx and y1 > my and x2 < w - mx and y2 < h - my
+
+    def _save_flow(self) -> None:
+        if self._flow_file is None:
+            return
+        try:
+            self._flow_file.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._flow_file.with_suffix(".tmp")
+            tmp.write_text(json.dumps({f"{cx},{cy}": [round(h, 1) for h in hs] for (cx, cy), hs in self._cells.items()}))
+            tmp.replace(self._flow_file)
+        except OSError:
+            pass
+
     def _cell(self, st: _State, frame_size) -> tuple[int, int]:
         w, h = frame_size if frame_size else self._extent
         cx = sum(c[0] for c in st.centres) / len(st.centres)
@@ -370,6 +423,9 @@ class IncidentDetector:
                 continue
             if not self._trusted(st):
                 continue   # sparse or swapped: its speed and heading are not the vehicle's
+            st.in_view = self._in_view((x1, y1, x2, y2), frame_size)
+            if not st.in_view and st.label in VEHICLE_LABELS:
+                continue   # too small or cut off at the edge: its box moves when the vehicle does not
 
             if sp > MOVING_SPEED:
                 st.was_moving = True
@@ -382,10 +438,14 @@ class IncidentDetector:
             hd = self._heading(st)
             cell = self._cell(st, frame_size)
             out.extend(self._per_track(tid, st, sp, hd, tracks, now, cell))
-            if hd is not None and sp > MOVING_SPEED:   # learned after judging, so a track never votes for itself
+            if hd is not None and sp > MOVING_SPEED and cell not in st.voted:   # after judging: never votes for itself
+                st.voted.add(cell)
                 self._flow.append(hd)
                 self._flow_count += 1
                 self._cells.setdefault(cell, deque(maxlen=300)).append(hd)
+                self._learned += 1
+                if self._learned % 100 == 0:
+                    self._save_flow()
 
         out.extend(self._pairs(tracks, now))
 
@@ -455,10 +515,14 @@ class IncidentDetector:
                               "other_vehicles_moving": movers, "vehicle": st.label}))
 
         here = self._cells.get(cell) if cell is not None else None
-        if here is not None and len(here) >= FLOW_MIN_TRACKS and hd is not None and sp > MOVING_SPEED:
+        if here is not None and len(here) >= WRONG_WAY_MIN_REGION and hd is not None and sp > MOVING_SPEED:
             same = sum(abs((hd - h + 180.0) % 360.0 - 180.0) <= 45.0 for h in here) / len(here)
+            bins = [0] * 12
+            for h in here:
+                bins[int((h + 180.0) // 30.0) % 12] += 1
+            dominant = max(bins[b] + bins[(b - 1) % 12] + bins[(b + 1) % 12] for b in range(12)) / len(here)
             straight = self._straightness(st)
-            if (same < WRONG_WAY_SHARE and straight <= WRONG_WAY_STRAIGHTNESS
+            if (same < WRONG_WAY_SHARE and dominant >= WRONG_WAY_DOMINANT and straight <= WRONG_WAY_STRAIGHTNESS
                     and self._fire((tid, "WRONG_WAY"), now)):
                 out.append(Incident(
                     self.camera_id, "WRONG_WAY", "MEDIUM", [tid], st.first_seen, now,
@@ -577,6 +641,7 @@ class IncidentDetector:
                 if (s := self._tracks.get(t.track_id)) is not None
                 and len(s.speeds) >= 4
                 and self._trusted(s)   # both tracks dense and continuous: a swap is not a crash
+                and getattr(s, "in_view", False)   # big enough and not cut off at an edge
                 # Vehicles only: a person overlapping a car is the pedestrian
                 # rule's business, not a two-vehicle collision.
                 and s.label in VEHICLE_LABELS]

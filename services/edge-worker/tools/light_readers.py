@@ -141,6 +141,8 @@ def main() -> int:
     # default misses outright (8 Oct, cam06 GJ18X..., 0.80-0.83)
     os.environ.setdefault("ANPR_PLATE_WEIGHTS", "plate_det_grid_clean.pt")
     os.environ.setdefault("EDGE_CONTINUOUS", "true")
+    # learned traffic directions survive the restart at every grid refusal window (anpr/incidents.py)
+    os.environ.setdefault("INCIDENT_FLOW_DIR", str(Path.home() / "Library" / "Caches" / "vigentra" / "incident-flow"))
     os.environ.setdefault("EDGE_CONTINUOUS_PASS_FRAMES", "100000")
     share_model_weights()
     from anpr.read import awiros

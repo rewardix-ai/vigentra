@@ -60,6 +60,9 @@ def _incident_id(camera_id: str, kind: str, track_ids: list[int], first_seen: fl
     return f"inc_{hashlib.sha1(seed.encode()).hexdigest()[:20]}"
 
 
+#: A re-raised incident extends its row only if that row was seen this recently (see ingest).
+REOPEN_AFTER = timedelta(minutes=30)
+
 #: Decoded snapshot ceiling. A 960 px JPEG at quality 80 is 60-150 KB; anything far larger is not one.
 SNAPSHOT_MAX_BYTES = 384 * 1024
 
@@ -162,6 +165,20 @@ async def ingest_incidents(
                 select(IncidentRow).where(IncidentRow.incident_id == incident_id)
             )
         ).scalar_one_or_none()
+        # Grid recordings replay from the start after every refusal window, so stream time and
+        # track ids repeat and a NEW event can hash to a days-old incident (8 Oct: fresh candidates
+        # merged into old rows, keeping their old reason). A match that has been quiet for longer
+        # than REOPEN_AFTER is a different event: it gets its own id for this half hour.
+        last_seen = existing.last_seen_utc if existing is not None else None
+        if last_seen is not None and last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)   # SQLite drops the zone
+        if last_seen is not None and now - last_seen > REOPEN_AFTER:
+            incident_id = f"{incident_id}_{int(now.timestamp() // REOPEN_AFTER.total_seconds())}"
+            existing = (
+                await db.execute(
+                    select(IncidentRow).where(IncidentRow.incident_id == incident_id)
+                )
+            ).scalar_one_or_none()
         snapshot = _snapshot_bytes(item.snapshot_jpeg_b64)
         if existing is not None:
             # Same incident observed again: extend its window, do not duplicate.

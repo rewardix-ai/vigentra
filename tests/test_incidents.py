@@ -143,3 +143,23 @@ async def test_a_bad_snapshot_never_costs_the_incident(api, login, traffic_camer
     operator = await login("dept.admin")
     one = next(i for i in (await api.get("/api/v1/incidents", headers=operator)).json() if i["track_ids"] == [42])
     assert one["has_snapshot"] is False
+
+
+@pytest.mark.asyncio
+async def test_a_replayed_recording_raises_a_new_incident_not_an_old_one(api, login, traffic_camera):
+    """Grid feeds loop: the same stream time and track id can recur hours later as a new event."""
+    from datetime import timedelta
+    from app.database import get_session_factory
+    from app.models import Incident
+    from sqlalchemy import select, update
+
+    edge = await login("traffic.ai")
+    cam = traffic_camera["camera_id"]
+    assert (await _submit(api, edge, cam, track_ids=[77])).json()["accepted"] == 1
+    async with get_session_factory()() as db:   # that first one was seen two hours ago
+        row = (await db.execute(select(Incident).where(Incident.camera_id == cam))).scalars().all()[-1]
+        await db.execute(update(Incident).where(Incident.id == row.id).values(last_seen_utc=row.last_seen_utc - timedelta(hours=2)))
+        await db.commit()
+    again = (await _submit(api, edge, cam, track_ids=[77])).json()
+    assert again["accepted"] == 1 and again["duplicates"] == 0
+    assert (await _submit(api, edge, cam, track_ids=[77])).json()["duplicates"] == 1   # and that one now extends

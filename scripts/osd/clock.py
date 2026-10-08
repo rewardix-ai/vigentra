@@ -112,7 +112,12 @@ def sql(statement: str) -> str:
 
 def sample(cams=None) -> dict:
     import yaml
+    # the account the supervisor chose (the one the reader is NOT using) must survive the service env,
+    # which names the main account: one stream per camera per account, so reading clocks on the
+    # reader's own account got nothing (8 Oct: 1 sample in 1.5 h while the reader ran on account 1)
+    chosen = {k: os.environ[k] for k in ("SENTINEL_GRID_EMAIL", "SENTINEL_GRID_PASSWORD") if os.environ.get(k)}
     os.environ.update(cp.service_env(yaml.safe_load((REPO / "docker-compose.yml").read_text()), "edge-worker", cp.dotenv()))
+    os.environ.update(chosen)
     from app import grid
     grid._force_tcp_transport()
     ocr = ocr_binary()

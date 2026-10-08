@@ -106,6 +106,10 @@ def light_config() -> Path:
     path = dst / "thresholds.yaml"
     cfg = yaml.safe_load(path.read_text())
     cfg["detector"]["vehicle_imgsz"] = int(os.environ.get("LIGHT_VEHICLE_IMGSZ", "640"))
+    # people too (same model, same pass): crowd gathering and person-in-traffic incidents need them;
+    # the pipeline skips plate search for them (anpr/pipeline.py)
+    if os.environ.get("LIGHT_DETECT_PEOPLE", "true").lower() == "true":
+        cfg["detector"]["vehicle_classes"] = sorted(set(cfg["detector"]["vehicle_classes"]) | {0})
     path.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return dst
 
@@ -259,7 +263,7 @@ def main() -> int:
                 if _count:
                     frames[self.camera_id] = frames.get(self.camera_id, 0) + 1
                     dets = out[0] if isinstance(out, tuple) else []
-                    widths = [d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets]
+                    widths = [d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets if d.class_name != "person"]
                     # hot only when a plate box was found: most near vehicles show no plate at all
                     # (side-on, headlight glare; 132 of 137 closed tracks on 8 Oct had none), and
                     # spending frames on them starved the vehicles whose plates were in view

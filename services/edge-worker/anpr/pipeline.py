@@ -328,6 +328,8 @@ class ANPRPipeline:
         self.last_plates = []
         cands: list[tuple] = []          # (vehicle, plate det) for every vehicle box in the frame
         for v in vdets:
+            if v.cls_name == "person":
+                continue   # tracked for incidents only (crowds, person in traffic): no plate, no bank
             if not self.masker.box_allowed(*v.box, max_masked_frac=0.5):
                 continue
             self.bank.touch(v.track_id, frame.frame_idx, frame.pts_ms, v.box, v.cls_name)

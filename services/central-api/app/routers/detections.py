@@ -570,7 +570,7 @@ async def vehicles_seen(
     """
     may_read_plate, plate_horizon = _plate_access(user, settings)
     since = datetime.now(timezone.utc) - timedelta(minutes=since_minutes)
-    stmt = select(DetectionRow).where(DetectionRow.timestamp_utc >= since)
+    stmt = select(DetectionRow).where(DetectionRow.timestamp_utc >= since, DetectionRow.class_name != "person")
     if camera_id:
         stmt = stmt.where(DetectionRow.camera_id == camera_id)
     cameras = {row.camera_id: row for row in (await db.execute(select(CameraRow))).scalars().all()}

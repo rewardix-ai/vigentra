@@ -110,6 +110,16 @@ WRONG_WAY_STRAIGHTNESS = 1.3   # path length / displacement above this is a turn
 #: not going the wrong way.
 VEHICLE_LABELS = frozenset({"car", "motorcycle", "bus", "truck", "auto-rickshaw", "bicycle"})
 PERSON_LABEL = "person"
+# CROWD_GATHERING: people bunching up where they usually do not - the visible part of a fight, a
+# collapse or an accident's aftermath. Fight itself is not recognisable at grid distance and resolution,
+# so this does not claim it; a person decides from the snapshot. Learned per region, so a bus stop or a
+# signal crossing that is always busy does not count.
+CROWD_MIN = 6               # people in one group
+CROWD_RADIUS_H = 2.5        # group = within this many person-heights of its centre person
+CROWD_FACTOR = 2.0          # ...and at least this many times the region's usual group size
+CROWD_SECONDS = 10.0        # held this long
+CROWD_HISTORY_S = 1800.0    # usual = 90th percentile of this region's group sizes over this window
+CROWD_COOLDOWN_S = 180.0
 
 #: Image-plane overlap between a person and a MOVING vehicle. Overlap is not
 #: contact and this is not a collision detector - from a typical CCTV angle it
@@ -235,6 +245,8 @@ class IncidentDetector:
             except (OSError, ValueError):
                 pass
         self._learned = 0
+        self._crowd_hist: dict[tuple[int, int], deque] = {}   # region -> (time, group size)
+        self._crowd_since: dict[tuple[int, int], float] = {}
         self._cooldown: dict[tuple, float] = {}
 
     def reset(self, *, keep_flow: bool = True) -> None:
@@ -448,6 +460,7 @@ class IncidentDetector:
                     self._save_flow()
 
         out.extend(self._pairs(tracks, now))
+        out.extend(self._crowd(tracks, now, frame_size))
 
         # Forget tracks the tracker has dropped, so state does not grow without bound.
         for tid in [t for t in self._tracks if t not in seen
@@ -571,6 +584,45 @@ class IncidentDetector:
                    f"{now - st.zone_since:.0f}s",
             evidence={"dwell_s": round(now - st.zone_since, 1), "foot_point": [round(x, 3), round(y, 3)],
                       "armed_hours": hours or "always"})]
+
+    def _crowd(self, tracks, now, frame_size) -> list[Incident]:
+        people = [t for t in tracks if getattr(t, "label", "") == PERSON_LABEL]
+        w, h = frame_size if frame_size else self._extent
+        best: list = []
+        for p in people:
+            px, py = (p.box[0] + p.box[2]) / 2.0, (p.box[1] + p.box[3]) / 2.0
+            r = CROWD_RADIUS_H * max(p.box[3] - p.box[1], 1.0)
+            group = [q for q in people
+                     if math.hypot((q.box[0] + q.box[2]) / 2.0 - px, (q.box[1] + q.box[3]) / 2.0 - py) <= r]
+            if len(group) > len(best):
+                best = group
+        if not best:
+            return []
+        cx = sum((q.box[0] + q.box[2]) / 2.0 for q in best) / len(best)
+        cy = sum((q.box[1] + q.box[3]) / 2.0 for q in best) / len(best)
+        cell = (min(FLOW_GRID[0] - 1, int(cx / max(w, 1.0) * FLOW_GRID[0])),
+                min(FLOW_GRID[1] - 1, int(cy / max(h, 1.0) * FLOW_GRID[1])))
+        hist = self._crowd_hist.setdefault(cell, deque())
+        while hist and now - hist[0][0] > CROWD_HISTORY_S:
+            hist.popleft()
+        past = sorted(n for t, n in hist if now - t > CROWD_SECONDS * 2)
+        usual = past[int(0.9 * (len(past) - 1))] if past else None
+        hist.append((now, len(best)))
+        if usual is None or len(past) < 20:
+            return []   # this region's usual is not known yet: say nothing rather than guess
+        if len(best) < max(CROWD_MIN, CROWD_FACTOR * usual):
+            self._crowd_since.pop(cell, None)
+            return []
+        since = self._crowd_since.setdefault(cell, now)
+        if now - since < CROWD_SECONDS or not self._fire((cell, "CROWD"), now):
+            return []
+        self._cooldown[(cell, "CROWD")] = now + CROWD_COOLDOWN_S - COOLDOWN_S
+        return [Incident(
+            self.camera_id, "CROWD_GATHERING", "MEDIUM", [q.track_id for q in best], since, now,
+            reason=(f"{len(best)} people gathered close together for {now - since:.0f}s where "
+                    f"{usual} is usual"),
+            evidence={"people": len(best), "usual_here": usual, "region": list(cell),
+                      "held_s": round(now - since, 1)})]
 
     def _person(self, tid, st, tracks, now) -> list[Incident]:
         """A person in the carriageway while traffic is moving.

@@ -38,6 +38,7 @@ const KIND_LABEL: Record<string, string> = {
   PERSON_ON_CARRIAGEWAY: "Person in traffic",
   INTRUSION: "Intrusion in a restricted zone",
   NO_PLATE_VISIBLE: "Vehicle without a visible number plate",
+  CROWD_GATHERING: "Crowd gathering",
 };
 
 type Tone = "ok" | "warn" | "bad" | "idle" | "info";

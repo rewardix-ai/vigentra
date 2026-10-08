@@ -80,3 +80,30 @@ def test_a_vehicle_too_small_or_cut_off_is_not_judged():
     for i in range(12):   # a car leaving at the left edge, its box shrinking
         out += det.update([SimpleNamespace(track_id=6, box=(0, 300, max(4, 120 - 10 * i), 380), label="car")], 10 + i * 0.2, frame_size=FRAME)
     assert not [o for o in out if o.kind in ("SUDDEN_STOP", "WRONG_WAY")]
+
+
+def people(n, cx, cy, start_id=500):
+    return [SimpleNamespace(track_id=start_id + i, box=(cx + 12 * (i % 4), cy + 10 * (i // 4), cx + 12 * (i % 4) + 30, cy + 10 * (i // 4) + 80),
+                            label="person") for i in range(n)]
+
+
+def test_a_crowd_forming_where_there_usually_is_none_is_raised():
+    det = IncidentDetector("cam-crowd")
+    t, out = 0.0, []
+    for _ in range(40):   # an ordinary spot: one or two people
+        det.update(people(2, 600, 300), t, frame_size=FRAME)
+        t += 2
+    for _ in range(10):   # eight people bunch up and stay
+        out += det.update(people(8, 600, 300), t, frame_size=FRAME)
+        t += 2
+    crowd = [o for o in out if o.kind == "CROWD_GATHERING"]
+    assert len(crowd) == 1 and crowd[0].evidence["people"] == 8
+
+
+def test_a_spot_that_is_always_busy_is_not_a_crowd():
+    det = IncidentDetector("cam-busstop")
+    t, out = 0.0, []
+    for _ in range(60):   # a bus stop: eight people waiting all the time
+        out += det.update(people(8, 600, 300), t, frame_size=FRAME)
+        t += 2
+    assert not [o for o in out if o.kind == "CROWD_GATHERING"]

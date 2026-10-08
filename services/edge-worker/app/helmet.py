@@ -35,6 +35,9 @@ WEIGHTS = [Path(p) for p in os.getenv(
 THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.8"))
 MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls at >= 0.8, all right; the snapshot
                             # carries the judged rider enlarged, so a person can check a small one
+SAME_RIDER_S, SAME_RIDER_W = 2.0, 2.5   # a call whose track starts within this time and this many widths of
+                            # where a raised rider was last seen is that rider again under a new track id
+                            # (cam06, 8 Oct: one red-shirted rider called twice a second apart)
 PARKED_FRAMES, PARKED_S = 4, 3.0   # only a two-wheeler seen this often, this long, and not moving is parked:
                             # light mode often sees a passing rider in one or two frames (8 Oct: 36 of 78
                             # two-wheelers were set aside as parked, most of them just seen too briefly)
@@ -80,6 +83,7 @@ class HelmetWatch:
     def __init__(self, camera_id: str) -> None:
         self.camera_id = camera_id
         self.views: dict[int, dict] = {}
+        self.raised: list[tuple[float, tuple[float, float], float]] = []   # (last pts, last centre, width)
 
     def observe(self, frame, detections, pts: float) -> list[dict]:
         import cv2
@@ -97,7 +101,7 @@ class HelmetWatch:
             c = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
             v = self.views.setdefault(tid, {"first_pts": pts, "max_w": 0.0, "crops": [], "jpeg": None,
                                             "first_c": c, "travel": 0.0, "frames": 0})
-            v["last_pts"] = pts
+            v["last_pts"], v["last_c"] = pts, c
             v["frames"] += 1
             v["travel"] = max(v["travel"], ((c[0] - v["first_c"][0]) ** 2 + (c[1] - v["first_c"][1]) ** 2) ** 0.5 / max(bw, 1.0))
             if bw < MIN_WIDTH or (len(v["crops"]) >= VIEWS and bw <= min(cw for cw, _ in v["crops"])):
@@ -157,6 +161,13 @@ class HelmetWatch:
             if score < THRESHOLD:
                 TALLY["judged_ok" if score < 0.5 else "judged_unsure"] += 1
                 continue
+            fc, fw = v["first_c"], max(v["max_w"], 1.0)
+            if any(0 <= v["first_pts"] - t_last <= SAME_RIDER_S
+                   and ((fc[0] - c_last[0]) ** 2 + (fc[1] - c_last[1]) ** 2) ** 0.5 <= SAME_RIDER_W * max(fw, w_last)
+                   for t_last, c_last, w_last in self.raised):
+                TALLY["same_rider_again"] += 1
+                continue
+            self.raised = [r for r in self.raised if v["last_pts"] - r[0] <= 10.0] + [(v["last_pts"], v["last_c"], fw)]
             TALLY["raised"] += 1
             payload = {
                 "camera_id": self.camera_id, "kind": "NO_HELMET", "severity": "LOW", "track_ids": [int(tid)],

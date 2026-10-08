@@ -62,3 +62,16 @@ def test_a_rider_seen_in_only_two_frames_is_still_judged(monkeypatch):
         out += w.observe(frame, [bike(11, 500, 300, w=110)], float(i))
     out += w.observe(frame, [], 20.0)
     assert len(out) == 1
+
+
+def test_a_rider_whose_track_breaks_is_called_once(monkeypatch):
+    """cam06, 8 Oct: the tracker lost a red-shirted rider for a frame; the new track must not be a second call."""
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(4):
+        out += w.observe(frame, [bike(20, 500, 100 + 30 * i)], 0.5 * i)
+    for i in range(4):   # same rider, new id, picking up where the first left off
+        out += w.observe(frame, [bike(21, 505, 220 + 30 * i)], 2.0 + 0.5 * i)
+    out += w.observe(frame, [], 20.0)
+    assert len(out) == 1

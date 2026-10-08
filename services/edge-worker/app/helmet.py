@@ -6,7 +6,8 @@ classified once by a small YOLO11n classifier trained on our own grid riders (mo
 no_helmet / helmet / unclear, labelled by eye; ANPR research repo tools/rider_crops.py, rider_mine.py).
 
 Measured on 134 held-out grid crops (8 Oct): at score >= 0.9 about 9 in 10 calls are right and no rider
-wearing a helmet scored above 0.77; it finds roughly 4 in 10 bare-headed riders. Its remaining mistakes
+wearing a helmet scored above 0.77; it finds roughly 4 in 10 bare-headed riders. Live, by eye (8 Oct, the
+first 14 incidents): 10 of 11 judgeable calls right; the miss was a full-face helmet with a face mask. Its remaining mistakes
 are crops where the head is out of view, so a person confirms every candidate from the snapshot.
 """
 from __future__ import annotations
@@ -21,7 +22,8 @@ logger = logging.getLogger("vigentra.edge.helmet")
 
 WEIGHTS = Path(os.getenv("HELMET_CLS_WEIGHTS", str(Path(__file__).resolve().parent.parent / "models" / "helmet_cls.pt")))
 THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.9"))
-MIN_WIDTH = 70.0            # px: a narrower two-wheeler's rider head is a handful of pixels
+MIN_WIDTH = 120.0           # px: below this a person cannot confirm the head from the snapshot (8 Oct live
+                            # audit: the three calls at 100-105 px, all night, could not be judged by eye)
 END_AFTER_S = 3.0           # a track unseen this long has ended
 MIN_TRAVEL_W = 1.0          # it must move at least its own width while tracked: a parked scooter with
                             # someone sitting beside it is not a rider (cam25, 8 Oct, the first live miss)

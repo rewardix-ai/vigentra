@@ -379,6 +379,9 @@ def main() -> int:
             if rejected:
                 log.info("plate proposals dropped: %s", " ".join(f"{k}={v}" for k, v in sorted(rejected.items(), key=lambda kv: -kv[1])))
                 rejected.clear()
+            if no_plate.REJECTED:
+                log.info("no-plate checks: %s", " ".join(f"{k}={v}" for k, v in no_plate.REJECTED.most_common()))
+                no_plate.REJECTED.clear()
             log.info("tracks closed %d | %s", outcomes_total,
                      " ".join(f"{k}={v}" for k, v in sorted(tally.items(), key=lambda kv: -kv[1])) or "none")
             log.info("frames/min %d total | hot now: %s | %s | idle: %s", total, " ".join(sorted(names.get(c, c) for c in gpu.hot())) or "none",

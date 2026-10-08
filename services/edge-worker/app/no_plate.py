@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import base64
 import logging
+from collections import Counter
 
 import numpy as np
 
@@ -32,6 +33,9 @@ TOWARDS_RATIO = 1.5         # vertical travel at least this many times the horiz
 MIN_LUMA, MAX_LUMA = 55, 205   # median brightness of the vehicle at its widest
 MIN_SHARPNESS = 40.0        # Laplacian variance of that view
 FORGET_SECONDS = 120.0
+
+#: why closed no-plate tracks did not become candidates, for the reader's per-minute log
+REJECTED: Counter = Counter()
 
 
 def candidate(view: dict, frame_w: float) -> tuple[bool, str]:
@@ -111,7 +115,8 @@ class NoPlateWatch:
             v = self.views.pop(tid, None)
             if v is None:
                 continue
-            ok, _why = candidate(v, frame_w)
+            ok, why = candidate(v, frame_w)
+            REJECTED[why or "raised"] += 1
             if not ok:
                 continue
             payload = {

@@ -140,6 +140,8 @@ def main() -> int:
         tracks = []
         for pkl in sorted((BANKS / args.tag / clip).glob("*.pkl")):
             bank = pickle.load(open(pkl, "rb"))
+            if not hasattr(bank, "crops"):
+                continue   # the engine's static-text map lives beside the banks
             crops = sorted(bank.crops, key=lambda c: -c.quality.quality_score)[: args.top]
             if not crops:
                 continue
@@ -150,13 +152,13 @@ def main() -> int:
                 paddle_read = paddle.read(c.image)[0]
                 per_crop.append((probs, paddle_read))
             tracks.append((pkl.stem, per_crop))
-        emitted = set()
+        emitted = set()   # what the pipeline read and confirmed (the harness marks nothing "emitted")
         tpath = OUT / args.tag / clip / "tracks.csv"
         if tpath.exists():
             with open(tpath) as fh:
                 for r in csv.DictReader(fh):
-                    if r.get("plate"):
-                        emitted.add(r["plate"])
+                    if r.get("status") == "CONFIRMED" and r.get("OCR_result"):
+                        emitted.add(r["OCR_result"])
         for P in candidates:
             best = (-1e9, None, 99)
             for tid, per_crop in tracks:

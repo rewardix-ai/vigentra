@@ -51,3 +51,14 @@ def test_one_bare_looking_frame_among_its_closest_views_is_not_a_call(monkeypatc
         out += w.observe(frame, [bike(5, 500, 200 + 25 * i, w=120 + 6 * i)], float(i))
     out += w.observe(frame, [], 20.0)
     assert not out
+
+
+def test_a_rider_seen_in_only_two_frames_is_still_judged(monkeypatch):
+    """Light mode often catches a passing rider once or twice; too brief to show travel, not parked."""
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(2):
+        out += w.observe(frame, [bike(11, 500, 300, w=110)], float(i))
+    out += w.observe(frame, [], 20.0)
+    assert len(out) == 1

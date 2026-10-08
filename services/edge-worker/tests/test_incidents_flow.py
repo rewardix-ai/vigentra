@@ -107,3 +107,37 @@ def test_a_spot_that_is_always_busy_is_not_a_crowd():
         out += det.update(people(8, 600, 300), t, frame_size=FRAME)
         t += 2
     assert not [o for o in out if o.kind == "CROWD_GATHERING"]
+
+
+def lane(det, track_id, x, *, towards, t0, n=12):
+    """A vehicle in a lane at column x, coming towards the camera (down the frame, box growing) or away."""
+    out = []
+    for i in range(n):
+        k = i if towards else n - 1 - i
+        y, size = 200 + 30 * k, 60 + 6 * k
+        box = (x - size / 2, y - size / 2, x + size / 2, y + size / 2)
+        out += det.update([SimpleNamespace(track_id=track_id, box=box, label="car")], t0 + i * 0.2, frame_size=FRAME)
+    return out
+
+
+def keep_left_road():
+    """Indian two-way road seen from the camera: own-side traffic moves away on the left, oncoming
+    traffic approaches on the right (Rules of the Road Reg. 2)."""
+    det = IncidentDetector("cam-keep-left")
+    t = 0.0
+    for k in range(60):
+        lane(det, 1000 + k, 420, towards=False, t0=t)
+        lane(det, 2000 + k, 860, towards=True, t0=t + 0.05)
+        t += 4
+    return det, t
+
+
+def test_coming_towards_the_camera_in_the_own_side_lane_is_wrong_side():
+    det, t = keep_left_road()
+    out = wrong_way(lane(det, 9001, 420, towards=True, t0=t))
+    assert out and "keep left" in out[0].reason and out[0].evidence["camera_layout"] == "keep-left"
+
+
+def test_the_oncoming_lane_is_not_wrong_side():
+    det, t = keep_left_road()
+    assert not wrong_way(lane(det, 9002, 860, towards=True, t0=t))

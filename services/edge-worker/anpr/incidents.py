@@ -96,6 +96,17 @@ FLOW_GRID = (4, 3)
 # vehicle leaves reads as a stop); wrong ways were mostly junction turns in regions that had learned
 # 12-21 vehicles since the last restart. So motion is judged only on vehicles that are big enough and
 # wholly in view, and wrong way only where a region has a clear, well-learned direction.
+# WRONG SIDE by the keep-left rule (Rules of the Road Regulations 1989, reg. 2: keep left, let oncoming
+# traffic pass on your right; reg. 17: one-way roads only in the signed direction; MV Act s. 184). A camera
+# looking along a road sees its own-side traffic recede and the oncoming lane approach. Approaching is read
+# from the box GROWING over the track, receding from it shrinking - robust to perspective, unlike an angle.
+# Each region learns which sense its traffic has (one vote per vehicle); a vehicle going the other sense in
+# a region that is clearly one-sense is on the wrong side. Crossing traffic (box size steady) is never
+# judged, so junction turns (reg. 3) are not flagged.
+SENSE_RATIO = 1.12          # last-third box height / first-third: above = approaching, below 1/x = receding
+WRONG_SIDE_MIN_REGION = 40  # vehicles a region must have learned
+WRONG_SIDE_DOMINANT = 0.85  # ...with at least this share going one sense
+WRONG_SIDE_SHARE = 0.08     # wrong side = a sense under this share of the region's traffic
 # Retired 8 Oct at the operator's request: on live grid footage every sudden stop checked by eye was
 # ordinary braking in traffic, distant-vehicle jitter or a box cut off at the frame edge.
 RAISE_SUDDEN_STOP = False
@@ -191,6 +202,8 @@ class _State:
     in_view: bool = False
     #: regions this vehicle has already voted a direction in: one vote per vehicle per region
     voted: set = field(default_factory=set)
+    #: ...and an approaching/receding sense in
+    voted_sense: set = field(default_factory=set)
 
 
 def _in_polygon(x: float, y: float, poly) -> bool:
@@ -243,11 +256,18 @@ class IncidentDetector:
             try:
                 saved = json.loads(self._flow_file.read_text())
                 for key, hs in saved.items():
+                    if key.startswith("s:"):
+                        cx, cy = (int(v) for v in key[2:].split(","))
+                        self._cells[("s", cx, cy)] = deque(hs, maxlen=300)   # moved to _senses below
+                        continue
                     cx, cy = (int(v) for v in key.split(","))
                     self._cells[(cx, cy)] = deque(hs, maxlen=300)
             except (OSError, ValueError):
                 pass
         self._learned = 0
+        self._senses: dict[tuple[int, int], deque] = {}   # region -> +1 approaching / -1 receding, per vehicle
+        for key in [k for k in list(self._cells) if isinstance(k, tuple) and len(k) == 3]:
+            self._senses[key[1:]] = self._cells.pop(key)   # persisted as ("s", cx, cy)
         self._crowd_hist: dict[tuple[int, int], deque] = {}   # region -> (time, group size)
         self._crowd_since: dict[tuple[int, int], float] = {}
         self._cooldown: dict[tuple, float] = {}
@@ -368,7 +388,9 @@ class IncidentDetector:
         try:
             self._flow_file.parent.mkdir(parents=True, exist_ok=True)
             tmp = self._flow_file.with_suffix(".tmp")
-            tmp.write_text(json.dumps({f"{cx},{cy}": [round(h, 1) for h in hs] for (cx, cy), hs in self._cells.items()}))
+            data = {f"{cx},{cy}": [round(h, 1) for h in hs] for (cx, cy), hs in self._cells.items()}
+            data.update({f"s:{cx},{cy}": list(ss) for (cx, cy), ss in self._senses.items()})
+            tmp.write_text(json.dumps(data))
             tmp.replace(self._flow_file)
         except OSError:
             pass
@@ -379,6 +401,36 @@ class IncidentDetector:
         cy = sum(c[1] for c in st.centres) / len(st.centres)
         return (min(FLOW_GRID[0] - 1, int(cx / max(w, 1.0) * FLOW_GRID[0])),
                 min(FLOW_GRID[1] - 1, int(cy / max(h, 1.0) * FLOW_GRID[1])))
+
+    @staticmethod
+    def _sense(st: _State) -> int:
+        """+1 approaching the camera (box growing), -1 receding (shrinking), 0 neither (crossing)."""
+        hs = list(st.heights)
+        if len(hs) < 6:
+            return 0
+        k = len(hs) // 3
+        early, late = sum(hs[:k]) / k, sum(hs[-k:]) / k
+        if late >= SENSE_RATIO * early:
+            return 1
+        if early >= SENSE_RATIO * late:
+            return -1
+        return 0
+
+    def _layout(self) -> str:
+        """Does the learned layout match keep-left? From the camera, the oncoming (approaching) lane
+        lies to the right of the own-side (receding) lane."""
+        ax, rx = [], []
+        for (cx, cy), ss in self._senses.items():
+            if len(ss) < WRONG_SIDE_MIN_REGION:
+                continue
+            share = sum(1 for v in ss if v > 0) / len(ss)
+            if share >= WRONG_SIDE_DOMINANT:
+                ax.append(cx)
+            elif share <= 1 - WRONG_SIDE_DOMINANT:
+                rx.append(cx)
+        if not ax or not rx:
+            return "one-way or not yet learned"
+        return "keep-left" if sum(ax) / len(ax) > sum(rx) / len(rx) else "approaching on the left (one-way road or a mirrored view)"
 
     @staticmethod
     def _straightness(st: _State) -> float:
@@ -453,6 +505,10 @@ class IncidentDetector:
             hd = self._heading(st)
             cell = self._cell(st, frame_size)
             out.extend(self._per_track(tid, st, sp, hd, tracks, now, cell))
+            sense = self._sense(st)
+            if sense and sp > MOVING_SPEED and cell not in st.voted_sense:
+                st.voted_sense.add(cell)
+                self._senses.setdefault(cell, deque(maxlen=300)).append(sense)
             if hd is not None and sp > MOVING_SPEED and cell not in st.voted:   # after judging: never votes for itself
                 st.voted.add(cell)
                 self._flow.append(hd)
@@ -530,6 +586,25 @@ class IncidentDetector:
                     evidence={"stationary_s": round(now - st.stopped_since, 1),
                               "other_vehicles_moving": movers, "vehicle": st.label}))
 
+        # wrong side by keep-left: going the other sense in a clearly one-sense region
+        senses = self._senses.get(cell) if cell is not None else None
+        sense = self._sense(st)
+        if senses is not None and len(senses) >= WRONG_SIDE_MIN_REGION and sense and sp > MOVING_SPEED:
+            same = sum(1 for v in senses if v == sense) / len(senses)
+            dominant = max(same, 1 - same)
+            straight = self._straightness(st)
+            if (same < WRONG_SIDE_SHARE and dominant >= WRONG_SIDE_DOMINANT and straight <= WRONG_WAY_STRAIGHTNESS
+                    and self._fire((tid, "WRONG_WAY"), now)):
+                layout = self._layout()
+                out.append(Incident(
+                    self.camera_id, "WRONG_WAY", "MEDIUM", [tid], st.first_seen, now,
+                    reason=(f"{st.label} {'coming towards the camera' if sense > 0 else 'moving away'} where "
+                            f"{dominant:.0%} of {len(senses)} vehicles go the other way: wrong-side driving "
+                            "(keep left, Rules of the Road Reg. 2; one-way Reg. 17; MV Act s. 184)"),
+                    evidence={"sense": "approaching" if sense > 0 else "receding", "region": list(cell),
+                              "share_same_sense_here": round(same, 3), "region_vehicles": len(senses),
+                              "camera_layout": layout, "straightness": round(straight, 2),
+                              "vehicle": st.label}))
         here = self._cells.get(cell) if cell is not None else None
         if here is not None and len(here) >= WRONG_WAY_MIN_REGION and hd is not None and sp > MOVING_SPEED:
             same = sum(abs((hd - h + 180.0) % 360.0 - 180.0) <= 45.0 for h in here) / len(here)

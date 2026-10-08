@@ -10,7 +10,10 @@ seen, so a candidate needs all of:
   width (a two-wheeler's plate is about a third of its width, a car's about a quarter), seen in at
   least MIN_FRAMES frames at a useful size;
 - moving towards or away from the camera, so its front or rear (where plates are) faces the lens,
-  not crossing the frame side-on;
+  not crossing the frame side-on: over the whole track, AND in the view that counts (its widest),
+  where the box must be no wider than a front or rear view of that vehicle is (MAX_ASPECT) and the
+  vehicle must be moving more up/down the frame than across it. The widest view of a vehicle that
+  turns is its side (cam04, 8 Oct: the first live call was a car turning at the junction);
 - a usable picture: the widest view neither dark nor blown out by glare, and sharp.
 
 It is a CANDIDATE, never a finding: covered, missing and unreadable plates all look the same here, and
@@ -33,6 +36,8 @@ CLASSES = frozenset(MIN_WIDTH_FRAC)
 USEFUL_SHARE = 0.7          # frames at least this share of that width count toward MIN_FRAMES
 MIN_FRAMES = 4              # light mode samples a busy camera a few times a second
 TOWARDS_RATIO = 1.5         # vertical travel at least this many times the horizontal
+#: width / height of the box at its widest: a front or rear view is no wider than this
+MAX_ASPECT = {"car": 1.45, "bus": 1.5, "truck": 1.5, "auto-rickshaw": 1.3, "motorcycle": 0.9, "scooter": 0.9}
 MIN_LUMA, MAX_LUMA = 55, 205   # median brightness of the vehicle at its widest
 MIN_SHARPNESS = 40.0        # Laplacian variance of that view
 FORGET_SECONDS = 120.0
@@ -53,6 +58,11 @@ def candidate(view: dict, frame_w: float) -> tuple[bool, str]:
     dy = abs(view["last_c"][1] - view["first_c"][1])
     if dy < TOWARDS_RATIO * max(dx, 1.0):
         return False, "side_on"
+    if view.get("aspect", 9.9) > MAX_ASPECT[view["label"]]:
+        return False, "side_on_at_widest"
+    ldx, ldy = view.get("local", (1.0, 0.0))
+    if abs(ldy) < abs(ldx):
+        return False, "turning_at_widest"
     if not (MIN_LUMA <= view.get("luma", 0) <= MAX_LUMA):
         return False, "exposure"
     if view.get("sharpness", 0.0) < MIN_SHARPNESS:
@@ -82,12 +92,15 @@ class NoPlateWatch:
             if v is None:
                 v = self.views[tid] = {"label": d.class_name, "max_w": 0.0, "useful_frames": 0,
                                        "first_c": c, "first_pts": pts, "jpeg": None}
+            prev = v.get("last_c", c)
             v["last_c"], v["last_pts"], v["label"] = c, pts, d.class_name   # its type may be refined as it nears
             need = MIN_WIDTH_FRAC[v["label"]] * w
             if bw >= USEFUL_SHARE * need:
                 v["useful_frames"] += 1
             if bw > v["max_w"] and bw >= need:
                 v["max_w"] = bw
+                v["aspect"] = bw / max(1.0, y2 - y1)
+                v["local"] = (c[0] - prev[0], c[1] - prev[1])
                 crop = frame[int(max(0, y1)):int(y2), int(max(0, x1)):int(x2)]
                 if crop.size:
                     g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)

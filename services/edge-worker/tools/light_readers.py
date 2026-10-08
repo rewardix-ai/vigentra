@@ -137,6 +137,8 @@ def share_model_weights() -> None:
 
 
 def main() -> int:
+    import faulthandler
+    faulthandler.enable()   # a segfault (seen twice on 8 Oct, exit -11) leaves every thread's stack in the log
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)-8s %(name)s :: %(message)s")
     os.environ["ANPR_CONFIG_DIR"] = str(light_config())
     os.environ.setdefault("ANPR_VEHICLE_WEIGHTS", "yolo11n.pt")

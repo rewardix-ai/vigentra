@@ -327,7 +327,7 @@ so the live shortfall is frames per camera, not reading.</p>
 </tr>
 <tr>
 <td>Incident detector</td>
-<td>Rules over tracker boxes (<code>anpr/incidents.py</code>): wrong way, sudden stop, stopped in lane, collision candidate, person on carriageway, intrusion; plus vehicle without a visible plate on every vehicle type (<code>app/no_plate.py</code>, from the plate detector's own misses, only when the vehicle faced the camera, close enough for its plate to be readable)</td>
+<td>Rules over tracker boxes (<code>anpr/incidents.py</code>): wrong way, sudden stop, stopped in lane, collision candidate, person on carriageway, intrusion; plus vehicle without a visible plate on every vehicle type (<code>app/no_plate.py</code>, from the plate detector's own misses, only in daylight, when the vehicle faced the camera fully in frame, close enough for its plate to be readable, and the detector proposes nothing even at confidence 0.03)</td>
 <td>No incident footage exists to train a model on, so the rules are explicit and every incident carries its evidence and a snapshot. Rebuilt 8 Oct: direction learned per region of the frame, only dense continuous tracks judged; a 6-hour replay went from 416 incidents to 71.</td>
 </tr>
 <tr>

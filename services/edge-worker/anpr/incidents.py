@@ -122,7 +122,7 @@ WRONG_WAY_STRAIGHTNESS = 1.3   # path length / displacement above this is a turn
 #: VEHICLE, and firing them on a pedestrian produces nonsense: a person who
 #: stops walking has not stopped in a lane, and a person crossing the road is
 #: not going the wrong way.
-VEHICLE_LABELS = frozenset({"car", "motorcycle", "bus", "truck", "auto-rickshaw", "bicycle"})
+VEHICLE_LABELS = frozenset({"car", "motorcycle", "scooter", "bus", "truck", "auto-rickshaw", "bicycle"})
 PERSON_LABEL = "person"
 # CROWD_GATHERING: people bunching up where they usually do not - the visible part of a fight, a
 # collapse or an accident's aftermath. Fight itself is not recognisable at grid distance and resolution,

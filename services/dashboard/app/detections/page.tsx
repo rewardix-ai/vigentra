@@ -33,12 +33,13 @@ import type { Detection, DetectorHealth, VehiclesSeen } from "@/lib/types";
  * follows the footage rules rather than the asset-record ones.
  */
 
-const CLASSES = ["person", "car", "motorcycle", "bus", "truck", "bicycle", "auto-rickshaw"];
+const CLASSES = ["person", "car", "motorcycle", "scooter", "bus", "truck", "bicycle", "auto-rickshaw"];
 
 const CLASS_TONE: Record<string, "ok" | "warn" | "bad" | "idle" | "info"> = {
   person: "info",
   car: "ok",
   motorcycle: "warn",
+  scooter: "warn",
   bus: "idle",
   truck: "idle",
   bicycle: "idle",

@@ -52,6 +52,8 @@ except Exception:  # pragma: no cover - analytics extras absent
 from .frame_quality import FrameQuality, FrameQualityRouter
 from . import helmet as helmet_check
 from .no_plate import NoPlateWatch
+from .vehicle_type import VehicleTypes
+from . import vehicle_type as vehicle_type_check
 from .plates import PLATE_BEARING_CLASSES
 
 logging.basicConfig(
@@ -770,6 +772,7 @@ def run(
     started = time.perf_counter()
     no_plate = None
     helmet = None
+    vtypes = VehicleTypes() if vehicle_type_check.available() else None
 
     try:
         for frame_index, frame, pts_seconds, discontinuity in frames:
@@ -817,6 +820,14 @@ def run(
             else:
                 detections = detector.detect(frame_to_detect)
 
+            # What kind of vehicle each track is (app/vehicle_type.py): the COCO detector calls autos
+            # trucks and never tells a scooter from a motorbike.
+            if vtypes is not None:
+                try:
+                    vtypes.refine(frame_to_detect, detections, pts_seconds)
+                except Exception as exc:  # pragma: no cover - a side check never stops the pass
+                    logger.warning("vehicle type failed: %s", exc)
+
             # A vehicle wide enough to be carrying a readable plate buys a
             # burst of dense frames - the plate is growing and the best crop is
             # a moment away.
@@ -854,8 +865,8 @@ def run(
                         source_mode=source_mode,
                         is_demo_data=source_mode != "authorized_edge",
                         # the tracker id lets central give this vehicle its plate once the plate settles
-                        provenance=dict(base_provenance, **({"track_id": (getattr(detection, "extra", None) or {}).get("track_id")}
-                                                            if (getattr(detection, "extra", None) or {}).get("track_id") is not None else {})),
+                        provenance=dict(base_provenance, **{k: v for k, v in (getattr(detection, "extra", None) or {}).items()
+                                                            if k in ("track_id", "detector_class", "type_score") and v is not None}),
                     )
                 )
             produced += len(detections)

@@ -894,6 +894,7 @@ DETECTION_CLASSES = [
     "person",
     "car",
     "motorcycle",
+    "scooter",
     "bus",
     "truck",
     "auto-rickshaw",

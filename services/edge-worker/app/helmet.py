@@ -27,7 +27,7 @@ MIN_WIDTH = 120.0           # px: below this a person cannot confirm the head fr
 END_AFTER_S = 3.0           # a track unseen this long has ended
 MIN_TRAVEL_W = 1.0          # it must move at least its own width while tracked: a parked scooter with
                             # someone sitting beside it is not a rider (cam25, 8 Oct, the first live miss)
-CLASSES = frozenset({"motorcycle"})
+CLASSES = frozenset({"motorcycle", "scooter"})
 
 _model = None
 _lock = threading.Lock()   # one classifier for every camera thread; predict is not thread-safe

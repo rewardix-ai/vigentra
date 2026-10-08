@@ -34,7 +34,7 @@ const WINDOWS: { hours: number; label: string }[] = [
 ];
 
 /** Vehicles first, biggest first; people and bicycles after. */
-const VEHICLES = new Set(["car", "motorcycle", "bus", "truck", "auto-rickshaw"]);
+const VEHICLES = new Set(["car", "motorcycle", "scooter", "bus", "truck", "auto-rickshaw"]);
 
 export function TrafficCount({ cameraId }: { cameraId: string }) {
   const [hours, setHours] = useState(24);

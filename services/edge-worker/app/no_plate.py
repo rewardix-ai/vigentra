@@ -28,7 +28,7 @@ import numpy as np
 logger = logging.getLogger("vigentra.edge.no_plate")
 
 #: per class, the width (fraction of the frame) at which its plate is >= ~40 px on a 1280 px frame
-MIN_WIDTH_FRAC = {"car": 0.18, "bus": 0.22, "truck": 0.22, "motorcycle": 0.11}
+MIN_WIDTH_FRAC = {"car": 0.18, "bus": 0.22, "truck": 0.22, "auto-rickshaw": 0.15, "motorcycle": 0.11, "scooter": 0.11}
 CLASSES = frozenset(MIN_WIDTH_FRAC)
 USEFUL_SHARE = 0.7          # frames at least this share of that width count toward MIN_FRAMES
 MIN_FRAMES = 4              # light mode samples a busy camera a few times a second
@@ -82,7 +82,7 @@ class NoPlateWatch:
             if v is None:
                 v = self.views[tid] = {"label": d.class_name, "max_w": 0.0, "useful_frames": 0,
                                        "first_c": c, "first_pts": pts, "jpeg": None}
-            v["last_c"], v["last_pts"] = c, pts
+            v["last_c"], v["last_pts"], v["label"] = c, pts, d.class_name   # its type may be refined as it nears
             need = MIN_WIDTH_FRAC[v["label"]] * w
             if bw >= USEFUL_SHARE * need:
                 v["useful_frames"] += 1

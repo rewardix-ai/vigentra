@@ -406,7 +406,7 @@ async def _touch_model_version(
 #: detected and stored, and both belong in a safety review rather than in the
 #: number a junction's throughput is judged by, so they are excluded here and
 #: still visible in `by_class`.
-VEHICLE_CLASSES = ("car", "motorcycle", "bus", "truck", "auto-rickshaw")
+VEHICLE_CLASSES = ("car", "motorcycle", "scooter", "bus", "truck", "auto-rickshaw")
 
 
 @router.get(

@@ -108,7 +108,7 @@ def light_config() -> Path:
     cfg["detector"]["vehicle_imgsz"] = int(os.environ.get("LIGHT_VEHICLE_IMGSZ", "640"))
     # people too (same model, same pass): crowd gathering and person-in-traffic incidents need them;
     # the pipeline skips plate search for them (anpr/pipeline.py)
-    if os.environ.get("LIGHT_DETECT_PEOPLE", "true").lower() == "true":
+    if os.environ.get("LIGHT_DETECT_PEOPLE", "false").lower() == "true":
         cfg["detector"]["vehicle_classes"] = sorted(set(cfg["detector"]["vehicle_classes"]) | {0})
     path.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return dst

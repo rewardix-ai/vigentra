@@ -7,9 +7,9 @@ frame (head turned, motion blur) neither makes nor blocks a call. The classifier
 classifier trained on our own grid riders (models/helmet_cls.pt:
 no_helmet / helmet / unclear, labelled by eye; ANPR research repo tools/rider_crops.py, rider_mine.py).
 
-Measured per crop on 170 held-out grid riders cut the live way (8 Oct, ANPR repo tools/helmet_eval.py):
-the two averaged, at >= 0.85, made 19 calls, 18 right, none on a rider wearing a helmet, and found 18 of
-the 41 bare-headed riders; v2 alone at 0.9 made 27 calls, 23 right, one on a helmet (a full-face helmet
+Measured per crop on 203 held-out grid riders cut the live way (8 Oct, ANPR repo tools/helmet_pair_eval.py):
+the two averaged, at >= 0.85, made 20 calls, 19 right, none on a rider wearing a helmet, and found 19 of
+the 45 bare-headed riders; v2 alone at 0.9 made 27 calls, 23 right, one on a helmet (a full-face helmet
 with a face mask, also the one miss of the first 14 live incidents). Its remaining mistakes are crops
 where the head is out of view, so a person confirms every candidate from the snapshot.
 """

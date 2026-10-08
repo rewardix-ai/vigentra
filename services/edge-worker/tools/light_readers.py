@@ -165,7 +165,7 @@ def main() -> int:
 
     awiros.AwirosReader = shared_reader
 
-    from app import anpr_engine, grid, worker
+    from app import anpr_engine, grid, no_plate, worker
     from anpr.pipeline import ANPRPipeline
 
     # Why vehicles end without a plate: every closed track's outcome, tallied per minute in the log.

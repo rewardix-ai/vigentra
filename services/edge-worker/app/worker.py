@@ -564,6 +564,37 @@ def _sighting_payload(
     }
 
 
+def _incident_snapshot(frame, inc, views, detector) -> str | None:
+    """The frame an incident was raised on, as base64 JPEG: the vehicles involved boxed in red, the
+    path each took drawn in yellow, and what was raised written across the top. 960 px wide at most,
+    so one incident costs 60-150 KB. None if it cannot be drawn; the incident goes without it."""
+    try:
+        import base64
+
+        import cv2
+
+        img = frame.copy()
+        boxes = {v.track_id: v.box for v in views}
+        thick = max(2, img.shape[1] // 400)
+        for tid in inc.track_ids:
+            path = [(int(x), int(y)) for x, y in detector.path(tid)]
+            for a, b in zip(path, path[1:]):
+                cv2.line(img, a, b, (0, 220, 255), thick)
+            if tid in boxes:
+                x1, y1, x2, y2 = (int(v) for v in boxes[tid])
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), thick + 1)
+        banner = f"{inc.kind}  {inc.severity}  {inc.camera_id}"
+        cv2.rectangle(img, (0, 0), (img.shape[1], 18 * thick + 8), (0, 0, 0), -1)
+        cv2.putText(img, banner, (8, 14 * thick), cv2.FONT_HERSHEY_SIMPLEX, 0.45 * thick, (255, 255, 255), max(1, thick // 2))
+        if img.shape[1] > 960:
+            img = cv2.resize(img, (960, int(img.shape[0] * 960 / img.shape[1])), interpolation=cv2.INTER_AREA)
+        ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        return base64.b64encode(buf.tobytes()).decode("ascii") if ok else None
+    except Exception as exc:  # pragma: no cover - evidence is best effort
+        logger.warning("incident snapshot failed: %s", exc)
+        return None
+
+
 from dataclasses import dataclass as _dataclass
 
 
@@ -856,7 +887,11 @@ def run(
                     incidents.reset()
                 views = _incident_views(detections)
                 for inc in incidents.update(views, pts_seconds, frame_size=(frame.shape[1], frame.shape[0])):
-                    incident_batch.append(inc.to_dict())
+                    payload = inc.to_dict()
+                    snapshot = _incident_snapshot(frame, inc, views, incidents)
+                    if snapshot:
+                        payload["snapshot_jpeg_b64"] = snapshot
+                    incident_batch.append(payload)
                     logger.info(
                         "incident %s (%s) on camera %s: %s",
                         inc.kind, inc.severity, camera_id, inc.reason,

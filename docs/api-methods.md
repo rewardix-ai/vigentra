@@ -1,6 +1,6 @@
 # Vigentra API: every endpoint, its HTTP method, and why
 
-This covers the central API (`services/central-api`, 61 operations), the browser-facing proxy, and the two mock
+This covers the central API (`services/central-api`, 63 operations), the browser-facing proxy, and the two mock
 department systems. For each endpoint it gives the method, what the endpoint does, why that method fits, and
 why the alternatives do not. The full request and response shapes are in [api.md](api.md); the live list is
 the OpenAPI page at `http://localhost:8000/docs`.
@@ -107,12 +107,14 @@ The form lives in the department's own system; Vigentra relays it.
 | POST | `/api/v1/incidents/ingest` | The edge submits incident candidates (wrong way, sudden stop, intrusion, …) | **POST batch**, safe to retry for the same reason as detections. |
 | GET | `/api/v1/detections` | Detections this account may read | Read with filters. |
 | GET | `/api/v1/detections/{detection_id}` | One detection | Read. |
+| GET | `/api/v1/detections/tracked-vehicles` | Detections grouped into vehicles (camera + tracker id), each with its plate or why there is none, and fair counts | Read. Named apart from `/vehicles` (the registry), which a camera id must never reach. |
 | GET | `/api/v1/cameras/{camera_id}/detections` | Detections for one camera | Read. |
 | GET | `/api/v1/cameras/{camera_id}/traffic` | Vehicles counted at a camera, by class (counted in the database) | Read. Counting on the server instead of downloading every row is the performance gain; the method stays GET. |
 | GET | `/api/v1/detector/health` | The analytics setup and the last model build seen | Read. |
 | GET | `/api/v1/events` | Normalised events from every source | Read. |
 | GET | `/api/v1/events/correlation` | Events at nearby cameras within a short time window | Read; a computed answer, nothing stored. |
 | GET | `/api/v1/incidents` | Incident candidates, newest first | Read. |
+| GET | `/api/v1/incidents/{incident_id}/snapshot` | The frame the incident was raised on (JPEG): vehicles boxed, paths drawn | Read, returns an image rather than JSON. GET because viewing changes nothing in the incident; the view itself is audited (`incident_snapshot_viewed`) as a server-side side effect, which is still safe to repeat. |
 | PATCH | `/api/v1/incidents/{incident_id}` | An operator records a review: REVIEWING, CONFIRMED or DISMISSED, with a note | **PATCH:** it sets two fields (status and note) on an existing incident, and a reviewer can change their mind (REVIEWING → CONFIRMED). The rest of the incident (what the edge saw) must not change, which PUT could not guarantee. Contrast with alert acknowledgement (below), which is a one-way event and so a POST. |
 
 ## 5. Video access, sessions and streams
@@ -183,7 +185,7 @@ central API's method rules stay the same whatever the vendor does.
 
 ## Benefits, in one place
 
-- **Safety of reads.** 39 of 61 operations are GET and can never change data. Caches, retries, prefetching and
+- **Safety of reads.** 41 of 63 operations are GET and can never change data. Caches, retries, prefetching and
   shared links are all harmless.
 - **Retries without duplicates.** Edge workers send batches by POST, made safe to repeat with deterministic
   IDs. A dropped connection never double-counts a vehicle or a plate.

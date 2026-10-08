@@ -284,6 +284,11 @@ class IncidentDetector:
             return None                     # barely moved; heading is noise
         return math.degrees(math.atan2(dy, dx))
 
+    def path(self, track_id) -> list[tuple[float, float]]:
+        """Recent centres of a track, oldest first (for drawing evidence)."""
+        st = self._tracks.get(track_id)
+        return list(st.centres) if st else []
+
     @staticmethod
     def _trusted(st: _State) -> bool:
         """Dense, continuous recent motion: no long gap, no jump an identity swap would make."""

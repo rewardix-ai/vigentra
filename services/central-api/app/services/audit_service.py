@@ -65,6 +65,7 @@ class AuditAction(str, Enum):
     #: as learning which vehicle it was.
     PLATE_DATA_VIEWED = "plate_data_viewed"
     INCIDENT_REVIEWED = "incident_reviewed"
+    INCIDENT_SNAPSHOT_VIEWED = "incident_snapshot_viewed"
 
     # plate identity - watchlist, alerts, movement
     WATCHLIST_ENTRY_ADDED = "watchlist_entry_added"

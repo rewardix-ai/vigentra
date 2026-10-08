@@ -208,6 +208,24 @@ export default function IncidentsPage() {
                     </div>
                   )}
 
+                  {incident.has_snapshot && (
+                    <a
+                      className="mt-1 block w-fit"
+                      href={api.incidentSnapshotUrl(incident.incident_id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="The frame it was raised on (opens full size)"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        alt={`Frame of ${KIND_LABEL[incident.kind] ?? incident.kind}`}
+                        className="max-h-40 rounded border border-ink-200"
+                        loading="lazy"
+                        src={api.incidentSnapshotUrl(incident.incident_id)}
+                      />
+                    </a>
+                  )}
+
                   {incident.reviewed_by && (
                     <div className="text-[10px] text-ink-400">
                       reviewed by {incident.reviewed_by} · {ist(incident.reviewed_at)}

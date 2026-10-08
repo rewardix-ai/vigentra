@@ -547,7 +547,7 @@ TRACK_GAP = timedelta(minutes=2)
 
 
 @router.get(
-    "/detections/vehicles",
+    "/detections/tracked-vehicles",
     response_model=VehiclesSeenResponse,
     summary="Vehicles seen, one row per vehicle with its plate or why it has none",
 )

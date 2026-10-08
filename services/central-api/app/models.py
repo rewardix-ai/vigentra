@@ -40,6 +40,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -864,6 +865,25 @@ class Incident(Base):
     review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     is_demo_data: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+
+class IncidentSnapshot(Base):
+    """The frame an incident was raised on, with the vehicles involved boxed and their paths drawn.
+
+    The candidate's evidence otherwise is numbers (headings, decelerations): a reviewer has to see
+    what the camera saw to confirm or dismiss it. One small JPEG per incident, kept beside it in the
+    database so it shares the incident's scoping and lifetime; served only to accounts that may read
+    the camera, and every view is audited.
+    """
+
+    __tablename__ = "incident_snapshots"
+
+    incident_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    jpeg: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )

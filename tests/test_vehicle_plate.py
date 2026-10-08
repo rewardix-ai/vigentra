@@ -63,7 +63,7 @@ async def test_vehicles_seen_counts_vehicles_not_frames(api, login, traffic_came
     (await api.post("/api/v1/detections/ingest", headers=edge, json={"detections": [plate]})).raise_for_status()
 
     reader = await login("traffic.state")
-    body = (await api.get("/api/v1/detections/vehicles", headers=reader, params={"camera_id": cam})).json()
+    body = (await api.get("/api/v1/detections/tracked-vehicles", headers=reader, params={"camera_id": cam})).json()
     by_plate = {v["plate_text"]: v for v in body["vehicles"]}
     assert body["vehicles_seen"] == 3 and body["near_enough_to_read"] == 2 and body["identified"] == 1
     assert body["identified_share_of_near"] == 0.5 and body["untracked_frames"] == 1

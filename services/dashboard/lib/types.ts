@@ -781,6 +781,8 @@ export interface Incident {
   reviewed_at: string | null;
   review_note: string | null;
   is_demo_data: boolean;
+  /** The frame it was raised on is stored: api.incidentSnapshotUrl gives the JPEG. */
+  has_snapshot: boolean;
 }
 
 /** A camera, or a whole department system, that stopped answering the health monitor. */

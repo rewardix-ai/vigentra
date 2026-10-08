@@ -1654,6 +1654,8 @@ class IncidentIn(BaseModel):
     reason: str = ""
     evidence: dict[str, Any] = Field(default_factory=dict)
     status: str = "CANDIDATE"
+    #: The frame it was raised on, JPEG, base64; at most ~384 KB decoded.
+    snapshot_jpeg_b64: str | None = Field(default=None, max_length=524_288)
 
 
 class IncidentBatch(BaseModel):
@@ -1688,6 +1690,8 @@ class IncidentOut(BaseModel):
     reviewed_at: datetime | None = None
     review_note: str | None = None
     is_demo_data: bool = True
+    #: GET /incidents/{incident_id}/snapshot returns the frame when this is true.
+    has_snapshot: bool = False
 
 
 class IncidentReview(BaseModel):

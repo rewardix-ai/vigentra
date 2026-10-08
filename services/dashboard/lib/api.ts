@@ -209,7 +209,7 @@ export const api = {
 
   /** Vehicles seen: frames grouped into vehicles, each with its plate or why it has none. */
   vehiclesSeen: (filters: { camera_id?: string; since_minutes?: string; identified_only?: string } = {}) =>
-    request<VehiclesSeen>(`/api/v1/detections/vehicles${query(filters)}`),
+    request<VehiclesSeen>(`/api/v1/detections/tracked-vehicles${query(filters)}`),
 
   /** Settled plate reads, newest first. One audited disclosure per call. */
   sightings: (filters: { camera_id?: string; since_hours?: string; limit?: string } = {}) =>
@@ -327,6 +327,9 @@ export const api = {
    * and never learns the central API's address.
    */
   streamUrl: (session: VideoSession) => `/api/vigentra${session.stream_url}`,
+  /** The frame an incident was raised on (JPEG). Each view is audited server-side. */
+  incidentSnapshotUrl: (incidentId: string) =>
+    `${BASE}/api/v1/incidents/${encodeURIComponent(incidentId)}/snapshot`,
 
   /**
    * The URL of a camera's latest still frame, proxied by the API from the

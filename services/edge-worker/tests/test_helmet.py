@@ -39,3 +39,15 @@ def test_a_parked_two_wheeler_is_not_a_rider(monkeypatch):
         out += w.observe(frame, [bike(9, 500, 300)], float(i))
     out += w.observe(frame, [], 20.0)
     assert not out
+
+
+def test_one_bare_looking_frame_among_its_closest_views_is_not_a_call(monkeypatch):
+    """A head turned away in one frame reads as bare; the rider's other close views show the helmet."""
+    looks = iter([0.97, 0.2, 0.2])
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: next(looks))
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(6):   # coming closer: 120, 126, ... px
+        out += w.observe(frame, [bike(5, 500, 200 + 25 * i, w=120 + 6 * i)], float(i))
+    out += w.observe(frame, [], 20.0)
+    assert not out

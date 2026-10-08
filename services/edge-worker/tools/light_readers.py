@@ -215,6 +215,34 @@ def main() -> int:
     grid.ReconnectingCapture.LOOP_TOLERANCE_MS = 30000.0
 
     gpu = Attention()
+
+    # Training harvest (LIGHT_HARVEST_DIR, opt-in): frames with a vehicle near enough to carry a readable
+    # plate, at most one per camera every HARVEST_SECONDS and HARVEST_MAX in all, each with the vehicles and
+    # plate boxes the engine saw. For fine-tuning only (research repo); never searched for a vehicle.
+    harvest_dir = os.environ.get("LIGHT_HARVEST_DIR")
+    harvest = {"last": {}, "n": len(list(Path(harvest_dir).glob("*.jpg"))) if harvest_dir and Path(harvest_dir).exists() else 0}
+    HARVEST_SECONDS, HARVEST_MAX, HARVEST_PX = 10.0, 8000, 120
+
+    def keep_for_training(engine, frame, dets) -> None:
+        import cv2
+        import json
+        cam = names.get(engine.camera_id, engine.camera_id)
+        now = time.time()
+        if (harvest["n"] >= HARVEST_MAX or now - harvest["last"].get(cam, 0) < HARVEST_SECONDS
+                or not any(d.bbox_xyxy[2] - d.bbox_xyxy[0] >= HARVEST_PX for d in dets)):
+            return
+        harvest["last"][cam] = now
+        harvest["n"] += 1
+        Path(harvest_dir).mkdir(parents=True, exist_ok=True)
+        stem = f"{harvest_dir}/{cam}_{int(now * 1000)}"
+        cv2.imwrite(stem + ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        plates = getattr(getattr(engine, "_pipeline", None), "last_plates", None) or []
+        Path(stem + ".json").write_text(json.dumps({
+            "camera": cam, "wall": now,
+            "vehicles": [{"cls": d.class_name, "conf": d.confidence, "box": d.bbox_xyxy,
+                          "track": (d.extra or {}).get("track_id")} for d in dets],
+            "plates": [{"track": str(t), "box": [round(float(v), 1) for v in b], "src": src, "conf": round(float(c), 3)}
+                       for t, b, src, c in plates]}))
     frames: dict[str, int] = {}   # frames each camera got through the engine since the last stats line
     spent = {"hot": [0.0, 0], "cold": [0.0, 0]}   # engine seconds and frames, by whether a near vehicle was in view
     for name in ("process", "finish"):
@@ -222,7 +250,7 @@ def main() -> int:
 
         def locked(self, *a, _original=original, _count=(name == "process"), **k):
             gpu.acquire(self.camera_id)
-            near, approaching = None, False
+            near, approaching, keep = None, False, None
             try:
                 t0 = time.perf_counter()
                 out = _original(self, *a, **k)
@@ -235,12 +263,19 @@ def main() -> int:
                     # spending frames on them starved the vehicles whose plates were in view
                     near = bool(getattr(getattr(self, "_pipeline", None), "last_plates", None))
                     approaching = any(w >= WARM_PX for w in widths)
+                    if harvest_dir and a:
+                        keep = (a[0], dets)
                     bucket = spent["hot" if near else "cold"]
                     bucket[0] += time.perf_counter() - t0
                     bucket[1] += 1
                 return out
             finally:
                 gpu.release(self.camera_id, near, approaching)
+                if keep is not None:   # written after the GPU is free
+                    try:
+                        keep_for_training(self, *keep)
+                    except Exception as exc:
+                        log.warning("harvest failed: %s", exc)
 
         setattr(anpr_engine.AnprEngine, name, locked)
     building = threading.Lock()
@@ -275,6 +310,7 @@ def main() -> int:
     discovery.sign_in(*accounts["traffic_vms"])
     registry = {c["external_camera_id"]: c for c in discovery.list_cameras() if str(c.get("external_camera_id", "")).startswith("GRID-")}
     wanted = [f"GRID-{c}" for c in sys.argv[1:]] or sorted(registry)
+    names = {c["camera_id"]: ext.replace("GRID-", "") for ext, c in registry.items()}
     incidents: dict = {}
     stop = threading.Event()
 
@@ -300,7 +336,6 @@ def main() -> int:
         threads.append(t)
         time.sleep(1.5)  # stagger the openings: thirty sessions at once is a burst the gateway notices
     log.info("light mode: %d cameras in one process", len(threads))
-    names = {c["camera_id"]: ext.replace("GRID-", "") for ext, c in registry.items()}
     try:
         while any(t.is_alive() for t in threads):
             time.sleep(60)

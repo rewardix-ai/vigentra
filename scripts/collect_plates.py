@@ -146,6 +146,8 @@ def main() -> int:
     ap.add_argument("--until", required=True, help='deadline in IST, e.g. "2026-10-11 23:00"')
     ap.add_argument("--logs", default=str(Path.home() / "Library" / "Logs" / "vigentra-readers"))
     ap.add_argument("--restore-docker", nargs="*", default=[], help="containers to start again at the deadline")
+    ap.add_argument("--harvest", default=None,
+                    help="light mode: save frames with near vehicles here, for fine-tuning only (8,000 at most)")
     ap.add_argument("--mode", choices=["light", "rotate"], default="light",
                     help="light: every grid camera at once in one process (tools/light_readers.py); rotate: 3 full readers, one camera each per window")
     args = ap.parse_args()
@@ -172,6 +174,8 @@ def main() -> int:
         if light:
             env = dict(envs["traffic_vms"], LIGHT_MUNICIPAL_USERNAME=municipal.get("EDGE_USERNAME", "municipal.ai"),
                        LIGHT_MUNICIPAL_PASSWORD=municipal.get("EDGE_PASSWORD", ""))
+            if args.harvest:
+                env["LIGHT_HARVEST_DIR"] = args.harvest
             slot["restart_at"], slot["started"], slot["idle_lines"] = None, time.time(), 0
             slot["watch_at"] = slot["log"].stat().st_size if slot["log"].exists() else 0
             slot["proc"] = subprocess.Popen([sys.executable, "tools/light_readers.py"], cwd=EDGE, env=env,

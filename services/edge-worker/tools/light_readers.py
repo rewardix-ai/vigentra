@@ -136,6 +136,10 @@ def main() -> int:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)-8s %(name)s :: %(message)s")
     os.environ["ANPR_CONFIG_DIR"] = str(light_config())
     os.environ.setdefault("ANPR_VEHICLE_WEIGHTS", "yolo11n.pt")
+    # the plate detector fine-tuned on grid footage (research repo, data/det/grid_clean): on 53 near
+    # vehicles the default found no plate on, it boxed the yellow plates of autos and trucks that the
+    # default misses outright (8 Oct, cam06 GJ18X..., 0.80-0.83)
+    os.environ.setdefault("ANPR_PLATE_WEIGHTS", "plate_det_grid_clean.pt")
     os.environ.setdefault("EDGE_CONTINUOUS", "true")
     os.environ.setdefault("EDGE_CONTINUOUS_PASS_FRAMES", "100000")
     share_model_weights()
@@ -152,6 +156,57 @@ def main() -> int:
     awiros.AwirosReader = shared_reader
 
     from app import anpr_engine, grid, worker
+    from anpr.pipeline import ANPRPipeline
+
+    # Why vehicles end without a plate: every closed track's outcome, tallied per minute in the log.
+    # Status plus the reason's kind ("width_below_gate:14<22" counts as width_below_gate).
+    outcomes: dict[str, int] = {}
+    finalise = ANPRPipeline._finalise_track
+
+    def counted(self, bank, _finalise=finalise):
+        before = len(self.records)
+        _finalise(self, bank)
+        if len(self.records) > before:
+            rec = self.records[-1]
+            key = rec.get("status", "?") if rec.get("status") == "CONFIRMED" else \
+                f"{rec.get('status', '?')}:{str(rec.get('reason') or '-').split(':')[0]}"
+            outcomes[key] = outcomes.get(key, 0) + 1
+
+    ANPRPipeline._finalise_track = counted
+
+    # Diagnostics (LIGHT_DIAG_DIR): a big vehicle with no plate box is saved (one per camera per 20 s,
+    # 80 at most) with what the plate detector proposed and why each proposal was dropped.
+    diag_dir = os.environ.get("LIGHT_DIAG_DIR")   # opt-in: nothing from the grid is written to disk otherwise
+    rejected: dict[str, int] = {}
+    if diag_dir:
+        import cv2
+        from anpr.detect.plate import PlateDetector
+        Path(diag_dir).mkdir(parents=True, exist_ok=True)
+        detect_in_vehicle = PlateDetector.detect_in_vehicle
+        last_saved: dict[str, float] = {}
+        saved = [0]
+
+        def watched(self, frame, box, vtype="car", frame_idx=-1, track_id="", _orig=detect_in_vehicle):
+            n = len(self.rejection_log)
+            out = _orig(self, frame, box, vtype, frame_idx, track_id)
+            for r in self.rejection_log[n:]:
+                for why in r.get("reasons", []):
+                    k = why.split(":")[0]
+                    rejected[k] = rejected.get(k, 0) + 1
+            cam = threading.current_thread().name
+            w = box[2] - box[0]
+            if not out and w >= 180 and saved[0] < 80 and time.time() - last_saved.get(cam, 0) > 20:
+                last_saved[cam] = time.time()
+                saved[0] += 1
+                x1, y1, x2, y2 = (int(max(0, v)) for v in box)
+                props = [f"{r.get('src')}:{r.get('raw_conf', 0):.2f}x{r.get('geom_prior', 0):.2f}:{'|'.join(r.get('reasons', []))}"
+                         for r in self.rejection_log[n:]]
+                name = f"{cam}_{int(time.time())}_{vtype}_{int(w)}px"
+                cv2.imwrite(f"{diag_dir}/{name}.jpg", frame[y1:y2, x1:x2])
+                Path(f"{diag_dir}/{name}.txt").write_text("\n".join(props) or "no proposals")
+            return out
+
+        PlateDetector.detect_in_vehicle = watched
 
     # With thirty streams on one machine the gateway re-sends a few seconds of buffered video now and then:
     # PTS steps back ~6 s. The capture took any step back over 5 s for a scene cut and reset tracking,
@@ -175,7 +230,10 @@ def main() -> int:
                     frames[self.camera_id] = frames.get(self.camera_id, 0) + 1
                     dets = out[0] if isinstance(out, tuple) else []
                     widths = [d.bbox_xyxy[2] - d.bbox_xyxy[0] for d in dets]
-                    near = any(w >= NEAR_PX for w in widths)
+                    # hot only when a plate box was found: most near vehicles show no plate at all
+                    # (side-on, headlight glare; 132 of 137 closed tracks on 8 Oct had none), and
+                    # spending frames on them starved the vehicles whose plates were in view
+                    near = bool(getattr(getattr(self, "_pipeline", None), "last_plates", None))
                     approaching = any(w >= WARM_PX for w in widths)
                     bucket = spent["hot" if near else "cold"]
                     bucket[0] += time.perf_counter() - t0
@@ -252,6 +310,13 @@ def main() -> int:
             ms = {k: (round(1000 * v[0] / v[1]) if v[1] else 0) for k, v in spent.items()}
             spent.update(hot=[0.0, 0], cold=[0.0, 0])
             log.info("engine ms/frame: near %d, quiet %d", ms["hot"], ms["cold"])
+            tally, outcomes_total = dict(outcomes), sum(outcomes.values())
+            outcomes.clear()
+            if rejected:
+                log.info("plate proposals dropped: %s", " ".join(f"{k}={v}" for k, v in sorted(rejected.items(), key=lambda kv: -kv[1])))
+                rejected.clear()
+            log.info("tracks closed %d | %s", outcomes_total,
+                     " ".join(f"{k}={v}" for k, v in sorted(tally.items(), key=lambda kv: -kv[1])) or "none")
             log.info("frames/min %d total | hot now: %s | %s | idle: %s", total, " ".join(sorted(names.get(c, c) for c in gpu.hot())) or "none",
                      " ".join(f"{names.get(k, k)}={v}" for k, v in sorted(counts.items(), key=lambda kv: names.get(kv[0], kv[0]))),
                      " ".join(idle) or "none")

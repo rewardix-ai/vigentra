@@ -1,0 +1,96 @@
+{
+ "camera": "cam06_noon",
+ "clip": "cam06_noon.mp4",
+ "resolution": "854x480",
+ "fps": 25.0,
+ "frames": 3000,
+ "duration_s": 120.0,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_grid_clean/reader_crnn",
+  "camera": "cam06_noon",
+  "vehicle_model": "yolo11n.pt",
+  "plate_model": "plate_det_grid_clean.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "cam06"
+ },
+ "frames_processed": 2958,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 2958
+ },
+ "realtime": false,
+ "frames_dropped_late": 0,
+ "frames_the_sampler_wanted": 2958,
+ "sampler": {
+  "looked": 3000,
+  "processed": 2958,
+  "bursts": 6,
+  "stride": 2,
+  "paced_stride": 2,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 10289,
+ "unique_vehicle_tracks": 116,
+ "tracks_with_plate_candidates": 45,
+ "tracks_by_size_band": {
+  "VERY_SMALL": 21,
+  "SMALL": 3,
+  "MEDIUM": 18,
+  "LARGE": 2,
+  "EXTREMELY_TINY": 1
+ },
+ "plate_detections": 4345,
+ "plate_candidates_banked": 2258,
+ "ocr_calls": 4000,
+ "ocr_images": 4357,
+ "tracks_with_ocr_result": 43,
+ "unique_ocr_results": 42,
+ "status_counts": {
+  "UNREADABLE": 73,
+  "CANDIDATE": 28,
+  "CONFIRMED": 15
+ },
+ "confirmed_plates": [
+  "GJ03EL4466",
+  "GJ05CS1117",
+  "GJ11BH6725",
+  "GJ11BR5399",
+  "GJ11CD1448",
+  "GJ11CD3844",
+  "GJ11CH3002",
+  "GJ11CH7598",
+  "GJ11DB3063",
+  "GJ11VV7988",
+  "GJ14BA3377",
+  "GJ18EC0510",
+  "GJ37T9052",
+  "RJ24TA3407"
+ ],
+ "emitted": [],
+ "unreadable_reasons": {
+  "no_plate_detected": 71,
+  "static_scene_text": 1,
+  "width_below_gate": 1
+ },
+ "wall_s": 816.4,
+ "finish_s": 4.3,
+ "processed_fps": 3.62,
+ "clip_seconds_per_wall_second": 0.147,
+ "frame_latency_ms_p50": 87.4,
+ "frame_latency_ms_p95": 248.1,
+ "cpu_percent_mean": 142.2,
+ "cpu_cores": 8,
+ "rss_max_mb": 1830,
+ "gpu_mem_max_mb": 111
+}

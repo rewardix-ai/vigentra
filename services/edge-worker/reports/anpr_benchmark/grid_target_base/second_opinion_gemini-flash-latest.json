@@ -1,0 +1,364 @@
+{
+ "tally": {
+  "true:None": 14,
+  "twin:None": 14,
+  "true:unreadable": 1,
+  "twin:unreadable": 1,
+  "true:agrees": 2,
+  "twin:differs": 2,
+  "other:unreadable": 1,
+  "other:None": 19
+ },
+ "rows": [
+  {
+   "clip": "cam06_noon",
+   "track": "00058_s0_t172",
+   "plate": "GJ03EL4466",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ03EL6966",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00097_s0_t295",
+   "plate": "GJ05CS1117",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ85CS1147",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00066_s0_t192",
+   "plate": "GJ11BH6725",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ26BH6725",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00068_s0_t194",
+   "plate": "GJ11BR5399",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ11BR5363",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00070_s0_t193",
+   "plate": "GJ11CD1448",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ14CD0448",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00024_s0_t80",
+   "plate": "GJ11CD3844",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ11CK3842",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00073_s0_t218",
+   "plate": "GJ11CH3002",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ13CH3022",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00071_s0_t203",
+   "plate": "GJ11CH7598",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ10CH7592",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00030_s0_t99",
+   "plate": "GJ11DB3063",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ43DB3063",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00020_s0_t75",
+   "plate": "GJ11VV7988",
+   "read": "UNREADABLE",
+   "model": "gemini-flash-latest",
+   "verdict": "unreadable",
+   "twin": "GJ11LV7983",
+   "twin_verdict": "unreadable"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00019_s0_t73",
+   "plate": "GJ13AW0739",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ17AG0739",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00022_s0_t78",
+   "plate": "GJ14BA3377",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ74BA6377",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00065_s0_t189",
+   "plate": "GJ18EC0510",
+   "read": "GJ18EC0510",
+   "model": "gemini-flash-latest",
+   "verdict": "agrees",
+   "twin": "GJ11KC0510",
+   "twin_verdict": "differs"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00027_s0_t87",
+   "plate": "GJ1KR6061",
+   "read": "GJ1KR6061",
+   "model": "gemini-flash-latest",
+   "verdict": "agrees",
+   "twin": "GJ1KX6060",
+   "twin_verdict": "differs"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00108_s0_t324",
+   "plate": "GJ37T9052",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ37T9612",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00032_s0_t104",
+   "plate": "RJ24TA3407",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "RJ24SA5407",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam07",
+   "track": "00000_s0_t1",
+   "plate": "GJ32AG0416",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "twin": "GJ38AG0816",
+   "twin_verdict": null
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00083_s0_t253",
+   "plate": "GJ11VV7988",
+   "read": "UNREADABLE",
+   "model": "gemini-flash-latest",
+   "verdict": "unreadable",
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00093_s0_t275",
+   "plate": "RJ24TA3407",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00059_s0_t1",
+   "plate": "GJ37T9052",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00089_s0_t219",
+   "plate": "GJ13AW0739",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00107_s0_t333",
+   "plate": "GJ11BH6725",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00092_s0_t265",
+   "plate": "GJ11VV7988",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00069_s0_t207",
+   "plate": "GJ11CH3002",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam07",
+   "track": "00002_s0_t10",
+   "plate": "GJ32AG0416",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00009_s0_t33",
+   "plate": "GJ18EC0510",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00038_s0_t114",
+   "plate": "GJ11CD1448",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00086_s0_t256",
+   "plate": "GJ11CD3844",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00076_s0_t224",
+   "plate": "GJ11BR5399",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00029_s0_t98",
+   "plate": "GJ11VV7988",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00105_s0_t310",
+   "plate": "GJ11DB3063",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00012_s0_t43",
+   "plate": "GJ05CS1117",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00079_s0_t240",
+   "plate": "GJ14BA3377",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00082_s0_t251",
+   "plate": "GJ1KR6061",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00091_s0_t284",
+   "plate": "GJ11DB3063",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00037_s0_t115",
+   "plate": "GJ14BA3377",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  },
+  {
+   "clip": "cam06_noon",
+   "track": "00035_s0_t109",
+   "plate": "GJ11CH3002",
+   "read": null,
+   "model": null,
+   "verdict": null,
+   "kind": "other"
+  }
+ ]
+}

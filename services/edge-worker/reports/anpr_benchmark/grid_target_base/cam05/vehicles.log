@@ -1,0 +1,36 @@
+[CAM05] Vehicle ID: cam05_s0_t51 (car)
+Track duration: 15.6 s  frames 209-598
+Plate candidates: 2  best frame: 440  plate size: 35x13  quality: 0.516
+OCR (per candidate, first 40):
+  f  435 29x10 q=0.53 det=0.21 -> - 0.00
+  f  440 28x9 q=0.52 det=0.78 -> - 0.00
+FINAL: GJ33AM6  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM05] Vehicle ID: cam05_s0_t179 (truck)
+Track duration: 0.9 s  frames 651-673
+Plate candidates: 23  best frame: 673  plate size: 148x60  quality: 0.986
+OCR (per candidate, first 40):
+  f  651 117x40 q=0.99 det=0.69 -> TS57SQ8300 0.71
+  f  652 118x40 q=0.99 det=0.69 -> TS57SQB3008 0.67
+  f  653 116x39 q=0.99 det=0.72 -> TS57SQB3008 0.80
+  f  654 117x40 q=0.99 det=0.72 -> TS57SQB3008 0.76
+  f  655 118x41 q=0.99 det=0.65 -> TS57SQB3008 0.75
+  f  656 118x41 q=0.99 det=0.65 -> TS57SQB3008 0.75
+  f  657 118x41 q=0.99 det=0.65 -> TS57SQB3008 0.76
+  f  658 118x41 q=0.99 det=0.66 -> TS57SQB3008 0.75
+  f  659 119x40 q=0.99 det=0.67 -> TS57SQ8300 0.81
+  f  660 119x40 q=0.99 det=0.67 -> TS57SQ8300 0.80
+  f  661 120x40 q=0.99 det=0.65 -> TS57SQ8300 0.71
+  f  662 119x41 q=0.99 det=0.69 -> TS57SQ8300 0.71
+  f  663 118x40 q=0.99 det=0.72 -> TS57SQ8300 0.71
+  f  664 121x41 q=0.99 det=0.66 -> TS57SQ8300 0.70
+  f  665 116x39 q=0.99 det=0.81 -> TS57SQ8300 0.70
+  f  666 116x39 q=0.99 det=0.83 -> TS57SQB3008 0.81
+  f  667 117x40 q=0.99 det=0.80 -> TS57SQB3008 0.75
+  f  668 119x40 q=0.99 det=0.83 -> TS57SQ8300 0.70
+  f  669 117x40 q=0.99 det=0.81 -> TS57SQ8300 0.81
+  f  670 121x40 q=0.99 det=0.76 -> TS57SQ8300 0.52
+  f  671 119x40 q=0.99 det=0.77 -> TS57SQ8300 0.52
+  f  672 120x40 q=0.99 det=0.75 -> TS57SQ8300 0.52
+  f  673 119x40 q=0.99 det=0.85 -> TS57SQ8300 0.57
+FINAL: TS75QB3008  status CONFIRMED  confidence 0.8365    emitted: no

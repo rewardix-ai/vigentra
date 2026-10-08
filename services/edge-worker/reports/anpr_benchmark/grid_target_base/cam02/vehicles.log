@@ -1,0 +1,17 @@
+[CAM02] Vehicle ID: cam02_s0_t237 (bus)
+Track duration: 0.8 s  frames 720-740
+Plate candidates: 5  best frame: 724  plate size: 152x74  quality: 0.866
+OCR (per candidate, first 40):
+  f  722 120x50 q=0.85 det=0.31 -> - 0.00
+  f  723 126x50 q=0.89 det=0.26 -> - 0.00
+  f  724 122x50 q=0.87 det=0.62 -> - 0.00
+  f  725 121x45 q=0.88 det=0.54 -> - 0.00
+  f  727 111x42 q=0.83 det=0.36 -> - 0.00
+FINAL: GJ17GJ3  status CANDIDATE  confidence 0.0001  low_confidence  emitted: no
+
+[CAM02] Vehicle ID: cam02_s0_t233 (car)
+Track duration: 2.4 s  frames 680-741
+Plate candidates: 1  best frame: 722  plate size: 71x28  quality: 0.669
+OCR (per candidate, first 40):
+  f  722 57x19 q=0.67 det=0.21 -> - 0.00
+FINAL: DL11777  status CANDIDATE  confidence 0.0045  no_glyph_evidence:0  emitted: no

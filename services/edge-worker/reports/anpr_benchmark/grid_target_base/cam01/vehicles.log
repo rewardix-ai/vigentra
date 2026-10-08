@@ -1,0 +1,119 @@
+[CAM01] Vehicle ID: cam01_s0_t3 (bus)
+Track duration: 8.4 s  frames 10-220
+Plate candidates: 11  best frame: 58  plate size: 115x48  quality: 0.888
+OCR (per candidate, first 40):
+  f   57 94x35 q=0.88 det=0.32 -> - 0.00
+  f   58 93x32 q=0.89 det=0.74 -> - 0.00
+  f   59 92x32 q=0.89 det=0.52 -> - 0.00
+  f   60 87x33 q=0.89 det=0.53 -> - 0.00
+  f   61 87x32 q=0.89 det=0.73 -> - 0.00
+  f   62 88x32 q=0.89 det=0.49 -> - 0.00
+  f   75 74x24 q=0.84 det=0.41 -> - 0.00
+  f   76 71x24 q=0.82 det=0.20 -> - 0.00
+  f   78 68x24 q=0.75 det=0.21 -> - 0.00
+  f   80 70x24 q=0.80 det=0.37 -> - 0.00
+  f   81 70x23 q=0.79 det=0.26 -> - 0.00
+FINAL: MH021777  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t98 (car)
+Track duration: 2.8 s  frames 445-515
+Plate candidates: 1  best frame: 464  plate size: 70x28  quality: 0.611
+OCR (per candidate, first 40):
+  f  464 57x18 q=0.61 det=0.31 -> - 0.00
+FINAL: MH017  status CANDIDATE  confidence 0.0005  no_glyph_evidence:2  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t127 (car)
+Track duration: 1.7 s  frames 594-636
+Plate candidates: 11  best frame: 619  plate size: 36x19  quality: 0.497
+OCR (per candidate, first 40):
+  f  615 29x12 q=0.49 det=0.81 -> - 0.00
+  f  616 29x12 q=0.49 det=0.83 -> - 0.00
+  f  617 29x12 q=0.49 det=0.81 -> - 0.00
+  f  618 29x13 q=0.50 det=0.82 -> - 0.00
+  f  619 29x13 q=0.50 det=0.83 -> - 0.00
+  f  620 28x11 q=0.48 det=0.85 -> - 0.00
+  f  621 28x11 q=0.48 det=0.82 -> - 0.00
+  f  622 27x11 q=0.48 det=0.77 -> - 0.00
+  f  624 26x11 q=0.46 det=0.21 -> - 0.00
+  f  635 23x10 q=0.43 det=0.29 -> - 0.00
+  f  636 23x9 q=0.43 det=0.40 -> - 0.00
+FINAL: MH028881  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t113 (car)
+Track duration: 4.6 s  frames 534-649
+Plate candidates: 1  best frame: 540  plate size: 115x49  quality: 0.891
+OCR (per candidate, first 40):
+  f  540 93x32 q=0.89 det=0.29 -> - 0.00
+FINAL: GJ22217  status CANDIDATE  confidence 0.0005  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t163 (car)
+Track duration: 4.4 s  frames 715-825
+Plate candidates: 2  best frame: 722  plate size: 120x62  quality: 0.957
+OCR (per candidate, first 40):
+  f  722 96x41 q=0.96 det=0.23 -> - 0.00
+  f  744 44x14 q=0.58 det=0.20 -> - 0.00
+FINAL: GJ130666  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t1 (bus)
+Track duration: 44.9 s  frames 0-1123
+Plate candidates: 5  best frame: 1104  plate size: 57x66  quality: 0.608
+OCR (per candidate, first 40):
+  f 1100 48x56 q=0.63 det=0.26 -> - 0.00
+  f 1102 45x46 q=0.62 det=0.32 -> - 0.00
+  f 1103 47x48 q=0.63 det=0.30 -> - 0.00
+  f 1104 46x44 q=0.61 det=0.59 -> - 0.00
+  f 1105 46x45 q=0.61 det=0.40 -> - 0.00
+FINAL: MH17B7449  status CANDIDATE  confidence 0.0002  low_confidence  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t2 (truck)
+Track duration: 44.9 s  frames 0-1123
+Plate candidates: 40  best frame: 768  plate size: 59x27  quality: 0.621
+OCR (per candidate, first 40):
+  f  261 22x22 q=0.47 det=0.23 -> - 0.00
+  f  274 20x20 q=0.47 det=0.23 -> - 0.00
+  f  275 19x20 q=0.47 det=0.25 -> - 0.00
+  f  276 19x19 q=0.47 det=0.30 -> - 0.00
+  f  278 20x20 q=0.47 det=0.23 -> - 0.00
+  f  510 22x24 q=0.47 det=0.27 -> - 0.00
+  f  542 22x24 q=0.47 det=0.27 -> - 0.00
+  f  650 48x19 q=0.63 det=0.23 -> - 0.00
+  f  651 48x19 q=0.63 det=0.23 -> - 0.00
+  f  660 48x19 q=0.62 det=0.27 -> - 0.00
+  f  661 48x19 q=0.62 det=0.27 -> - 0.00
+  f  662 48x19 q=0.63 det=0.27 -> - 0.00
+  f  685 48x19 q=0.63 det=0.24 -> - 0.00
+  f  690 48x19 q=0.63 det=0.24 -> - 0.00
+  f  705 48x18 q=0.63 det=0.22 -> - 0.00
+  f  728 47x18 q=0.62 det=0.21 -> - 0.00
+  f  729 47x18 q=0.62 det=0.24 -> - 0.00
+  f  762 50x18 q=0.63 det=0.23 -> - 0.00
+  f  763 48x18 q=0.62 det=0.38 -> - 0.00
+  f  764 48x18 q=0.62 det=0.38 -> - 0.00
+  f  765 49x18 q=0.62 det=0.29 -> - 0.00
+  f  766 49x18 q=0.62 det=0.29 -> - 0.00
+  f  767 48x18 q=0.62 det=0.34 -> - 0.00
+  f  768 48x18 q=0.62 det=0.38 -> - 0.00
+  f  769 48x18 q=0.62 det=0.38 -> - 0.00
+  f  770 48x19 q=0.62 det=0.32 -> - 0.00
+  f  772 48x19 q=0.62 det=0.33 -> - 0.00
+  f  773 48x19 q=0.62 det=0.33 -> - 0.00
+  f  774 48x19 q=0.62 det=0.33 -> - 0.00
+  f  775 48x19 q=0.62 det=0.33 -> - 0.00
+  f  780 48x18 q=0.62 det=0.33 -> - 0.00
+  f  785 47x18 q=0.62 det=0.21 -> - 0.00
+  f  790 47x18 q=0.62 det=0.21 -> - 0.00
+  f  800 49x20 q=0.62 det=0.27 -> - 0.00
+  f  805 49x20 q=0.62 det=0.27 -> - 0.00
+  f  815 48x18 q=0.64 det=0.34 -> - 0.00
+  f  820 48x18 q=0.64 det=0.34 -> - 0.00
+  f  825 48x18 q=0.64 det=0.34 -> - 0.00
+  f 1025 47x17 q=0.62 det=0.21 -> - 0.00
+  f 1035 47x16 q=0.62 det=0.21 -> - 0.00
+FINAL: GJ1119  status CANDIDATE  confidence 0.0  no_glyph_evidence:2  emitted: no
+
+[CAM01] Vehicle ID: cam01_s0_t225 (bus)
+Track duration: 6.9 s  frames 950-1123
+Plate candidates: 1  best frame: 984  plate size: 165x77  quality: 0.916
+OCR (per candidate, first 40):
+  f  984 133x51 q=0.92 det=0.20 -> - 0.00
+FINAL: MR049429  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no

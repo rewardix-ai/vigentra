@@ -60,11 +60,13 @@ class Attention:
         self.hot_until: dict[str, float] = {}
         self.warm_until: dict[str, float] = {}
         self.last: dict[str, float] = {}
+        #: cameras an active pursuit wants watched (central GET /pursuits): first claim on frames
+        self.pursuit: set[str] = set()
 
     def _rank(self, entry, now):
         arrival, cam = entry
         waited = now - self.last.get(cam, 0)
-        urgent = (self.hot_until.get(cam, 0) > now
+        urgent = (cam in self.pursuit or self.hot_until.get(cam, 0) > now
                   or (self.warm_until.get(cam, 0) > now and waited > WARM_SECONDS)
                   or waited > COLD_SECONDS)
         return (0 if urgent else 1, arrival)
@@ -181,6 +183,23 @@ def main() -> int:
             outcomes[key] = outcomes.get(key, 0) + 1
 
     ANPRPipeline._finalise_track = counted
+
+    # Pursuit (central routers/pursuits.py): every closed track with plate crops is checked against the
+    # pursued plates off the GPU path, and matches go back as possible sightings with the best crop.
+    import queue
+    pursuit = {"targets": {}}            # plate -> pursuit id, refreshed by the poller below
+    checks: "queue.Queue" = queue.Queue(maxsize=500)
+    finalise_counted = ANPRPipeline._finalise_track
+
+    def checked(self, bank, _inner=finalise_counted):
+        _inner(self, bank)
+        if pursuit["targets"] and bank.crops:
+            try:
+                checks.put_nowait((self.camera_id, f"{bank.track_id}_{int(bank.first_pts_ms)}", list(bank.crops)))
+            except queue.Full:
+                pass
+
+    ANPRPipeline._finalise_track = checked
 
     # Diagnostics (LIGHT_DIAG_DIR): a big vehicle with no plate box is saved (one per camera per 20 s,
     # 80 at most) with what the plate detector proposed and why each proposal was dropped.
@@ -317,6 +336,8 @@ def main() -> int:
     discovery = worker.CentralClient()
     discovery.sign_in(*accounts["traffic_vms"])
     registry = {c["external_camera_id"]: c for c in discovery.list_cameras() if str(c.get("external_camera_id", "")).startswith("GRID-")}
+    start_pursuit_threads(gpu, pursuit, checks, registry, lambda c, dept: sign_in(c, *accounts[dept]), worker,
+                          threading.Event())
     wanted = [f"GRID-{c}" for c in sys.argv[1:]] or sorted(registry)
     names = {c["camera_id"]: ext.replace("GRID-", "") for ext, c in registry.items()}
     incidents: dict = {}
@@ -366,6 +387,77 @@ def main() -> int:
     except KeyboardInterrupt:
         stop.set()
     return 0
+
+
+def start_pursuit_threads(gpu, pursuit, checks, registry, sign_in_as, worker, stop) -> None:
+    """The poller (active pursuits -> hot cameras and targets) and the checker (closed tracks -> possible
+    sightings). Both log and carry on through any error: a pursuit must never stop the readers."""
+    import base64
+
+    import cv2
+
+    from anpr.read.crnn import CRNNReader
+    from app import target_check
+
+    dept_of = {c["camera_id"]: c.get("source_system", "traffic_vms") for c in registry.values()}
+    clients: dict = {}
+
+    def client(dept):
+        if dept not in clients:
+            c = worker.CentralClient()
+            sign_in_as(c, dept)   # the department's own account, not the thread's
+            clients[dept] = c
+        return clients[dept]
+
+    def poll():
+        while not stop.is_set():
+            try:
+                r = client("traffic_vms")._client.get("/api/v1/pursuits", headers=client("traffic_vms")._headers())
+                if r.status_code == 401:
+                    clients.pop("traffic_vms", None)
+                else:
+                    r.raise_for_status()
+                    active = r.json()["pursuits"]
+                    pursuit["targets"] = {p["plate"]: p["id"] for p in active}
+                    gpu.pursuit = {cid for p in active for cid in p["hot_cameras"]}
+            except Exception as exc:
+                log.warning("pursuit poll failed: %s", exc)
+            stop.wait(10)
+
+    def edits(a: str, b: str) -> int:
+        prev = list(range(len(b) + 1))
+        for i, ca in enumerate(a, 1):
+            cur = [i]
+            for j, cb in enumerate(b, 1):
+                cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+            prev = cur
+        return prev[-1]
+
+    reader = CRNNReader(HERE / "models" / "reader_crnn.onnx")
+
+    def check():
+        while not stop.is_set():
+            try:
+                camera_id, track, crops = checks.get(timeout=5)
+            except Exception:
+                continue
+            targets = dict(pursuit["targets"])
+            try:
+                for plate, (score, read) in target_check.score_crops(crops, list(targets), reader).items():
+                    if score < target_check.MATCH_SCORE and not (read and edits(read, plate) <= 1):
+                        continue
+                    best = max(crops, key=lambda c: c.quality.quality_score)
+                    ok, buf = cv2.imencode(".jpg", best.image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                    body = {"camera_id": camera_id, "track": track, "read_as": read or None, "target_score": score,
+                            "crops": len(crops), "crop_jpeg_b64": base64.b64encode(buf.tobytes()).decode() if ok else None}
+                    c = client(dept_of.get(camera_id, "traffic_vms"))
+                    r = c._client.post(f"/api/v1/pursuits/{targets[plate]}/possible", headers=c._headers(), json=body)
+                    log.info("pursuit: possible %s at %s (score %.2f, read %s) -> %s", plate, camera_id, score, read, r.status_code)
+            except Exception as exc:
+                log.warning("pursuit check failed: %s", exc)
+
+    threading.Thread(target=poll, name="pursuit-poll", daemon=True).start()
+    threading.Thread(target=check, name="pursuit-check", daemon=True).start()
 
 
 def _with(lock, fn, *a, **k):

@@ -1628,7 +1628,6 @@ class AnalyticsReportRow(BaseModel):
 INCIDENT_KINDS = (
     "WRONG_WAY",
     "STOPPED_IN_LANE",
-    "SUDDEN_STOP",
     "COLLISION_CANDIDATE",
     "PERSON_ON_CARRIAGEWAY",
     "INTRUSION",   # a person or vehicle inside a camera's configured restricted zone

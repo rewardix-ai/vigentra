@@ -16,7 +16,7 @@ WHAT IT WATCHES
 Everything is derived from the tracker's own boxes over time; no extra model, so it costs
 almost nothing on top of detection that is already running.
 
-    SUDDEN_STOP        a vehicle decelerating far harder than traffic around it
+    SUDDEN_STOP        (retired) a vehicle decelerating far harder than traffic around it
     STOPPED_IN_LANE    a vehicle stationary while other vehicles keep moving past it
     COLLISION_CANDIDATE two vehicles overlapping AND both losing speed sharply together
     WRONG_WAY          a vehicle travelling against the camera's established flow
@@ -96,6 +96,9 @@ FLOW_GRID = (4, 3)
 # vehicle leaves reads as a stop); wrong ways were mostly junction turns in regions that had learned
 # 12-21 vehicles since the last restart. So motion is judged only on vehicles that are big enough and
 # wholly in view, and wrong way only where a region has a clear, well-learned direction.
+# Retired 8 Oct at the operator's request: on live grid footage every sudden stop checked by eye was
+# ordinary braking in traffic, distant-vehicle jitter or a box cut off at the frame edge.
+RAISE_SUDDEN_STOP = False
 JUDGE_MIN_HEIGHT_FRAC = 0.06   # box at least this share of the frame height
 EDGE_MARGIN_FRAC = 0.02        # box this close to any frame edge is cut off: not judged
 WRONG_WAY_MIN_REGION = 50      # vehicles a region must have learned before it judges direction
@@ -495,7 +498,7 @@ class IncidentDetector:
             and o.label in VEHICLE_LABELS and o.speeds and o.speeds[-1][1] > MOVING_SPEED
             and self._trusted(o))
         if (decel is not None and decel >= HARD_DECEL and stopped_now and others_moving >= 2
-                and self._fire((tid, "SUDDEN_STOP"), now)):
+                and RAISE_SUDDEN_STOP and self._fire((tid, "SUDDEN_STOP"), now)):
             out.append(Incident(
                 self.camera_id, "SUDDEN_STOP", "MEDIUM", [tid], st.first_seen, now,
                 reason=(f"{st.label} lost {decel:.1f} vehicle-heights/s of speed per "

@@ -163,3 +163,11 @@ async def test_a_replayed_recording_raises_a_new_incident_not_an_old_one(api, lo
     again = (await _submit(api, edge, cam, track_ids=[77])).json()
     assert again["accepted"] == 1 and again["duplicates"] == 0
     assert (await _submit(api, edge, cam, track_ids=[77])).json()["duplicates"] == 1   # and that one now extends
+
+
+@pytest.mark.asyncio
+async def test_sudden_stop_is_retired(api, login, traffic_camera):
+    """Retired 8 Oct: every sudden stop checked on live grid footage was ordinary braking or jitter."""
+    edge = await login("traffic.ai")
+    r = (await _submit(api, edge, traffic_camera["camera_id"], kind="SUDDEN_STOP", track_ids=[88])).json()
+    assert r["accepted"] == 0 and r["errors"][0]["code"] == "UNKNOWN_KIND"

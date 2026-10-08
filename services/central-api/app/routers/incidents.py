@@ -240,6 +240,8 @@ async def list_incidents(
         stmt = stmt.where(IncidentRow.camera_id == camera_id)
     if kind:
         stmt = stmt.where(IncidentRow.kind == kind.strip().upper())
+    else:   # retired kinds (sudden stop, 8 Oct) stay in the database but are no longer listed
+        stmt = stmt.where(IncidentRow.kind.in_(INCIDENT_KINDS))
     if status_filter:
         stmt = stmt.where(IncidentRow.status == status_filter.strip().upper())
 

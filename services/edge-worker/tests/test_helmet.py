@@ -4,8 +4,15 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from app import helmet
+
+
+@pytest.fixture(autouse=True)
+def _a_two_wheeler(monkeypatch):
+    """Synthetic grey frames are no vehicle at all; the type check is its own test below."""
+    monkeypatch.setattr(helmet.vehicle_type, "two_wheeler_score", lambda crop: 1.0)
 
 
 def bike(tid, x, y, w=120):
@@ -75,3 +82,17 @@ def test_a_rider_whose_track_breaks_is_called_once(monkeypatch):
         out += w.observe(frame, [bike(21, 505, 220 + 30 * i)], 2.0 + 0.5 * i)
     out += w.observe(frame, [], 20.0)
     assert len(out) == 1
+
+
+def test_a_vehicle_the_type_classifier_rejects_is_not_judged(monkeypatch):
+    """cam04, 8 Oct: a pedal cargo tricycle the detector called a motorcycle; cyclists need no helmet."""
+    from app import vehicle_type
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.99)
+    monkeypatch.setattr(vehicle_type, "available", lambda: True)
+    monkeypatch.setattr(vehicle_type, "two_wheeler_score", lambda crop: 0.04)
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(4):
+        out += w.observe(frame, [bike(30, 500, 200 + 25 * i)], float(i))
+    out += w.observe(frame, [], 20.0)
+    assert not out

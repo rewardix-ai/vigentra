@@ -23,6 +23,8 @@ import threading
 from collections import Counter
 from pathlib import Path
 
+from . import vehicle_type
+
 logger = logging.getLogger("vigentra.edge.helmet")
 
 MODELS = Path(__file__).resolve().parent.parent / "models"
@@ -38,6 +40,7 @@ MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls a
 SAME_RIDER_S, SAME_RIDER_W = 2.0, 2.5   # a call whose track starts within this time and this many widths of
                             # where a raised rider was last seen is that rider again under a new track id
                             # (cam06, 8 Oct: one red-shirted rider called twice a second apart)
+TWO_WHEELER_MIN = 0.1       # the vehicle-type classifier must find it plausibly a motorbike or scooter
 PARKED_FRAMES, PARKED_S = 4, 3.0   # only a two-wheeler seen this often, this long, and not moving is parked:
                             # light mode often sees a passing rider in one or two frames (8 Oct: 36 of 78
                             # two-wheelers were set aside as parked, most of them just seen too briefly)
@@ -118,6 +121,9 @@ class HelmetWatch:
             if bw <= v["max_w"]:
                 continue
             v["max_w"] = bw
+            bx1, by1 = int(max(0, x1 - 0.08 * bw)), int(max(0, y1 - 0.08 * bh))
+            bx2, by2 = int(min(w, x2 + 0.08 * bw)), int(min(h, y2 + 0.08 * bh))
+            v["vehicle"] = frame[by1:by2, bx1:bx2].copy()   # cut as the vehicle-type classifier was trained
             snap = frame.copy()
             t = max(2, w // 400)
             cv2.rectangle(snap, (cx1, cy1), (cx2, cy2), (0, 0, 255), t + 1)
@@ -151,6 +157,13 @@ class HelmetWatch:
                     and v["last_pts"] - v["first_pts"] >= PARKED_S):
                 TALLY["parked"] += 1
                 continue   # never moved: not a rider on the road
+            if v.get("vehicle") is not None and vehicle_type.available():
+                try:
+                    if vehicle_type.two_wheeler_score(v["vehicle"]) < TWO_WHEELER_MIN:
+                        TALLY["not_a_two_wheeler"] += 1
+                        continue   # a cycle cart, an auto or a handcart the detector took for a motorcycle
+                except Exception as exc:  # pragma: no cover - a side check never stops the pass
+                    logger.warning("two-wheeler check failed: %s", exc)
             views = [crop for cw, crop in v["crops"] if cw >= VIEW_SHARE * v["max_w"]]
             try:
                 scores = [no_helmet_score(crop) for crop in views]

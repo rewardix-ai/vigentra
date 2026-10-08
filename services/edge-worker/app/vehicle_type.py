@@ -50,6 +50,20 @@ def _classify(crop) -> tuple[str, float]:
         return _model.names[int(r.probs.top1)], float(r.probs.top1conf)
 
 
+def two_wheeler_score(crop) -> float:
+    """P(motorcycle) + P(scooter) for a vehicle crop: the helmet check asks it before judging a rider
+    (cam04, 8 Oct: a pedal cargo tricycle the detector called a motorcycle scored 0.04; labelled grid
+    motorbikes and scooters score >= 0.1 in 97 of 100 cases)."""
+    global _model
+    with _lock:
+        if _model is None:
+            from ultralytics import YOLO
+            _model = YOLO(str(WEIGHTS))
+        p = _model.predict(crop, imgsz=224, verbose=False, device="cpu")[0].probs.data
+        ids = [k for k, v in _model.names.items() if v in ("motorcycle", "scooter")]
+        return float(sum(p[i] for i in ids))
+
+
 class VehicleTypes:
     """Per camera: each track's type, refined as the vehicle comes closer."""
 

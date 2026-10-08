@@ -115,11 +115,12 @@ class NoPlateWatch:
                     snap = frame.copy()
                     t = max(2, w // 400)
                     cv2.rectangle(snap, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), t + 1)
-                    cv2.rectangle(snap, (0, 0), (w, 18 * t + 8), (0, 0, 0), -1)
-                    cv2.putText(snap, f"NO PLATE VISIBLE  {v['label'].upper()}  {self.camera_id}", (8, 14 * t),
+                    strip = np.zeros((18 * t + 8, w, 3), np.uint8)   # title above the frame, never over it
+                    cv2.putText(strip, f"NO PLATE VISIBLE  {v['label'].upper()}  {self.camera_id}", (8, 14 * t),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45 * t, (255, 255, 255), max(1, t // 2))
+                    snap = np.vstack([strip, snap])
                     if w > 960:
-                        snap = cv2.resize(snap, (960, int(h * 960 / w)), interpolation=cv2.INTER_AREA)
+                        snap = cv2.resize(snap, (960, int(snap.shape[0] * 960 / w)), interpolation=cv2.INTER_AREA)
                     ok, buf = cv2.imencode(".jpg", snap, [cv2.IMWRITE_JPEG_QUALITY, 80])
                     v["jpeg"] = buf.tobytes() if ok else None
             elif bw > v["max_w"]:

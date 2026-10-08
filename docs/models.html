@@ -317,8 +317,8 @@ so the live shortfall is frames per camera, not reading.</p>
 </tr>
 <tr>
 <td>Helmet classifier</td>
-<td>Two YOLO11n-cls (1.5 M parameters each) trained on 1,036 of our own grid rider crops labelled by eye, their scores averaged over each rider's three closest views (<code>app/helmet.py</code>, <code>models/helmet_cls.pt</code> + <code>helmet_cls_v4.pt</code>)</td>
-<td>Flags bare-headed two-wheeler riders (motorcycle and scooter, at least 120 px wide) as LOW candidates at mean &gt;= 0.85. On 203 held-out riders: 20 calls, 19 right, none on a helmeted rider, 19 of 45 bare-headed riders found. Live audit of the first 14 calls: 10 of 11 judgeable right. A free downloaded helmet model found nothing on our footage.</td>
+<td>Three YOLO11n-cls (1.5 M parameters each) trained on 1,236 of our own grid rider crops labelled by eye, their scores averaged over each rider's three closest views (<code>app/helmet.py</code>, <code>models/helmet_cls.pt</code>, <code>helmet_cls_v4.pt</code>, <code>helmet_cls_v5.pt</code>)</td>
+<td>Flags bare-headed two-wheeler riders (motorcycle and scooter, at least 120 px wide) as LOW candidates at mean &gt;= 0.85. On 203 held-out riders: 20 calls, 19 right, none on a helmeted rider, 19 of 45 bare-headed riders found. v2 alone scores some helmeted riders above 0.95 (a live miss on cam06, 8 Oct); the trio puts that rider below 0.75. Live audit of the first 14 calls: 10 of 11 judgeable right. A free downloaded helmet model found nothing on our footage.</td>
 </tr>
 <tr>
 <td>Vehicle-type classifier</td>
@@ -366,10 +366,10 @@ so the live shortfall is frames per camera, not reading.</p>
 <td>Not adopted; v4 (from v2) is used with v2.</td>
 </tr>
 <tr>
-<td>Helmet v5 (v4 fine-tuned on 200 more riders)</td>
+<td>Helmet v5 paired with v2 only</td>
 <td>Helmet classifier</td>
-<td>Paired with v2 on 203 held-out riders: 25 calls, 22 right, one on a helmet (v2+v4: 20, 19, none)</td>
-<td>Not adopted.</td>
+<td>On 203 held-out riders: 25 calls, 22 right, one on a helmet</td>
+<td>Not adopted as a pair; used in the trio.</td>
 </tr>
 <tr>
 <td>YOLO26n</td>

@@ -8,8 +8,8 @@ classifier trained on our own grid riders (models/helmet_cls.pt:
 no_helmet / helmet / unclear, labelled by eye; ANPR research repo tools/rider_crops.py, rider_mine.py).
 
 Measured per crop on 203 held-out grid riders cut the live way (8 Oct, ANPR repo tools/helmet_pair_eval.py):
-the two averaged, at >= 0.85, made 20 calls, 19 right, none on a rider wearing a helmet, and found 19 of
-the 45 bare-headed riders; v2 alone at 0.9 made 27 calls, 23 right, one on a helmet (a full-face helmet
+the three averaged, at >= 0.85, made 20 calls, 19 right, none on a rider wearing a helmet, and found 19
+of the 45 bare-headed riders; v2 alone at 0.9 made 27 calls, 23 right, one on a helmet (a full-face helmet
 with a face mask, also the one miss of the first 14 live incidents). Its remaining mistakes are crops
 where the head is out of view, so a person confirms every candidate from the snapshot.
 """
@@ -24,9 +24,12 @@ from pathlib import Path
 logger = logging.getLogger("vigentra.edge.helmet")
 
 MODELS = Path(__file__).resolve().parent.parent / "models"
-#: two classifiers, their no-helmet scores averaged: v2 (models/helmet_cls.pt) and v4, fine-tuned from it
-#: on the riders labelled 8 Oct and cut exactly as below (models/helmet_cls_v4.pt)
-WEIGHTS = [Path(p) for p in os.getenv("HELMET_CLS_WEIGHTS", f"{MODELS / 'helmet_cls.pt'},{MODELS / 'helmet_cls_v4.pt'}").split(",") if p]
+#: three classifiers, their no-helmet scores averaged: v2 (models/helmet_cls.pt), v4 fine-tuned from it on
+#: the riders labelled 8 Oct and cut exactly as below, and v5 fine-tuned from v4 on 200 more. v2 alone puts
+#: some helmeted riders above 0.95 (cam06's looping checked-shirt rider in a black helmet, 8 Oct live);
+#: the later two, trained on such riders, pull them below the threshold.
+WEIGHTS = [Path(p) for p in os.getenv(
+    "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in ("helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v5.pt"))).split(",") if p]
 THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.85"))
 MIN_WIDTH = 120.0           # px: below this a person cannot confirm the head from the snapshot (8 Oct live
                             # audit: the three calls at 100-105 px, all night, could not be judged by eye)
@@ -72,6 +75,7 @@ class HelmetWatch:
 
     def observe(self, frame, detections, pts: float) -> list[dict]:
         import cv2
+        import numpy as np
 
         h, w = frame.shape[:2]
         seen = set()
@@ -104,11 +108,15 @@ class HelmetWatch:
             snap = frame.copy()
             t = max(2, w // 400)
             cv2.rectangle(snap, (cx1, cy1), (cx2, cy2), (0, 0, 255), t + 1)
-            cv2.rectangle(snap, (0, 0), (w, 18 * t + 8), (0, 0, 0), -1)
-            cv2.putText(snap, f"NO HELMET  LOW  {self.camera_id}", (8, 14 * t), cv2.FONT_HERSHEY_SIMPLEX,
+            # the title goes on a strip above the frame, never over it: a rider near the top edge has
+            # its head there (cam06, 8 Oct: a call that could not be checked because the title hid it)
+            strip = np.zeros((18 * t + 8, w, 3), np.uint8)
+            cv2.putText(strip, f"NO HELMET  LOW  {self.camera_id}", (8, 14 * t), cv2.FONT_HERSHEY_SIMPLEX,
                         0.45 * t, (255, 255, 255), max(1, t // 2))
+            snap = np.vstack([strip, snap])
+            h_snap = snap.shape[0]
             if w > 960:
-                snap = cv2.resize(snap, (960, int(h * 960 / w)), interpolation=cv2.INTER_AREA)
+                snap = cv2.resize(snap, (960, int(h_snap * 960 / w)), interpolation=cv2.INTER_AREA)
             ok, buf = cv2.imencode(".jpg", snap, [cv2.IMWRITE_JPEG_QUALITY, 80])
             v["jpeg"] = buf.tobytes() if ok else None
         out = []

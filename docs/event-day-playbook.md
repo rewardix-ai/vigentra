@@ -44,7 +44,7 @@ Why reading is hard on this grid, with evidence anyone can check:
 | A route on GIS with timestamps | Rehearsed live: trace of GJ11E5402 (cam06) and GJ39CB0189 (cam30) with map, footage time, camera and department | Trace page, rehearsal 8 Oct |
 | That the system does not invent | Possible vs confirmed vs candidate shown apart; implausible legs flagged; every trace reason audited | `track_service.py`, audit log |
 | Why a camera missed it | Per-minute log of where plates are lost; snapshot of the vehicle when no plate was visible (incident) | light reader log; NO_PLATE_VISIBLE incidents |
-| Live analytics beyond plates | Incidents with snapshots: rider without a helmet, vehicle without a visible plate, wrong side (keep-left rule, Rules of the Road reg. 2/17, MV Act s. 184), possible collision, stopped in lane | Incidents page |
+| Live analytics beyond plates | Every vehicle typed (auto-rickshaw, scooter, motorcycle, car, bus, truck: 89 % right on held-out grid cameras, 60 % for the stock detector). Incidents with snapshots: rider without a helmet (19 of 20 held-out calls right), vehicle without a visible plate (any type), wrong side (keep-left rule, Rules of the Road reg. 2/17, MV Act s. 184), possible collision, stopped in lane | Incidents page |
 | Honest measurement | Incidents audited by eye on live snapshots; rules that failed were retired (sudden stop) or rebuilt (wrong way: 274 to 6 in a 6 h replay) | `docs/submission.md` |
 | Scale and integration | 30 grid cameras on one Mac, federation of two department VMS, onboarding, role and department access, video grants, retention | HLD, scalability note |
 | Resilience | Grid refusal windows survived by switching accounts; idle-camera watchdog; clock re-sampling | supervisor log |

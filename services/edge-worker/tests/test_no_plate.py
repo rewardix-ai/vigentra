@@ -78,3 +78,13 @@ def test_a_car_turning_at_a_junction_is_not_raised():
         x1, wi = 450 + 60 * i, 330 + 20 * i
         w.observe(f, [det(4, (x1, 330, x1 + wi, 330 + wi / 2.0))], 8.0 + i)
     assert not w.closed(closed(4), W)
+
+
+def test_a_vehicle_cut_off_by_the_frame_edge_is_not_raised():
+    """cam30, 8 Oct: a car reversing out of the bottom-left corner, its rear plate below the frame."""
+    w = NoPlateWatch("cam-x")
+    f = frame()
+    for i in range(8):
+        y1, wi = 420 + 25 * i, 250 + 4 * i
+        w.observe(f, [det(6, (2, y1, 2 + wi, min(H, y1 + wi / 1.3)))], float(i))
+    assert not w.closed(closed(6), W)

@@ -14,7 +14,8 @@ seen, so a candidate needs all of:
   where the box must be no wider than a front or rear view of that vehicle is (MAX_ASPECT) and the
   vehicle must be moving more up/down the frame than across it. The widest view of a vehicle that
   turns is its side (cam04, 8 Oct: the first live call was a car turning at the junction);
-- a usable picture: the widest view neither dark nor blown out by glare, and sharp.
+- a usable picture: the widest view fully inside the frame (cam30, 8 Oct: a car cut off by the bottom
+  edge, where its rear plate was), neither dark nor blown out by glare, and sharp.
 
 It is a CANDIDATE, never a finding: covered, missing and unreadable plates all look the same here, and
 the snapshot (the frame at the vehicle's widest, boxed) is what lets a person decide.
@@ -40,6 +41,7 @@ TOWARDS_RATIO = 1.5         # vertical travel at least this many times the horiz
 MAX_ASPECT = {"car": 1.45, "bus": 1.5, "truck": 1.5, "auto-rickshaw": 1.3, "motorcycle": 0.9, "scooter": 0.9}
 MIN_LUMA, MAX_LUMA = 55, 205   # median brightness of the vehicle at its widest
 MIN_SHARPNESS = 40.0        # Laplacian variance of that view
+EDGE_MARGIN = 0.015         # the widest view must be at least this share of the frame clear of every edge
 FORGET_SECONDS = 120.0
 
 #: why closed no-plate tracks did not become candidates, for the reader's per-minute log
@@ -63,6 +65,8 @@ def candidate(view: dict, frame_w: float) -> tuple[bool, str]:
     ldx, ldy = view.get("local", (1.0, 0.0))
     if abs(ldy) < abs(ldx):
         return False, "turning_at_widest"
+    if view.get("at_edge", False):
+        return False, "cut_by_frame_edge"
     if not (MIN_LUMA <= view.get("luma", 0) <= MAX_LUMA):
         return False, "exposure"
     if view.get("sharpness", 0.0) < MIN_SHARPNESS:
@@ -100,6 +104,8 @@ class NoPlateWatch:
             if bw > v["max_w"] and bw >= need:
                 v["max_w"] = bw
                 v["aspect"] = bw / max(1.0, y2 - y1)
+                mx, my = EDGE_MARGIN * w, EDGE_MARGIN * h
+                v["at_edge"] = x1 < mx or y1 < my or x2 > w - mx or y2 > h - my
                 v["local"] = (c[0] - prev[0], c[1] - prev[1])
                 crop = frame[int(max(0, y1)):int(y2), int(max(0, x1)):int(x2)]
                 if crop.size:

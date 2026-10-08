@@ -1692,3 +1692,31 @@ class IncidentReview(BaseModel):
 
     status: str
     note: str | None = None
+
+
+class VehicleSeen(BaseModel):
+    """One vehicle at one camera: its frame detections grouped by the edge tracker's id."""
+    camera_id: str
+    camera_name: str | None = None
+    city: str | None = None
+    vehicle_type: str
+    first_seen_utc: datetime
+    last_seen_utc: datetime
+    frames: int
+    max_width_px: float
+    near_enough_to_read: bool
+    plate_text: str | None = None
+    plate_confidence: float | None = None
+    plate_confirmed: bool | None = None
+    plate_withheld: bool = False
+    no_plate_reason: str | None = None   # "too far to read" | "plate not readable"
+
+
+class VehiclesSeenResponse(BaseModel):
+    since_utc: datetime
+    vehicles_seen: int
+    near_enough_to_read: int
+    identified: int
+    identified_share_of_near: float | None
+    untracked_frames: int
+    vehicles: list[VehicleSeen]

@@ -48,3 +48,25 @@ async def test_the_plate_reaches_every_frame_of_its_vehicle(api, login, traffic_
     assert all(plates[f"v7-{i}"] == "GJ01AB1234" for i in range(5))
     assert all(plates[f"v8-{i}"] is None for i in range(3))      # another vehicle keeps no plate
     assert plates["v7-old"] is None                              # same tracker id, long before: not this vehicle
+
+
+async def test_vehicles_seen_counts_vehicles_not_frames(api, login, traffic_camera):
+    edge = await login("traffic.ai")
+    cam = traffic_camera["camera_id"]
+    now = datetime.now(timezone.utc)
+    near = [vehicle_frame(cam, detection_id=f"n{t}-{i}", moment=now - timedelta(seconds=30 - i), track_id=t) for t in (21, 22) for i in range(4)]
+    far = [dict(vehicle_frame(cam, detection_id=f"f23-{i}", moment=now - timedelta(seconds=30 - i), track_id=23), bbox_xyxy=[10.0, 10.0, 60.0, 40.0]) for i in range(6)]
+    untracked = [dict(vehicle_frame(cam, detection_id="u-1", moment=now, track_id=0), provenance={})]
+    (await api.post("/api/v1/detections/ingest", headers=edge, json={"detections": near + far + untracked})).raise_for_status()
+    plate = plate_detection(cam, "GJ05CD4321", detection_id="n21-plate", moment=now)
+    plate["provenance"]["track_id"] = 21
+    (await api.post("/api/v1/detections/ingest", headers=edge, json={"detections": [plate]})).raise_for_status()
+
+    reader = await login("traffic.state")
+    body = (await api.get("/api/v1/detections/vehicles", headers=reader, params={"camera_id": cam})).json()
+    by_plate = {v["plate_text"]: v for v in body["vehicles"]}
+    assert body["vehicles_seen"] == 3 and body["near_enough_to_read"] == 2 and body["identified"] == 1
+    assert body["identified_share_of_near"] == 0.5 and body["untracked_frames"] == 1
+    assert by_plate["GJ05CD4321"]["frames"] == 5 and by_plate["GJ05CD4321"]["no_plate_reason"] is None
+    reasons = sorted(v["no_plate_reason"] for v in body["vehicles"] if not v["plate_text"])
+    assert reasons == ["plate not readable", "too far to read"]

@@ -30,6 +30,34 @@ export type VideoAccessState =
   | "needs_unit_approval"
   | "camera_unavailable";
 
+/** One vehicle at one camera: its frame detections grouped by the edge tracker. */
+export interface VehicleSeen {
+  camera_id: string;
+  camera_name: string | null;
+  city: string | null;
+  vehicle_type: string;
+  first_seen_utc: string;
+  last_seen_utc: string;
+  frames: number;
+  max_width_px: number;
+  near_enough_to_read: boolean;
+  plate_text: string | null;
+  plate_confidence: number | null;
+  plate_confirmed: boolean | null;
+  plate_withheld: boolean;
+  no_plate_reason: string | null;
+}
+
+export interface VehiclesSeen {
+  since_utc: string;
+  vehicles_seen: number;
+  near_enough_to_read: number;
+  identified: number;
+  identified_share_of_near: number | null;
+  untracked_frames: number;
+  vehicles: VehicleSeen[];
+}
+
 /** One object seen in one frame, as recorded by an edge worker. */
 export interface Detection {
   detection_id: string;

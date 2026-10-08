@@ -35,7 +35,7 @@ from ..database import get_db
 from ..dependencies import SettingsDep, client_ip, require_permission
 from ..models import Camera as CameraRow
 from ..models import Detection as DetectionRow
-from ..models import FrameQualityEvent, ModelVersion
+from ..models import FrameQualityEvent, ModelVersion, PlateSighting
 from ..schemas import (
     DETECTION_CLASSES,
     CameraTrafficSummary,
@@ -45,6 +45,8 @@ from ..schemas import (
     DetectorHealth,
     InstallationStatus,
     VehicleCount,
+    VehicleSeen,
+    VehiclesSeenResponse,
 )
 from ..services import alert_webhook, audit_service, watchlist_service
 from ..services.audit_service import AuditAction, AuditOutcome, ResourceType
@@ -535,6 +537,113 @@ async def list_detections(
     if disclosed:
         await _record_plate_view(db, request, user, disclosed=disclosed, camera_id=camera_id)
     return projected
+
+
+#: A vehicle at least this wide (frame px) is near enough for its plate to be searched; narrower, the
+#: plate is under ~40 px and never reads exactly (the edge engine's own plate-search floor).
+NEAR_PX = 96.0
+#: The edge tracker's ids restart with its engine: the same id more than this far apart is another vehicle.
+TRACK_GAP = timedelta(minutes=2)
+
+
+@router.get(
+    "/detections/vehicles",
+    response_model=VehiclesSeenResponse,
+    summary="Vehicles seen, one row per vehicle with its plate or why it has none",
+)
+async def vehicles_seen(
+    request: Request,
+    settings: SettingsDep,
+    user: DemoUser = Depends(require_permission(Permission.DETECTION_READ)),
+    db: AsyncSession = Depends(get_db),
+    camera_id: str | None = Query(default=None),
+    since_minutes: int = Query(default=60, ge=1, le=360),
+    identified_only: bool = Query(default=False),
+    limit: int = Query(default=300, ge=1, le=2000),
+) -> VehiclesSeenResponse:
+    """The frames a camera detected, grouped into the vehicles they show.
+
+    The edge detects a vehicle in every frame it is in view, and decides its plate once, when it
+    leaves. A frame list therefore shows one car forty times; this shows it once, with how long it
+    was tracked, whether it came near enough for a plate to be read (at least 96 px wide), and its
+    plate, or the reason it has none. Counts are of vehicles, not frames.
+    """
+    may_read_plate, plate_horizon = _plate_access(user, settings)
+    since = datetime.now(timezone.utc) - timedelta(minutes=since_minutes)
+    stmt = select(DetectionRow).where(DetectionRow.timestamp_utc >= since)
+    if camera_id:
+        stmt = stmt.where(DetectionRow.camera_id == camera_id)
+    cameras = {row.camera_id: row for row in (await db.execute(select(CameraRow))).scalars().all()}
+    rows = [
+        r for r in (await db.execute(stmt.order_by(DetectionRow.timestamp_utc))).scalars().all()
+        if r.camera_id in cameras and may_read_detections(user, cameras[r.camera_id])
+    ]
+
+    untracked = 0
+    open_tracks: dict[tuple[str, int], list] = {}
+    groups: list[list] = []
+    for r in rows:
+        track = (r.provenance or {}).get("track_id")
+        if track is None:
+            untracked += 1
+            continue
+        key = (r.camera_id, int(track))
+        current = open_tracks.get(key)
+        if current is not None and to_utc(r.timestamp_utc) - to_utc(current[-1].timestamp_utc) <= TRACK_GAP:
+            current.append(r)
+        else:
+            open_tracks[key] = [r]
+            groups.append(open_tracks[key])
+
+    plate_ids = [r.detection_id for g in groups for r in g if r.plate_text]
+    confirmed: dict[str, bool] = {}
+    if plate_ids:
+        for s_row in (await db.execute(select(PlateSighting).where(PlateSighting.detection_id.in_(plate_ids)))).scalars().all():
+            confirmed[s_row.detection_id] = bool((s_row.provenance or {}).get("plate_confirmed", True))
+
+    vehicles: list[VehicleSeen] = []
+    disclosed = 0
+    for g in groups:
+        width = max(float(r.bbox_json[2]) - float(r.bbox_json[0]) for r in g if r.bbox_json and len(r.bbox_json) == 4) if any(r.bbox_json for r in g) else 0.0
+        best = max(g, key=lambda r: r.confidence or 0.0)
+        plated = [r for r in g if r.plate_text]
+        reading = max(plated, key=lambda r: r.plate_confidence or 0.0) if plated else None
+        allow = bool(reading) and may_read_plate and _within_plate_retention(reading, plate_horizon)
+        if allow:
+            disclosed += 1
+        cam = cameras.get(g[0].camera_id)
+        vehicles.append(VehicleSeen(
+            camera_id=g[0].camera_id,
+            camera_name=getattr(cam, "name", None),
+            city=getattr(cam, "city", None),
+            vehicle_type=best.class_name,
+            first_seen_utc=to_utc(g[0].timestamp_utc),
+            last_seen_utc=to_utc(g[-1].timestamp_utc),
+            frames=len(g),
+            max_width_px=round(width, 1),
+            near_enough_to_read=width >= NEAR_PX,
+            plate_text=reading.plate_text if allow else None,
+            plate_confidence=reading.plate_confidence if allow else None,
+            plate_confirmed=(any(confirmed.get(r.detection_id, False) for r in plated) if plated else None) if allow else None,
+            plate_withheld=bool(reading) and not allow,
+            no_plate_reason=None if reading else ("too far to read" if width < NEAR_PX else "plate not readable"),
+        ))
+
+    near = sum(v.near_enough_to_read for v in vehicles)
+    identified = sum(1 for v in vehicles if v.plate_text or v.plate_withheld)
+    listed = [v for v in vehicles if not identified_only or v.plate_text or v.plate_withheld]
+    listed.sort(key=lambda v: (v.plate_text is None and not v.plate_withheld, -v.last_seen_utc.timestamp()))
+    if disclosed:
+        await _record_plate_view(db, request, user, disclosed=disclosed, camera_id=camera_id)
+    return VehiclesSeenResponse(
+        since_utc=since,
+        vehicles_seen=len(vehicles),
+        near_enough_to_read=near,
+        identified=identified,
+        identified_share_of_near=round(identified / near, 3) if near else None,
+        untracked_frames=untracked,
+        vehicles=listed[:limit],
+    )
 
 
 @router.get(

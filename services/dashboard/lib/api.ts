@@ -38,6 +38,7 @@ import type { Incident,
   Track,
   WatchCategory,
   WatchlistEntry,
+  VehiclesSeen,
 } from "./types";
 
 const BASE = "/api/vigentra";
@@ -205,6 +206,10 @@ export const api = {
     since_hours?: string;
     limit?: string;
   } = {}) => request<Detection[]>(`/api/v1/detections${query(filters)}`),
+
+  /** Vehicles seen: frames grouped into vehicles, each with its plate or why it has none. */
+  vehiclesSeen: (filters: { camera_id?: string; since_minutes?: string; identified_only?: string } = {}) =>
+    request<VehiclesSeen>(`/api/v1/detections/vehicles${query(filters)}`),
 
   /** Settled plate reads, newest first. One audited disclosure per call. */
   sightings: (filters: { camera_id?: string; since_hours?: string; limit?: string } = {}) =>

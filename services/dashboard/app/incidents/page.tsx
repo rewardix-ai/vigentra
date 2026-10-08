@@ -32,7 +32,6 @@ import type { Incident } from "@/lib/types";
 
 const KIND_LABEL: Record<string, string> = {
   WRONG_WAY: "Wrong way",
-  STOPPED_IN_LANE: "Stopped in lane",
   COLLISION_CANDIDATE: "Possible collision",
   PERSON_ON_CARRIAGEWAY: "Person in traffic",
   INTRUSION: "Intrusion in a restricted zone",

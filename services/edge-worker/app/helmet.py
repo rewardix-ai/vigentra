@@ -162,7 +162,7 @@ class HelmetWatch:
                 TALLY["judged_ok" if score < 0.5 else "judged_unsure"] += 1
                 continue
             fc, fw = v["first_c"], max(v["max_w"], 1.0)
-            if any(0 <= v["first_pts"] - t_last <= SAME_RIDER_S
+            if any(abs(v["first_pts"] - t_last) <= SAME_RIDER_S   # after it, or overlapping: an id switch
                    and ((fc[0] - c_last[0]) ** 2 + (fc[1] - c_last[1]) ** 2) ** 0.5 <= SAME_RIDER_W * max(fw, w_last)
                    for t_last, c_last, w_last in self.raised):
                 TALLY["same_rider_again"] += 1

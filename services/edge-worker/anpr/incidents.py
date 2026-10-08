@@ -110,6 +110,9 @@ WRONG_SIDE_SHARE = 0.08     # wrong side = a sense under this share of the regio
 # Retired 8 Oct at the operator's request: on live grid footage every sudden stop checked by eye was
 # ordinary braking in traffic, distant-vehicle jitter or a box cut off at the frame edge.
 RAISE_SUDDEN_STOP = False
+# Retired 8 Oct at the operator's request: a vehicle waiting to turn, unloading or queued at a signal
+# looks the same as one broken down in the lane; none checked by eye was worth an alert.
+RAISE_STOPPED_IN_LANE = False
 JUDGE_MIN_HEIGHT_FRAC = 0.06   # box at least this share of the frame height
 EDGE_MARGIN_FRAC = 0.02        # box this close to any frame edge is cut off: not judged
 WRONG_WAY_MIN_REGION = 50      # vehicles a region must have learned before it judges direction
@@ -576,7 +579,7 @@ class IncidentDetector:
                          if t.track_id != tid
                          and (s := self._tracks.get(t.track_id)) is not None
                          and s.speeds and s.speeds[-1][1] > MOVING_SPEED)
-            if movers >= 1 and self._fire((tid, "STOPPED_IN_LANE"), now):
+            if movers >= 1 and RAISE_STOPPED_IN_LANE and self._fire((tid, "STOPPED_IN_LANE"), now):
                 out.append(Incident(
                     self.camera_id, "STOPPED_IN_LANE", "LOW", [tid], st.stopped_since,
                     now,

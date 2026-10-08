@@ -1630,7 +1630,6 @@ class AnalyticsReportRow(BaseModel):
 #: kind is not one of these is a client fault, not a new category.
 INCIDENT_KINDS = (
     "WRONG_WAY",
-    "STOPPED_IN_LANE",
     "COLLISION_CANDIDATE",
     "PERSON_ON_CARRIAGEWAY",
     "INTRUSION",   # a person or vehicle inside a camera's configured restricted zone

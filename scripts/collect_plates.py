@@ -59,6 +59,14 @@ OTHERS = ["cam06", "cam17", "cam18", "cam16", "cam30", "cam03", "cam12", "cam19"
 ROTATION = SAME_EVENING + OTHERS[:8] + SAME_EVENING + OTHERS[8:]
 READERS = 3          # a fourth pushed a 16 GB Mac into swap with the stack running
 PROBE_SECONDS = 20   # one test login every 20 s while refused: a restart is caught within 20 s
+# Light-mode watchdog. The process can live on while most of its cameras get no frames (8 Oct: 22 of 30
+# idle for 14 h after long pauses), and nothing else notices. Its per-minute stats line lists the idle
+# cameras; this many idle for this many lines in a row restarts it. A fresh start gets a grace period,
+# since the cameras open 1.5 s apart and a few are idle in the first minute.
+IDLE_LIMIT = 5
+IDLE_LINES = 3
+IDLE_GRACE_SECONDS = 300
+IDLE_LINE = re.compile(r"frames/min .*\| idle: (.*)$")
 
 
 def log(msg: str) -> None:
@@ -162,7 +170,8 @@ def main() -> int:
         if light:
             env = dict(envs["traffic_vms"], LIGHT_MUNICIPAL_USERNAME=municipal.get("EDGE_USERNAME", "municipal.ai"),
                        LIGHT_MUNICIPAL_PASSWORD=municipal.get("EDGE_PASSWORD", ""))
-            slot["restart_at"] = None
+            slot["restart_at"], slot["started"], slot["idle_lines"] = None, time.time(), 0
+            slot["watch_at"] = slot["log"].stat().st_size if slot["log"].exists() else 0
             slot["proc"] = subprocess.Popen([sys.executable, "tools/light_readers.py"], cwd=EDGE, env=env,
                                             stdout=open(slot["log"], "a"), stderr=subprocess.STDOUT)
             return
@@ -219,6 +228,29 @@ def main() -> int:
         for slot, cam in zip(slots, chosen):
             launch(slot, cam)
         log(("restart: " if restarted else "") + "reading " + " ".join(chosen))
+
+    def watchdog(slot, now) -> bool:
+        """True when the light process has had too many idle cameras for too long."""
+        p = slot["proc"]
+        if p is None or p.poll() is not None or not slot["log"].exists():
+            return False
+        with open(slot["log"], "rb") as f:
+            f.seek(slot.get("watch_at", 0))
+            new = f.read().decode(errors="ignore")
+            slot["watch_at"] = f.tell()
+        if now - slot.get("started", 0) < IDLE_GRACE_SECONDS:
+            return False
+        for line in new.splitlines():
+            m = IDLE_LINE.search(line)
+            if m:
+                idle = [c for c in m.group(1).split() if c != "none"]
+                slot["idle_lines"] = slot["idle_lines"] + 1 if len(idle) >= IDLE_LIMIT else 0
+                slot["idle_now"] = idle
+        if slot["idle_lines"] >= IDLE_LINES:
+            idle = slot["idle_now"]
+            log(f"watchdog: {len(idle)} cameras idle for {IDLE_LINES} min ({' '.join(idle)}); restarting light mode")
+            return True
+        return False
 
     caffeinate = subprocess.Popen(["caffeinate", "-i", "-s", "-w", str(os.getpid())])
     stopping = False
@@ -299,6 +331,9 @@ def main() -> int:
                         slot["restart_at"] = now + 30
                     if slot["restart_at"] is not None and now >= slot["restart_at"]:
                         launch(slot, slot["camera"])
+                if light and watchdog(slots[0], now):
+                    stop_all()
+                    launch(slots[0], "all")
         if now - last_progress >= 3600:
             progress(logs)
             last_progress = now

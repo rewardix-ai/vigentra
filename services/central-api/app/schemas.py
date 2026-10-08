@@ -1548,6 +1548,8 @@ class TrackPointOut(BaseModel):
     #: The date and time printed on the footage at this read (grid cameras whose
     #: clock has been sampled); shown as on screen, with no time zone.
     video_time: datetime | None = None
+    #: A pursuit's target-check match (GET /pursuits/evidence/{sighting_id}), not a confirmed reading.
+    possible: bool = False
 
     @field_serializer("timestamp_utc")
     def _ser_time(self, value: datetime) -> str | None:

@@ -889,6 +889,37 @@ class IncidentSnapshot(Base):
     )
 
 
+class Pursuit(Base):
+    """A designated vehicle being followed across the cameras right now.
+
+    While a pursuit is active, edge readers give first claim on their frames to the cameras the vehicle
+    was last seen at and their nearest neighbours, and check every vehicle they close against its plate,
+    sending back POSSIBLE sightings with the plate crop for a person to confirm. Started and ended by a
+    named operator with a reason, both audited.
+    """
+
+    __tablename__ = "pursuits"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    plate_normalised: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    started_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PursuitEvidence(Base):
+    """The plate crop behind a possible sighting, so a person can judge it."""
+
+    __tablename__ = "pursuit_evidence"
+
+    sighting_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    jpeg: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
 class HealthAlert(Base):
     """A camera, or a whole department system, that stopped answering the health monitor.
 

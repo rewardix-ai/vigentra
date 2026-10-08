@@ -66,6 +66,9 @@ class AuditAction(str, Enum):
     PLATE_DATA_VIEWED = "plate_data_viewed"
     INCIDENT_REVIEWED = "incident_reviewed"
     INCIDENT_SNAPSHOT_VIEWED = "incident_snapshot_viewed"
+    PURSUIT_STARTED = "pursuit_started"
+    PURSUIT_ENDED = "pursuit_ended"
+    PURSUIT_EVIDENCE_VIEWED = "pursuit_evidence_viewed"
 
     # plate identity - watchlist, alerts, movement
     WATCHLIST_ENTRY_ADDED = "watchlist_entry_added"

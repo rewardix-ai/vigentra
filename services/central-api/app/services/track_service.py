@@ -104,6 +104,8 @@ class TrackPoint:
     #: elsewhere. The route is ordered by read time, which the grid keeps on
     #: one common timeline; this is what a viewer of the footage would see.
     video_time: datetime | None = None
+    #: An edge reader's "is this the pursued plate?" match, not a reading: shown for a person to confirm.
+    possible: bool = False
 
 
 @dataclass
@@ -321,6 +323,7 @@ async def reconstruct(
                 latitude=camera.latitude if camera else None,
                 longitude=camera.longitude if camera else None,
                 coverage_description=camera.coverage_description if camera else None,
+                possible=bool((row.provenance or {}).get("possible")),
             )
         )
 

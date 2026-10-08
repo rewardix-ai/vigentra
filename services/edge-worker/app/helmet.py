@@ -19,6 +19,7 @@ import base64
 import logging
 import os
 import threading
+from collections import Counter
 from pathlib import Path
 
 logger = logging.getLogger("vigentra.edge.helmet")
@@ -39,6 +40,9 @@ VIEW_SHARE = 0.8            # a view counts if it is at least this share of the 
 MIN_TRAVEL_W = 1.0          # it must move at least its own width while tracked: a parked scooter with
                             # someone sitting beside it is not a rider (cam25, 8 Oct, the first live miss)
 CLASSES = frozenset({"motorcycle", "scooter"})
+
+#: what became of each two-wheeler track, for the reader's per-minute log (light mode)
+TALLY: Counter = Counter()
 
 _models: list = []
 _lock = threading.Lock()   # one classifier for every camera thread; predict is not thread-safe
@@ -122,8 +126,12 @@ class HelmetWatch:
         out = []
         for tid in [t for t, v in self.views.items() if t not in seen and pts - v["last_pts"] > END_AFTER_S]:
             v = self.views.pop(tid)
-            if not v["crops"] or v["travel"] < MIN_TRAVEL_W:
-                continue   # never seen close, or never moved: not a rider on the road
+            if not v["crops"]:
+                TALLY["never_close"] += 1
+                continue   # never seen close enough to judge the head
+            if v["travel"] < MIN_TRAVEL_W:
+                TALLY["parked"] += 1
+                continue   # never moved: not a rider on the road
             views = [crop for cw, crop in v["crops"] if cw >= VIEW_SHARE * v["max_w"]]
             try:
                 scores = [no_helmet_score(crop) for crop in views]
@@ -132,7 +140,9 @@ class HelmetWatch:
                 logger.warning("helmet check failed: %s", exc)
                 continue
             if score < THRESHOLD:
+                TALLY["judged_ok" if score < 0.5 else "judged_unsure"] += 1
                 continue
+            TALLY["raised"] += 1
             payload = {
                 "camera_id": self.camera_id, "kind": "NO_HELMET", "severity": "LOW", "track_ids": [int(tid)],
                 "first_seen": float(v["first_pts"]), "last_seen": float(v["last_pts"]),

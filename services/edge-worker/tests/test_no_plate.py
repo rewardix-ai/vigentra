@@ -1,0 +1,54 @@
+"""A vehicle without a visible number plate is raised only when its plate should have been seen."""
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+import numpy as np
+
+from app.no_plate import NoPlateWatch, candidate
+
+W, H = 1280, 720
+
+
+def frame(level=120):
+    rng = np.random.default_rng(0)   # texture, so the view is sharp
+    return np.clip(rng.normal(level, 40, (H, W, 3)), 0, 255).astype(np.uint8)
+
+
+def det(tid, box, cls="car"):
+    return SimpleNamespace(bbox_xyxy=list(box), class_name=cls, extra={"track_id": tid})
+
+
+def drive(watch, tid, *, towards=True, width=360, cls="car", level=120, n=10):
+    f = frame(level)
+    for i in range(n):
+        if towards:   # coming down the frame, growing: its front faces the camera
+            x1, y1 = 400, 100 + 40 * i
+        else:         # crossing the frame side-on
+            x1, y1 = 100 + 80 * i, 300
+        watch.observe(f, [det(tid, (x1, y1, x1 + width, y1 + 0.6 * width), cls)], float(i))
+
+
+def closed(tid):
+    return [{"track_id": f"cam_{tid}", "reason": "no_plate_detected"}]
+
+
+def test_a_close_car_facing_the_camera_with_no_plate_is_raised_with_its_frame():
+    w = NoPlateWatch("cam-x")
+    drive(w, 1)
+    out = w.closed(closed(1), W)
+    assert len(out) == 1 and out[0]["kind"] == "NO_PLATE_VISIBLE"
+    assert out[0]["snapshot_jpeg_b64"]
+
+
+def test_side_on_small_dark_or_two_wheeler_is_not_raised():
+    for kwargs in ({"towards": False}, {"width": 150}, {"level": 15}, {"cls": "motorcycle"}):
+        w = NoPlateWatch("cam-x")
+        drive(w, 2, **kwargs)
+        assert not w.closed(closed(2), W), kwargs
+
+
+def test_the_rule_says_why_not():
+    view = {"label": "car", "max_w": 400, "useful_frames": 2, "first_c": (0, 0), "last_c": (0, 300),
+            "luma": 120, "sharpness": 100.0}
+    assert candidate(view, W) == (False, "too_few_frames")

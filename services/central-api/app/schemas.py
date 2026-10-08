@@ -1632,6 +1632,7 @@ INCIDENT_KINDS = (
     "COLLISION_CANDIDATE",
     "PERSON_ON_CARRIAGEWAY",
     "INTRUSION",   # a person or vehicle inside a camera's configured restricted zone
+    "NO_PLATE_VISIBLE",   # a vehicle seen close, facing the camera, with no plate found on it
 )
 INCIDENT_SEVERITIES = ("LOW", "MEDIUM", "HIGH")
 INCIDENT_STATUSES = ("CANDIDATE", "REVIEWING", "CONFIRMED", "DISMISSED")

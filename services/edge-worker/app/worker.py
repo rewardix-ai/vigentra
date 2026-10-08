@@ -50,6 +50,7 @@ try:
 except Exception:  # pragma: no cover - analytics extras absent
     AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
+from .no_plate import NoPlateWatch
 from .plates import PLATE_BEARING_CLASSES
 
 logging.basicConfig(
@@ -766,6 +767,7 @@ def run(
                              "pts_seconds": None}
     processed = skipped = produced = 0
     started = time.perf_counter()
+    no_plate = None
 
     try:
         for frame_index, frame, pts_seconds, discontinuity in frames:
@@ -878,6 +880,16 @@ def run(
                     sighting.text, sighting.confidence, sighting.observations,
                     "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
                 )
+
+            # Vehicles that came close, faced the camera and never showed a plate (app/no_plate.py).
+            if anpr is not None and incidents is not None:
+                if no_plate is None:
+                    no_plate = NoPlateWatch(camera_id)
+                try:
+                    no_plate.observe(frame, detections, pts_seconds)
+                    incident_batch.extend(no_plate.closed(anpr.closed_without_plate(), frame.shape[1]))
+                except Exception as exc:  # pragma: no cover - a side check never stops the pass
+                    logger.warning("no-plate check failed: %s", exc)
 
             # Incident detection from the same boxes. `detections` carry the
             # tracker's id in `extra`; only tracked vehicles can be judged for

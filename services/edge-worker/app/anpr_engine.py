@@ -151,6 +151,8 @@ class AnprEngine:
         #: Track keys already emitted, so a settled plate is sent once even
         #: though its record stays on the pipeline.
         self._emitted: set[str] = set()
+        #: no-plate tracks already handed to the no-plate watch (closed_without_plate)
+        self._noplate_seen: set[str] = set()
         #: Plates that settled before the caller asked for them - a scene cut
         #: mid-pass closes tracks, and those readings must survive to the next
         #: finish() rather than being dropped on the floor.
@@ -293,6 +295,18 @@ class AnprEngine:
         return detections, settled
 
     # -- end of pass -------------------------------------------------------
+
+    def closed_without_plate(self) -> list[dict]:
+        """Tracks closed since the last call on which no plate box was found in any frame (each once)."""
+        out = []
+        for rec in list(getattr(self._pipeline, "records", [])):
+            key = str(rec.get("track_id"))
+            if rec.get("reason") == "no_plate_detected" and key not in self._noplate_seen:
+                self._noplate_seen.add(key)
+                out.append(rec)
+        if len(self._noplate_seen) > 5000:
+            self._noplate_seen = set(list(self._noplate_seen)[-2500:])
+        return out
 
     def finish(self) -> list[PlateSighting]:
         """Close the open tracks and return every plate that settled this pass."""

@@ -60,3 +60,10 @@ async def test_a_possible_sighting_alone_is_on_the_route_marked_possible(api, lo
         "camera_id": traffic_camera["camera_id"], "track": "t9", "target_score": -0.8})).raise_for_status()
     route = (await api.get("/api/v1/plates/GJ05XY7788/track", headers=operator, params={"reason": "Rehearsal"})).json()
     assert [p["possible"] for p in route["points"]] == [True]
+
+
+def test_the_watched_circle_grows_with_time_since_the_sighting():
+    from app.routers.pursuits import MAX_RADIUS_KM, MIN_RADIUS_KM, reach_km
+    assert reach_km(0) == MIN_RADIUS_KM            # just seen: the cameras right around it
+    assert reach_km(10) == 10.0                    # ten minutes at city speed
+    assert reach_km(120) == MAX_RADIUS_KM          # capped: a whole region hot is no priority

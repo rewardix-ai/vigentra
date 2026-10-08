@@ -152,7 +152,7 @@ export default function PlatesPage() {
                   <span className="mono font-semibold">{p.plate}</span>
                   <span className="text-2xs text-ink-600">
                     {p.hot_cameras.length > 0
-                      ? `${p.hot_cameras.length} camera${p.hot_cameras.length === 1 ? "" : "s"} watched first (last seen and nearest)`
+                      ? `${p.hot_cameras.length} camera${p.hot_cameras.length === 1 ? "" : "s"} watched first (last seen and all it could reach)`
                       : "not seen yet: every camera checks each vehicle against it"}
                     {" · started by "}
                     {p.started_by} {relative(p.started_at)}
@@ -348,7 +348,7 @@ export default function PlatesPage() {
                   Follow this vehicle live
                 </button>
                 <span className="text-2xs text-ink-600">
-                  The cameras where it was last seen and their nearest neighbours get first claim on frames,
+                  The cameras where it was last seen, and every camera it could have reached since, get first claim on frames,
                   and every vehicle they see is checked against this plate. Matches appear here as
                   possible sightings, with the plate crop, for you to confirm.
                 </span>

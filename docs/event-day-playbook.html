@@ -137,8 +137,9 @@ start (we switch accounts and resume automatically), and footage cannot be rewou
 <ul>
 <li>every camera checks each vehicle it closes against the plate (&quot;is this plate P?&quot;), which accepts a
 blurrier plate than reading one open-ended (measured: 0 false matches in 487 decoy checks);</li>
-<li>the cameras where it was seen in the last 20 minutes, and the 3 nearest each on the map, get first
-claim on the GPU, so the vehicle gets the frame rate at which we read 15 of 17 plates on clips.</li>
+<li>the cameras where it was seen in the last 20 minutes, and every camera it could have reached since
+(all within the distance covered at 60 km/h since that sighting: 3 km at once, growing to 25 km),
+get first claim on the GPU, so the vehicle gets the frame rate at which we read 15 of 17 plates on clips.</li>
 </ul>
 </li>
 <li>As it is seen, <strong>Reconstruct this vehicle's movement</strong>: the route on the map, each point with our

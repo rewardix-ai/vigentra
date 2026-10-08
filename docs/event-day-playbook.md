@@ -28,8 +28,9 @@ Why reading is hard on this grid, with evidence anyone can check:
 2. **Follow this vehicle live** (pursuit mode). From that moment:
    - every camera checks each vehicle it closes against the plate ("is this plate P?"), which accepts a
      blurrier plate than reading one open-ended (measured: 0 false matches in 487 decoy checks);
-   - the cameras where it was seen in the last 20 minutes, and the 3 nearest each on the map, get first
-     claim on the GPU, so the vehicle gets the frame rate at which we read 15 of 17 plates on clips.
+   - the cameras where it was seen in the last 20 minutes, and every camera it could have reached since
+     (all within the distance covered at 60 km/h since that sighting: 3 km at once, growing to 25 km),
+     get first claim on the GPU, so the vehicle gets the frame rate at which we read 15 of 17 plates on clips.
 3. As it is seen, **Reconstruct this vehicle's movement**: the route on the map, each point with our
    read time, **the time printed on that camera's footage**, camera, location, department and frames agreed.
 4. **Possible sightings** (pursuit matches) appear on the route marked *possible*, with the plate crop.

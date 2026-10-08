@@ -4,8 +4,10 @@ The event test names one registration and asks for its route. Reading plates ope
 cameras at once gives a quiet camera a frame every few seconds, and a passing vehicle a frame or two.
 A pursuit turns that around for one vehicle:
 
-- the cameras where it was seen in the last HOT_MINUTES, and the NEIGHBOURS nearest each on the map,
-  are "hot": edge readers poll GET /pursuits and give those cameras first claim on their frames;
+- the cameras where it was seen in the last HOT_MINUTES, and EVERY camera it could have reached since
+  (within the distance a vehicle covers at REACH_KMH in the time since that sighting, never under
+  MIN_RADIUS_KM nor over MAX_RADIUS_KM), are "hot": edge readers poll GET /pursuits and give those
+  cameras first claim on their frames;
 - edge readers check every vehicle they close against the plate ("is this plate P?", which accepts a
   blurrier plate than reading one open-ended) and send matches back as POSSIBLE sightings, with the plate
   crop, for a person to confirm. They appear on the route marked as possible, never as confirmed.
@@ -37,7 +39,9 @@ from ..services.track_service import haversine_km
 router = APIRouter(prefix="/api/v1", tags=["pursuit"])
 
 HOT_MINUTES = 20        # a camera stays hot this long after the vehicle was seen there
-NEIGHBOURS = 3          # ...and so do this many nearest cameras on the map
+REACH_KMH = 60.0        # ...and every camera the vehicle could have reached since, at city speed
+MIN_RADIUS_KM = 3.0     # the cameras just around it, the moment it is seen
+MAX_RADIUS_KM = 25.0    # beyond this the whole region would be "hot", which is no priority at all
 MATCH_DISTANCE = 1.0    # a sighting this close to the plate (plate_matching) counts as the vehicle
 EVIDENCE_MAX_BYTES = 256 * 1024
 
@@ -63,16 +67,29 @@ def _readers_or_edge(user: CurrentUser) -> DemoUser:
     return user
 
 
+def reach_km(age_minutes: float) -> float:
+    """How far the vehicle may have gone since a sighting this old."""
+    return min(MAX_RADIUS_KM, max(MIN_RADIUS_KM, REACH_KMH * age_minutes / 60.0))
+
+
 async def _hot_cameras(db: AsyncSession, plate: str, cameras: list[CameraRow]) -> list[str]:
-    since = datetime.now(timezone.utc) - timedelta(minutes=HOT_MINUTES)
-    rows = (await db.execute(select(PlateSighting).where(PlateSighting.timestamp_utc >= since))).scalars().all()
-    seen = {r.camera_id for r in rows if plate_matching.plate_distance(plate, r.plate_normalised) <= MATCH_DISTANCE}
+    now = datetime.now(timezone.utc)
+    rows = (await db.execute(select(PlateSighting).where(PlateSighting.timestamp_utc >= now - timedelta(minutes=HOT_MINUTES)))).scalars().all()
+    latest: dict[str, datetime] = {}   # camera -> its most recent sighting of the vehicle
+    for r in rows:
+        if plate_matching.plate_distance(plate, r.plate_normalised) <= MATCH_DISTANCE:
+            ts = r.timestamp_utc if r.timestamp_utc.tzinfo else r.timestamp_utc.replace(tzinfo=timezone.utc)
+            latest[r.camera_id] = max(latest.get(r.camera_id, ts), ts)
+    by_id = {c.camera_id: c for c in cameras}
     placed = [c for c in cameras if c.latitude is not None and c.longitude is not None]
-    hot = set(seen)
-    for cam in [c for c in placed if c.camera_id in seen]:
-        nearest = sorted((haversine_km(cam.latitude, cam.longitude, o.latitude, o.longitude), o.camera_id)
-                         for o in placed if o.camera_id != cam.camera_id)
-        hot.update(cid for _, cid in nearest[:NEIGHBOURS])
+    hot = set(latest)
+    for cid, ts in latest.items():
+        cam = by_id.get(cid)
+        if cam is None or cam.latitude is None or cam.longitude is None:
+            continue
+        radius = reach_km((now - ts).total_seconds() / 60.0)
+        hot.update(o.camera_id for o in placed
+                   if haversine_km(cam.latitude, cam.longitude, o.latitude, o.longitude) <= radius)
     return sorted(hot)
 
 
@@ -129,7 +146,8 @@ async def active_pursuits(
     for row in rows:
         out.append({"id": row.id, "plate": row.plate_normalised, "started_by": row.started_by,
                     "started_at": row.started_at, "hot_cameras": await _hot_cameras(db, row.plate_normalised, cameras)})
-    return {"pursuits": out, "hot_minutes": HOT_MINUTES, "neighbours": NEIGHBOURS}
+    return {"pursuits": out, "hot_minutes": HOT_MINUTES, "reach_kmh": REACH_KMH,
+            "radius_km": [MIN_RADIUS_KM, MAX_RADIUS_KM]}
 
 
 @router.post("/pursuits/{pursuit_id}/possible", status_code=status.HTTP_201_CREATED,

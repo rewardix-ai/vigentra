@@ -88,3 +88,24 @@ def test_a_vehicle_cut_off_by_the_frame_edge_is_not_raised():
         y1, wi = 420 + 25 * i, 250 + 4 * i
         w.observe(f, [det(6, (2, y1, 2 + wi, min(H, y1 + wi / 1.3)))], float(i))
     assert not w.closed(closed(6), W)
+
+
+def test_a_faint_plate_the_detector_proposes_at_a_low_floor_stops_the_call():
+    """cam15, 8 Oct: a night rear plate a person could see, under the normal threshold."""
+    w = NoPlateWatch("cam-x")
+    drive(w, 7)
+    assert not w.closed(closed(7), W, probe=lambda crop, floor: 0.08)
+    w = NoPlateWatch("cam-x")
+    drive(w, 8)
+    assert len(w.closed(closed(8), W, probe=lambda crop, floor: 0.0)) == 1
+
+
+def test_a_night_scene_is_not_judged():
+    """Headlights and lamps blow out part of a night frame; there a plate miss says nothing."""
+    w = NoPlateWatch("cam-x")
+    f = frame()
+    f[:60, :] = 255   # lamps and headlights: ~8 % of the frame blown out
+    for i in range(10):
+        x1, y1, wi = 400, 80 + 25 * i, 360 * (0.8 + 0.02 * i)
+        w.observe(f, [det(9, (x1, y1, x1 + wi, y1 + wi / 1.2))], float(i))
+    assert not w.closed(closed(9), W)

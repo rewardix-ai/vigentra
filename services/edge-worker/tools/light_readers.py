@@ -272,7 +272,7 @@ def main() -> int:
                        for t, b, src, c in plates]}))
     frames: dict[str, int] = {}   # frames each camera got through the engine since the last stats line
     spent = {"hot": [0.0, 0], "cold": [0.0, 0]}   # engine seconds and frames, by whether a near vehicle was in view
-    for name in ("process", "finish"):
+    for name in ("process", "finish", "plate_probe"):   # every use of the engine's models goes through the lock
         original = getattr(anpr_engine.AnprEngine, name)
 
         def locked(self, *a, _original=original, _count=(name == "process"), **k):

@@ -296,6 +296,22 @@ class AnprEngine:
 
     # -- end of pass -------------------------------------------------------
 
+    def plate_probe(self, crop, floor: float = 0.03) -> float:
+        """The plate detector's best confidence on a vehicle crop at a very low floor: the no-plate check
+        asks this before saying a vehicle shows no plate, because a faint plate at night falls under the
+        normal threshold (cam15, 8 Oct). 0.0 when nothing at all is proposed."""
+        import cv2
+
+        det = getattr(self._pipeline, "plates", None)
+        if det is None or det.model is None or crop is None or crop.size == 0:
+            return 0.0
+        h, w = crop.shape[:2]
+        if max(h, w) < det.upscale_min_px:
+            k = det.upscale_min_px / max(h, w)
+            crop = cv2.resize(crop, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC)
+        res = det.model.predict(crop, imgsz=det.imgsz, conf=floor, device=det.device, verbose=False)[0]
+        return float(res.boxes.conf.max()) if res.boxes is not None and len(res.boxes) else 0.0
+
     def closed_without_plate(self) -> list[dict]:
         """Tracks closed since the last call on which no plate box was found in any frame (each once)."""
         out = []

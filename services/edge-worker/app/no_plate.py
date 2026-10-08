@@ -17,6 +17,15 @@ seen, so a candidate needs all of:
 - a usable picture: the widest view fully inside the frame (cam30, 8 Oct: a car cut off by the bottom
   edge, where its rear plate was), neither dark nor blown out by glare, and sharp.
 
+Only in daylight: at night the plate detector misses faint plates a person can still see, so a miss says
+nothing (all three of the first live calls, 8 Oct, were night views with a plate there or out of frame).
+Night is told by headlights and street lamps: more than NIGHT_BLOWN of the frame blown out (night
+grid frames 1.8-5.7 %, daylight ones at most 0.5 %).
+
+Before a candidate is raised, the plate detector looks once more at that view at a very low floor
+(PROBE_FLOOR); anything it proposes means a plate may be there, faint, and nothing is raised (cam15,
+8 Oct: a night rear plate a person could see, under the detector's normal threshold).
+
 It is a CANDIDATE, never a finding: covered, missing and unreadable plates all look the same here, and
 the snapshot (the frame at the vehicle's widest, boxed) is what lets a person decide.
 """
@@ -41,6 +50,8 @@ TOWARDS_RATIO = 1.5         # vertical travel at least this many times the horiz
 MAX_ASPECT = {"car": 1.45, "bus": 1.5, "truck": 1.5, "auto-rickshaw": 1.3, "motorcycle": 0.9, "scooter": 0.9}
 MIN_LUMA, MAX_LUMA = 55, 205   # median brightness of the vehicle at its widest
 MIN_SHARPNESS = 40.0        # Laplacian variance of that view
+NIGHT_BLOWN = 0.01          # share of the frame at V > 245 above which the scene is night
+PROBE_FLOOR = 0.03          # plate detector confidence floor for the last look
 EDGE_MARGIN = 0.015         # the widest view must be at least this share of the frame clear of every edge
 FORGET_SECONDS = 120.0
 
@@ -65,6 +76,8 @@ def candidate(view: dict, frame_w: float) -> tuple[bool, str]:
     ldx, ldy = view.get("local", (1.0, 0.0))
     if abs(ldy) < abs(ldx):
         return False, "turning_at_widest"
+    if view.get("night", False):
+        return False, "night"
     if view.get("at_edge", False):
         return False, "cut_by_frame_edge"
     if not (MIN_LUMA <= view.get("luma", 0) <= MAX_LUMA):
@@ -104,11 +117,14 @@ class NoPlateWatch:
             if bw > v["max_w"] and bw >= need:
                 v["max_w"] = bw
                 v["aspect"] = bw / max(1.0, y2 - y1)
+                small = cv2.resize(frame, (320, max(1, int(320 * h / w))), interpolation=cv2.INTER_AREA)
+                v["night"] = float((cv2.cvtColor(small, cv2.COLOR_BGR2HSV)[:, :, 2] > 245).mean()) > NIGHT_BLOWN
                 mx, my = EDGE_MARGIN * w, EDGE_MARGIN * h
                 v["at_edge"] = x1 < mx or y1 < my or x2 > w - mx or y2 > h - my
                 v["local"] = (c[0] - prev[0], c[1] - prev[1])
                 crop = frame[int(max(0, y1)):int(y2), int(max(0, x1)):int(x2)]
                 if crop.size:
+                    v["crop"] = crop.copy()
                     g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
                     v["luma"] = float(np.median(g))
                     v["sharpness"] = float(cv2.Laplacian(g, cv2.CV_64F).var())
@@ -128,7 +144,7 @@ class NoPlateWatch:
         for tid in [t for t, v in self.views.items() if pts - v.get("last_pts", pts) > FORGET_SECONDS]:
             self.views.pop(tid, None)
 
-    def closed(self, records: list[dict], frame_w: float) -> list[dict]:
+    def closed(self, records: list[dict], frame_w: float, probe=None) -> list[dict]:
         """Incident payloads for tracks the engine closed without a plate box, where one should show."""
         out = []
         for rec in records:
@@ -141,6 +157,13 @@ class NoPlateWatch:
             if v is None:
                 continue
             ok, why = candidate(v, frame_w)
+            if ok and probe is not None and v.get("crop") is not None:
+                try:
+                    if probe(v["crop"], PROBE_FLOOR) > 0.0:
+                        ok, why = False, "faint_plate_proposed"
+                except Exception as exc:  # pragma: no cover - a side check never stops the pass
+                    logger.warning("plate probe failed: %s", exc)
+                    ok, why = False, "probe_failed"
             REJECTED[why or "raised"] += 1
             if not ok:
                 continue

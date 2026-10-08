@@ -900,7 +900,7 @@ def run(
                     no_plate = NoPlateWatch(camera_id)
                 try:
                     no_plate.observe(frame, detections, pts_seconds)
-                    incident_batch.extend(no_plate.closed(anpr.closed_without_plate(), frame.shape[1]))
+                    incident_batch.extend(no_plate.closed(anpr.closed_without_plate(), frame.shape[1], anpr.plate_probe))
                 except Exception as exc:  # pragma: no cover - a side check never stops the pass
                     logger.warning("no-plate check failed: %s", exc)
                 # Two-wheeler riders who appear bare-headed (app/helmet.py), when the classifier is installed.

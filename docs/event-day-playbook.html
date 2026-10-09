@@ -88,7 +88,7 @@ day, its complete timestamped route on the map. This sets out what to expect hon
 operator runs the test, the backups, and the evidence behind every claim. Numbers are measured in this
 repository unless marked as an estimate.</p>
 </div>
-  <div class="meta"><span>5 sections</span><span>Sources cited by file</span><span>Estimates marked as estimates</span><span>Updated 8 Oct 2026</span></div>
+  <div class="meta"><span>5 sections</span><span>Sources cited by file</span><span>Estimates marked as estimates</span><span>Updated 9 Oct 2026</span></div>
 </div></header>
 <div class="layout">
   <nav class="toc" aria-label="Contents"><b>Contents</b><a href="#1-the-honest-expectation">1. The honest expectation</a><a href="#2-running-the-test-operator-steps">2. Running the test (operator steps)</a><a href="#3-if-the-plate-does-not-read-what-we-show-and-why-it-is-still-the-strongest-solution">3. If the plate does not read: what we show, and why it is still the strongest solution</a><a href="#4-answers-to-the-questions-we-expect">4. Answers to the questions we expect</a><a href="#5-before-the-venue">5. Before the venue</a></nav>
@@ -170,12 +170,12 @@ Open the crop, confirm or discard. Nothing unconfirmed is presented as fact.</li
 </tr>
 <tr>
 <td>Why a camera missed it</td>
-<td>Per-minute log of where plates are lost; snapshot of the vehicle when no plate was visible (incident)</td>
-<td>light reader log; NO_PLATE_VISIBLE incidents</td>
+<td>Per-minute log of where plates are lost; saved crops of the misses</td>
+<td>light reader log</td>
 </tr>
 <tr>
 <td>Live analytics beyond plates</td>
-<td>Every vehicle typed (auto-rickshaw, scooter, motorcycle, car, bus, truck: 89 % right on held-out grid cameras, 60 % for the stock detector). Incidents with snapshots: rider without a helmet (19 of 20 held-out calls right), vehicle without a visible plate (any type), wrong side (keep-left rule, Rules of the Road reg. 2/17, MV Act s. 184), possible collision, stopped in lane</td>
+<td>Every vehicle typed (auto-rickshaw, scooter, motorcycle, car, bus, truck: 89 % right on held-out grid cameras, 60 % for the stock detector). Incidents with snapshots: rider without a helmet (21 of 21 held-out calls right), wrong side (keep-left rule, Rules of the Road reg. 2/17, MV Act s. 184), possible collision</td>
 <td>Incidents page</td>
 </tr>
 <tr>
@@ -211,10 +211,37 @@ central keeps only plates, detections and incidents; see the scalability note.</
 </ul>
 <h2 id="5-before-the-venue">5. Before the venue</h2>
 <ul>
-<li>Run the trace and a pursuit once on the venue network; if port 8554 is blocked, switch on the HLS
-fallback (<code>SENTINEL_GRID_HLS_FALLBACK=1</code>).</li>
-<li>Open the map once so its tiles are cached.</li>
-<li>Keep this Mac on power; the collection supervisor keeps it awake.</li>
+<li>
+<p><strong>Keep the Mac on power with the lid open.</strong> On 8-9 Oct it slept on battery with the lid closed and
+no camera was read for 15 hours; <code>caffeinate</code> prevents idle sleep, not lid-close sleep.</p>
+</li>
+<li>
+<p><strong>Watchlist is loaded.</strong> Six DEMO plates that recur on the grid (case DEMO-SENTINEL-2026, expire 14 Oct)
+raise live alerts; add the designated plate to the watchlist as soon as it is named.</p>
+</li>
+<li>
+<p><strong>The tracker restarts itself.</strong> It runs as a LaunchAgent (<code>scripts/launchd/</code>): it starts at log-in,
+opens Docker Desktop if needed and waits for central-api, and launchd restarts it within a minute of a
+crash (tested 9 Oct by killing it). After a reboot someone must log in (FileVault is on, so there is
+no automatic log-in); nothing reads while the Mac sleeps. Status:
+<code>launchctl print gui/$(id -u)/com.vigentra.readers | grep -E &quot;state|pid&quot;</code>.</p>
+</li>
+<li>
+<p><strong>New grid cameras (30 -&gt; 50).</strong> They federate on their own, but arrive without map pins (the grid's
+catalogue sends only an id and a name). Run <code>python scripts/survey_new_grid_cameras.py</code>, check each
+proposed pin (geocoded from the name, else the town or district centre, labelled so), then
+<code>--apply</code> and restart central-api. The collection supervisor reads every camera the registry holds.</p>
+</li>
+<li>
+<p>Run the trace and a pursuit once on the venue network; if port 8554 is blocked, switch on the HLS
+fallback (<code>SENTINEL_GRID_HLS_FALLBACK=1</code>).</p>
+</li>
+<li>
+<p>Open the map once so its tiles are cached.</p>
+</li>
+<li>
+<p>Keep this Mac on power; the collection supervisor keeps it awake.</p>
+</li>
 </ul>
 
     <footer>Generated from event-day-playbook.md by deliverables/anpr-keynote/tools/technical_html.py. Links open from inside the repository.</footer>

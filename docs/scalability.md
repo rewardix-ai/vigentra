@@ -376,3 +376,12 @@ answer is that none of it is per-camera work.
 The thing that scales badly in most surveillance systems is not the compute —
 it is the number of people who can see everything. That is governed here by
 role scope and grant, and neither gets looser as cameras are added.
+
+## Offence analytics on the edge (9 Oct)
+
+The helmet and vehicle-type checks run on the edge, on CPU, once per track rather than per
+frame: a two-wheeler costs about 12 small classifier passes when its track ends (four models, three
+views), a vehicle at most three type passes as it nears. At 30 cameras in light mode this is well
+under the GPU's share; the per-minute log line `helmet checks:` shows what was judged. Only
+the incident (a few kB of evidence and a JPEG) reaches central, so 80,000 cameras add rows, not video.
+

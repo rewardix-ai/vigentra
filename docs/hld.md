@@ -324,6 +324,25 @@ The two layers carrying the accuracy are the **grammar engine** and the
   box beside a fence otherwise enters it with its head. Zones are drawn by the
   department that owns the site; no camera ships with one.
 
+- **Offence candidates with evidence (8-9 Oct).** Each is a LOW-severity candidate with a snapshot a
+  person checks; none is ever a finding on its own.
+  - *Rider without a helmet*: four small classifiers trained on 1,317 grid riders labelled by eye
+    (one sees only the head band), averaged over each rider's three closest views; judged only on a
+    vehicle the type classifier finds a two-wheeler; one call per rider when the tracker breaks the
+    track. Held out: 21 calls, all right; live, checked by eye: 47 of 50 right, the misses fixed.
+  - *Vehicle types*: a classifier trained on 960 grid vehicles re-types each track (auto-rickshaw,
+    scooter, motorcycle, car, bus, truck); the stock detector called autos "truck". Held out: 89 %
+    right against 60 %.
+  - Retired at the operator's request after live audits: sudden stop, stopped in lane, and (9 Oct)
+    vehicle without a visible plate: on the grid's night, high-angle views a plate the detector misses is
+    almost always side-on, cut off or in glare, so a miss says little (stored rows hidden, not deleted).
+- **E-challan (8 Oct).** Confirm on an offence opens a popup: the operator types the plate read on the
+  evidence, the owner is looked up, the challan is recorded and the SMS sent. The vehicle reference
+  registry stays owner-free; owners come from a separate source, in production the state e-challan /
+  VAHAN service (MV Act s.136A, CMVR r.167A), here a demo stand-in with fictional owners, and SMS is
+  simulated until a DLT-registered gateway is configured. Traffic enforcement only, every lookup
+  audited, only the masked mobile stored.
+
 Everything that does not parse as a plausible Indian registration is dropped at
 the edge and never transmitted, then checked again centrally. Half-read text is
 worse than no text: it looks like evidence and is not.

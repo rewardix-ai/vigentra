@@ -51,7 +51,6 @@ except Exception:  # pragma: no cover - analytics extras absent
     AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
 from . import helmet as helmet_check
-from .no_plate import NoPlateWatch
 from .vehicle_type import VehicleTypes
 from . import vehicle_type as vehicle_type_check
 from .plates import PLATE_BEARING_CLASSES
@@ -770,7 +769,6 @@ def run(
                              "pts_seconds": None}
     processed = skipped = produced = 0
     started = time.perf_counter()
-    no_plate = None
     helmet = None
     vtypes = VehicleTypes() if vehicle_type_check.available() else None
 
@@ -894,15 +892,7 @@ def run(
                     "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
                 )
 
-            # Vehicles that came close, faced the camera and never showed a plate (app/no_plate.py).
             if anpr is not None and incidents is not None:
-                if no_plate is None:
-                    no_plate = NoPlateWatch(camera_id)
-                try:
-                    no_plate.observe(frame, detections, pts_seconds)
-                    incident_batch.extend(no_plate.closed(anpr.closed_without_plate(), frame.shape[1], anpr.plate_probe))
-                except Exception as exc:  # pragma: no cover - a side check never stops the pass
-                    logger.warning("no-plate check failed: %s", exc)
                 # Two-wheeler riders who appear bare-headed (app/helmet.py), when the classifier is installed.
                 if helmet is None and helmet_check.available():
                     helmet = helmet_check.HelmetWatch(camera_id)

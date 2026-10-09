@@ -26,8 +26,6 @@ from ..models import Challan, DemoVehicleOwner
 OFFENCES: dict[str, dict] = {
     "NO_HELMET": {"label": "riding a two-wheeler without a helmet", "section": "MV Act s.129 r/w s.194D",
                   "fine": 1000, "note": "and licence disqualification for 3 months"},
-    "NO_PLATE_VISIBLE": {"label": "driving without a visible registration plate",
-                         "section": "MV Act s.39 r/w CMVR r.50, penalty s.177", "fine": 500, "note": ""},
     "WRONG_WAY": {"label": "driving against the direction of traffic", "section": "MV Act s.184",
                   "fine": 1000, "note": ""},
 }

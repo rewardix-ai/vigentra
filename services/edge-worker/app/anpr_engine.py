@@ -151,8 +151,6 @@ class AnprEngine:
         #: Track keys already emitted, so a settled plate is sent once even
         #: though its record stays on the pipeline.
         self._emitted: set[str] = set()
-        #: no-plate tracks already handed to the no-plate watch (closed_without_plate)
-        self._noplate_seen: set[str] = set()
         #: Plates that settled before the caller asked for them - a scene cut
         #: mid-pass closes tracks, and those readings must survive to the next
         #: finish() rather than being dropped on the floor.
@@ -295,34 +293,6 @@ class AnprEngine:
         return detections, settled
 
     # -- end of pass -------------------------------------------------------
-
-    def plate_probe(self, crop, floor: float = 0.03) -> float:
-        """The plate detector's best confidence on a vehicle crop at a very low floor: the no-plate check
-        asks this before saying a vehicle shows no plate, because a faint plate at night falls under the
-        normal threshold (cam15, 8 Oct). 0.0 when nothing at all is proposed."""
-        import cv2
-
-        det = getattr(self._pipeline, "plates", None)
-        if det is None or det.model is None or crop is None or crop.size == 0:
-            return 0.0
-        h, w = crop.shape[:2]
-        if max(h, w) < det.upscale_min_px:
-            k = det.upscale_min_px / max(h, w)
-            crop = cv2.resize(crop, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC)
-        res = det.model.predict(crop, imgsz=det.imgsz, conf=floor, device=det.device, verbose=False)[0]
-        return float(res.boxes.conf.max()) if res.boxes is not None and len(res.boxes) else 0.0
-
-    def closed_without_plate(self) -> list[dict]:
-        """Tracks closed since the last call on which no plate box was found in any frame (each once)."""
-        out = []
-        for rec in list(getattr(self._pipeline, "records", [])):
-            key = str(rec.get("track_id"))
-            if rec.get("reason") == "no_plate_detected" and key not in self._noplate_seen:
-                self._noplate_seen.add(key)
-                out.append(rec)
-        if len(self._noplate_seen) > 5000:
-            self._noplate_seen = set(list(self._noplate_seen)[-2500:])
-        return out
 
     def finish(self) -> list[PlateSighting]:
         """Close the open tracks and return every plate that settled this pass."""

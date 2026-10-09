@@ -32,14 +32,29 @@ MODELS = Path(__file__).resolve().parent.parent / "models"
 #: the riders labelled 8 Oct and cut exactly as below, and v5 fine-tuned from v4 on 200 more. v2 alone puts
 #: some helmeted riders above 0.95 (cam06's looping checked-shirt rider in a black helmet, 8 Oct live);
 #: the later two, trained on such riders, pull them below the threshold.
+#: A name ending _head.pt sees only the head band of the crop (head_band): the head ~1.7x larger.
+#: v7 (full crop) and v8 (head band) were fine-tuned from v5 and v6 on 79 more riders the live average
+#: found borderline, plus the two cam06 helmeted riders it called bare (9 Oct). Held out (221 riders,
+#: 50 bare-headed), at >= 0.8: 21 calls, all right, none on a helmet (v2+v4+v5+v6: 23 calls, 22 right).
+#: The cam06 black-helmet rider now averages 0.42 (was 0.79).
 WEIGHTS = [Path(p) for p in os.getenv(
-    "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in ("helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v5.pt"))).split(",") if p]
+    "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in (
+        "helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v7.pt", "helmet_cls_v8_head.pt"))).split(",") if p]
 THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.8"))
 MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls at >= 0.8, all right; the snapshot
                             # carries the judged rider enlarged, so a person can check a small one
 SAME_RIDER_S, SAME_RIDER_W = 2.0, 2.5   # a call whose track starts within this time and this many widths of
                             # where a raised rider was last seen is that rider again under a new track id
                             # (cam06, 8 Oct: one red-shirted rider called twice a second apart)
+LOOKALIKE_S, LOOKALIKE_W, LOOKALIKE_CORR = 10.0, 3.0, 0.85  # ...or, with a longer gap (light mode can lose a
+                            # rider for several seconds), one whose colours match: the same rider again
+                            # (cam30, 9 Oct: one woman called twice, her second track starting > 2 s later;
+                            # her two crops correlate 0.94, two different cam06 riders 0.72)
+REPLAY_W, REPLAY_CORR, REPLAY_HOURS = 1.5, 0.95, 24.0  # the grid replays each recording after its restarts and
+                            # the reader restarts with it, forgetting what it called (cam04, 9 Oct: one rider
+                            # called at 13:45 and again at 13:54, both at footage time 21:00:09). A call whose
+                            # path and colours match an earlier call on the camera (kept on disk, at
+                            # HELMET_SEEN_PATH) is that replay; different riders on one path correlate ~0.72
 TWO_WHEELER_MIN = 0.1       # the vehicle-type classifier must find it plausibly a motorbike or scooter
 PARKED_FRAMES, PARKED_S = 4, 3.0   # only a two-wheeler seen this often, this long, and not moving is parked:
                             # light mode often sees a passing rider in one or two frames (8 Oct: 36 of 78
@@ -58,10 +73,17 @@ _models: list = []
 _lock = threading.Lock()   # one classifier for every camera thread; predict is not thread-safe
 
 
+def head_band(crop):
+    """The part of a rider crop the head is in: 5-65 % of its height, the middle 80 % of its width."""
+    h, w = crop.shape[:2]
+    return crop[int(0.05 * h):int(0.65 * h), int(0.1 * w):int(0.9 * w)]
+
+
 def _classifiers() -> list:
+    """(model, sees the head band only) for every installed classifier."""
     if not _models:
         from ultralytics import YOLO
-        _models.extend(YOLO(str(w)) for w in WEIGHTS if w.exists())
+        _models.extend((YOLO(str(w)), w.stem.endswith("_head")) for w in WEIGHTS if w.exists())
     return _models
 
 
@@ -73,11 +95,64 @@ def no_helmet_score(crop) -> float:
     """The classifiers' mean probability that the rider in this crop is bare-headed."""
     with _lock:
         scores = []
-        for m in _classifiers():
-            r = m.predict(crop, imgsz=224, verbose=False, device="cpu")[0]
+        for m, head in _classifiers():
+            r = m.predict(head_band(crop) if head else crop, imgsz=224, verbose=False, device="cpu")[0]
             idx = [k for k, v in m.names.items() if v == "no_helmet"][0]
             scores.append(float(r.probs.data[idx]))
         return sum(scores) / len(scores)
+
+
+def _colours(crop):
+    """Hue-saturation histogram of a rider crop: what tells one rider's clothes from another's."""
+    import cv2
+
+    if crop is None or crop.size == 0:
+        return None
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    hist = cv2.calcHist([hsv], [0, 1], None, [18, 8], [0, 180, 0, 256])
+    return cv2.normalize(hist, hist).flatten()
+
+
+def _seen_path():
+    import os
+
+    path = os.environ.get("HELMET_SEEN_PATH")
+    return Path(path) if path else None
+
+
+def _replayed(camera_id: str, path, width: float, look) -> bool:
+    """Was this rider called before on this camera, in an earlier replay of the same footage? Remembers the
+    call either way (only when HELMET_SEEN_PATH is set)."""
+    import json
+    import time
+
+    import cv2
+    import numpy as np
+
+    store = _seen_path()
+    if store is None or look is None:
+        return False
+    try:
+        seen = json.loads(store.read_text()) if store.exists() else {}
+    except (OSError, ValueError):
+        seen = {}
+    now = time.time()
+    mine = [r for r in seen.get(camera_id, []) if now - r["at"] <= REPLAY_HOURS * 3600]
+    for r in mine:
+        far = min(((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5 for a in path for b in r["path"]) / max(width, r["w"], 1.0)
+        corr = float(cv2.compareHist(look, np.asarray(r["hist"], np.float32), cv2.HISTCMP_CORREL))
+        if far <= REPLAY_W and corr >= REPLAY_CORR:
+            return True
+    mine.append({"at": now, "path": [[round(float(x), 1), round(float(y), 1)] for x, y in path][-20:],
+                 "w": round(float(width), 1), "hist": [round(float(h), 5) for h in look]})
+    seen[camera_id] = mine[-200:]
+    try:
+        tmp = store.with_suffix(".tmp")
+        tmp.write_text(json.dumps(seen))
+        tmp.replace(store)
+    except OSError as exc:  # pragma: no cover - a memory, never a reason to stop
+        logger.warning("helmet replay memory not saved: %s", exc)
+    return False
 
 
 class HelmetWatch:
@@ -86,7 +161,7 @@ class HelmetWatch:
     def __init__(self, camera_id: str) -> None:
         self.camera_id = camera_id
         self.views: dict[int, dict] = {}
-        self.raised: list[tuple[float, tuple[float, float], float]] = []   # (last pts, last centre, width)
+        self.raised: list[tuple] = []   # (last pts, last centre, width, colour histogram) of riders called
 
     def observe(self, frame, detections, pts: float) -> list[dict]:
         import cv2
@@ -103,8 +178,9 @@ class HelmetWatch:
             bw, bh = x2 - x1, y2 - y1
             c = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
             v = self.views.setdefault(tid, {"first_pts": pts, "max_w": 0.0, "crops": [], "jpeg": None,
-                                            "first_c": c, "travel": 0.0, "frames": 0})
+                                            "first_c": c, "travel": 0.0, "frames": 0, "path": []})
             v["last_pts"], v["last_c"] = pts, c
+            v["path"] = (v["path"] + [c])[-40:]
             v["frames"] += 1
             v["travel"] = max(v["travel"], ((c[0] - v["first_c"][0]) ** 2 + (c[1] - v["first_c"][1]) ** 2) ** 0.5 / max(bw, 1.0))
             if bw < MIN_WIDTH or (len(v["crops"]) >= VIEWS and bw <= min(cw for cw, _ in v["crops"])):
@@ -175,12 +251,27 @@ class HelmetWatch:
                 TALLY["judged_ok" if score < 0.5 else "judged_unsure"] += 1
                 continue
             fc, fw = v["first_c"], max(v["max_w"], 1.0)
-            if any(abs(v["first_pts"] - t_last) <= SAME_RIDER_S   # after it, or overlapping: an id switch
-                   and ((fc[0] - c_last[0]) ** 2 + (fc[1] - c_last[1]) ** 2) ** 0.5 <= SAME_RIDER_W * max(fw, w_last)
-                   for t_last, c_last, w_last in self.raised):
+            look = _colours(views[0])
+
+            def same(t_first, t_last, path_last, w_last, h_last):
+                # time apart: 0 when the tracks overlap (an id switch mid-track), else the gap between them
+                gap = max(0.0, v["first_pts"] - t_last, t_first - v["last_pts"])
+                # nearest approach of the two paths, in widths: a new id can pick the rider up anywhere along
+                # the old one's path (cam06, 9 Oct: tracks 4 then 3 on one rider a second apart)
+                far = min(((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5 for a in v["path"] for b in path_last) / max(fw, w_last)
+                if gap <= SAME_RIDER_S and far <= SAME_RIDER_W:
+                    return True
+                return (gap <= LOOKALIKE_S and far <= LOOKALIKE_W and h_last is not None and look is not None
+                        and float(cv2.compareHist(look, h_last, cv2.HISTCMP_CORREL)) >= LOOKALIKE_CORR)
+
+            if any(same(*r) for r in self.raised):
                 TALLY["same_rider_again"] += 1
                 continue
-            self.raised = [r for r in self.raised if v["last_pts"] - r[0] <= 10.0] + [(v["last_pts"], v["last_c"], fw)]
+            if _replayed(self.camera_id, v["path"], fw, look):
+                TALLY["replayed_rider"] += 1
+                continue
+            self.raised = [r for r in self.raised if v["last_pts"] - r[1] <= 15.0] + [
+                (v["first_pts"], v["last_pts"], list(v["path"]), fw, look)]
             TALLY["raised"] += 1
             payload = {
                 "camera_id": self.camera_id, "kind": "NO_HELMET", "severity": "LOW", "track_ids": [int(tid)],
@@ -188,7 +279,10 @@ class HelmetWatch:
                 "reason": f"two-wheeler rider who appears bare-headed (classifier {score:.2f} over {len(scores)} "
                            f"view{'s' if len(scores) > 1 else ''}, at {int(v['max_w'])} px)",
                 "evidence": {"no_helmet_score": round(score, 3), "view_scores": [round(x, 3) for x in scores],
-                             "widest_px": round(v["max_w"]), "threshold": THRESHOLD},
+                             "widest_px": round(v["max_w"]), "threshold": THRESHOLD,
+                             # where the track began and ended: what tells a second call on one rider apart
+                             "track_from": [round(v["first_c"][0]), round(v["first_c"][1]), round(v["first_pts"], 2)],
+                             "track_to": [round(v["last_c"][0]), round(v["last_c"][1]), round(v["last_pts"], 2)]},
             }
             if v["jpeg"]:
                 payload["snapshot_jpeg_b64"] = base64.b64encode(v["jpeg"]).decode("ascii")

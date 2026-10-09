@@ -1633,7 +1633,6 @@ INCIDENT_KINDS = (
     "COLLISION_CANDIDATE",
     "PERSON_ON_CARRIAGEWAY",
     "INTRUSION",   # a person or vehicle inside a camera's configured restricted zone
-    "NO_PLATE_VISIBLE",   # a vehicle seen close, facing the camera, with no plate found on it
     "CROWD_GATHERING",   # people bunching up where they usually do not (fight, collapse, accident aftermath)
     "NO_HELMET",   # a two-wheeler rider who appears bare-headed (classifier trained on grid riders)
 )

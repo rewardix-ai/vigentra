@@ -2,7 +2,7 @@
 
 The two department systems in this repository are mocks. The **Sentinel grid**
 is not: it is the live sandbox published at
-<https://sentinel.gujarat.gov.in/resource> and served from `live.corp8.cloud`,
+<https://sentinel.gujarat.gov.in/resource> and served from `cctv.corp8.cloud` (`live.corp8.cloud` until the grid moved),
 federated through the same adapter contract as everything else.
 
 30 cameras, across Ahmedabad, Junagadh, Navsari, Rajkot, Patan, Gandhinagar,
@@ -83,7 +83,7 @@ which would downgrade the scheme mid-playlist. Every request carries it.
 
 ## How the video reaches a browser
 
-The browser never learns that `live.corp8.cloud` exists.
+The browser never learns that the grid host exists.
 
 ```
 browser → /api/v1/streams/{session_id}          (Vigentra, authorised, audited)

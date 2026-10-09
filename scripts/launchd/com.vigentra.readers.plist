@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The live grid tracker (scripts/collect_plates.py), started at log-in and after a crash. See README.md. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.vigentra.readers</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/uchit/Downloads/ANPR/.venv/bin/python</string>
+    <string>scripts/collect_plates.py</string>
+    <string>--until</string><string>2026-10-13 23:59</string>
+    <string>--harvest</string><string>/Users/uchit/Downloads/ANPR/data/raw/grid_harvest</string>
+    <string>--restore-docker</string>
+    <string>vigentra-anpr-live-1</string><string>vigentra-edge-worker-1</string>
+    <string>vigentra-detector-traffic-1</string><string>vigentra-detector-municipal-1</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/uchit/Vigentra/vigentra</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/Users/uchit/.docker/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <!-- start at log-in; restart only after a crash (a clean exit is the deadline or a stop request) -->
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <!-- the stop takes ~45 s while readers flush their plates; do not kill it sooner -->
+  <key>ExitTimeOut</key><integer>120</integer>
+  <!-- not throttled like a background job: the readers need the GPU at full speed -->
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>/Users/uchit/Library/Logs/vigentra-readers/supervisor.log</string>
+  <key>StandardErrorPath</key><string>/Users/uchit/Library/Logs/vigentra-readers/supervisor.log</string>
+</dict>
+</plist>

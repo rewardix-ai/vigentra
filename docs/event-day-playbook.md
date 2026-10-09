@@ -43,8 +43,8 @@ Why reading is hard on this grid, with evidence anyone can check:
 |---|---|---|
 | A route on GIS with timestamps | Rehearsed live: trace of GJ11E5402 (cam06) and GJ39CB0189 (cam30) with map, footage time, camera and department | Trace page, rehearsal 8 Oct |
 | That the system does not invent | Possible vs confirmed vs candidate shown apart; implausible legs flagged; every trace reason audited | `track_service.py`, audit log |
-| Why a camera missed it | Per-minute log of where plates are lost; snapshot of the vehicle when no plate was visible (incident) | light reader log; NO_PLATE_VISIBLE incidents |
-| Live analytics beyond plates | Every vehicle typed (auto-rickshaw, scooter, motorcycle, car, bus, truck: 89 % right on held-out grid cameras, 60 % for the stock detector). Incidents with snapshots: rider without a helmet (19 of 20 held-out calls right), vehicle without a visible plate (any type), wrong side (keep-left rule, Rules of the Road reg. 2/17, MV Act s. 184), possible collision, stopped in lane | Incidents page |
+| Why a camera missed it | Per-minute log of where plates are lost; saved crops of the misses | light reader log |
+| Live analytics beyond plates | Every vehicle typed (auto-rickshaw, scooter, motorcycle, car, bus, truck: 89 % right on held-out grid cameras, 60 % for the stock detector). Incidents with snapshots: rider without a helmet (21 of 21 held-out calls right), wrong side (keep-left rule, Rules of the Road reg. 2/17, MV Act s. 184), possible collision | Incidents page |
 | Honest measurement | Incidents audited by eye on live snapshots; rules that failed were retired (sudden stop) or rebuilt (wrong way: 274 to 6 in a 6 h replay) | `docs/submission.md` |
 | Scale and integration | 30 grid cameras on one Mac, federation of two department VMS, onboarding, role and department access, video grants, retention | HLD, scalability note |
 | Resilience | Grid refusal windows survived by switching accounts; idle-camera watchdog; clock re-sampling | supervisor log |
@@ -64,6 +64,20 @@ Why reading is hard on this grid, with evidence anyone can check:
   central keeps only plates, detections and incidents; see the scalability note.
 
 ## 5. Before the venue
+
+- **Keep the Mac on power with the lid open.** On 8-9 Oct it slept on battery with the lid closed and
+  no camera was read for 15 hours; `caffeinate` prevents idle sleep, not lid-close sleep.
+- **Watchlist is loaded.** Six DEMO plates that recur on the grid (case DEMO-SENTINEL-2026, expire 14 Oct)
+  raise live alerts; add the designated plate to the watchlist as soon as it is named.
+- **The tracker restarts itself.** It runs as a LaunchAgent (`scripts/launchd/`): it starts at log-in,
+  opens Docker Desktop if needed and waits for central-api, and launchd restarts it within a minute of a
+  crash (tested 9 Oct by killing it). After a reboot someone must log in (FileVault is on, so there is
+  no automatic log-in); nothing reads while the Mac sleeps. Status:
+  `launchctl print gui/$(id -u)/com.vigentra.readers | grep -E "state|pid"`.
+- **New grid cameras (30 -> 50).** They federate on their own, but arrive without map pins (the grid's
+  catalogue sends only an id and a name). Run `python scripts/survey_new_grid_cameras.py`, check each
+  proposed pin (geocoded from the name, else the town or district centre, labelled so), then
+  `--apply` and restart central-api. The collection supervisor reads every camera the registry holds.
 
 - Run the trace and a pursuit once on the venue network; if port 8554 is blocked, switch on the HLS
   fallback (`SENTINEL_GRID_HLS_FALLBACK=1`).

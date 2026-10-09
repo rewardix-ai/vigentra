@@ -1,6 +1,7 @@
 """Read plates on every grid camera with the Mac's GPU until a deadline, and keep the readers alive.
 
-Runs continuous ANPR readers (one camera each, rotating) (`app.worker --forever` with long passes),
+By default (--mode light) one process reads every grid camera at once (tools/light_readers.py);
+--mode rotate runs three continuous readers instead, one camera each, rotating,
 on the host so the engine can use the Apple GPU (Docker on macOS has none). Each reader signs in to
 central-api with its department's AI account, the same account the Docker workers use: traffic.ai for
 Traffic Police cameras, municipal.ai for Municipal Corporation cameras. Credentials and grid settings
@@ -24,9 +25,14 @@ What it does on its own:
 - it holds a macOS caffeinate assertion while it runs, so an idle Mac on power does not sleep;
 - once an hour it appends each camera table's row count to progress.log.
 Logs: ~/Library/Logs/vigentra-readers/ (survives a reboot; the readers themselves do not).
+
+To come back after a reboot or log-in it runs as a LaunchAgent (scripts/launchd/, see its README): at
+start it waits for Docker and central-api (opening Docker Desktop if it is not running), refuses to run
+twice, and does nothing once the deadline has passed.
 """
 import argparse
 import datetime as dt
+import fcntl
 import json
 import os
 import re
@@ -141,6 +147,26 @@ def progress(logs: Path) -> None:
         f.write(f"{dt.datetime.now(IST):%Y-%m-%d %H:%M} {out}\n")
 
 
+def wait_for_stack() -> None:
+    """After a reboot Docker Desktop may not be running (it does not start at log-in here): open it,
+    then wait until postgres and central-api answer."""
+    opened = said = False
+    while True:
+        db = subprocess.run(["docker", "exec", "vigentra-postgres-1", "pg_isready", "-q"], capture_output=True).returncode == 0
+        api = subprocess.run(["curl", "-sf", "--max-time", "10", "-o", "/dev/null", "http://localhost:8000/health"]).returncode == 0
+        if db and api:
+            if said:
+                log("Docker stack is up")
+            return
+        if not said:
+            log("waiting for Docker (postgres and central-api)")
+            said = True
+        if not opened and subprocess.run(["docker", "info"], capture_output=True).returncode != 0:
+            subprocess.run(["open", "-g", "-a", "Docker"])
+            opened = True
+        time.sleep(15)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--until", required=True, help='deadline in IST, e.g. "2026-10-11 23:00"')
@@ -154,6 +180,16 @@ def main() -> int:
     deadline = dt.datetime.strptime(args.until, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
     logs = Path(args.logs).expanduser()
     logs.mkdir(parents=True, exist_ok=True)
+    if dt.datetime.now(IST) >= deadline:
+        log(f"deadline {deadline:%d %b %H:%M} IST has passed: nothing to do")
+        return 0
+    lock = open(logs / "supervisor.lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        log("another supervisor is running: exiting")
+        return 0
+    wait_for_stack()
 
     compose = yaml.safe_load((REPO / "docker-compose.yml").read_text())
     dot = dotenv()
@@ -162,8 +198,10 @@ def main() -> int:
     for env in envs.values():
         env["EDGE_CONTINUOUS_PASS_FRAMES"] = "1000000"   # one pass per window: read the whole replay
     cams = cameras()
-    assert set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
     light = args.mode == "light"
+    # light mode reads every grid camera the registry holds, however many the event grid brings (50 on
+    # 12-13 Oct); only the rotation needs its fixed list to match
+    assert light or set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
     slots = ([{"name": "light", "camera": "all", "proc": None, "log": logs / "light.log", "restart_at": None}] if light else
              [{"name": f"reader{i + 1}", "camera": None, "proc": None, "log": logs / f"reader{i + 1}.log", "restart_at": None} for i in range(READERS)])
     municipal = service_env(compose, "detector-municipal", dot)
@@ -176,6 +214,7 @@ def main() -> int:
                        LIGHT_MUNICIPAL_PASSWORD=municipal.get("EDGE_PASSWORD", ""))
             if args.harvest:
                 env["LIGHT_HARVEST_DIR"] = args.harvest
+            env["HELMET_SEEN_PATH"] = str(logs / "helmet_seen.json")   # remembered across restarts (grid replays)
             slot["restart_at"], slot["started"], slot["idle_lines"] = None, time.time(), 0
             slot["watch_at"] = slot["log"].stat().st_size if slot["log"].exists() else 0
             slot["proc"] = subprocess.Popen([sys.executable, "tools/light_readers.py"], cwd=EDGE, env=env,

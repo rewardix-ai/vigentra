@@ -327,7 +327,7 @@ services ship an `app` package, and one interpreter can import only one of them.
 pytest services/edge-worker/tests
 ```
 
-338 test functions (209 in the platform suite, 129 in the edge worker's) cover installation onboarding and validation, ownership and
+397 tests (223 in the platform suite, 174 in the edge worker's, counted by pytest on 9 Oct) cover installation onboarding and validation, ownership and
 permission, registration-gated sync, source-outage isolation, canonical
 normalisation, redaction depth, the full video permission matrix, cross-unit
 grants, recorded-playback windows and retention, detection ingestion and

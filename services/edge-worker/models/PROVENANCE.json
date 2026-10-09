@@ -1,22 +1,90 @@
 {
-  "plate_detector.pt": {
-    "from": "runs/plate/B_highres_960/weights/best.pt",
-    "sha256": "c3f82966bbb3b4e6e0b7081258680f9c2de41c06fc7952938f427297cc6c05e0",
-    "bytes": 19202778
+  "helmet_cls.pt": {
+    "from": "ANPR models/helmet_cls_v2.pt (renamed on copy)",
+    "sha256": "8959825da10858fff8be61dff3ded0d96b9f2508356e13049e9c44a7c1d501f0",
+    "bytes": 3189250
   },
-  "plate_reader.pt": {
-    "from": "runs/reader/R5_staged/best.pt",
-    "sha256": "f991c5b5499c6185380b92b2f3513440d26482790ce74f57ef1d873fbdeab351",
-    "bytes": 17485379
+  "helmet_cls_v4.pt": {
+    "from": "ANPR models/helmet_cls_v4.pt (identical copy)",
+    "sha256": "5aa8511b2a91e1100493ffb1d2644a850aa184e2823ff19ae60692d9fdfd7351",
+    "bytes": 3189954
   },
-  "plate_sr.pt": {
-    "from": "runs/sr/S3_wide_cont/best.pt",
-    "sha256": "69ab75a048c35979f44bdde1face2b17f6096d6578ac952cdcd7ec057a7b58ff",
-    "bytes": 2509187
+  "helmet_cls_v5.pt": {
+    "from": "ANPR models/helmet_cls_v5.pt (identical copy)",
+    "sha256": "55673dda9944108240b5450b8e2e94a1746a8718a206544a9cc215867ebaeb7b",
+    "bytes": 3189570
   },
-  "plate_detector_frame.pt": {
-    "from": "D:/ANPR/models/plate_detector.pt (original yolo11m full-frame model)",
-    "sha256": "d691f8d5e7709d2065b18a0e2bd75deaf08f6115cc0295cc3de7d0fd2eabcdae",
-    "bytes": 40507749
+  "helmet_cls_v6_head.pt": {
+    "from": "ANPR models/helmet_cls_v6_head.pt (identical copy)",
+    "sha256": "1f86e8d08fb361954dbd9196dc443dcd33d5cf17596dcd5977a684e71c0847ce",
+    "bytes": 3189954
+  },
+  "helmet_cls_v7.pt": {
+    "from": "ANPR models/helmet_cls_v7.pt (identical copy)",
+    "sha256": "75e938fee094a75057fbe29991a6fc62f02b1cf12c60cf05c88224c87ee2170e",
+    "bytes": 3189634
+  },
+  "helmet_cls_v8_head.pt": {
+    "from": "ANPR models/helmet_cls_v8_head.pt (identical copy)",
+    "sha256": "c85ec3368eef47cea23cf66168689586da45b695135f947251b5673335b11e78",
+    "bytes": 3189634
+  },
+  "plate_det_grid_clean.pt": {
+    "from": "ANPR models/plate_det_grid_clean.pt (identical copy)",
+    "sha256": "ec29bb9b7e0fba06f9fbc52593d87de4e2a2bf3485aa0a64e9eae9723c95af4b",
+    "bytes": 5441818
+  },
+  "plate_det_mix_n.pt": {
+    "from": "ANPR models/plate_det_mix_n.pt (identical copy)",
+    "sha256": "4f34a0fb2145fccb099b535976c942aa30924b309f70b10ec3e6752f9080fd33",
+    "bytes": 21234339
+  },
+  "reader_crnn.onnx": {
+    "from": "ANPR models/reader_crnn.onnx (identical copy)",
+    "sha256": "7d67053b8866d3afdbc36104293c45270e1980f11c01e0ec226805211d9682b1",
+    "bytes": 7709909
+  },
+  "reader_crnn_v6.onnx": {
+    "from": "ANPR models/reader_crnn_v6.onnx (identical copy)",
+    "sha256": "7f39b68472e25a7d78dbecb984f5395f4c91c153e0b98a5c026dc68b4440a46a",
+    "bytes": 7709939
+  },
+  "vehicle_types_world.pt": {
+    "from": "YOLO-World with vehicle-type prompts (product only)",
+    "sha256": "502c3efe6412ab475b201676af8e8c849c5650cd9603ff9ab8f6ebef7fedc0a4",
+    "bytes": 328510119
+  },
+  "vtype_cls.pt": {
+    "from": "ANPR models/vtype_cls_v2.pt (renamed on copy)",
+    "sha256": "8d9c345f0bf9e1e71f808476010537ff9223e95dc59383135c4bef5edccc08cc",
+    "bytes": 3200386
+  },
+  "yolo11n.pt": {
+    "from": "Ultralytics release (COCO)",
+    "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "bytes": 5613764
+  },
+  "yolo11n_person.pt": {
+    "from": "Ultralytics yolo11n, person class",
+    "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "bytes": 5613764
+  },
+  "yolo11s.pt": {
+    "from": "Ultralytics release (COCO)",
+    "sha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+    "bytes": 19313732
+  },
+  "yolo26n.pt": {
+    "from": "Ultralytics release (COCO)",
+    "sha256": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+    "bytes": 5544453
+  },
+  "yolov8s-worldv2.pt": {
+    "from": "Ultralytics release (YOLO-World)",
+    "sha256": "9b2c17ab6124a913e9b3a5c170617920d91b0f01111a8479da69f00e2cf27792",
+    "bytes": 25923032
+  },
+  "awiros/": {
+    "from": "Awiros PP-OCRv5 reader (optional, needs third_party/PaddleOCR)"
   }
 }

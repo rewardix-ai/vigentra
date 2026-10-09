@@ -96,3 +96,65 @@ def test_a_vehicle_the_type_classifier_rejects_is_not_judged(monkeypatch):
         out += w.observe(frame, [bike(30, 500, 200 + 25 * i)], float(i))
     out += w.observe(frame, [], 20.0)
     assert not out
+
+
+def _rider_frame(bgr):
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    frame[0:400, 450:650] = bgr   # the rider's clothes fill the crop
+    return frame
+
+
+def test_the_same_rider_lost_for_seconds_is_called_once(monkeypatch):
+    """cam30, 9 Oct: one woman called twice, her second track starting more than 2 s after the first."""
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    red = _rider_frame((40, 40, 200))
+    for i in range(3):
+        out += w.observe(red, [bike(40, 500, 250 + 10 * i)], float(i))
+    for i in range(3):   # lost for 4 s, back under a new id, same clothes, same place
+        out += w.observe(red, [bike(41, 505, 280 + 10 * i)], 6.0 + i)
+    out += w.observe(red, [], 30.0)
+    assert len(out) == 1
+
+
+def test_a_different_rider_at_the_same_spot_is_still_called(monkeypatch):
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    red, blue = _rider_frame((40, 40, 200)), _rider_frame((200, 60, 30))
+    for i in range(3):
+        out += w.observe(red, [bike(50, 500, 250 + 10 * i)], float(i))
+    for i in range(3):
+        out += w.observe(blue, [bike(51, 505, 280 + 10 * i)], 6.0 + i)
+    out += w.observe(blue, [], 30.0)
+    assert len(out) == 2
+
+
+def test_a_new_id_picking_the_rider_up_mid_path_is_the_same_rider(monkeypatch):
+    """cam06, 9 Oct: tracks 4 then 3 on one rider; the new id began near where the rider had been, not where
+    the old track ended."""
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(6):   # the rider comes down the frame fast
+        out += w.observe(frame, [bike(60, 500, 100 + 60 * i)], 0.2 * i)
+    for i in range(3):   # a second box on the same rider, starting back near the middle of that path
+        out += w.observe(frame, [bike(61, 500, 220 + 10 * i)], 1.3 + 0.2 * i)
+    out += w.observe(frame, [], 30.0)
+    assert len(out) == 1
+
+
+def test_a_rider_called_again_in_a_grid_replay_is_not_called_twice(tmp_path, monkeypatch):
+    import numpy as np
+
+    from app import helmet as h
+
+    monkeypatch.setenv("HELMET_SEEN_PATH", str(tmp_path / "seen.json"))
+    look = np.random.default_rng(1).random(144).astype("float32")
+    path = [(100.0, 200.0), (110.0, 260.0), (120.0, 320.0)]
+    assert not h._replayed("cam04", path, 90.0, look)            # first call: remembered
+    assert h._replayed("cam04", path, 90.0, look)                # the replay: same path, same colours
+    other = np.random.default_rng(2).random(144).astype("float32")
+    assert not h._replayed("cam04", path, 90.0, other)           # another rider on the same path
+    assert not h._replayed("cam06", path, 90.0, look)            # another camera
+    far = [(x + 900.0, y) for x, y in path]
+    assert not h._replayed("cam04", far, 90.0, look)             # same colours, elsewhere in the frame

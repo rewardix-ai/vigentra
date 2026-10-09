@@ -38,7 +38,8 @@ MODELS = Path(__file__).resolve().parent.parent / "models"
 WEIGHTS = [Path(p) for p in os.getenv(
     "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in (
         "helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v5.pt", "helmet_cls_v6_head.pt"))).split(",") if p]
-THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.8"))
+THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.85"))   # held out: same 20 calls as 0.8;
+                            # live, a cam06 rider in a black helmet averaged 0.79 (9 Oct)
 MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls at >= 0.8, all right; the snapshot
                             # carries the judged rider enlarged, so a person can check a small one
 SAME_RIDER_S, SAME_RIDER_W = 2.0, 2.5   # a call whose track starts within this time and this many widths of

@@ -177,6 +177,9 @@ class FrameQualityRouter:
     #: transform edges sit too). 9 Oct, 1,920 grid frames at full size: median 1.15, 99th percentile
     #: 1.60; frames at 1.8+ were mostly smeared macroblocks (some fog/glare also reaches it)
     CORRUPT_BLOCKINESS = 1.8
+    #: ...and at least this many times the camera's own running level (its first frames build it;
+    #: until then only gross damage counts)
+    CORRUPT_OVER_BASE, CORRUPT_GROSS, BLOCK_WARMUP = 1.4, 3.0, 20
     #: an all-black frame: night grid frames still average 20-60 with street lights and headlights
     BLACKOUT_LUMA, BLACKOUT_VARIANCE = 8.0, 5.0
 
@@ -207,14 +210,26 @@ class FrameQualityRouter:
                 clipped_highlight_ratio=clipped, inference_skipped=True,
                 detail={"mean_luma": round(mean_luma, 2), "laplacian_variance": round(variance, 2)},
             )
-        # Corruption first: a smeared frame's exposure and focus numbers describe the smear.
-        if blocky is not None and blocky >= self.CORRUPT_BLOCKINESS:
+        # Corruption first: a smeared frame's exposure and focus numbers describe the smear. Judged
+        # against this camera's own level: some encoders are always a little blocky (cam10, 9 Oct:
+        # 1.80-1.99 on every frame, no damage), while damage jumps far above it (cam06 up to 9).
+        corrupt = False
+        if blocky is not None:
+            base, seen = getattr(self, "_block_base", None), getattr(self, "_block_seen", 0)
+            if seen < self.BLOCK_WARMUP:
+                corrupt = blocky >= self.CORRUPT_GROSS
+            else:
+                corrupt = blocky >= max(self.CORRUPT_BLOCKINESS, self.CORRUPT_OVER_BASE * base)
+            if not corrupt:
+                self._block_base = blocky if base is None else 0.95 * base + 0.05 * blocky
+                self._block_seen = seen + 1
+        if corrupt:
             return QualityAssessment(
                 quality=FrameQuality.CORRUPTED,
                 mean_luma=mean_luma,
                 laplacian_variance=variance,
                 clipped_highlight_ratio=clipped,
-                detail={"blockiness": round(blocky, 3), "threshold": self.CORRUPT_BLOCKINESS},
+                detail={"blockiness": round(blocky, 3), "camera_level": round(getattr(self, "_block_base", 0) or 0, 3)},
             )
 
         # Order matters, and not in the obvious way.

@@ -165,7 +165,7 @@ def main() -> int:
 
     awiros.AwirosReader = shared_reader
 
-    from app import anpr_engine, grid, helmet, no_plate, worker
+    from app import anpr_engine, grid, helmet, worker
     from anpr.pipeline import ANPRPipeline
 
     # Why vehicles end without a plate: every closed track's outcome, tallied per minute in the log.
@@ -272,7 +272,7 @@ def main() -> int:
                        for t, b, src, c in plates]}))
     frames: dict[str, int] = {}   # frames each camera got through the engine since the last stats line
     spent = {"hot": [0.0, 0], "cold": [0.0, 0]}   # engine seconds and frames, by whether a near vehicle was in view
-    for name in ("process", "finish", "plate_probe"):   # every use of the engine's models goes through the lock
+    for name in ("process", "finish"):   # every use of the engine's models goes through the lock
         original = getattr(anpr_engine.AnprEngine, name)
 
         def locked(self, *a, _original=original, _count=(name == "process"), **k):
@@ -382,9 +382,6 @@ def main() -> int:
             if helmet.TALLY:
                 log.info("helmet checks: %s", " ".join(f"{k}={v}" for k, v in helmet.TALLY.most_common()))
                 helmet.TALLY.clear()
-            if no_plate.REJECTED:
-                log.info("no-plate checks: %s", " ".join(f"{k}={v}" for k, v in no_plate.REJECTED.most_common()))
-                no_plate.REJECTED.clear()
             log.info("tracks closed %d | %s", outcomes_total,
                      " ".join(f"{k}={v}" for k, v in sorted(tally.items(), key=lambda kv: -kv[1])) or "none")
             log.info("frames/min %d total | hot now: %s | %s | idle: %s", total, " ".join(sorted(names.get(c, c) for c in gpu.hot())) or "none",

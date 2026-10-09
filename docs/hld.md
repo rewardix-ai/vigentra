@@ -330,13 +330,12 @@ The two layers carrying the accuracy are the **grammar engine** and the
     (one sees only the head band), averaged over each rider's three closest views; judged only on a
     vehicle the type classifier finds a two-wheeler; one call per rider when the tracker breaks the
     track. Held out: 21 calls, all right; live, checked by eye: 47 of 50 right, the misses fixed.
-  - *Vehicle without a visible plate*: any vehicle type, close enough for its plate to be readable,
-    facing the camera fully in frame, in daylight only (at night a detector miss says nothing), and
-    the plate model proposes nothing even at confidence 0.03.
   - *Vehicle types*: a classifier trained on 960 grid vehicles re-types each track (auto-rickshaw,
     scooter, motorcycle, car, bus, truck); the stock detector called autos "truck". Held out: 89 %
     right against 60 %.
-  - Retired at the operator's request after live audits: sudden stop, stopped in lane.
+  - Retired at the operator's request after live audits: sudden stop, stopped in lane, and (9 Oct)
+    vehicle without a visible plate: on the grid's night, high-angle views a plate the detector misses is
+    almost always side-on, cut off or in glare, so a miss says little (stored rows hidden, not deleted).
 - **E-challan (8 Oct).** Confirm on an offence opens a popup: the operator types the plate read on the
   evidence, the owner is looked up, the challan is recorded and the SMS sent. The vehicle reference
   registry stays owner-free; owners come from a separate source, in production the state e-challan /

@@ -36,7 +36,6 @@ const KIND_LABEL: Record<string, string> = {
   COLLISION_CANDIDATE: "Possible collision",
   PERSON_ON_CARRIAGEWAY: "Person in traffic",
   INTRUSION: "Intrusion in a restricted zone",
-  NO_PLATE_VISIBLE: "Vehicle without a visible number plate",
   CROWD_GATHERING: "Crowd gathering",
   NO_HELMET: "Rider without a helmet",
 };
@@ -57,7 +56,7 @@ const STATUS_TONE: Record<string, Tone> = {
 };
 
 /** Offences: Confirm opens the e-challan popup (central routers/challans.py). */
-const CHALLAN_KINDS = new Set(["NO_HELMET", "NO_PLATE_VISIBLE", "WRONG_WAY"]);
+const CHALLAN_KINDS = new Set(["NO_HELMET", "WRONG_WAY"]);
 
 export default function IncidentsPage() {
   const [rows, setRows] = useState<Incident[] | null>(null);

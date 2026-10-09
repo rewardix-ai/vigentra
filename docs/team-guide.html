@@ -145,6 +145,7 @@ html { scroll-behavior: smooth; }
       <li><a href="#flow">One plate, start to finish</a></li>
       <li><a href="#arch">The building blocks</a></li>
       <li><a href="#modules">Module by module</a></li>
+      <li><a href="#reference">Module reference</a></li>
       <li><a href="#analytics">What it detects</a></li>
       <li><a href="#files">File structure</a></li>
       <li><a href="#research">The research repo</a></li>
@@ -364,8 +365,195 @@ html { scroll-behavior: smooth; }
       </table></div>
     </section>
 
+    <section id="reference">
+      <h2><span class="n">07</span>Module reference</h2>
+      <p class="lede">Every module in detail: what it is for, how it works inside, what it talks to, and the decisions behind it. Paths are relative to the product repo unless they start with <code>ANPR/</code>.</p>
+
+      <h3>A. The event-day reading path</h3>
+      <div class="grid2">
+        <div class="box"><span class="tag">scripts/collect_plates.py</span><h4>The supervisor</h4>
+          <p>Keeps the GPU reader alive from now to the deadline (<code>--until 2026-10-13 23:59</code>).</p>
+          <ul>
+            <li>Builds the reader's environment from <code>docker-compose.yml</code> and <code>.env</code> at run time (never printed): the AI accounts traffic.ai and municipal.ai, the grid URL, the models folder, GPU device <code>mps</code>.</li>
+            <li>Starts <code>tools/light_readers.py</code> (light mode) and watches its log.</li>
+            <li><b>Refusal windows:</b> 4 or more “RTSP 401” lines mean the grid is restarting. It stops the reader, tries a second grid account if one is configured, otherwise makes one test login every 20 s and restarts reading the moment the grid accepts.</li>
+            <li><b>Watchdog:</b> 5 or more cameras idle for 3 stats lines in a row restarts the reader (after a 5-minute grace at start).</li>
+            <li>Every 30 min it re-reads each camera's on-screen clock (<code>scripts/osd/clock.py</code>), so routes can show footage time.</li>
+            <li>Holds a <code>caffeinate</code> assertion, writes <code>status.json</code> and an hourly <code>progress.log</code> in <code>~/Library/Logs/vigentra-readers/</code>.</li>
+            <li>At start: waits for Docker and central-api, refuses to run twice (a file lock), does nothing after the deadline. At the deadline it starts the paused Docker readers again.</li>
+          </ul></div>
+        <div class="box"><span class="tag">scripts/launchd/</span><h4>The LaunchAgent</h4>
+          <p><code>com.vigentra.readers.plist</code> registers the supervisor with macOS.</p>
+          <ul>
+            <li><b>RunAtLoad:</b> starts at log-in.</li>
+            <li><b>KeepAlive on crash only:</b> a crash restarts it after 60 s; a clean exit (deadline, stop request) does not.</li>
+            <li><b>ProcessType Interactive:</b> macOS does not throttle it like a background job, so the GPU runs at full speed.</li>
+            <li><b>ExitTimeOut 120 s:</b> stopping takes ~45 s while the reader flushes plates.</li>
+            <li>Does not survive sleep: the Mac must stay on power, lid open.</li>
+          </ul></div>
+        <div class="box"><span class="tag">services/edge-worker/tools/light_readers.py</span><h4>Light mode reader</h4>
+          <ul>
+            <li>One process, one thread per grid camera, each running <code>app.worker.run</code> on its own stream.</li>
+            <li>Models are loaded once and shared: YOLO11n vehicles at 640 px, plate detector <code>plate_det_grid_clean.pt</code>, CRNN readers, helmet and vehicle-type classifiers.</li>
+            <li>A single <b>GPU lock</b> serialises model calls. Cameras with a vehicle close to the lens (“hot”) get the lock first; quiet cameras get a frame every few seconds.</li>
+            <li>Polls <code>GET /pursuits</code>: cameras a pursued vehicle could reach become hot, and each closed track there is checked against the target plate.</li>
+            <li>Logs a stats line every minute: frames per camera, idle cameras, where plates were lost, <code>helmet checks:</code> tallies.</li>
+            <li>With <code>--harvest</code> it saves frames with near vehicles (8,000 max) for training only.</li>
+          </ul></div>
+        <div class="box"><span class="tag">services/edge-worker/app/worker.py</span><h4>The reader loop</h4>
+          <ul>
+            <li>Signs in to central-api as its department's AI account and opens an audited video session for the camera.</li>
+            <li>For each frame: frame-quality check, vehicle detection and tracking, ANPR, incident rules, helmet check, vehicle-type refinement.</li>
+            <li>Posts in batches: <code>/detections/ingest</code> (boxes, types, plates), <code>/incidents/ingest</code> (with a JPEG snapshot), <code>/detections/frame-quality</code>.</li>
+            <li>A plate is uploaded the moment its track settles, not at the end of the pass, so alerts are live.</li>
+            <li>Run alone with <code>python -m app.worker --camera …</code> or <code>--all-cameras --forever</code> (Docker detectors use the second).</li>
+          </ul></div>
+      </div>
+
+      <h3>B. Edge worker: product modules (services/edge-worker/app)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Module</th><th>What it does</th><th>How it works / why</th></tr></thead>
+        <tbody>
+          <tr><td><code>grid.py</code></td><td>Opens grid streams the way the integrator's guide requires.</td><td>RTSP forced over TCP, timing taken from the stream's own timestamps, reconnect with backoff, optional HLS fallback through central-api when port 8554 is blocked (<code>SENTINEL_GRID_HLS_FALLBACK=1</code>). Promises nothing is written to disk.</td></tr>
+          <tr><td><code>anpr_engine.py</code></td><td>Wraps the ANPR pipeline for the worker.</td><td>Frames go in with their time; <code>finish()</code> returns plates that settled (CONFIRMED or CANDIDATE with score and frame count). Keeps plates that settled mid-pass so none are lost on a scene cut.</td></tr>
+          <tr><td><code>detectors.py</code></td><td>Object detector abstraction.</td><td>YOLO when weights exist, a mock detector in tests; never downloads weights at run time.</td></tr>
+          <tr><td><code>frame_quality.py</code></td><td>Labels frames low-light, overexposed or blurred.</td><td>Brightness and sharpness measures; flagged frames are reported so the dashboard can say why a camera reads little.</td></tr>
+          <tr><td><code>helmet.py</code></td><td>Raises NO_HELMET candidates.</td><td>Per two-wheeler track it keeps the rider's 3 closest views (at least 70 px wide), runs 4 YOLO11n classifiers (one sees only the head band) and averages them; at 0.8 or more it is a call. Not judged if the vehicle is parked or the type classifier says it is not a two-wheeler. One call per rider: a new track near the old one in path or clothing colours (histogram correlation ≥ 0.85) is the same rider. Snapshot has a title strip and an enlarged rider inset.</td></tr>
+          <tr><td><code>vehicle_type.py</code></td><td>Tells auto-rickshaw, scooter, motorcycle, car, bus and truck apart.</td><td>YOLO11n classifier trained on 960 grid crops. Overrides the detector's COCO class only at ≥ 0.7, looks again when the vehicle has grown 1.5× (up to 3 looks). The detector's own class is kept in provenance.</td></tr>
+          <tr><td><code>target_check.py</code></td><td>Pursuit test “could this plate be P?”.</td><td>Scores how likely the reader's character probabilities are to spell P (CTC likelihood), so a half-read plate can still be a possible match.</td></tr>
+          <tr><td><code>plates.py</code></td><td>Which classes can carry a plate.</td><td>Car, bus, truck, motorcycle, scooter, auto-rickshaw; people and bicycles are never sent to the plate reader.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>C. Edge worker: the ANPR engine (services/edge-worker/anpr)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Module</th><th>What it does</th><th>How it works / why</th></tr></thead>
+        <tbody>
+          <tr><td><code>pipeline.py</code></td><td>The whole chain from frame to plate.</td><td>Mask the on-screen overlay → detect and track vehicles → find the plate inside each vehicle → keep the best crops per track (crop bank) → legibility gate → enhance → read → vote across frames → record. A track closes when the vehicle leaves; its reason is kept (read, unreadable, no plate found).</td></tr>
+          <tr><td><code>detect/vehicle.py</code>, <code>plate.py</code></td><td>Vehicle detection + ByteTrack; plate detection inside a vehicle crop.</td><td>The plate detector runs on the vehicle crop with a 5 % margin, enlarged if small, so small plates are still found.</td></tr>
+          <tr><td><code>detect/overlay_mask.py</code>, <code>static_text.py</code>, <code>char_evidence.py</code></td><td>Stop false plates.</td><td>The camera's timestamp and site name are masked; text that never moves is ignored; a confirmation needs glyph-shaped marks in the pixels.</td></tr>
+          <tr><td><code>enhance/</code></td><td>Make crops readable.</td><td>Rectify the plate, register and fuse several frames, reduce glare, denoise, deblur, super-resolve; a quality score picks what to read.</td></tr>
+          <tr><td><code>read/crnn.py</code>, <code>beam_grammar.py</code>, <code>rows.py</code></td><td>Read the characters.</td><td>Two CRNN readers (ONNX); beam search constrained by Indian plate grammar (state code, RTO number, series, number); two-row plates split and read in order.</td></tr>
+          <tr><td><code>plate_grammar.py</code></td><td>Indian plate rules.</td><td>Valid state codes and formats, and the usual confusions (0/O, 1/I, 8/B, 5/S) used when correcting and matching.</td></tr>
+          <tr><td><code>fuse/rover.py</code></td><td>Vote across frames.</td><td>Character-by-character voting over all reads of a track; a plate is CONFIRMED only when enough frames and readers agree.</td></tr>
+          <tr><td><code>track/vehicle_count.py</code></td><td>Count real vehicles, not tracker ids.</td><td>Links fragments, continuations and parked re-acquisitions; never-moving low-confidence tracks are ghosts (lane markings, the overlay). Cam06 noon: 84 vehicles, not 141 ids.</td></tr>
+          <tr><td><code>incidents.py</code></td><td>Traffic incident rules.</td><td>Wrong way: normal flow is learned per area of each camera's frame, and only dense, continuous tracks are judged. Collision candidate: two vehicles overlapping and stopping together (one vehicle boxed twice is ignored). Person on carriageway, intrusion into a configured zone. Sudden stop and stopped in lane are switched off. Everything is a candidate with a snapshot.</td></tr>
+          <tr><td><code>sampling.py</code>, <code>camera/profile.py</code></td><td>How often to look, per camera.</td><td>Adaptive sampling (more frames when vehicles are near) and per-camera settings from <code>config/camera_profiles.yaml</code>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>D. Edge worker: tools and config</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Module</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>tools/snapshot_wall.py</code></td><td>Runs in the grid-snapshots container: decodes grid streams into still frames for the live wall (4 streams, rotated).</td></tr>
+          <tr><td><code>tools/anpr_benchmark.py</code></td><td>Runs the engine over the recorded clips exactly as the worker does and scores it against <code>data/eval/anpr_gt</code>. Every ANPR change is measured with it.</td></tr>
+          <tr><td><code>tools/anpr_replay.py</code>, <code>anpr_failures.py</code></td><td>Re-run only the reading stage on saved crops (minutes, not hours); explain why each readable plate was missed.</td></tr>
+          <tr><td><code>tools/anpr_gt_sheets.py</code>, <code>anpr_gt_plates.py</code></td><td>Build the labelling sheets used to write the by-eye ground truth.</td></tr>
+          <tr><td><code>tools/annotate_video.py</code></td><td>Renders branded annotated videos (vehicle numbers, types, readings) for the presentation.</td></tr>
+          <tr><td><code>config/thresholds.yaml</code></td><td>Every threshold of the ANPR chain in one place.</td></tr>
+          <tr><td><code>config/camera_profiles.yaml</code>, <code>roi.yaml</code></td><td>Per-camera settings, intrusion zones and regions of interest.</td></tr>
+          <tr><td><code>models/PROVENANCE.json</code></td><td>Which weights are installed, where each came from, with checksums.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>E. central-api: core and adapters (services/central-api/app)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Module</th><th>What it does</th><th>How it works / why</th></tr></thead>
+        <tbody>
+          <tr><td><code>main.py</code></td><td>Builds the FastAPI app.</td><td>Includes the 19 routers; at start-up creates the schema and starts the camera-health monitor.</td></tr>
+          <tr><td><code>config.py</code></td><td>Settings, roles, permissions, demo accounts.</td><td>Roles (state admin, department admin, traffic operator, municipal operator, auditor, AI accounts…) map to permissions such as <code>watchlist:manage</code> or <code>challan:issue</code>. Demo accounts are seeded from here.</td></tr>
+          <tr><td><code>database.py</code></td><td>Database connection.</td><td>Async SQLAlchemy; Postgres in Docker, SQLite in tests. Creates tables at start (no migrations tool).</td></tr>
+          <tr><td><code>dependencies.py</code></td><td>Who is calling.</td><td>Reads the bearer token, loads the user, checks a permission per endpoint, hands routers the adapters.</td></tr>
+          <tr><td><code>models.py</code></td><td>The 27 tables.</td><td>Cameras, sources, installations, detections, plate_sightings, watchlist entries and alerts, incidents and snapshots, pursuits and evidence, health alerts, challans, demo owners, video sessions and grants, audit logs…</td></tr>
+          <tr><td><code>schemas.py</code>, <code>mappers.py</code></td><td>API shapes and conversion.</td><td>Pydantic models validate every request; mappers turn rows into responses and redact fields a role may not see. <code>INCIDENT_KINDS</code> lives here: removing a kind hides its stored rows.</td></tr>
+          <tr><td><code>adapters/traffic_adapter.py</code></td><td>Talks to the Traffic Police system.</td><td>Flat snake_case fields, IST text times, API-key header → common camera record.</td></tr>
+          <tr><td><code>adapters/municipal_adapter.py</code></td><td>Talks to the Municipal system.</td><td>Nested camelCase, epoch milliseconds, bearer token → the same common record.</td></tr>
+          <tr><td><code>adapters/grid_adapter.py</code></td><td>Talks to the real Sentinel grid.</td><td>Holds the one grid web session, lists cameras, adds map pins from <code>data/reference/grid_cameras.json</code>, claims new cameras automatically, serves the last good list if the grid's sign-in is down.</td></tr>
+          <tr><td><code>video_adapters.py</code>, <code>providers/</code></td><td>Video handles per dialect; which provider feeds the registry.</td><td><code>federated</code> is the default; <code>official</code> stays inert until a real state API is configured.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>F. central-api: routers (one file per API area)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Router</th><th>Endpoints and purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>auth</code></td><td>Sign in, current user.</td></tr>
+          <tr><td><code>sources</code>, <code>cameras</code>, <code>directory</code>, <code>overview</code></td><td>Department systems and their sync; the camera registry; cities and departments; dashboard counts.</td></tr>
+          <tr><td><code>installation_requests</code></td><td>Onboarding new cameras: request, route to the owning department, track its lifecycle.</td></tr>
+          <tr><td><code>detections</code></td><td>Ingest from readers (plate reads inside are passed to the watchlist service), traffic counts, the Vehicles view, detector health, frame-quality events.</td></tr>
+          <tr><td><code>watchlist</code></td><td>Watchlist CRUD, alerts and acknowledgement, sightings, plate search, <code>/plates/{plate}/track</code> (the trace, reason required and audited), the ANPR report.</td></tr>
+          <tr><td><code>pursuits</code></td><td>Start and end a pursuit, list hot cameras (vehicle reachable at 60 km/h within 20 min), record possible sightings with crops.</td></tr>
+          <tr><td><code>incidents</code></td><td>Ingest with snapshots, list, the snapshot JPEG, review (confirm, dismiss).</td></tr>
+          <tr><td><code>challans</code></td><td>Owner lookup for a typed plate (audited), issue a challan (number <code>VG-YYYYMMDD-NNNNN</code>, simulated SMS), list challans. Traffic roles only.</td></tr>
+          <tr><td><code>events</code>, <code>health</code>, <code>health_alerts</code></td><td>Generic events and cross-camera correlation; liveness; cameras or systems that stopped answering.</td></tr>
+          <tr><td><code>video_sessions</code>, <code>video_grants</code></td><td>Open and proxy a stream behind the permission check; ask another unit for access, grant, deny, revoke.</td></tr>
+          <tr><td><code>vehicles</code>, <code>reports</code>, <code>audit</code></td><td>The vehicle reference registry (never joined to sightings); gap analysis; the audit trail.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>G. central-api: services (the logic behind the routers)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Service</th><th>What it does</th><th>How it works / why</th></tr></thead>
+        <tbody>
+          <tr><td><code>track_service.py</code></td><td>Rebuilds a vehicle's route.</td><td>Collects every sighting of the plate (exact, near, possible), orders by time, attaches camera place and department, flags legs faster than 200 km/h as implausible, adds footage time from the clock samples.</td></tr>
+          <tr><td><code>watchlist_service.py</code></td><td>Stores sightings and raises alerts.</td><td>Each new plate is compared with every active entry; a match writes an alert (exact or near, with its distance) and can call a signed webhook.</td></tr>
+          <tr><td><code>plate_matching.py</code></td><td>Fuzzy plate comparison.</td><td>Edit distance weighted by OCR confusions, so TS50B3008 still matches TS75QB3008 as a near match (first live alert, 9 Oct).</td></tr>
+          <tr><td><code>plate_geography.py</code></td><td>Where a plate is registered.</td><td>RTO code → district (e.g. GJ01 Ahmedabad), shown on traces.</td></tr>
+          <tr><td><code>challan_service.py</code></td><td>E-challan logic.</td><td>Offence → MV Act section and fine (helmet s.129/194D ₹1,000; wrong way s.184 ₹1,000); demo owner lookup (fictional, created on first lookup); masked mobile; SMS text; simulated sending.</td></tr>
+          <tr><td><code>audit_service.py</code></td><td>The audit log.</td><td>Written in its own transaction so a failed request still leaves its record.</td></tr>
+          <tr><td><code>video_permissions.py</code>, <code>video_broker.py</code>, <code>video_grants.py</code></td><td>Who may watch what.</td><td>One <code>evaluate()</code> decides every video request (role, department, zone, grants); the broker opens the stream only after that.</td></tr>
+          <tr><td><code>health_monitor.py</code>, <code>health_alerts.py</code></td><td>Camera health.</td><td>Polls cameras and systems; repeated failures raise a health alert someone must acknowledge.</td></tr>
+          <tr><td><code>sync_service.py</code>, <code>installation_service.py</code>, <code>normalization.py</code>, <code>policy_service.py</code></td><td>Registry upkeep.</td><td>Sync only registered sources; installation lifecycle; normalise names and fields; per-camera access policy.</td></tr>
+          <tr><td><code>alert_webhook.py</code></td><td>Push alerts to another system.</td><td>HMAC-signed POST, off unless <code>ALERT_WEBHOOK_URL</code> is set.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>H. dashboard (services/dashboard)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>middleware.ts</code>, <code>app/api/auth/login</code></td><td>Sends anyone without a session to <code>/login</code>; stores the token in an httpOnly cookie the browser's scripts cannot read.</td></tr>
+          <tr><td><code>app/api/vigentra/[...path]</code></td><td>Server-side proxy: every page calls this, and it adds the token when calling central-api, so the token never reaches the browser.</td></tr>
+          <tr><td><code>app/plates</code> + <code>components/TrackMap.tsx</code></td><td>Trace a vehicle: search, reason, route on a Leaflet map with times, places and confidence; “Follow live” starts a pursuit.</td></tr>
+          <tr><td><code>app/incidents</code> + <code>components/ChallanDialog.tsx</code></td><td>Incident queue with snapshots; confirming a helmet or wrong-way incident opens the challan dialog (type plate → find owner → issue and send SMS).</td></tr>
+          <tr><td><code>app/live</code> + <code>LiveTile.tsx</code>, <code>VideoPlayer.tsx</code></td><td>The live wall and video player, with detection overlays.</td></tr>
+          <tr><td><code>app/registry</code> + <code>RegistryMap.tsx</code>, <code>CameraFieldOfView.tsx</code></td><td>Camera list and map, each camera's view cone, per-camera policy.</td></tr>
+          <tr><td><code>app/watchlist</code>, <code>app/alerts</code></td><td>Manage entries; see and acknowledge hits.</td></tr>
+          <tr><td><code>components/Shell.tsx</code></td><td>The navigation rail; shows only the pages the user's permissions allow.</td></tr>
+          <tr><td><code>lib/api.ts</code>, <code>lib/types.ts</code></td><td>Every API call and its types in one place.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>I. Mock department systems and scripts</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Module</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>services/traffic-vms</code>, <code>municipal-vms</code></td><td>Stand-ins for two real department systems, each a single FastAPI file with its own register, validation, lifecycle words and API dialect. They prove Vigentra federates systems it does not control.</td></tr>
+          <tr><td><code>scripts/camera_plates.sql</code></td><td>Schema <code>camera_plates</code>: one table per grid camera filled by a trigger on every new plate, plus <code>video_clock</code>/<code>grid_restarts</code> and <code>video_time_for()</code> to turn our read time into footage time.</td></tr>
+          <tr><td><code>scripts/osd/clock.py</code>, <code>ocr.swift</code></td><td>Reads the time printed on a camera's picture with Apple Vision OCR and stores it with our clock time.</td></tr>
+          <tr><td><code>scripts/survey_new_grid_cameras.py</code></td><td>For cameras without coordinates: geocodes the name with OpenStreetMap (full name, then shorter forms, then town or district centre), marks how sure it is, <code>--apply</code> merges after checking.</td></tr>
+          <tr><td><code>scripts/cross_camera.py</code></td><td>Lists vehicles read on more than one camera, from the per-camera tables.</td></tr>
+          <tr><td><code>scripts/anpr_report.py</code>, <code>export_samples.py</code></td><td>The ANPR output report; the sample files for the submission.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>J. Research repo tools (ANPR/tools)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Group</th><th>Tools and what they do</th></tr></thead>
+        <tbody>
+          <tr><td>Plate detector data</td><td><code>harvest_to_plate_set.py</code> turns live harvest frames into a set: four detectors propose boxes, two agreeing at ≥ 0.4 is “auto”, the rest “review”; target plates are excluded; resumable. <code>auto_plate_set.py</code> builds an unattended set from auto boxes + grid_clean. <code>dataset_sheet.py</code> renders review sheets and applies by-eye verdicts. <code>plate_ab.py</code> compares detectors on checked validation sets.</td></tr>
+          <tr><td>Unattended chains</td><td><code>plate_autopilot.sh</code> (build → assemble → wait for mains power → fine-tune → A/B report), <code>review_chain.sh</code> (finish the set → review sheets), <code>helmet_backlog_sheet.sh</code> (contact sheets of live helmet calls).</td></tr>
+          <tr><td>Helmet</td><td><code>rider_crops.py</code>, <code>rider_mine.py</code> (find riders, incl. borderline live ones), <code>rider_recut.py</code>, <code>helmet_ds.py</code> (build sets; <code>--head</code> for head-band crops), <code>helmet_eval.py</code>, <code>helmet_pair_eval.py</code> (score model combinations at several thresholds).</td></tr>
+          <tr><td>Vehicle type</td><td><code>vehicle_crops.py</code>, <code>vtype_ds.py</code>, <code>vtype_eval.py</code>.</td></tr>
+          <tr><td>Reader</td><td>Synthetic plates (<code>synth_plates.py</code>, <code>synth_kinds.py</code>), degradation, pseudo-labelling by reader agreement, harvesting confirmed reads, <code>training/train_reader_crnn.py</code>.</td></tr>
+          <tr><td>Labelling and checks</td><td><code>label_tool.py</code>, <code>verify_sheet.py</code>, <code>read_sheet.py</code>, <code>build_ground_truth.py</code>.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section id="analytics">
-      <h2><span class="n">07</span>What it detects</h2>
+      <h2><span class="n">08</span>What it detects</h2>
       <p class="lede">Every analytic is checked by eye on live snapshots. Rules that did not hold up were retired, not hidden.</p>
       <div class="tbl"><table>
         <thead><tr><th>Analytic</th><th>Status</th><th>How well, measured</th></tr></thead>
@@ -383,7 +571,7 @@ html { scroll-behavior: smooth; }
     </section>
 
     <section id="files">
-      <h2><span class="n">08</span>File structure</h2>
+      <h2><span class="n">09</span>File structure</h2>
       <p class="lede">The product repo, <code>vigentra/</code>. Weights, videos and <code>.env</code> are never committed.</p>
 <pre>vigentra/
 ├── README.md               what Vigentra is, roles, demo accounts, how to run and test
@@ -414,12 +602,12 @@ html { scroll-behavior: smooth; }
 │   └── municipal-vms/      mock Municipal Corporation system
 ├── scripts/                collect_plates.py · launchd/ · camera_plates.sql · osd/ · survey …
 ├── tests/                  platform tests (API, federation, access, trace, challan …)
-├── docs/                   design and operations docs (section 14)
+├── docs/                   design and operations docs (section 15)
 └── deliverables/           keynote, proposal, decks, demo videos, samples</pre>
     </section>
 
     <section id="research">
-      <h2><span class="n">09</span>The research repo</h2>
+      <h2><span class="n">10</span>The research repo</h2>
       <p class="lede"><code>~/Downloads/ANPR</code> is where models are trained and measured. Nothing reaches the product automatically.</p>
 <pre>ANPR/
 ├── anpr/          the original engine (the product carries a hand-ported copy)
@@ -438,7 +626,7 @@ html { scroll-behavior: smooth; }
     </section>
 
     <section id="run">
-      <h2><span class="n">10</span>Running it</h2>
+      <h2><span class="n">11</span>Running it</h2>
       <h3>The stack (Docker)</h3>
 <pre><code>docker compose up -d
 docker ps --format '{{.Names}}\t{{.Status}}'</code></pre>
@@ -455,14 +643,14 @@ cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code>
     </section>
 
     <section id="status">
-      <h2><span class="n">11</span>Where we stand</h2>
+      <h2><span class="n">12</span>Where we stand</h2>
       <div class="tbl"><table>
         <thead><tr><th>Item</th><th>State</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Live reading of all grid cameras on the GPU</td><td><span class="pill ok">done</span></td><td>Light mode, supervised, LaunchAgent; recovers from crashes, refusal windows and idle cameras.</td></tr>
           <tr><td>Trace with timestamped route on GIS</td><td><span class="pill ok">done</span></td><td>Rehearsed on GJ11E5402 (cam06) and GJ39CB0189 (cam30).</td></tr>
           <tr><td>Pursuit (follow live)</td><td><span class="pill ok">done</span></td><td>Hot cameras first; possible sightings with crops for a person to confirm.</td></tr>
-          <tr><td>Helmet, vehicle types, wrong way</td><td><span class="pill ok">done</span></td><td>Audited live by eye; numbers in section 7.</td></tr>
+          <tr><td>Helmet, vehicle types, wrong way</td><td><span class="pill ok">done</span></td><td>Audited live by eye; numbers in section 8.</td></tr>
           <tr><td>E-challan demo</td><td><span class="pill ok">done</span></td><td>Fictional owners, simulated SMS, traffic roles only, every lookup audited.</td></tr>
           <tr><td>Plate detector retrained on live grid frames</td><td><span class="pill wip">in progress</span></td><td>Dataset from 8,000 harvested frames being built; then review by eye, fine-tune, and A/B. Adopted only if it reads more plates.</td></tr>
           <tr><td>New cameras at the venue (30 → 50)</td><td><span class="pill wip">ready</span></td><td>They join automatically; map pins via <code>survey_new_grid_cameras.py</code>.</td></tr>
@@ -473,7 +661,7 @@ cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code>
       <h3>Event-day checklist</h3>
       <ul>
         <li>Mac on power, lid open, sleep disabled; log in after any reboot (FileVault is on).</li>
-        <li>Check the tracker is running and reading (commands in section 10).</li>
+        <li>Check the tracker is running and reading (commands in section 11).</li>
         <li>Pin any new grid cameras, then restart central-api.</li>
         <li>Open the map once so its tiles are cached; run one trace and one pursuit on the venue network.</li>
         <li>Full steps: <code>docs/event-day-playbook.md</code>.</li>
@@ -481,7 +669,7 @@ cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code>
     </section>
 
     <section id="rules">
-      <h2><span class="n">12</span>House rules</h2>
+      <h2><span class="n">13</span>House rules</h2>
       <ul>
         <li><b>Secrets stay out.</b> Never type, paste, print or commit passwords, API keys or <code>.env</code>. Never run <code>docker compose config</code>; it prints the grid password.</li>
         <li><b>Nothing big in git.</b> No model weights (<code>*.pt</code>, <code>*.onnx</code>, <code>*.safetensors</code>) and no videos (<code>*.mp4</code>).</li>
@@ -495,7 +683,7 @@ cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code>
     </section>
 
     <section id="words">
-      <h2><span class="n">13</span>Words we use</h2>
+      <h2><span class="n">14</span>Words we use</h2>
       <div class="tbl"><table><tbody>
         <tr><td><b>Grid</b></td><td>The organisers' camera network: recorded footage replayed as live RTSP streams.</td></tr>
         <tr><td><b>Refusal window</b></td><td>About 20 minutes when the grid restarts and refuses our login (RTSP 401). Afterwards every recording replays from its start.</td></tr>
@@ -510,7 +698,7 @@ cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code>
     </section>
 
     <section id="more">
-      <h2><span class="n">14</span>Read next</h2>
+      <h2><span class="n">15</span>Read next</h2>
       <div class="tbl"><table>
         <thead><tr><th>Document</th><th>Read it for</th></tr></thead>
         <tbody>

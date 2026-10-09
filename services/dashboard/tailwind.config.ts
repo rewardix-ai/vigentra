@@ -30,7 +30,7 @@ const config: Config = {
       // Text.
       ink: { DEFAULT: "#141414", soft: "#262626" },
       muted: "#707070",
-      // Decoration only - separators, resting icons, the footer's quiet line.
+      // Decoration only - separators, resting icons.
       // At 2.3:1 on white it is not a colour for anything that must be read.
       faint: "#adadad",
 

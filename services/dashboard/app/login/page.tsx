@@ -11,7 +11,6 @@ import {
   Spinner,
 } from "@/components/ui";
 import { BrandLockup } from "@/components/Brand";
-import { PageFooter } from "@/components/Shell";
 
 /**
  * Where to go after signing in: `next`, but only ever a path on this site.
@@ -103,8 +102,6 @@ function SignInForm() {
           </form>
         </div>
       </main>
-
-      <PageFooter />
     </div>
   );
 }

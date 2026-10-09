@@ -102,6 +102,16 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .timeline b { color: var(--ink); }
 
 .diagram { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; margin: 14px 0; }
+.arch { display: block; width: 100%; min-width: 600px; height: auto; font-family: var(--f-body); }
+.arch .b { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
+.arch .b.hi { fill: var(--iris-soft); stroke: var(--iris-soft); }
+.arch .b.key { stroke: var(--iris); stroke-width: 2; }
+.arch .t { fill: var(--ink); font-size: 15px; font-weight: 700; }
+.arch .s { fill: var(--ink-2); font-size: 12px; }
+.arch .l { fill: var(--ink-3); font-size: 11.5px; font-family: var(--f-mono); }
+.arch .e { stroke: var(--ink-3); stroke-width: 1.6; fill: none; }
+.arch .e.d { stroke-dasharray: 5 4; }
+.arch .ah { fill: var(--ink-3); }
 .note { background: var(--iris-soft); border-radius: 10px; padding: 12px 16px; margin: 14px 0; font-size: 15px; }
 .note b { color: var(--ink); }
 
@@ -208,22 +218,66 @@ html { scroll-behavior: smooth; }
       <h2><span class="n">05</span>The building blocks</h2>
       <p class="lede">Five services in Docker, plus the GPU reader on the Mac itself.</p>
       <div class="diagram">
-<pre class="mermaid">
-flowchart LR
-  G["Sentinel grid<br/>~50 RTSP cameras"] -->|RTSP| LR["Light reader<br/>(Mac GPU, LaunchAgent)"]
-  G -->|RTSP| DW["Docker detectors<br/>detector-traffic / -municipal"]
-  G -->|RTSP| GS["grid-snapshots<br/>live wall frames"]
-  TV["traffic-vms<br/>(mock dept system)"] --> API
-  MV["municipal-vms<br/>(mock dept system)"] --> API
-  G -->|catalogue| API
-  LR -->|plates, detections, incidents| API["central-api<br/>FastAPI :8000"]
-  DW -->|detections| API
-  GS --> API
-  API <--> DB[("Postgres<br/>plates, incidents, audit")]
-  API --> UI["dashboard<br/>Next.js :3000"]
-  UI --> OP(["Operator"])
-</pre>
-      </div>
+<svg viewBox="0 0 760 480" role="img" aria-labelledby="archT" class="arch">
+  <title id="archT">How the parts connect: the Sentinel grid streams to three readers, which send results to central-api; the two department systems federate into central-api; central-api stores in Postgres and serves the dashboard to the operator.</title>
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <rect x="20" y="10" width="720" height="58" rx="10" class="b hi"/>
+  <text x="380" y="35" class="t" text-anchor="middle">Sentinel grid</text>
+  <text x="380" y="54" class="s" text-anchor="middle">about 50 cameras · live RTSP streams · camera list</text>
+
+  <rect x="20" y="120" width="200" height="72" rx="10" class="b"/>
+  <text x="120" y="148" class="t" text-anchor="middle">Light reader</text>
+  <text x="120" y="166" class="s" text-anchor="middle">Mac GPU · all cameras</text>
+  <text x="120" y="182" class="s" text-anchor="middle">LaunchAgent keeps it up</text>
+  <rect x="280" y="120" width="200" height="72" rx="10" class="b"/>
+  <text x="380" y="148" class="t" text-anchor="middle">Docker detectors</text>
+  <text x="380" y="166" class="s" text-anchor="middle">traffic · municipal</text>
+  <text x="380" y="182" class="s" text-anchor="middle">CPU object detection</text>
+  <rect x="540" y="120" width="200" height="72" rx="10" class="b"/>
+  <text x="640" y="148" class="t" text-anchor="middle">grid-snapshots</text>
+  <text x="640" y="166" class="s" text-anchor="middle">still frames for</text>
+  <text x="640" y="182" class="s" text-anchor="middle">the live wall</text>
+
+  <line x1="120" y1="68" x2="120" y2="118" class="e" marker-end="url(#ah)"/>
+  <line x1="380" y1="68" x2="380" y2="118" class="e" marker-end="url(#ah)"/>
+  <line x1="640" y1="68" x2="640" y2="118" class="e" marker-end="url(#ah)"/>
+  <text x="128" y="98" class="l">RTSP</text><text x="388" y="98" class="l">RTSP</text><text x="648" y="98" class="l">RTSP</text>
+  <line x1="250" y1="68" x2="250" y2="258" class="e d" marker-end="url(#ah)"/>
+  <text x="257" y="104" class="l">camera list</text>
+
+  <line x1="120" y1="192" x2="290" y2="258" class="e" marker-end="url(#ah)"/>
+  <text x="150" y="232" class="l">plates, incidents</text>
+  <line x1="380" y1="192" x2="380" y2="258" class="e" marker-end="url(#ah)"/>
+  <text x="388" y="232" class="l">detections</text>
+  <line x1="640" y1="192" x2="470" y2="258" class="e" marker-end="url(#ah)"/>
+  <text x="566" y="232" class="l">frames</text>
+
+  <rect x="20" y="262" width="170" height="68" rx="10" class="b"/>
+  <text x="105" y="290" class="t" text-anchor="middle">traffic-vms</text>
+  <text x="105" y="310" class="s" text-anchor="middle">Traffic Police system</text>
+  <rect x="570" y="262" width="170" height="68" rx="10" class="b"/>
+  <text x="655" y="290" class="t" text-anchor="middle">municipal-vms</text>
+  <text x="655" y="310" class="s" text-anchor="middle">Municipal system</text>
+  <rect x="240" y="260" width="280" height="72" rx="10" class="b key"/>
+  <text x="380" y="290" class="t" text-anchor="middle">central-api  :8000</text>
+  <text x="380" y="310" class="s" text-anchor="middle">registry · ingest · trace · pursuit</text>
+  <text x="380" y="325" class="s" text-anchor="middle">watchlist · incidents · audit</text>
+  <line x1="190" y1="296" x2="238" y2="296" class="e" marker-end="url(#ah)"/>
+  <line x1="570" y1="296" x2="522" y2="296" class="e" marker-end="url(#ah)"/>
+
+  <rect x="240" y="392" width="130" height="68" rx="10" class="b"/>
+  <text x="305" y="420" class="t" text-anchor="middle">Postgres</text>
+  <text x="305" y="440" class="s" text-anchor="middle">plates · incidents</text>
+  <rect x="390" y="392" width="130" height="68" rx="10" class="b"/>
+  <text x="455" y="420" class="t" text-anchor="middle">dashboard</text>
+  <text x="455" y="440" class="s" text-anchor="middle">:3000</text>
+  <rect x="580" y="398" width="160" height="56" rx="28" class="b hi"/>
+  <text x="660" y="431" class="t" text-anchor="middle">Operator</text>
+  <line x1="305" y1="334" x2="305" y2="390" class="e" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <line x1="455" y1="334" x2="455" y2="390" class="e" marker-end="url(#ah)"/>
+  <line x1="522" y1="426" x2="578" y2="426" class="e" marker-end="url(#ah)"/>
+</svg>
+</div>
       <div class="tbl"><table>
         <thead><tr><th>Service</th><th>Container</th><th>Port</th><th>What it does</th></tr></thead>
         <tbody>

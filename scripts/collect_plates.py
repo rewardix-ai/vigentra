@@ -162,8 +162,10 @@ def main() -> int:
     for env in envs.values():
         env["EDGE_CONTINUOUS_PASS_FRAMES"] = "1000000"   # one pass per window: read the whole replay
     cams = cameras()
-    assert set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
     light = args.mode == "light"
+    # light mode reads every grid camera the registry holds, however many the event grid brings (50 on
+    # 12-13 Oct); only the rotation needs its fixed list to match
+    assert light or set(ROTATION) == set(cams), "the rotation must cover exactly the grid cameras"
     slots = ([{"name": "light", "camera": "all", "proc": None, "log": logs / "light.log", "restart_at": None}] if light else
              [{"name": f"reader{i + 1}", "camera": None, "proc": None, "log": logs / f"reader{i + 1}.log", "restart_at": None} for i in range(READERS)])
     municipal = service_env(compose, "detector-municipal", dot)

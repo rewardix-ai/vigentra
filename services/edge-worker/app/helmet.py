@@ -32,14 +32,15 @@ MODELS = Path(__file__).resolve().parent.parent / "models"
 #: the riders labelled 8 Oct and cut exactly as below, and v5 fine-tuned from v4 on 200 more. v2 alone puts
 #: some helmeted riders above 0.95 (cam06's looping checked-shirt rider in a black helmet, 8 Oct live);
 #: the later two, trained on such riders, pull them below the threshold.
-#: v6 (a name ending _head.pt) sees only the head band of the crop (head_band): the head ~1.7x larger.
-#: Held out (203 riders), the four averaged at >= 0.8: 20 calls, 19 right, none on a helmet (the three
-#: before it: 23 calls, 21 right); v6 alone at 0.85: 19 calls, all right.
+#: A name ending _head.pt sees only the head band of the crop (head_band): the head ~1.7x larger.
+#: v7 (full crop) and v8 (head band) were fine-tuned from v5 and v6 on 79 more riders the live average
+#: found borderline, plus the two cam06 helmeted riders it called bare (9 Oct). Held out (221 riders,
+#: 50 bare-headed), at >= 0.8: 21 calls, all right, none on a helmet (v2+v4+v5+v6: 23 calls, 22 right).
+#: The cam06 black-helmet rider now averages 0.42 (was 0.79).
 WEIGHTS = [Path(p) for p in os.getenv(
     "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in (
-        "helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v5.pt", "helmet_cls_v6_head.pt"))).split(",") if p]
-THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.85"))   # held out: same 20 calls as 0.8;
-                            # live, a cam06 rider in a black helmet averaged 0.79 (9 Oct)
+        "helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v7.pt", "helmet_cls_v8_head.pt"))).split(",") if p]
+THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.8"))
 MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls at >= 0.8, all right; the snapshot
                             # carries the judged rider enlarged, so a person can check a small one
 SAME_RIDER_S, SAME_RIDER_W = 2.0, 2.5   # a call whose track starts within this time and this many widths of

@@ -49,6 +49,8 @@ class FrameQuality(str, Enum):
     BLURRED = "blurred"
     #: decoder damage: smeared 16x16 macroblocks from lost packets (grid cameras right after a restart)
     CORRUPTED = "corrupted"
+    #: the picture is gone: an all-black frame (no signal, a covered lens, a dead encoder)
+    BLACKOUT = "blackout"
 
 
 @dataclass(frozen=True)
@@ -175,6 +177,8 @@ class FrameQualityRouter:
     #: transform edges sit too). 9 Oct, 1,920 grid frames at full size: median 1.15, 99th percentile
     #: 1.60; frames at 1.8+ were mostly smeared macroblocks (some fog/glare also reaches it)
     CORRUPT_BLOCKINESS = 1.8
+    #: an all-black frame: night grid frames still average 20-60 with street lights and headlights
+    BLACKOUT_LUMA, BLACKOUT_VARIANCE = 8.0, 5.0
 
     def _blockiness(self, gray) -> float | None:
         if _np is None or not hasattr(gray, "shape"):
@@ -196,6 +200,13 @@ class FrameQualityRouter:
         clipped = self._clipped_ratio(gray)
         variance = self._laplacian_variance(gray)
         blocky = self._blockiness(gray)
+        # Blackout before anything: a black frame has no exposure or focus to speak of.
+        if mean_luma <= self.BLACKOUT_LUMA and variance <= self.BLACKOUT_VARIANCE:
+            return QualityAssessment(
+                quality=FrameQuality.BLACKOUT, mean_luma=mean_luma, laplacian_variance=variance,
+                clipped_highlight_ratio=clipped, inference_skipped=True,
+                detail={"mean_luma": round(mean_luma, 2), "laplacian_variance": round(variance, 2)},
+            )
         # Corruption first: a smeared frame's exposure and focus numbers describe the smear.
         if blocky is not None and blocky >= self.CORRUPT_BLOCKINESS:
             return QualityAssessment(

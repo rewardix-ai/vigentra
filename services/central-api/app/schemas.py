@@ -908,6 +908,7 @@ class FrameQuality(str, Enum):
     OVEREXPOSED = "overexposed"
     BLURRED = "blurred"
     CORRUPTED = "corrupted"   # smeared macroblocks: the stream lost data (edge app/frame_quality.py)
+    BLACKOUT = "blackout"     # an all-black frame: no picture at all
 
 
 class DetectionIn(BaseModel):
@@ -1276,11 +1277,14 @@ class FootageQuality(BaseModel):
     district: str | None = None
     owning_department: str
     corrupted: int = 0
+    blackout: int = 0
     low_light: int = 0
     overexposed: int = 0
     blurred: int = 0
     flagged: int = 0
     last_flagged_utc: datetime | None = None
+    #: an open FOOTAGE_CORRUPTED / FOOTAGE_BLACKOUT health alert: broken right now
+    broken_now: str | None = None
 
 
 class GapAnalysisResponse(BaseModel):

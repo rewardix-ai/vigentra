@@ -333,6 +333,29 @@ async def test_frame_quality_events_can_be_recorded(api, login, traffic_camera, 
     assert response.json()["recorded"] is True
 
 
+def test_a_black_frame_is_a_blackout_not_low_light(frame_quality):
+    numpy = pytest.importorskip("numpy")
+    assessment = frame_quality.FrameQualityRouter().classify(numpy.zeros((720, 1280, 3), dtype="uint8"))
+    assert assessment.quality is frame_quality.FrameQuality.BLACKOUT
+    assert assessment.inference_skipped
+
+
+async def test_broken_footage_raises_one_camera_alert_at_once(api, login, traffic_camera, frame_quality):
+    """Three corrupted frames within a minute raise FOOTAGE_CORRUPTED straight away; more do not
+    raise a second one while it is open."""
+    from app.services import health_alerts
+
+    health_alerts.reset()
+    headers = await login("traffic.ai")
+    raised = []
+    for _ in range(5):
+        response = await api.post("/api/v1/detections/frame-quality", headers=headers,
+                                  json={"camera_id": traffic_camera["camera_id"], "quality": "corrupted"})
+        assert response.status_code == 202
+        raised.append(response.json()["alert_raised"])
+    assert raised[:2] == [None, None] and raised[2] is not None and raised[3:] == [None, None]
+
+
 # ---------------------------------------------------------------------------
 # The supervisor: many cameras, continuously
 # ---------------------------------------------------------------------------

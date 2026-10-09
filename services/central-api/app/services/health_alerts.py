@@ -31,6 +31,15 @@ from ..schemas import CameraStatus, SyncStatus
 
 CAMERA_OFFLINE = "CAMERA_OFFLINE"
 SOURCE_UNREACHABLE = "SOURCE_UNREACHABLE"
+#: the camera answers but its picture is broken (edge frame quality); raised at once, not per sweep
+FOOTAGE_CORRUPTED = "FOOTAGE_CORRUPTED"
+FOOTAGE_BLACKOUT = "FOOTAGE_BLACKOUT"
+FOOTAGE_KINDS = {"corrupted": FOOTAGE_CORRUPTED, "blackout": FOOTAGE_BLACKOUT}
+#: this many bad frames within the window raise the alert (one smeared frame is a blip)
+FOOTAGE_FRAMES, FOOTAGE_WINDOW_S = 3, 60.0
+#: closed when no bad frame of its kind has come for this long
+FOOTAGE_CLEAR_S = 300.0
+_bad_frames: dict[tuple[str, str], list[datetime]] = {}
 
 _DOWN = {CameraStatus.OFFLINE.value, CameraStatus.UNAVAILABLE.value}
 _streak: dict[str, int] = {}
@@ -39,6 +48,54 @@ _streak: dict[str, int] = {}
 def reset() -> None:
     """Forget every streak (tests, and a fresh monitor)."""
     _streak.clear()
+    _bad_frames.clear()
+
+
+async def footage(db: AsyncSession, camera: CameraRow, quality: str, now: datetime | None = None) -> HealthAlert | None:
+    """A corrupted or black frame from the edge: raise the camera's footage alert as soon as a few
+    arrive within a minute (none open of that kind already). Returns the alert it raised."""
+    kind = FOOTAGE_KINDS.get(quality)
+    if kind is None:
+        return None
+    now = now or datetime.now(timezone.utc)
+    key = (camera.camera_id, kind)
+    times = [t for t in _bad_frames.get(key, []) if (now - t).total_seconds() <= FOOTAGE_WINDOW_S] + [now]
+    _bad_frames[key] = times[-FOOTAGE_FRAMES:]
+    if len(times) < FOOTAGE_FRAMES:
+        return None
+    open_row = (await db.execute(select(HealthAlert).where(
+        HealthAlert.camera_id == camera.camera_id, HealthAlert.kind == kind, HealthAlert.recovered_at.is_(None),
+    ))).scalars().first()
+    if open_row is not None:
+        return None
+    detail = ("Picture breaking up into blocks (data lost from the stream)" if kind == FOOTAGE_CORRUPTED
+              else "Picture completely black (no signal or lens covered)")
+    row = _new(kind, camera.source_system, camera.owning_department, camera.camera_id, detail, now)
+    db.add(row)
+    return row
+
+
+async def clear_footage(db: AsyncSession, now: datetime | None = None) -> list[HealthAlert]:
+    """Close footage alerts whose camera has sent no bad frame of that kind for FOOTAGE_CLEAR_S."""
+    from ..models import FrameQualityEvent
+    from sqlalchemy import func
+
+    now = now or datetime.now(timezone.utc)
+    rows = (await db.execute(select(HealthAlert).where(
+        HealthAlert.kind.in_(list(FOOTAGE_KINDS.values())), HealthAlert.recovered_at.is_(None),
+    ))).scalars().all()
+    closed = []
+    for row in rows:
+        quality = next(q for q, k in FOOTAGE_KINDS.items() if k == row.kind)
+        last = (await db.execute(select(func.max(FrameQualityEvent.timestamp_utc)).where(
+            FrameQualityEvent.camera_id == row.camera_id, FrameQualityEvent.quality == quality,
+        ))).scalar()
+        if last is not None and last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        if last is None or (now - last).total_seconds() >= FOOTAGE_CLEAR_S:
+            row.recovered_at = now
+            closed.append(row)
+    return closed
 
 
 def _new(kind: str, source_system: str, department: str | None, camera_id: str | None,

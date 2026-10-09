@@ -521,11 +521,14 @@ export interface FootageQuality {
   district: string | null;
   owning_department: string;
   corrupted: number;
+  blackout: number;
   low_light: number;
   overexposed: number;
   blurred: number;
   flagged: number;
   last_flagged_utc: string | null;
+  /** "corrupted" or "black" while its footage alert is open: broken right now. */
+  broken_now?: string | null;
 }
 
 export interface AuditEntry {

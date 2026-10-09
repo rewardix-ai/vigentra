@@ -129,7 +129,7 @@ async def gap_analysis(
     )
     for camera_id, kind, count, last in rows.all():
         camera = by_id.get(camera_id)
-        if camera is None or kind not in ("corrupted", "low_light", "overexposed", "blurred"):
+        if camera is None or kind not in ("corrupted", "blackout", "low_light", "overexposed", "blurred"):
             continue
         entry = quality.setdefault(camera_id, FootageQuality(
             camera_id=camera_id, name=camera.name, district=camera.district, owning_department=camera.owning_department))
@@ -137,7 +137,18 @@ async def gap_analysis(
         entry.flagged += int(count)
         if last and (entry.last_flagged_utc is None or last > entry.last_flagged_utc):
             entry.last_flagged_utc = last
-    footage = sorted(quality.values(), key=lambda q: (q.corrupted, q.flagged), reverse=True)
+    from ..models import HealthAlert
+    from ..services.health_alerts import FOOTAGE_KINDS
+
+    for alert in (await db.execute(select(HealthAlert).where(
+            HealthAlert.kind.in_(list(FOOTAGE_KINDS.values())), HealthAlert.recovered_at.is_(None)))).scalars().all():
+        camera = by_id.get(alert.camera_id or "")
+        if camera is None:
+            continue
+        entry = quality.setdefault(alert.camera_id, FootageQuality(
+            camera_id=alert.camera_id, name=camera.name, district=camera.district, owning_department=camera.owning_department))
+        entry.broken_now = "black" if alert.kind.endswith("BLACKOUT") else "corrupted"
+    footage = sorted(quality.values(), key=lambda q: (q.broken_now is not None, q.blackout + q.corrupted, q.flagged), reverse=True)
 
     return GapAnalysisResponse(
         footage_quality=footage,

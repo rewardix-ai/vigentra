@@ -280,7 +280,9 @@ export default function GapAnalysisPage() {
           ) : (
             <div className="overflow-x-auto">
               <p className="px-6 pb-3 text-caption text-muted">
-                A camera can be online and still show nothing usable. <strong>Possibly corrupted</strong>: the
+                A camera can be online and still show nothing usable. <strong>Now</strong>: an open alert, raised
+                within a minute of 3 bad frames and closed after 5 clean minutes. <strong>Blackout</strong>: an
+                all-black picture. <strong>Possibly corrupted</strong>: the
                 picture broke into smeared blocks (data lost from the stream; heavy fog or glare can look the
                 same). Dark, glared and blurred frames limit what can be read, plates above all.
               </p>
@@ -289,6 +291,8 @@ export default function GapAnalysisPage() {
                   <tr>
                     <th>Camera</th>
                     <th>District</th>
+                    <th>Now</th>
+                    <th className="text-right">Blackout</th>
                     <th className="text-right">Possibly corrupted</th>
                     <th className="text-right">Too dark</th>
                     <th className="text-right">Glare</th>
@@ -306,6 +310,16 @@ export default function GapAnalysisPage() {
                         </Link>
                       </td>
                       <td>{row.district ?? "—"}</td>
+                      <td>
+                        {row.broken_now ? (
+                          <span className="font-semibold text-bad">{row.broken_now === "black" ? "Black screen" : "Breaking up"}</span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                      <td className={`tabular text-right ${row.blackout > 0 ? "font-semibold text-bad" : "text-muted"}`}>
+                        {row.blackout}
+                      </td>
                       <td className={`tabular text-right ${row.corrupted > 0 ? "font-semibold text-bad" : "text-muted"}`}>
                         {row.corrupted}
                       </td>

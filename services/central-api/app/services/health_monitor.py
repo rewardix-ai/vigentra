@@ -194,6 +194,10 @@ async def poll_once(
                 logger.exception("health sweep failed for %s", adapter.source_system)
                 results.append({"source": adapter.source_system, "error": str(exc)})
         await _prune(db, settings)
+        try:
+            await health_alerts.clear_footage(db)   # footage alerts close when the picture is back
+        except Exception:  # pragma: no cover - never stops the sweep
+            logger.exception("footage alert clearing failed")
         await db.commit()
         raised = [row for up, _ in swept for row in up]
         recovered = [row for _, down in swept for row in down]

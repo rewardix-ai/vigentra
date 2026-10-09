@@ -815,5 +815,9 @@ async def record_frame_quality(
             detail=dict(payload.get("detail") or {}),
         )
     )
+    # A broken picture is told to someone at once, not found later in the gap analysis.
+    from ..services import health_alerts
+
+    raised = await health_alerts.footage(db, camera, str(payload.get("quality") or ""))
     await db.commit()
-    return {"recorded": True, "camera_id": camera_id}
+    return {"recorded": True, "camera_id": camera_id, "alert_raised": raised.alert_id if raised else None}

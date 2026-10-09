@@ -1,0 +1,476 @@
+<title>Vigentra Team Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@700;800&display=swap">
+<style>
+/* Layout: a long onboarding read. Dark masthead band (the brand's night), then a paper page with a
+   sticky contents rail on wide screens and one column on phones. Monospace for anything typed or on disk. */
+:root {
+  --night: #0b0a1f;        /* masthead, always dark */
+  --night-ink: #e9e8ff;
+  --bg: #f6f7fb;           /* paper */
+  --card: #ffffff;
+  --ink: #16182b;
+  --ink-2: #4a4d66;
+  --ink-3: #6b6e88;
+  --line: #e3e5ef;
+  --iris: #4c47d6;
+  --iris-soft: #eeedfd;
+  --ok: #1f7a4d; --ok-soft: #e4f4ea;
+  --warn: #9a5b00; --warn-soft: #fbf0dc;
+  --off: #8a3b3b; --off-soft: #f8e7e7;
+  --code-bg: #f0f1f8;
+  --f-display: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11101f; --card: #191830; --ink: #ecebff; --ink-2: #b7b6d6; --ink-3: #8f8eb2; --line: #2b2a48;
+    --iris: #a9a5ff; --iris-soft: #24224a; --ok: #7fd6a6; --ok-soft: #173326; --warn: #f0c070; --warn-soft: #3a2c12;
+    --off: #f0a0a0; --off-soft: #3a1c1c; --code-bg: #1e1d38; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11101f; --card: #191830; --ink: #ecebff; --ink-2: #b7b6d6; --ink-3: #8f8eb2; --line: #2b2a48;
+  --iris: #a9a5ff; --iris-soft: #24224a; --ok: #7fd6a6; --ok-soft: #173326; --warn: #f0c070; --warn-soft: #3a2c12;
+  --off: #f0a0a0; --off-soft: #3a1c1c; --code-bg: #1e1d38; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.6; }
+a { color: var(--iris); }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { font-family: var(--f-mono); font-size: 13px; line-height: 1.55; background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 0; }
+pre code { background: none; padding: 0; }
+
+.mast { background: var(--night); color: var(--night-ink); padding-block: 40px 36px; padding-inline: 16px; }
+.mast-in { max-width: 1120px; margin: 0 auto; display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.mast img { width: 88px; height: auto; }
+.mast h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 4.4vw, 44px); line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.mast p { margin: 8px 0 0; color: #b9b6ff; max-width: 62ch; }
+.mast .stamp { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #8d89e8; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); align-self: start; font-size: 14px; }
+nav.toc p { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; counter-reset: s; }
+nav.toc li { counter-increment: s; }
+nav.toc a { display: block; padding: 4px 8px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+nav.toc a::before { content: counter(s, decimal-leading-zero) "  "; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--iris-soft); color: var(--ink); outline: none; }
+main { min-width: 0; }
+section { padding-block: 8px 28px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+section:last-child { border-bottom: 0; }
+h2 { font-family: var(--f-display); font-weight: 800; font-size: 26px; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; scroll-margin-top: 16px; }
+h2 .n { font-family: var(--f-mono); font-weight: 500; font-size: 13px; color: var(--iris); display: block; letter-spacing: 0.08em; margin-bottom: 4px; }
+h3 { font-size: 18px; margin: 26px 0 8px; text-wrap: balance; }
+.lede { color: var(--ink-2); font-size: 17px; max-width: 68ch; margin: 0 0 16px; }
+p, li { max-width: 72ch; }
+ul, ol { padding-left: 1.25em; }
+li { margin: 4px 0; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 14px 0; }
+.box { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.box h4 { margin: 0 0 6px; font-size: 15px; }
+.box p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.box .tag { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.tbl { overflow-x: auto; margin: 12px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; font-family: var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; background: var(--code-bg); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.pill { display: inline-block; font-family: var(--f-mono); font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.wip { background: var(--warn-soft); color: var(--warn); }
+.pill.off { background: var(--off-soft); color: var(--off); }
+
+.steps { list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 10px; counter-reset: st; }
+.steps li { counter-increment: st; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; max-width: none; }
+.steps li::before { content: counter(st); font-family: var(--f-display); font-weight: 800; font-size: 20px; color: var(--iris); line-height: 1.3; }
+.steps b { display: block; }
+.steps span { color: var(--ink-2); font-size: 15px; }
+
+.timeline { border-left: 2px solid var(--line); margin: 14px 0 0 6px; padding-left: 18px; display: grid; gap: 14px; }
+.timeline div { position: relative; }
+.timeline div::before { content: ""; position: absolute; left: -24px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--iris); }
+.timeline .when { font-family: var(--f-mono); font-size: 12px; color: var(--iris); letter-spacing: 0.04em; }
+.timeline p { margin: 2px 0 0; color: var(--ink-2); }
+.timeline b { color: var(--ink); }
+
+.diagram { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; margin: 14px 0; }
+.note { background: var(--iris-soft); border-radius: 10px; padding: 12px 16px; margin: 14px 0; font-size: 15px; }
+.note b { color: var(--ink); }
+
+@media (max-width: 860px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  nav.toc { position: static; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--card); }
+  nav.toc ol { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<header class="mast">
+  <div class="mast-in">
+    <img src="data:image/png;base64,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" alt="Vigentra mark">
+    <div>
+      <div class="stamp">Team guide · as of 9 Oct 2026</div>
+      <h1>Vigentra, from scratch to today</h1>
+      <p>What we are building for the Sentinel hackathon, how a number plate travels from a camera to the map, what every module does, where the files live, and what is left before 12 Oct.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#brief">The brief</a></li>
+      <li><a href="#what">What Vigentra is</a></li>
+      <li><a href="#story">How we got here</a></li>
+      <li><a href="#flow">One plate, start to finish</a></li>
+      <li><a href="#arch">The building blocks</a></li>
+      <li><a href="#modules">Module by module</a></li>
+      <li><a href="#analytics">What it detects</a></li>
+      <li><a href="#files">File structure</a></li>
+      <li><a href="#research">The research repo</a></li>
+      <li><a href="#run">Running it</a></li>
+      <li><a href="#status">Where we stand</a></li>
+      <li><a href="#rules">House rules</a></li>
+      <li><a href="#words">Words we use</a></li>
+      <li><a href="#more">Read next</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="brief">
+      <h2><span class="n">01</span>The brief</h2>
+      <p class="lede">Sentinel is the Gujarat Police hackathon for a statewide CCTV platform. We were shortlisted on 6 Oct. The on-site test is on <b>12 and 13 Oct 2026 at i-Hub Gujarat</b>.</p>
+      <ul>
+        <li>The organisers run a <b>camera grid</b>: recorded CCTV footage from Gujarat junctions, replayed as live RTSP streams. It had 30 cameras; the event will use about <b>50</b>.</li>
+        <li>On the day they name <b>one registration number</b>. We must find it across cameras and show its <b>complete, timestamped route on a map (GIS)</b>.</li>
+        <li>The platform must also onboard cameras from different departments, cross-check a watchlist continuously and raise alerts in real time.</li>
+        <li>The grid has to be read <b>live</b>. Its guide tells integrators not to copy footage, and we decided on 8 Oct not to record or buffer streams at all.</li>
+      </ul>
+      <p>The jury scores seven areas: the test case, the presentation, the high-level design (HLD), a working platform, analytics output, scalability and completeness.</p>
+    </section>
+
+    <section id="what">
+      <h2><span class="n">02</span>What Vigentra is</h2>
+      <p class="lede">A single console over many camera systems. It reads number plates and other events at the edge and keeps only the results centrally, with every access audited.</p>
+      <div class="grid2">
+        <div class="box"><span class="tag">Federation</span><h4>Many departments, one registry</h4><p>Traffic Police, the Municipal Corporation and the Sentinel grid each keep their own system. Adapters translate their different APIs into one camera registry.</p></div>
+        <div class="box"><span class="tag">Edge reading</span><h4>Plates read next to the camera</h4><p>Readers detect vehicles, read plates and spot offences on the video, then send only the results (text, crops, snapshots) to the centre.</p></div>
+        <div class="box"><span class="tag">Trace</span><h4>Where has this vehicle been?</h4><p>Type a plate and give a reason. Vigentra rebuilds its route from every camera that read it and draws it on the map with times.</p></div>
+        <div class="box"><span class="tag">Pursuit and watchlist</span><h4>Follow it live</h4><p>A plate on the watchlist raises an alert when read. A pursuit points the GPU at cameras the vehicle could reach next.</p></div>
+        <div class="box"><span class="tag">Incidents</span><h4>Offences, as candidates</h4><p>Riders without helmets, wrong-way driving and possible collisions arrive with a snapshot. A person confirms or dismisses each one, and can raise an e-challan.</p></div>
+        <div class="box"><span class="tag">Governance</span><h4>Roles, departments, audit</h4><p>Each user sees only what their department and role allow. Every trace, lookup and video view is written to the audit log.</p></div>
+      </div>
+    </section>
+
+    <section id="story">
+      <h2><span class="n">03</span>How we got here</h2>
+      <p class="lede">Over 300 commits since 25 Aug. These are the turns that shaped the current design.</p>
+      <div class="timeline">
+        <div><span class="when">25–31 Aug</span><p><b>The platform.</b> Camera registry, two mock department systems (Traffic, Municipal), federation of the live Sentinel grid, video access rules, and the first console design.</p></div>
+        <div><span class="when">2–5 Sep</span><p><b>Live video and first analytics.</b> Rebranded to Vigentra. One grid session for brokered video. First incident rules: wrong way, stopped, sudden stop, collision.</p></div>
+        <div><span class="when">7–14 Sep</span><p><b>The ANPR engine.</b> Plate detector and reader fine-tuned on our footage, and the research engine vendored into the edge worker. Integrator's guide access model built into the code.</p></div>
+        <div><span class="when">16–20 Sep</span><p><b>Measure before keeping.</b> A by-eye ground truth and a benchmark. The 18 Sep optimisation read <b>16 of 26</b> readable plates (9 before) with <b>none wrong</b>, in half the time. Plates upload as they settle; alerts refresh every 5 s.</p></div>
+        <div><span class="when">22–28 Sep</span><p><b>Submission.</b> Vehicle counting fixed (84 real vehicles where the tracker saw 141 ids), sample outputs exported, proposal and keynote delivered by the 28 Sep deadline.</p></div>
+        <div><span class="when">5–6 Oct</span><p><b>Shortlisted.</b> Code guide and process map written. Camera-health alerts added.</p></div>
+        <div><span class="when">7 Oct</span><p><b>Reading the grid on the Mac's GPU.</b> Docker on a Mac has no GPU, so the readers moved to the host. A supervisor keeps them alive through the grid's refusal windows. Each camera got its own plate table.</p></div>
+        <div><span class="when">8 Oct</span><p><b>Light mode and offences.</b> One process now reads every grid camera at once. Incidents rebuilt (a 6-hour replay went from 416 to 71) with snapshots. Helmet classifier, vehicle-type classifier, pursuit, e-challan demo. Retired: sudden stop, stopped in lane.</p></div>
+        <div><span class="when">9 Oct</span><p><b>Hardening for the event.</b> Helmet duplicates removed. The tracker runs as a macOS LaunchAgent and restarts itself. The no-plate check was retired. A new plate detector is being trained on frames harvested live.</p></div>
+      </div>
+    </section>
+
+    <section id="flow">
+      <h2><span class="n">04</span>One plate, start to finish</h2>
+      <p class="lede">This is the event-day path. Everything else in the project supports it.</p>
+      <ol class="steps">
+        <li><div><b>The grid streams a camera</b><span>The grid serves each camera as an RTSP stream. central-api has already listed it in the registry, with its map position from <code>data/reference/grid_cameras.json</code>.</span></div></li>
+        <li><div><b>The light reader takes frames</b><span><code>tools/light_readers.py</code> runs on the Mac's GPU and reads every grid camera at once, about 500–600 frames a minute in total. Cameras with a vehicle close to the lens get the GPU first.</span></div></li>
+        <li><div><b>Vehicles are found and tracked</b><span>YOLO11n finds vehicles; ByteTrack follows each one across frames. The vehicle-type classifier tells autos, scooters, motorcycles, cars, buses and trucks apart.</span></div></li>
+        <li><div><b>The plate is found and read</b><span>A plate detector looks inside each vehicle. The best crops go through enhancement and two CRNN readers, then an Indian plate grammar check and a vote across frames. The result is CONFIRMED or a CANDIDATE.</span></div></li>
+        <li><div><b>Results go to central-api</b><span>The reader posts detections and plates to <code>/api/v1/detections/ingest</code>, and incidents with their snapshot to <code>/api/v1/incidents/ingest</code>. It never sends or stores video.</span></div></li>
+        <li><div><b>Stored and matched</b><span>Each reading becomes a row in <code>plate_sightings</code>, is matched against the watchlist (fuzzy, allowing for confusions like 0/O, 8/B), and is copied into its camera's own table in the <code>camera_plates</code> schema.</span></div></li>
+        <li><div><b>Traced on the map</b><span>On the Trace page an operator types the plate and a reason. <code>track_service.py</code> rebuilds the route: each point shows the time we read it, the time on the footage, the camera, place and department, and how many frames agreed. Impossible legs are flagged.</span></div></li>
+        <li><div><b>Followed live</b><span>“Follow this vehicle live” starts a pursuit: cameras within reach become hot and get the GPU first, and possible sightings appear with their crop for a person to confirm.</span></div></li>
+      </ol>
+      <div class="note"><b>Why two clocks?</b> The grid replays recordings, so the time we read a plate (IST, today) differs from the time printed on the footage (often 13 June 2026, 21:00). <code>scripts/osd/clock.py</code> reads each camera's on-screen clock so the route can show both.</div>
+    </section>
+
+    <section id="arch">
+      <h2><span class="n">05</span>The building blocks</h2>
+      <p class="lede">Five services in Docker, plus the GPU reader on the Mac itself.</p>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  G["Sentinel grid<br/>~50 RTSP cameras"] -->|RTSP| LR["Light reader<br/>(Mac GPU, LaunchAgent)"]
+  G -->|RTSP| DW["Docker detectors<br/>detector-traffic / -municipal"]
+  G -->|RTSP| GS["grid-snapshots<br/>live wall frames"]
+  TV["traffic-vms<br/>(mock dept system)"] --> API
+  MV["municipal-vms<br/>(mock dept system)"] --> API
+  G -->|catalogue| API
+  LR -->|plates, detections, incidents| API["central-api<br/>FastAPI :8000"]
+  DW -->|detections| API
+  GS --> API
+  API <--> DB[("Postgres<br/>plates, incidents, audit")]
+  API --> UI["dashboard<br/>Next.js :3000"]
+  UI --> OP(["Operator"])
+</pre>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Service</th><th>Container</th><th>Port</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>postgres</td><td class="mono">vigentra-postgres-1</td><td class="num">5432</td><td>The database (<code>sentinel</code>): cameras, plates, incidents, watchlist, audit, per-camera plate tables.</td></tr>
+          <tr><td>central-api</td><td class="mono">vigentra-central-api-1</td><td class="num">8000</td><td>The middleware. Registry, federation adapters, ingest, trace, pursuit, watchlist, incidents, e-challan, access rules, audit.</td></tr>
+          <tr><td>dashboard</td><td class="mono">vigentra-dashboard-1</td><td class="num">3000</td><td>The console operators use.</td></tr>
+          <tr><td>traffic-vms</td><td class="mono">vigentra-traffic-vms-1</td><td class="num">8001</td><td>Mock Traffic Police video system with its own API dialect. Also serves our own footage clips.</td></tr>
+          <tr><td>municipal-vms</td><td class="mono">vigentra-municipal-vms-1</td><td class="num">8002</td><td>Mock Municipal Corporation system, deliberately different (camelCase, epoch times, bearer token).</td></tr>
+          <tr><td>grid-snapshots</td><td class="mono">vigentra-grid-snapshots-1</td><td>internal</td><td>Decodes grid streams into still frames for the live wall.</td></tr>
+          <tr><td>detector-traffic / -municipal</td><td class="mono">vigentra-detector-*-1</td><td>none</td><td>24/7 object detection on CPU, one per department account. Paused while the GPU reader runs.</td></tr>
+          <tr><td>edge-worker / anpr-live</td><td class="mono">vigentra-edge-worker-1 / anpr-live-1</td><td>none</td><td>Docker plate readers (profiles <code>anpr</code>, <code>anpr-live</code>). CPU only, so slower; kept as a fallback.</td></tr>
+          <tr><td>Light reader (host)</td><td class="mono">launchd: com.vigentra.readers</td><td>none</td><td>The event-day reader on the Mac GPU, kept alive by <code>scripts/collect_plates.py</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <p>The grid allows about six streams per account. The live wall takes four and each detector one, which is why streams are rationed and the GPU reader uses RTSP only (never a second web sign-in, which would end central-api's session).</p>
+    </section>
+
+    <section id="modules">
+      <h2><span class="n">06</span>Module by module</h2>
+
+      <h3>central-api <span class="mono" style="color:var(--ink-3)">services/central-api</span></h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/main.py</code></td><td>Starts the app, wires 19 routers, creates the schema and starts the camera-health monitor.</td></tr>
+          <tr><td><code>config.py</code>, <code>dependencies.py</code></td><td>Settings, roles and permissions; who is calling and whether they may.</td></tr>
+          <tr><td><code>models.py</code>, <code>schemas.py</code></td><td>About 28 database tables; the API's data shapes, including the allowed incident kinds.</td></tr>
+          <tr><td><code>adapters/</code></td><td>One adapter per department system: <code>traffic_adapter</code>, <code>municipal_adapter</code>, and <code>grid_adapter</code> for the real Sentinel grid.</td></tr>
+          <tr><td><code>routers/detections.py</code></td><td>Ingest of detections and plates from readers; traffic counts; the Vehicles view.</td></tr>
+          <tr><td><code>routers/watchlist.py</code></td><td>Watchlist, alerts, plate search and <code>/plates/{plate}/track</code>, the trace.</td></tr>
+          <tr><td><code>routers/pursuits.py</code></td><td>Start and end a pursuit, list hot cameras, record possible sightings.</td></tr>
+          <tr><td><code>routers/incidents.py</code>, <code>routers/challans.py</code></td><td>Incident ingest, review and snapshots; the e-challan owner lookup and issue.</td></tr>
+          <tr><td><code>routers/</code> (others)</td><td>Auth, cameras, installations (onboarding), video sessions and grants, health alerts, reports, audit.</td></tr>
+          <tr><td><code>services/track_service.py</code></td><td>Builds a route from plate reads only, flags impossible speeds, adds footage time.</td></tr>
+          <tr><td><code>services/watchlist_service.py</code>, <code>plate_matching.py</code></td><td>Stores sightings and matches them to the watchlist, allowing for common OCR confusions.</td></tr>
+          <tr><td><code>services/challan_service.py</code></td><td>Offences and fines (helmet, wrong way). Owners come from a <b>demo</b> stand-in for VAHAN; the SMS is simulated.</td></tr>
+          <tr><td><code>services/audit_service.py</code>, <code>video_permissions.py</code></td><td>The audit log, and the one place that decides who may watch which video.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>edge-worker <span class="mono" style="color:var(--ink-3)">services/edge-worker</span></h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/worker.py</code></td><td>The reader's main loop: sign in, open a video session, take frames, run detection, ANPR, incidents, helmet and vehicle type, post results.</td></tr>
+          <tr><td><code>app/grid.py</code></td><td>The grid's capture rules: RTSP over TCP, timing from the stream, reconnect with backoff.</td></tr>
+          <tr><td><code>app/anpr_engine.py</code></td><td>Wraps the ANPR engine: frames go in, settled plates per vehicle come out. Nothing is written to disk.</td></tr>
+          <tr><td><code>app/helmet.py</code></td><td>Rider-without-helmet check: four classifiers averaged over the rider's three closest views, one call per rider.</td></tr>
+          <tr><td><code>app/vehicle_type.py</code></td><td>Re-types each vehicle (auto-rickshaw, scooter, motorcycle, car, bus, truck) when the classifier is confident.</td></tr>
+          <tr><td><code>app/target_check.py</code></td><td>For a pursuit: “could this plate be P?”, scored from the reader's own character probabilities.</td></tr>
+          <tr><td><code>anpr/pipeline.py</code></td><td>The full ANPR chain: overlay mask, track, plate detect, crop bank, enhance, read, vote.</td></tr>
+          <tr><td><code>anpr/incidents.py</code></td><td>Rules over tracked boxes: wrong way (direction learned per area of the frame), collision candidate, person on carriageway, intrusion.</td></tr>
+          <tr><td><code>anpr/detect</code>, <code>enhance</code>, <code>read</code>, <code>fuse</code></td><td>Plate detection, image clean-up, the CRNN readers and Indian plate grammar, and voting across frames.</td></tr>
+          <tr><td><code>tools/light_readers.py</code></td><td>Light mode: every grid camera in one process, models shared, one GPU lock, near vehicles first, pursuit polling.</td></tr>
+          <tr><td><code>tools/anpr_benchmark.py</code> and friends</td><td>How every ANPR change is measured against the by-eye ground truth before it is kept.</td></tr>
+          <tr><td><code>config/</code>, <code>models/</code></td><td>Thresholds and camera profiles; model weights (not in git).</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>dashboard <span class="mono" style="color:var(--ink-3)">services/dashboard</span></h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Page</th><th>What an operator does there</th></tr></thead>
+        <tbody>
+          <tr><td><code>/plates</code></td><td>Trace a vehicle: search, give a reason, see the route on the map; start a live pursuit.</td></tr>
+          <tr><td><code>/incidents</code></td><td>Review offence candidates with snapshots; confirm opens the e-challan dialog.</td></tr>
+          <tr><td><code>/watchlist</code>, <code>/alerts</code></td><td>Standing instructions and the hits they raise.</td></tr>
+          <tr><td><code>/live</code>, <code>/registry</code></td><td>The live wall; the camera registry as a list and a map.</td></tr>
+          <tr><td><code>/detections</code></td><td>Traffic counts and the Vehicles view (one row per vehicle, with its plate or why not).</td></tr>
+          <tr><td><code>/installations</code>, <code>/access-requests</code></td><td>Onboarding new cameras; asking another department for video access.</td></tr>
+          <tr><td><code>/reports/anpr</code>, <code>/audit</code></td><td>The ANPR output report; the audit trail.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Operations scripts <span class="mono" style="color:var(--ink-3)">scripts/</span></h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Script</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>collect_plates.py</code></td><td>The supervisor for the GPU reader: restarts it after a crash, rides out the grid's refusal windows (RTSP 401) by switching accounts or waiting, restarts it when cameras go idle, samples the on-screen clocks.</td></tr>
+          <tr><td><code>launchd/</code></td><td>The LaunchAgent that starts the supervisor at log-in and after a crash.</td></tr>
+          <tr><td><code>camera_plates.sql</code></td><td>One plate table per grid camera, filled by a trigger; the footage-clock tables.</td></tr>
+          <tr><td><code>survey_new_grid_cameras.py</code></td><td>Proposes map pins for new grid cameras from their names (OpenStreetMap), for checking and <code>--apply</code>.</td></tr>
+          <tr><td><code>cross_camera.py</code>, <code>anpr_report.py</code>, <code>export_samples.py</code></td><td>Vehicles seen on several cameras; the ANPR report; sample outputs for the submission.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="analytics">
+      <h2><span class="n">07</span>What it detects</h2>
+      <p class="lede">Every analytic is checked by eye on live snapshots. Rules that did not hold up were retired, not hidden.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Analytic</th><th>Status</th><th>How well, measured</th></tr></thead>
+        <tbody>
+          <tr><td>Number plates (ANPR)</td><td><span class="pill ok">live</span></td><td>Benchmark 18 Sep: 16 of 26 readable plates, none wrong. Most grid plates are 14–31 px wide, too small for anyone to read.</td></tr>
+          <tr><td>Rider without a helmet</td><td><span class="pill ok">live</span></td><td>Held out: 21 calls on 221 riders, all right. Live since 8 Oct: 53 right, 1 unsure, 2 wrong (both fixed).</td></tr>
+          <tr><td>Vehicle type</td><td><span class="pill ok">live</span></td><td>130 of 146 held-out grid vehicles right (89 %), against 88 (60 %) for the stock detector, which called autos “truck”.</td></tr>
+          <tr><td>Wrong way</td><td><span class="pill ok">live</span></td><td>Rebuilt 8 Oct; a 6-hour replay dropped from 274 calls to 6.</td></tr>
+          <tr><td>Collision candidate, person on carriageway, intrusion</td><td><span class="pill ok">live</span></td><td>Rule-based, with snapshots; one vehicle boxed twice no longer counts as a collision.</td></tr>
+          <tr><td>Sudden stop, stopped in lane</td><td><span class="pill off">retired</span></td><td>Live audits showed mostly false calls.</td></tr>
+          <tr><td>Vehicle without a visible plate</td><td><span class="pill off">retired 9 Oct</span></td><td>On the grid's night, high-angle views a missed plate is almost always side-on, cut off or in glare.</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>E-challan (demo).</b> Confirming a helmet or wrong-way incident opens a dialog: the operator types the plate, the owner is looked up and a challan is issued with the MV Act section and fine. Owners are fictional (mobiles start with 0) and the SMS is simulated. In production this would call VAHAN and a registered SMS gateway.</p>
+    </section>
+
+    <section id="files">
+      <h2><span class="n">08</span>File structure</h2>
+      <p class="lede">The product repo, <code>vigentra/</code>. Weights, videos and <code>.env</code> are never committed.</p>
+<pre>vigentra/
+├── README.md               what Vigentra is, roles, demo accounts, how to run and test
+├── docker-compose.yml      the whole stack
+├── .env.example            the variables .env needs (the real .env stays local)
+├── data/
+│   ├── reference/          grid camera survey (map pins), RTO districts, demo vehicle registry
+│   ├── eval/anpr_gt/       by-eye ANPR ground truth, one CSV per clip
+│   └── videos/             footage (not in git)
+├── services/
+│   ├── central-api/        FastAPI middleware
+│   │   └── app/            main.py · config.py · models.py · schemas.py
+│   │       ├── adapters/   traffic · municipal · grid
+│   │       ├── routers/    one file per API area (19)
+│   │       └── services/   track · watchlist · challan · audit · video access …
+│   ├── dashboard/          Next.js console
+│   │   ├── app/            one folder per page (/plates, /incidents, /live …)
+│   │   ├── components/     TrackMap, ChallanDialog, LiveTile, Shell …
+│   │   └── lib/            api.ts, types.ts, helpers
+│   ├── edge-worker/        readers and analytics
+│   │   ├── app/            worker · grid · anpr_engine · helmet · vehicle_type · target_check
+│   │   ├── anpr/           vendored ANPR engine + incidents.py
+│   │   ├── tools/          light_readers.py, benchmark, replay, video tools
+│   │   ├── config/         thresholds, camera profiles, ROI
+│   │   ├── models/         weights (not in git)
+│   │   └── tests/          edge-worker tests
+│   ├── traffic-vms/        mock Traffic Police system
+│   └── municipal-vms/      mock Municipal Corporation system
+├── scripts/                collect_plates.py · launchd/ · camera_plates.sql · osd/ · survey …
+├── tests/                  platform tests (API, federation, access, trace, challan …)
+├── docs/                   design and operations docs (section 14)
+└── deliverables/           keynote, proposal, decks, demo videos, samples</pre>
+    </section>
+
+    <section id="research">
+      <h2><span class="n">09</span>The research repo</h2>
+      <p class="lede"><code>~/Downloads/ANPR</code> is where models are trained and measured. Nothing reaches the product automatically.</p>
+<pre>ANPR/
+├── anpr/          the original engine (the product carries a hand-ported copy)
+├── tools/         labelling sheets, dataset builders, helmet and vehicle-type
+│                  training data, grid harvest → plate set, evaluation
+├── training/      train_plate_detector.py, train_reader_crnn.py …
+├── eval/          run_eval, compare, reader and detector benches
+├── models/        every trained version (helmet_cls_v*, plate_det_*, reader_crnn_v*, vtype_cls_v*)
+└── data/          cls/ (helmet, vtype crops) · det/ (plate sets) · raw/grid_harvest · eval/ …</pre>
+      <ul>
+        <li><b>Code</b> moves by hand, one change at a time, into <code>services/edge-worker/anpr/</code>.</li>
+        <li><b>Weights</b> are copied into <code>services/edge-worker/models/</code> (renamed where needed, e.g. <code>vtype_cls_v2.pt</code> becomes <code>vtype_cls.pt</code>).</li>
+        <li><b>Training data</b> flows back: the live reader saves frames with near vehicles into <code>data/raw/grid_harvest</code> (8,000 so far).</li>
+        <li>A new model is adopted only if it beats the current one on the checked validation set and then live, side by side.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2><span class="n">10</span>Running it</h2>
+      <h3>The stack (Docker)</h3>
+<pre><code>docker compose up -d
+docker ps --format '{{.Names}}\t{{.Status}}'</code></pre>
+      <p>Dashboard on <code>http://localhost:3000</code>, API on <code>:8000</code>. Ask the owner of the Mac for an account; never share passwords in chat or commit them.</p>
+      <h3>The GPU reader (LaunchAgent)</h3>
+<pre><code>launchctl print gui/$(id -u)/com.vigentra.readers | grep -E "state|pid"
+tail -f ~/Library/Logs/vigentra-readers/supervisor.log
+grep "frames/min" ~/Library/Logs/vigentra-readers/light.log | tail -3</code></pre>
+      <p>It starts at log-in, opens Docker if needed, and launchd restarts it within a minute of a crash. It cannot read while the Mac sleeps: keep it on power, lid open. Stop it with <code>launchctl bootout gui/$(id -u)/com.vigentra.readers</code>; details in <code>scripts/launchd/README.md</code>.</p>
+      <h3>Tests</h3>
+<pre><code>.venv/bin/python -m pytest tests
+cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code></pre>
+      <p>Run the two suites separately: both services ship a package called <code>app</code>. The platform suite runs the real API and both mock systems in-process on SQLite, so no Docker is needed.</p>
+    </section>
+
+    <section id="status">
+      <h2><span class="n">11</span>Where we stand</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Item</th><th>State</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Live reading of all grid cameras on the GPU</td><td><span class="pill ok">done</span></td><td>Light mode, supervised, LaunchAgent; recovers from crashes, refusal windows and idle cameras.</td></tr>
+          <tr><td>Trace with timestamped route on GIS</td><td><span class="pill ok">done</span></td><td>Rehearsed on GJ11E5402 (cam06) and GJ39CB0189 (cam30).</td></tr>
+          <tr><td>Pursuit (follow live)</td><td><span class="pill ok">done</span></td><td>Hot cameras first; possible sightings with crops for a person to confirm.</td></tr>
+          <tr><td>Helmet, vehicle types, wrong way</td><td><span class="pill ok">done</span></td><td>Audited live by eye; numbers in section 7.</td></tr>
+          <tr><td>E-challan demo</td><td><span class="pill ok">done</span></td><td>Fictional owners, simulated SMS, traffic roles only, every lookup audited.</td></tr>
+          <tr><td>Plate detector retrained on live grid frames</td><td><span class="pill wip">in progress</span></td><td>Dataset from 8,000 harvested frames being built; then review by eye, fine-tune, and A/B. Adopted only if it reads more plates.</td></tr>
+          <tr><td>New cameras at the venue (30 → 50)</td><td><span class="pill wip">ready</span></td><td>They join automatically; map pins via <code>survey_new_grid_cameras.py</code>.</td></tr>
+          <tr><td>HLS fallback if port 8554 is blocked</td><td><span class="pill wip">untested</span></td><td><code>SENTINEL_GRID_HLS_FALLBACK=1</code>; needs the venue network to test.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><b>The honest limit.</b> Most grid footage is 720p at night, and plates are 14–31 px wide. Nobody can read those, and the system must not pretend to. Reads come from the frames where a vehicle is close, which is why the reader gives near vehicles the GPU first, and why the pursuit exists.</div>
+      <h3>Event-day checklist</h3>
+      <ul>
+        <li>Mac on power, lid open, sleep disabled; log in after any reboot (FileVault is on).</li>
+        <li>Check the tracker is running and reading (commands in section 10).</li>
+        <li>Pin any new grid cameras, then restart central-api.</li>
+        <li>Open the map once so its tiles are cached; run one trace and one pursuit on the venue network.</li>
+        <li>Full steps: <code>docs/event-day-playbook.md</code>.</li>
+      </ul>
+    </section>
+
+    <section id="rules">
+      <h2><span class="n">12</span>House rules</h2>
+      <ul>
+        <li><b>Secrets stay out.</b> Never type, paste, print or commit passwords, API keys or <code>.env</code>. Never run <code>docker compose config</code>; it prints the grid password.</li>
+        <li><b>Nothing big in git.</b> No model weights (<code>*.pt</code>, <code>*.onnx</code>, <code>*.safetensors</code>) and no videos (<code>*.mp4</code>).</li>
+        <li><b>The grid is read live.</b> No recording or buffering of grid streams. RTSP only from the readers; a second web sign-in with the grid account ends central-api's session.</li>
+        <li><b>Measure before keeping.</b> Every ANPR or analytics change is scored against fixed ground truth. A wrong plate costs more than a missed one.</li>
+        <li><b>No training on the test plates.</b> The nine Delhi benchmark plates and cam06's GJ03KS7334 never enter a training set.</li>
+        <li><b>Nothing is deleted.</b> Retired incident kinds are hidden, cleared incidents are archived, audit rows are never removed.</li>
+        <li><b>One commit per verified change</b>, and the docs (HLD, scalability, submission tracker) change with the code.</li>
+        <li><b>Do not restart central-api while a reader is mid-pass</b> without pausing the reader first; buffered plates would be lost.</li>
+      </ul>
+    </section>
+
+    <section id="words">
+      <h2><span class="n">13</span>Words we use</h2>
+      <div class="tbl"><table><tbody>
+        <tr><td><b>Grid</b></td><td>The organisers' camera network: recorded footage replayed as live RTSP streams.</td></tr>
+        <tr><td><b>Refusal window</b></td><td>About 20 minutes when the grid restarts and refuses our login (RTSP 401). Afterwards every recording replays from its start.</td></tr>
+        <tr><td><b>Light mode</b></td><td>One reader process for every grid camera, sharing the GPU.</td></tr>
+        <tr><td><b>Settled / confirmed</b></td><td>A plate the reader is sure of after voting across frames. A candidate is shown but marked as unsure.</td></tr>
+        <tr><td><b>Trace</b></td><td>The route of one plate across cameras, rebuilt from stored reads.</td></tr>
+        <tr><td><b>Pursuit</b></td><td>Following a plate live: nearby cameras get priority and possible matches are shown for confirmation.</td></tr>
+        <tr><td><b>Footage time</b></td><td>The time printed on the video, as opposed to the time we read it.</td></tr>
+        <tr><td><b>Candidate (incident)</b></td><td>An offence the system suspects; only a person can confirm it.</td></tr>
+        <tr><td><b>Harvest</b></td><td>Frames with near vehicles saved by the live reader for training, never for search.</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="more">
+      <h2><span class="n">14</span>Read next</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Document</th><th>Read it for</th></tr></thead>
+        <tbody>
+          <tr><td><code>docs/hld.md</code></td><td>The high-level design submitted to the jury.</td></tr>
+          <tr><td><code>docs/event-day-playbook.md</code></td><td>Exactly what to do on 12–13 Oct, fallbacks and expected questions.</td></tr>
+          <tr><td><code>docs/models.md</code></td><td>Every model, why it was chosen, and how well it scores on our footage.</td></tr>
+          <tr><td><code>docs/api-methods.md</code></td><td>All 66 API operations and why each exists.</td></tr>
+          <tr><td><code>docs/scalability.md</code></td><td>How this scales to about 80,000 cameras.</td></tr>
+          <tr><td><code>docs/submission.md</code></td><td>The day-by-day change log and deliverable tracker.</td></tr>
+          <tr><td><code>docs/code-guide.html</code>, <code>docs/process-map.html</code></td><td>Deeper code walkthrough and the whole process as one flowchart (6 Oct).</td></tr>
+          <tr><td><code>docs/access-model.md</code>, <code>docs/sentinel-grid.md</code></td><td>Who may see what; the grid's integrator rules.</td></tr>
+          <tr><td><code>docs/anpr-*.md</code></td><td>The ANPR audit, baseline, optimisation and dataset notes.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+  </main>
+</div>

@@ -290,7 +290,7 @@ class AnprEngine:
             )
         self._harvest()
         settled, self._pending = self._pending, []
-        return detections, settled
+        return detections, self._not_scene_text(settled)
 
     # -- end of pass -------------------------------------------------------
 
@@ -298,7 +298,18 @@ class AnprEngine:
         """Close the open tracks and return every plate that settled this pass."""
         self._settle()
         out, self._pending = self._pending, []
-        return out
+        return self._not_scene_text(out)
+
+    def _not_scene_text(self, sightings: list[PlateSighting]) -> list[PlateSighting]:
+        """Drop reads of text painted in this camera's scene (config/scene_text.yaml): a signboard the
+        static-text map missed is read again on every pass and would raise watchlist alerts."""
+        from .plates import scene_text
+
+        keep = [s for s in sightings if not scene_text(self.camera_id, s.text)]
+        for s in sightings:
+            if s not in keep:
+                logger.info("dropped scene text %s on %s (config/scene_text.yaml)", s.text, self.camera_id)
+        return keep
 
     def _settle(self) -> None:
         """Close open tracks and move newly settled readings into `_pending`."""

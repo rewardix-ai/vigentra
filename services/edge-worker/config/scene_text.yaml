@@ -1,0 +1,12 @@
+# Text painted in a camera's scene that the plate reader keeps taking for a number plate. A plate read on
+# that camera within MAX_EDITS of one of these is dropped before it is sent (app/plates.py).
+# Keys match the camera id case-insensitively as a substring (cam05 matches GRID-cam05 and ...-CAM05).
+#
+# cam05: a phone-number signboard "75750 83008" behind the junction, read since Sep as TS57SDB3008,
+# TS57SQB3008, TS75QB3008, TS75DB3008, TS57SQ8300, TS50B3008 (30 sightings; found in the 9 Oct by-eye
+# review of plate boxes, and it raised the first watchlist alerts).
+cam05:
+  - TS57SDB3008
+  - TS57SQB3008
+  - TS75QB3008
+  - TS75DB3008

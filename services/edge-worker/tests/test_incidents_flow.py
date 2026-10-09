@@ -141,3 +141,11 @@ def test_coming_towards_the_camera_in_the_own_side_lane_is_wrong_side():
 def test_the_oncoming_lane_is_not_wrong_side():
     det, t = keep_left_road()
     assert not wrong_way(lane(det, 9002, 860, towards=True, t0=t))
+
+
+def test_one_vehicle_boxed_twice_is_not_a_collision():
+    """cam30, 9 Oct: a distant car boxed twice, one box inside the other, read as two cars colliding."""
+    from anpr.incidents import COLLISION_NESTED, _inside_share
+    outer, inner = (470, 205, 550, 265), (490, 210, 545, 258)
+    assert _inside_share(outer, inner) >= COLLISION_NESTED
+    assert _inside_share((0, 0, 100, 60), (70, 0, 170, 60)) < COLLISION_NESTED   # two cars touching

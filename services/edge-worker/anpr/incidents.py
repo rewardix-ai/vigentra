@@ -76,6 +76,9 @@ COLLISION_IOU = 0.18       # boxes overlapping this much in the image plane
 # Lower than HARD_DECEL because a collision has to satisfy three things at once -- overlap
 # plus BOTH vehicles losing speed -- so each individual bar can be less extreme.
 COLLISION_DECEL = 0.40
+# one box almost wholly inside the other is one vehicle detected twice (cam30, 9 Oct: a distant car
+# boxed twice, its two boxes "overlapping 65 %" and jittering), never two vehicles touching
+COLLISION_NESTED = 0.85     # intersection / smaller box area at or above this: the same vehicle
 FLOW_MIN_TRACKS = 12       # tracks needed before a camera's flow is considered known
 WRONG_WAY_DEG = 115.0      # heading this far from flow is against it
 MIN_TRACK_SECONDS = 1.2    # ignore tracks too short to have a trustworthy velocity
@@ -219,6 +222,14 @@ def _in_polygon(x: float, y: float, poly) -> bool:
             inside = not inside
         j = i
     return inside
+
+
+def _inside_share(a, b) -> float:
+    """How much of the smaller box lies inside the other (1.0 = wholly inside)."""
+    iw = max(0.0, min(a[2], b[2]) - max(a[0], b[0]))
+    ih = max(0.0, min(a[3], b[3]) - max(a[1], b[1]))
+    small = min((a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1]))
+    return float(iw * ih / small) if small > 0 else 0.0
 
 
 def _iou(a, b) -> float:
@@ -782,7 +793,7 @@ class IncidentDetector:
             for j in range(i + 1, len(cand)):
                 a, b = cand[i], cand[j]
                 iou = _iou(a.box, b.box)
-                if iou < COLLISION_IOU:
+                if iou < COLLISION_IOU or _inside_share(a.box, b.box) >= COLLISION_NESTED:
                     continue
                 sa, sb = self._tracks[a.track_id], self._tracks[b.track_id]
                 da, db = self._decel(sa), self._decel(sb)

@@ -907,6 +907,7 @@ class FrameQuality(str, Enum):
     LOW_LIGHT = "low_light"
     OVEREXPOSED = "overexposed"
     BLURRED = "blurred"
+    CORRUPTED = "corrupted"   # smeared macroblocks: the stream lost data (edge app/frame_quality.py)
 
 
 class DetectionIn(BaseModel):
@@ -1267,6 +1268,21 @@ class AgeingCamera(BaseModel):
     health_status: CameraStatus
 
 
+class FootageQuality(BaseModel):
+    """How often a camera's footage was not usable, from the edge's per-frame quality checks."""
+
+    camera_id: str
+    name: str
+    district: str | None = None
+    owning_department: str
+    corrupted: int = 0
+    low_light: int = 0
+    overexposed: int = 0
+    blurred: int = 0
+    flagged: int = 0
+    last_flagged_utc: datetime | None = None
+
+
 class GapAnalysisResponse(BaseModel):
     """Coverage gaps and ageing infrastructure across the federated registry."""
 
@@ -1280,6 +1296,9 @@ class GapAnalysisResponse(BaseModel):
         description="Districts with fewer than the configured minimum"
     )
     ageing_cameras: list[AgeingCamera]
+    #: frames flagged as not normal in the last `footage_hours`, per camera, worst first
+    footage_quality: list[FootageQuality] = Field(default_factory=list)
+    footage_hours: int = 24
     departments_without_coverage: list[str] = Field(default_factory=list)
 
     @field_serializer("generated_at")

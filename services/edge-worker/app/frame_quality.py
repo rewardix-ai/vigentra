@@ -47,6 +47,8 @@ class FrameQuality(str, Enum):
     LOW_LIGHT = "low_light"
     OVEREXPOSED = "overexposed"
     BLURRED = "blurred"
+    #: decoder damage: smeared 16x16 macroblocks from lost packets (grid cameras right after a restart)
+    CORRUPTED = "corrupted"
 
 
 @dataclass(frozen=True)
@@ -169,12 +171,40 @@ class FrameQualityRouter:
 
     # -- classification ---------------------------------------------------
 
+    #: edge strength on the 16-px macroblock grid over that between it (8-px offset, where JPEG and
+    #: transform edges sit too). 9 Oct, 1,920 grid frames at full size: median 1.15, 99th percentile
+    #: 1.60; frames at 1.8+ were mostly smeared macroblocks (some fog/glare also reaches it)
+    CORRUPT_BLOCKINESS = 1.8
+
+    def _blockiness(self, gray) -> float | None:
+        if _np is None or not hasattr(gray, "shape"):
+            return None
+        array = _np.asarray(gray, dtype=_np.float32)
+        if array.ndim != 2 or array.shape[1] < 640 or array.shape[0] < 360:
+            return None   # a resized frame has no codec grid left to measure
+        def ratio(d):
+            idx = _np.arange(len(d))
+            return float(d[(idx % 16) == 15].mean() / max(float(d[(idx % 16) == 7].mean()), 1e-3))
+        dx = _np.abs(_np.diff(array, axis=1)).mean(axis=0)
+        dy = _np.abs(_np.diff(array, axis=0)).mean(axis=1)
+        return (ratio(dx) + ratio(dy)) / 2
+
     def classify(self, frame) -> QualityAssessment:
         """Classify without modifying anything."""
         gray = self._to_gray(frame)
         mean_luma = self._mean_luma(gray)
         clipped = self._clipped_ratio(gray)
         variance = self._laplacian_variance(gray)
+        blocky = self._blockiness(gray)
+        # Corruption first: a smeared frame's exposure and focus numbers describe the smear.
+        if blocky is not None and blocky >= self.CORRUPT_BLOCKINESS:
+            return QualityAssessment(
+                quality=FrameQuality.CORRUPTED,
+                mean_luma=mean_luma,
+                laplacian_variance=variance,
+                clipped_highlight_ratio=clipped,
+                detail={"blockiness": round(blocky, 3), "threshold": self.CORRUPT_BLOCKINESS},
+            )
 
         # Order matters, and not in the obvious way.
         #

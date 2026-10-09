@@ -5,17 +5,17 @@ overdue) attach here.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import DemoUser, Permission
 from ..database import get_db
 from ..dependencies import require_permission
-from ..models import Camera as CameraRow, Source as SourceRow
-from ..schemas import AgeingCamera, CameraStatus, DistrictCoverage, GapAnalysisResponse
+from ..models import Camera as CameraRow, FrameQualityEvent, Source as SourceRow
+from ..schemas import AgeingCamera, CameraStatus, DistrictCoverage, FootageQuality, GapAnalysisResponse
 from ..services.policy_service import may_read_camera
 
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
@@ -39,6 +39,7 @@ async def gap_analysis(
     db: AsyncSession = Depends(get_db),
     min_cameras_per_district: int = Query(default=3, ge=1, le=1000),
     ageing_years: int = Query(default=5, ge=1, le=50, description="Cameras older than this are flagged"),
+    footage_hours: int = Query(default=24, ge=1, le=720, description="Window for the footage-quality counts"),
 ) -> GapAnalysisResponse:
     """Aggregates for a coverage overview page.
 
@@ -116,7 +117,31 @@ async def gap_analysis(
     districts_sorted = sorted(coverage.values(), key=lambda item: item.cameras, reverse=True)
     thin_districts = [row for row in districts_sorted if row.is_thin]
 
+    # Footage that is there but not usable: the edge flags each frame that is corrupted (smeared
+    # macroblocks), dark, glared or blurred. A camera can be online and still show nothing readable.
+    since = datetime.now(timezone.utc) - timedelta(hours=footage_hours)
+    by_id = {camera.camera_id: camera for camera in cameras}
+    quality: dict[str, FootageQuality] = {}
+    rows = await db.execute(
+        select(FrameQualityEvent.camera_id, FrameQualityEvent.quality, func.count(), func.max(FrameQualityEvent.timestamp_utc))
+        .where(FrameQualityEvent.timestamp_utc >= since)
+        .group_by(FrameQualityEvent.camera_id, FrameQualityEvent.quality)
+    )
+    for camera_id, kind, count, last in rows.all():
+        camera = by_id.get(camera_id)
+        if camera is None or kind not in ("corrupted", "low_light", "overexposed", "blurred"):
+            continue
+        entry = quality.setdefault(camera_id, FootageQuality(
+            camera_id=camera_id, name=camera.name, district=camera.district, owning_department=camera.owning_department))
+        setattr(entry, kind, getattr(entry, kind) + int(count))
+        entry.flagged += int(count)
+        if last and (entry.last_flagged_utc is None or last > entry.last_flagged_utc):
+            entry.last_flagged_utc = last
+    footage = sorted(quality.values(), key=lambda q: (q.corrupted, q.flagged), reverse=True)
+
     return GapAnalysisResponse(
+        footage_quality=footage,
+        footage_hours=footage_hours,
         generated_at=datetime.now(timezone.utc),
         thresholds={
             "min_cameras_per_district": min_cameras_per_district,

@@ -265,6 +265,66 @@ export default function GapAnalysisPage() {
 
         {/* Ageing infrastructure */}
         <Card
+          title="Footage quality"
+          action={
+            <span className="text-caption text-muted">
+              frames flagged by the edge in the last {report.footage_hours ?? 24} h, worst first
+            </span>
+          }
+        >
+          {(report.footage_quality ?? []).length === 0 ? (
+            <EmptyState
+              message="No camera's footage was flagged in this window."
+              hint="The readers flag frames that are corrupted, too dark, glared or blurred."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <p className="px-6 pb-3 text-caption text-muted">
+                A camera can be online and still show nothing usable. <strong>Possibly corrupted</strong>: the
+                picture broke into smeared blocks (data lost from the stream; heavy fog or glare can look the
+                same). Dark, glared and blurred frames limit what can be read, plates above all.
+              </p>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Camera</th>
+                    <th>District</th>
+                    <th className="text-right">Possibly corrupted</th>
+                    <th className="text-right">Too dark</th>
+                    <th className="text-right">Glare</th>
+                    <th className="text-right">Blurred</th>
+                    <th className="text-right">All flagged</th>
+                    <th>Last flagged</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(report.footage_quality ?? []).map((row) => (
+                    <tr key={row.camera_id}>
+                      <td>
+                        <Link className="link-quiet" href={`/registry/${encodeURIComponent(row.camera_id)}`}>
+                          {row.name}
+                        </Link>
+                      </td>
+                      <td>{row.district ?? "—"}</td>
+                      <td className={`tabular text-right ${row.corrupted > 0 ? "font-semibold text-bad" : "text-muted"}`}>
+                        {row.corrupted}
+                      </td>
+                      <td className="tabular text-right">{row.low_light}</td>
+                      <td className="tabular text-right">{row.overexposed}</td>
+                      <td className="tabular text-right">{row.blurred}</td>
+                      <td className="tabular text-right font-semibold">{row.flagged}</td>
+                      <td className="text-muted">
+                        {row.last_flagged_utc ? new Date(row.last_flagged_utc).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card
           title="Ageing infrastructure"
           action={
             <span className="text-caption text-muted">

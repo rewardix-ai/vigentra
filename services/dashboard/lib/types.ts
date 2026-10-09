@@ -510,6 +510,22 @@ export interface GapAnalysis {
   thin_districts: DistrictCoverage[];
   ageing_cameras: AgeingCamera[];
   departments_without_coverage: string[];
+  /** Frames the edge flagged as not usable, per camera, worst first. */
+  footage_quality?: FootageQuality[];
+  footage_hours?: number;
+}
+
+export interface FootageQuality {
+  camera_id: string;
+  name: string;
+  district: string | null;
+  owning_department: string;
+  corrupted: number;
+  low_light: number;
+  overexposed: number;
+  blurred: number;
+  flagged: number;
+  last_flagged_utc: string | null;
 }
 
 export interface AuditEntry {

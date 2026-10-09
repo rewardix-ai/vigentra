@@ -87,7 +87,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line);
 our own footage. Numbers come from measurements in this repository (<code>docs/submission.md</code>, the research
 repo's <code>reports/LOOP_LOG.md</code>, <code>models/PROVENANCE.json</code>), not from vendors' claims. State as of 8 Oct 2026.</p>
 </div>
-  <div class="meta"><span>10 sections</span><span>Sources cited by file</span><span>Estimates marked as estimates</span><span>Updated 8 Oct 2026</span></div>
+  <div class="meta"><span>10 sections</span><span>Sources cited by file</span><span>Estimates marked as estimates</span><span>Updated 9 Oct 2026</span></div>
 </div></header>
 <div class="layout">
   <nav class="toc" aria-label="Contents"><b>Contents</b><a href="#1-the-chain-at-a-glance">1. The chain at a glance</a><a href="#2-vehicle-detector-yolo11n">2. Vehicle detector: YOLO11n</a><a href="#3-tracker-bytetrack">3. Tracker: ByteTrack</a><a href="#4-plate-detector-plate-det-grid-clean-live-plate-det-mix-n-default">4. Plate detector: plate_det_grid_clean (live), plate_det_mix_n (default)</a><a href="#5-plate-readers-crnn-v3b-crnn-v6-awiros-anpr-ocr">5. Plate readers: CRNN v3b, CRNN v6, Awiros-ANPR-OCR</a><a href="#6-the-decision-layer-rules-not-a-model">6. The decision layer (rules, not a model)</a><a href="#7-other-components">7. Other components</a><a href="#8-tried-and-not-adopted">8. Tried and not adopted</a><a href="#9-what-is-being-trained-now">9. What is being trained now</a><a href="#10-licences">10. Licences</a></nav>
@@ -317,8 +317,8 @@ so the live shortfall is frames per camera, not reading.</p>
 </tr>
 <tr>
 <td>Helmet classifier</td>
-<td>Three YOLO11n-cls (1.5 M parameters each) trained on 1,236 of our own grid rider crops labelled by eye, their scores averaged over each rider's three closest views (<code>app/helmet.py</code>, <code>models/helmet_cls.pt</code>, <code>helmet_cls_v4.pt</code>, <code>helmet_cls_v5.pt</code>)</td>
-<td>Flags bare-headed two-wheeler riders (motorcycle and scooter, at least 120 px wide) as LOW candidates at mean &gt;= 0.85. On 203 held-out riders: 20 calls, 19 right, none on a helmeted rider, 19 of 45 bare-headed riders found. v2 alone scores some helmeted riders above 0.95 (a live miss on cam06, 8 Oct); the trio puts that rider below 0.75. Live audit of the first 14 calls: 10 of 11 judgeable right. A free downloaded helmet model found nothing on our footage.</td>
+<td>Four YOLO11n-cls (1.5 M parameters each) trained on 1,236 of our own grid rider crops labelled by eye, one of them (v6) on the head band only so the head is ~1.7x larger; scores averaged over each rider's three closest views (<code>app/helmet.py</code>, <code>models/helmet_cls.pt</code>, <code>_v4</code>, <code>_v5</code>, <code>_v6_head</code>). Judged only on a vehicle the type classifier finds a two-wheeler</td>
+<td>Flags bare-headed riders of motorcycles and scooters from 70 px wide as LOW candidates at mean &gt;= 0.8, with the rider enlarged on the snapshot. On 203 held-out riders: 20 calls, 19 right, none on a helmeted rider, 19 of 45 bare-headed riders found; v6 alone at 0.85: 19 calls, all right. Live, checked by eye since 8 Oct 17:23: 46 calls right, 1 unsure, 1 wrong (a pedal cargo tricycle, since excluded). v2 alone scores some helmeted riders above 0.95 (a live miss on cam06, 8 Oct); the trio puts that rider below 0.75. Live audit of the first 14 calls: 10 of 11 judgeable right. A free downloaded helmet model found nothing on our footage.</td>
 </tr>
 <tr>
 <td>Vehicle-type classifier</td>

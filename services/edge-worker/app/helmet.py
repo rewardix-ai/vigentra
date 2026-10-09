@@ -32,8 +32,12 @@ MODELS = Path(__file__).resolve().parent.parent / "models"
 #: the riders labelled 8 Oct and cut exactly as below, and v5 fine-tuned from v4 on 200 more. v2 alone puts
 #: some helmeted riders above 0.95 (cam06's looping checked-shirt rider in a black helmet, 8 Oct live);
 #: the later two, trained on such riders, pull them below the threshold.
+#: v6 (a name ending _head.pt) sees only the head band of the crop (head_band): the head ~1.7x larger.
+#: Held out (203 riders), the four averaged at >= 0.8: 20 calls, 19 right, none on a helmet (the three
+#: before it: 23 calls, 21 right); v6 alone at 0.85: 19 calls, all right.
 WEIGHTS = [Path(p) for p in os.getenv(
-    "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in ("helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v5.pt"))).split(",") if p]
+    "HELMET_CLS_WEIGHTS", ",".join(str(MODELS / n) for n in (
+        "helmet_cls.pt", "helmet_cls_v4.pt", "helmet_cls_v5.pt", "helmet_cls_v6_head.pt"))).split(",") if p]
 THRESHOLD = float(os.getenv("HELMET_NO_HELMET_SCORE", "0.8"))
 MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls at >= 0.8, all right; the snapshot
                             # carries the judged rider enlarged, so a person can check a small one
@@ -62,10 +66,17 @@ _models: list = []
 _lock = threading.Lock()   # one classifier for every camera thread; predict is not thread-safe
 
 
+def head_band(crop):
+    """The part of a rider crop the head is in: 5-65 % of its height, the middle 80 % of its width."""
+    h, w = crop.shape[:2]
+    return crop[int(0.05 * h):int(0.65 * h), int(0.1 * w):int(0.9 * w)]
+
+
 def _classifiers() -> list:
+    """(model, sees the head band only) for every installed classifier."""
     if not _models:
         from ultralytics import YOLO
-        _models.extend(YOLO(str(w)) for w in WEIGHTS if w.exists())
+        _models.extend((YOLO(str(w)), w.stem.endswith("_head")) for w in WEIGHTS if w.exists())
     return _models
 
 
@@ -77,8 +88,8 @@ def no_helmet_score(crop) -> float:
     """The classifiers' mean probability that the rider in this crop is bare-headed."""
     with _lock:
         scores = []
-        for m in _classifiers():
-            r = m.predict(crop, imgsz=224, verbose=False, device="cpu")[0]
+        for m, head in _classifiers():
+            r = m.predict(head_band(crop) if head else crop, imgsz=224, verbose=False, device="cpu")[0]
             idx = [k for k, v in m.names.items() if v == "no_helmet"][0]
             scores.append(float(r.probs.data[idx]))
         return sum(scores) / len(scores)

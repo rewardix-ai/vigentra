@@ -9,8 +9,9 @@ import { Notice } from "./ui";
 /**
  * Confirm an incident as an offence and issue the e-challan.
  *
- * The operator types the plate they read on the evidence (the system's own reading is not used: a
- * person confirms the vehicle). "Find owner" looks it up (audited) and shows the owner, the masked
+ * When the reader read the vehicle's plate, it is filled in as a suggestion, marked so; the operator
+ * checks it against the evidence and corrects it before anything is looked up (a person confirms the
+ * vehicle). Otherwise they type it. "Find owner" looks it up (audited) and shows the owner, the masked
  * mobile, the section, fine and the SMS; "Issue challan & send SMS" issues it and confirms the
  * incident. Owners come from the DEMO stand-in for VAHAN and the SMS is simulated until a gateway
  * is configured; both are said on screen.
@@ -26,7 +27,7 @@ export function ChallanDialog({
   onClose: () => void;
   onIssued: (challan: ChallanIssued) => void;
 }) {
-  const [plate, setPlate] = useState("");
+  const [plate, setPlate] = useState(incident.suggested_plate ?? "");
   const [preview, setPreview] = useState<ChallanPreview | null>(null);
   const [issued, setIssued] = useState<ChallanIssued | null>(null);
   const [busy, setBusy] = useState(false);
@@ -101,6 +102,14 @@ export function ChallanDialog({
                   Find owner
                 </button>
               </div>
+              {incident.suggested_plate && plate === incident.suggested_plate && (
+                <p className="mt-1 text-caption text-muted">
+                  Filled in from the camera&apos;s reading (
+                  {incident.suggested_plate_confirmed ? "confirmed by the reader" : "not confirmed"}
+                  {incident.suggested_plate_confidence != null && `, score ${incident.suggested_plate_confidence.toFixed(2)}`}
+                  ). Check it against the snapshot before finding the owner.
+                </p>
+              )}
             </div>
           )}
 

@@ -795,6 +795,10 @@ export interface Incident {
   is_demo_data: boolean;
   /** The frame it was raised on is stored: api.incidentSnapshotUrl gives the JPEG. */
   has_snapshot: boolean;
+  /** The plate the reader settled on the same vehicle track: a suggestion the operator must check. */
+  suggested_plate?: string | null;
+  suggested_plate_confidence?: number | null;
+  suggested_plate_confirmed?: boolean | null;
 }
 
 /** A camera, or a whole department system, that stopped answering the health monitor. */

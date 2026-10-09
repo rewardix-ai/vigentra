@@ -1695,6 +1695,11 @@ class IncidentOut(BaseModel):
     is_demo_data: bool = True
     #: GET /incidents/{incident_id}/snapshot returns the frame when this is true.
     has_snapshot: bool = False
+    #: The plate the reader settled on the same vehicle track at the same camera, if any. A suggestion
+    #: for the operator to check against the snapshot, never used without their confirmation.
+    suggested_plate: str | None = None
+    suggested_plate_confidence: float | None = None
+    suggested_plate_confirmed: bool | None = None
 
 
 class IncidentReview(BaseModel):

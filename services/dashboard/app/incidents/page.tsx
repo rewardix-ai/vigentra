@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import { ChallanDialog } from "@/components/ChallanDialog";
 import { api } from "@/lib/api";
+import { useBackCloses } from "@/lib/backCloses";
 import { humanise, ist, relative } from "@/lib/format";
 import type { Incident } from "@/lib/types";
 
@@ -76,6 +77,14 @@ export default function IncidentsPage() {
   const [sinceHours, setSinceHours] = useState("24");
   const [acting, setActing] = useState<string | null>(null);
   const [challanFor, setChallanFor] = useState<Incident | null>(null);
+  const [zoom, setZoom] = useState<Incident | null>(null);
+  useBackCloses(zoom !== null, () => setZoom(null));
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setZoom(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoom]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -187,12 +196,12 @@ export default function IncidentsPage() {
             <Card key={incident.incident_id}>
               <div className="flex flex-col gap-6 p-5 md:flex-row">
                 {/* The frame it was raised on: the thing a reviewer judges, so it leads. */}
-                <a
+                <button
+                  type="button"
+                  disabled={!incident.has_snapshot}
+                  onClick={() => setZoom(incident)}
                   className="flex aspect-[16/10] w-full shrink-0 items-center justify-center overflow-hidden rounded-sm bg-canvas-soft md:w-[360px]"
-                  href={incident.has_snapshot ? api.incidentSnapshotUrl(incident.incident_id) : undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={incident.has_snapshot ? "Open the frame full size" : undefined}
+                  title={incident.has_snapshot ? "Enlarge the frame" : undefined}
                 >
                   {incident.has_snapshot ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -205,7 +214,7 @@ export default function IncidentsPage() {
                   ) : (
                     <span className="text-caption text-muted">No frame saved</span>
                   )}
-                </a>
+                </button>
 
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2 text-caption text-muted">
@@ -240,6 +249,17 @@ export default function IncidentsPage() {
                       {day(incident.last_seen_utc)} · {relative(incident.last_seen_utc)}
                     </span>
                   </div>
+
+                  {incident.suggested_plate && (
+                    <div className="text-body-sm text-ink-soft">
+                      Plate read <span className="mono font-semibold text-ink">{incident.suggested_plate}</span>{" "}
+                      <span className="text-muted">
+                        · {incident.suggested_plate_confirmed ? "confirmed by the reader" : "unconfirmed"}
+                        {incident.suggested_plate_confidence != null && ` · score ${incident.suggested_plate_confidence.toFixed(2)}`}
+                        {" "}· check before issuing
+                      </span>
+                    </div>
+                  )}
 
                   {fine && (
                     <div className="text-body-sm text-ink-soft">
@@ -284,6 +304,25 @@ export default function IncidentsPage() {
           );
         })}
       </div>
+
+      {zoom && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setZoom(null)}
+          role="dialog"
+          aria-label="Incident frame"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt={`Frame of ${KIND_LABEL[zoom.kind] ?? zoom.kind}`}
+            className="max-h-full max-w-full rounded-sm object-contain"
+            src={api.incidentSnapshotUrl(zoom.incident_id)}
+          />
+          <button className="btn absolute right-4 top-4" onClick={() => setZoom(null)}>
+            Close (Esc)
+          </button>
+        </div>
+      )}
 
       {challanFor && (
         <ChallanDialog

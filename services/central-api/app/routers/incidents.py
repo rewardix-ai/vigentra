@@ -31,6 +31,7 @@ from ..dependencies import client_ip, require_permission
 from ..models import Camera as CameraRow
 from ..models import Incident as IncidentRow
 from ..models import IncidentSnapshot
+from ..models import PlateSighting
 from ..schemas import (
     INCIDENT_KINDS,
     INCIDENT_SEVERITIES,
@@ -81,8 +82,48 @@ def _snapshot_bytes(b64: str | None) -> bytes | None:
     return data
 
 
-def _to_out(row: IncidentRow, camera: CameraRow | None, has_snapshot: bool = False) -> IncidentOut:
+#: a plate read on the incident's vehicle settles when its track closes, so it can come a little after
+PLATE_BEFORE_S, PLATE_AFTER_S = 120, 300
+
+
+async def _plates_for(db: AsyncSession, rows: list[IncidentRow]) -> dict[str, PlateSighting]:
+    """For each incident, the best plate read on one of its vehicle tracks at its camera around its
+    time. Track ids restart when a reader restarts, so the time window keeps the match to one pass."""
+    if not rows:
+        return {}
+    lo = min(r.first_seen_utc for r in rows) - timedelta(seconds=PLATE_BEFORE_S)
+    hi = max(r.last_seen_utc for r in rows) + timedelta(seconds=PLATE_AFTER_S)
+    sightings = (await db.execute(
+        select(PlateSighting).where(
+            PlateSighting.camera_id.in_({r.camera_id for r in rows}),
+            PlateSighting.timestamp_utc >= lo, PlateSighting.timestamp_utc <= hi,
+        )
+    )).scalars().all()
+    out: dict[str, PlateSighting] = {}
+    for r in rows:
+        tracks = {int(t) for t in (r.track_ids or [])}
+        if not tracks:
+            continue
+        lo_r = r.first_seen_utc - timedelta(seconds=PLATE_BEFORE_S)
+        hi_r = r.last_seen_utc + timedelta(seconds=PLATE_AFTER_S)
+        best = None
+        for s in sightings:
+            tid = (s.provenance or {}).get("track_id")
+            if s.camera_id != r.camera_id or tid is None or int(tid) not in tracks or not (lo_r <= s.timestamp_utc <= hi_r):
+                continue
+            if best is None or s.confidence > best.confidence:
+                best = s
+        if best is not None:
+            out[r.incident_id] = best
+    return out
+
+
+def _to_out(row: IncidentRow, camera: CameraRow | None, has_snapshot: bool = False,
+            plate: PlateSighting | None = None) -> IncidentOut:
     return IncidentOut(
+        suggested_plate=plate.plate_text if plate else None,
+        suggested_plate_confidence=round(plate.confidence, 2) if plate else None,
+        suggested_plate_confirmed=bool((plate.provenance or {}).get("plate_confirmed")) if plate else None,
         incident_id=row.incident_id,
         camera_id=row.camera_id,
         camera_name=camera.name if camera else None,
@@ -258,8 +299,9 @@ async def list_incidents(
             )
         ).scalars().all()
     ) if rows else set()
+    plates = await _plates_for(db, list(rows))
     return [
-        _to_out(row, cameras.get(row.camera_id), row.incident_id in with_snapshot)
+        _to_out(row, cameras.get(row.camera_id), row.incident_id in with_snapshot, plates.get(row.incident_id))
         for row in rows
         if row.camera_id in cameras and may_read_detections(user, cameras[row.camera_id])
     ]

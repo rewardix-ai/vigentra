@@ -65,6 +65,13 @@ Why reading is hard on this grid, with evidence anyone can check:
 
 ## 5. Before the venue
 
+- **Keep the Mac on power with the lid open.** On 8-9 Oct it slept on battery with the lid closed and
+  no camera was read for 15 hours; `caffeinate` prevents idle sleep, not lid-close sleep.
+- **New grid cameras (30 -> 50).** They federate on their own, but arrive without map pins (the grid's
+  catalogue sends only an id and a name). Run `python scripts/survey_new_grid_cameras.py`, check each
+  proposed pin (geocoded from the name, else the town or district centre, labelled so), then
+  `--apply` and restart central-api. The collection supervisor reads every camera the registry holds.
+
 - Run the trace and a pursuit once on the venue network; if port 8554 is blocked, switch on the HLS
   fallback (`SENTINEL_GRID_HLS_FALLBACK=1`).
 - Open the map once so its tiles are cached.

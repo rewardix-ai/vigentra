@@ -127,3 +127,17 @@ def test_a_different_rider_at_the_same_spot_is_still_called(monkeypatch):
         out += w.observe(blue, [bike(51, 505, 280 + 10 * i)], 6.0 + i)
     out += w.observe(blue, [], 30.0)
     assert len(out) == 2
+
+
+def test_a_new_id_picking_the_rider_up_mid_path_is_the_same_rider(monkeypatch):
+    """cam06, 9 Oct: tracks 4 then 3 on one rider; the new id began near where the rider had been, not where
+    the old track ended."""
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    for i in range(6):   # the rider comes down the frame fast
+        out += w.observe(frame, [bike(60, 500, 100 + 60 * i)], 0.2 * i)
+    for i in range(3):   # a second box on the same rider, starting back near the middle of that path
+        out += w.observe(frame, [bike(61, 500, 220 + 10 * i)], 1.3 + 0.2 * i)
+    out += w.observe(frame, [], 30.0)
+    assert len(out) == 1

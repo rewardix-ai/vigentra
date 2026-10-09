@@ -131,8 +131,9 @@ class HelmetWatch:
             bw, bh = x2 - x1, y2 - y1
             c = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
             v = self.views.setdefault(tid, {"first_pts": pts, "max_w": 0.0, "crops": [], "jpeg": None,
-                                            "first_c": c, "travel": 0.0, "frames": 0})
+                                            "first_c": c, "travel": 0.0, "frames": 0, "path": []})
             v["last_pts"], v["last_c"] = pts, c
+            v["path"] = (v["path"] + [c])[-40:]
             v["frames"] += 1
             v["travel"] = max(v["travel"], ((c[0] - v["first_c"][0]) ** 2 + (c[1] - v["first_c"][1]) ** 2) ** 0.5 / max(bw, 1.0))
             if bw < MIN_WIDTH or (len(v["crops"]) >= VIEWS and bw <= min(cw for cw, _ in v["crops"])):
@@ -205,9 +206,12 @@ class HelmetWatch:
             fc, fw = v["first_c"], max(v["max_w"], 1.0)
             look = _colours(views[0])
 
-            def same(t_last, c_last, w_last, h_last):
-                gap = abs(v["first_pts"] - t_last)   # after it, or overlapping: an id switch
-                far = ((fc[0] - c_last[0]) ** 2 + (fc[1] - c_last[1]) ** 2) ** 0.5 / max(fw, w_last)
+            def same(t_first, t_last, path_last, w_last, h_last):
+                # time apart: 0 when the tracks overlap (an id switch mid-track), else the gap between them
+                gap = max(0.0, v["first_pts"] - t_last, t_first - v["last_pts"])
+                # nearest approach of the two paths, in widths: a new id can pick the rider up anywhere along
+                # the old one's path (cam06, 9 Oct: tracks 4 then 3 on one rider a second apart)
+                far = min(((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5 for a in v["path"] for b in path_last) / max(fw, w_last)
                 if gap <= SAME_RIDER_S and far <= SAME_RIDER_W:
                     return True
                 return (gap <= LOOKALIKE_S and far <= LOOKALIKE_W and h_last is not None and look is not None
@@ -216,7 +220,8 @@ class HelmetWatch:
             if any(same(*r) for r in self.raised):
                 TALLY["same_rider_again"] += 1
                 continue
-            self.raised = [r for r in self.raised if v["last_pts"] - r[0] <= 15.0] + [(v["last_pts"], v["last_c"], fw, look)]
+            self.raised = [r for r in self.raised if v["last_pts"] - r[1] <= 15.0] + [
+                (v["first_pts"], v["last_pts"], list(v["path"]), fw, look)]
             TALLY["raised"] += 1
             payload = {
                 "camera_id": self.camera_id, "kind": "NO_HELMET", "severity": "LOW", "track_ids": [int(tid)],
@@ -224,7 +229,10 @@ class HelmetWatch:
                 "reason": f"two-wheeler rider who appears bare-headed (classifier {score:.2f} over {len(scores)} "
                            f"view{'s' if len(scores) > 1 else ''}, at {int(v['max_w'])} px)",
                 "evidence": {"no_helmet_score": round(score, 3), "view_scores": [round(x, 3) for x in scores],
-                             "widest_px": round(v["max_w"]), "threshold": THRESHOLD},
+                             "widest_px": round(v["max_w"]), "threshold": THRESHOLD,
+                             # where the track began and ended: what tells a second call on one rider apart
+                             "track_from": [round(v["first_c"][0]), round(v["first_c"][1]), round(v["first_pts"], 2)],
+                             "track_to": [round(v["last_c"][0]), round(v["last_c"][1]), round(v["last_pts"], 2)]},
             }
             if v["jpeg"]:
                 payload["snapshot_jpeg_b64"] = base64.b64encode(v["jpeg"]).decode("ascii")

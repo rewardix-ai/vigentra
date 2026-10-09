@@ -322,8 +322,8 @@ so the live shortfall is frames per camera, not reading.</p>
 </tr>
 <tr>
 <td>Vehicle-type classifier</td>
-<td>YOLO11n-cls trained on 960 grid vehicles labelled by eye (<code>app/vehicle_type.py</code>, <code>models/vtype_cls.pt</code>): auto-rickshaw, bus, car, motorcycle, scooter, truck</td>
-<td>The COCO detector called autos &quot;truck&quot; (45 of 70 clear &quot;trucks&quot; were autos, 6 were trucks) and never separates scooters. A confident call (&gt;= 0.7) replaces the detector's class; held out by camera, types right went from 88 of 146 (detector) to 130 of 146; its confident calls are right 108 of 113.</td>
+<td>YOLO11n-cls v3 in Indian classes (CMVR / AIS-053), trained on 2,160 grid crops labelled by eye (<code>app/vehicle_type.py</code>, <code>models/vtype_cls.pt</code>): scooter and motorcycle (L1-L3), passenger auto-rickshaw (L5M), car/jeep/SUV (M1), minibus/Tempo Traveller (M2), bus (M3), lcv: Tata Ace, pickup, tempo (N1), truck (N2/N3), plus not-a-vehicle and unclear. Goods three-wheelers (10 crops) and tractors (none on these cameras) are too rare to learn yet</td>
+<td>The COCO detector calls autos &quot;truck&quot; and sign boards, police barricades and overlays &quot;bus&quot;/&quot;truck&quot;. A confident call (&gt;= 0.7) replaces the detector's class; a confident not-a-vehicle drops the box. Held out by camera (313 vehicles): types right 158 (detector) / 236 (v2, 6 classes) / 268 (v3); confident calls right 241 of 248; 19 of 24 non-vehicles dropped, no clearly typed vehicle dropped.</td>
 </tr>
 <tr>
 <td>Incident detector</td>

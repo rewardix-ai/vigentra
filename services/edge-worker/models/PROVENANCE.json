@@ -63,7 +63,12 @@
     "bytes": 328510119
   },
   "vtype_cls.pt": {
-    "from": "ANPR models/vtype_cls_v2.pt (renamed on copy)",
+    "from": "ANPR models/vtype_cls_v3.pt: Indian classes (auto, bus, car, lcv, minibus, motorcycle, notvehicle, scooter, truck, unclear), 2,160 grid crops labelled by eye, 9 Oct",
+    "sha256": "882946a2524d84da4ef2db167429f1c6aa493b7bfb713522f5c77227eef0daac",
+    "bytes": 3208130
+  },
+  "vtype_cls_v2.pt": {
+    "from": "ANPR models/vtype_cls_v2.pt (rollback for vtype_cls.pt)",
     "sha256": "8d9c345f0bf9e1e71f808476010537ff9223e95dc59383135c4bef5edccc08cc",
     "bytes": 3200386
   },

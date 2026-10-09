@@ -1,4 +1,5 @@
-"""What kind of vehicle each track is: auto-rickshaw, bus, car, motorcycle, scooter or truck.
+"""What kind of vehicle each track is, in Indian classes: scooter, motorcycle, auto-rickshaw, car, minibus,
+bus, lcv (light goods) or truck; a crop the classifier is sure is no vehicle is dropped (v3, 9 Oct).
 
 The COCO vehicle detector knows car, motorcycle, bus and truck only. On the grid that is wrong in a
 systematic way (480 grid vehicles labelled by eye, 8 Oct): its "truck" was an auto-rickshaw 45 times,

@@ -1,6 +1,6 @@
 """SQLAlchemy models for the central metadata registry.
 
-Twenty-one tables:
+Twenty-seven tables:
 
     users                            demo accounts, seeded from configuration
     roles                            role catalogue and its permission set
@@ -23,6 +23,12 @@ Twenty-one tables:
     watchlist_entries                registration numbers to be alerted on
     watchlist_alerts                 sightings the matcher tied to a watchlist entry
     incidents                        edge-raised traffic-incident candidates
+    incident_snapshots               the JPEG an incident was raised on
+    pursuits                         live follows of one plate
+    pursuit_evidence                 possible sightings a pursuit found, with crops
+    health_alerts                    cameras or systems that stopped answering
+    demo_vehicle_owners              DEMO stand-in for VAHAN owner lookup (fictional)
+    challans                         e-challans issued on confirmed offences
 
 JSON columns use JSONB on PostgreSQL and fall back to plain JSON on SQLite so
 the test-suite can run without a database container.

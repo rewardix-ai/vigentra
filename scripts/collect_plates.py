@@ -1,6 +1,7 @@
 """Read plates on every grid camera with the Mac's GPU until a deadline, and keep the readers alive.
 
-Runs continuous ANPR readers (one camera each, rotating) (`app.worker --forever` with long passes),
+By default (--mode light) one process reads every grid camera at once (tools/light_readers.py);
+--mode rotate runs three continuous readers instead, one camera each, rotating,
 on the host so the engine can use the Apple GPU (Docker on macOS has none). Each reader signs in to
 central-api with its department's AI account, the same account the Docker workers use: traffic.ai for
 Traffic Police cameras, municipal.ai for Municipal Corporation cameras. Credentials and grid settings

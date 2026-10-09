@@ -654,7 +654,7 @@ cd services/edge-worker &amp;&amp; ../../.venv/bin/python -m pytest tests</code>
           <tr><td>E-challan demo</td><td><span class="pill ok">done</span></td><td>Fictional owners, simulated SMS, traffic roles only, every lookup audited.</td></tr>
           <tr><td>Plate detector retrained on live grid frames</td><td><span class="pill wip">in progress</span></td><td>Dataset from 8,000 harvested frames being built; then review by eye, fine-tune, and A/B. Adopted only if it reads more plates.</td></tr>
           <tr><td>New cameras at the venue (30 → 50)</td><td><span class="pill wip">ready</span></td><td>They join automatically; map pins via <code>survey_new_grid_cameras.py</code>.</td></tr>
-          <tr><td>HLS fallback if port 8554 is blocked</td><td><span class="pill wip">untested</span></td><td><code>SENTINEL_GRID_HLS_FALLBACK=1</code>; needs the venue network to test.</td></tr>
+          <tr><td>HLS fallback if port 8554 is blocked</td><td><span class="pill ok">tested</span></td><td><code>SENTINEL_GRID_HLS_FALLBACK=1</code>. Tested 9 Oct through central-api: first frame after ~23 s, ~4.6 frames/s at 854x480 (lower than RTSP's 1280x720, so fewer plates).</td></tr>
         </tbody>
       </table></div>
       <div class="note"><b>The honest limit.</b> Most grid footage is 720p at night, and plates are 14–31 px wide. Nobody can read those, and the system must not pretend to. Reads come from the frames where a vehicle is close, which is why the reader gives near vehicles the GPU first, and why the pursuit exists.</div>

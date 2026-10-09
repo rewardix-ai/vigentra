@@ -80,6 +80,8 @@ Why reading is hard on this grid, with evidence anyone can check:
   `--apply` and restart central-api. The collection supervisor reads every camera the registry holds.
 
 - Run the trace and a pursuit once on the venue network; if port 8554 is blocked, switch on the HLS
-  fallback (`SENTINEL_GRID_HLS_FALLBACK=1`).
+  fallback (`SENTINEL_GRID_HLS_FALLBACK=1`). Tested 9 Oct on cam04 through central-api's broker: first
+  frame after ~23 s, then ~4.6 frames/s at 854x480 (RTSP gives 1280x720), so fewer plates are readable;
+  it keeps the trace alive, it does not replace RTSP.
 - Open the map once so its tiles are cached.
 - Keep this Mac on power; the collection supervisor keeps it awake.

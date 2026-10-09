@@ -40,6 +40,10 @@ MIN_WIDTH = 70.0            # px: held out, riders 60-120 px wide drew 7 calls a
 SAME_RIDER_S, SAME_RIDER_W = 2.0, 2.5   # a call whose track starts within this time and this many widths of
                             # where a raised rider was last seen is that rider again under a new track id
                             # (cam06, 8 Oct: one red-shirted rider called twice a second apart)
+LOOKALIKE_S, LOOKALIKE_W, LOOKALIKE_CORR = 10.0, 3.0, 0.85  # ...or, with a longer gap (light mode can lose a
+                            # rider for several seconds), one whose colours match: the same rider again
+                            # (cam30, 9 Oct: one woman called twice, her second track starting > 2 s later;
+                            # her two crops correlate 0.94, two different cam06 riders 0.72)
 TWO_WHEELER_MIN = 0.1       # the vehicle-type classifier must find it plausibly a motorbike or scooter
 PARKED_FRAMES, PARKED_S = 4, 3.0   # only a two-wheeler seen this often, this long, and not moving is parked:
                             # light mode often sees a passing rider in one or two frames (8 Oct: 36 of 78
@@ -80,13 +84,24 @@ def no_helmet_score(crop) -> float:
         return sum(scores) / len(scores)
 
 
+def _colours(crop):
+    """Hue-saturation histogram of a rider crop: what tells one rider's clothes from another's."""
+    import cv2
+
+    if crop is None or crop.size == 0:
+        return None
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    hist = cv2.calcHist([hsv], [0, 1], None, [18, 8], [0, 180, 0, 256])
+    return cv2.normalize(hist, hist).flatten()
+
+
 class HelmetWatch:
     """Per camera: the closest view of each two-wheeler, judged once when its track ends."""
 
     def __init__(self, camera_id: str) -> None:
         self.camera_id = camera_id
         self.views: dict[int, dict] = {}
-        self.raised: list[tuple[float, tuple[float, float], float]] = []   # (last pts, last centre, width)
+        self.raised: list[tuple] = []   # (last pts, last centre, width, colour histogram) of riders called
 
     def observe(self, frame, detections, pts: float) -> list[dict]:
         import cv2
@@ -175,12 +190,20 @@ class HelmetWatch:
                 TALLY["judged_ok" if score < 0.5 else "judged_unsure"] += 1
                 continue
             fc, fw = v["first_c"], max(v["max_w"], 1.0)
-            if any(abs(v["first_pts"] - t_last) <= SAME_RIDER_S   # after it, or overlapping: an id switch
-                   and ((fc[0] - c_last[0]) ** 2 + (fc[1] - c_last[1]) ** 2) ** 0.5 <= SAME_RIDER_W * max(fw, w_last)
-                   for t_last, c_last, w_last in self.raised):
+            look = _colours(views[0])
+
+            def same(t_last, c_last, w_last, h_last):
+                gap = abs(v["first_pts"] - t_last)   # after it, or overlapping: an id switch
+                far = ((fc[0] - c_last[0]) ** 2 + (fc[1] - c_last[1]) ** 2) ** 0.5 / max(fw, w_last)
+                if gap <= SAME_RIDER_S and far <= SAME_RIDER_W:
+                    return True
+                return (gap <= LOOKALIKE_S and far <= LOOKALIKE_W and h_last is not None and look is not None
+                        and float(cv2.compareHist(look, h_last, cv2.HISTCMP_CORREL)) >= LOOKALIKE_CORR)
+
+            if any(same(*r) for r in self.raised):
                 TALLY["same_rider_again"] += 1
                 continue
-            self.raised = [r for r in self.raised if v["last_pts"] - r[0] <= 10.0] + [(v["last_pts"], v["last_c"], fw)]
+            self.raised = [r for r in self.raised if v["last_pts"] - r[0] <= 15.0] + [(v["last_pts"], v["last_c"], fw, look)]
             TALLY["raised"] += 1
             payload = {
                 "camera_id": self.camera_id, "kind": "NO_HELMET", "severity": "LOW", "track_ids": [int(tid)],

@@ -96,3 +96,34 @@ def test_a_vehicle_the_type_classifier_rejects_is_not_judged(monkeypatch):
         out += w.observe(frame, [bike(30, 500, 200 + 25 * i)], float(i))
     out += w.observe(frame, [], 20.0)
     assert not out
+
+
+def _rider_frame(bgr):
+    frame = np.full((720, 1280, 3), 90, np.uint8)
+    frame[0:400, 450:650] = bgr   # the rider's clothes fill the crop
+    return frame
+
+
+def test_the_same_rider_lost_for_seconds_is_called_once(monkeypatch):
+    """cam30, 9 Oct: one woman called twice, her second track starting more than 2 s after the first."""
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    red = _rider_frame((40, 40, 200))
+    for i in range(3):
+        out += w.observe(red, [bike(40, 500, 250 + 10 * i)], float(i))
+    for i in range(3):   # lost for 4 s, back under a new id, same clothes, same place
+        out += w.observe(red, [bike(41, 505, 280 + 10 * i)], 6.0 + i)
+    out += w.observe(red, [], 30.0)
+    assert len(out) == 1
+
+
+def test_a_different_rider_at_the_same_spot_is_still_called(monkeypatch):
+    monkeypatch.setattr(helmet, "no_helmet_score", lambda crop: 0.95)
+    w, out = helmet.HelmetWatch("cam-h"), []
+    red, blue = _rider_frame((40, 40, 200)), _rider_frame((200, 60, 30))
+    for i in range(3):
+        out += w.observe(red, [bike(50, 500, 250 + 10 * i)], float(i))
+    for i in range(3):
+        out += w.observe(blue, [bike(51, 505, 280 + 10 * i)], 6.0 + i)
+    out += w.observe(blue, [], 30.0)
+    assert len(out) == 2

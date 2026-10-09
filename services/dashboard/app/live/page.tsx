@@ -50,6 +50,9 @@ export default function LiveWallPage() {
   // out; snapshots come off the fast RTSP path and always render. On by
   // default because it is the only path that works on this network.
   const [snapshot, setSnapshot] = usePersisted("live.snapshot", true);
+  // What the snapshot wall draws on the frames: detection boxes at all, and people among them.
+  const [boxes, setBoxes] = usePersisted("live.boxes", true);
+  const [people, setPeople] = usePersisted("live.people", true);
   // A snapshot wall opens no session, so it can come back on its own after a
   // reload; a full-motion one needs the password typed again.
   const started = startedBefore && (snapshot || password.length > 0);
@@ -232,6 +235,18 @@ export default function LiveWallPage() {
                 showing {shown.length} of {watchable.length}
               </span>
               <QueueStatus />
+              {snapshot && (
+                <>
+                  <label className="flex items-center gap-2 text-body-sm text-ink-soft">
+                    <input type="checkbox" checked={boxes} onChange={(e) => setBoxes(e.target.checked)} />
+                    Show detections
+                  </label>
+                  <label className={`flex items-center gap-2 text-body-sm ${boxes ? "text-ink-soft" : "text-faint"}`}>
+                    <input type="checkbox" checked={people} disabled={!boxes} onChange={(e) => setPeople(e.target.checked)} />
+                    Include people
+                  </label>
+                </>
+              )}
               <button
                 className="btn btn-primary"
                 disabled={shown.length === 0}
@@ -302,6 +317,7 @@ export default function LiveWallPage() {
                 password={password}
                 compact={wall}
                 snapshot={snapshot}
+                overlay={{ boxes, people }}
                 plates={platesByCamera[camera.camera_id]}
                 onOpenFull={(id) => router.push(`/registry/${encodeURIComponent(id)}`)}
               />

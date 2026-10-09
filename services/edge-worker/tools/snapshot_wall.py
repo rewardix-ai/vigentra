@@ -293,8 +293,8 @@ class Estate:
             self.seq[cam] = self.seq.get(cam, 0) + 1
             self.updated[cam] = now
 
-    def snapshot(self, cam: str) -> bytes | None:
-        """The latest frame as JPEG, at once.
+    def snapshot(self, cam: str, boxes: bool = True, people: bool = True) -> bytes | None:
+        """The latest frame as JPEG, at once; `boxes`/`people` are the viewer's overlay choice.
 
         With the detector on, a background worker draws the boxes and this
         returns the newest frame it has finished - a request never waits on
@@ -302,6 +302,8 @@ class Estate:
         request for a camera gets its frame unboxed rather than nothing.
         """
         self.note_demand(cam)
+        if not (boxes and people) and cam not in self.predrawn:
+            return self._variant(cam, boxes)
         with self.lock:
             frame, seq = self.frames.get(cam), self.seq.get(cam, 0)
             done = self.rendered.get(cam)
@@ -311,11 +313,39 @@ class Estate:
             return None
         return self._render(cam, frame, seq, detect=False)
 
+    def _variant(self, cam: str, boxes: bool) -> bytes | None:
+        """The newest frame without boxes, or boxed without people, from the detections the
+        background worker already found (no extra detector pass); one JPEG per frame and variant."""
+        key = "vehicles" if boxes else "plain"
+        with self.lock:
+            found = getattr(self, "found", {}).get(cam)
+            frame, seq = (found[1], found[0]) if (boxes and found) else (self.frames.get(cam), self.seq.get(cam, 0))
+            cached = getattr(self, "variants", {}).get((cam, key))
+        if frame is None:
+            return None
+        if cached and cached[0] == seq:
+            return cached[1]
+        image = frame.copy()
+        if boxes and found:
+            draw_detections(image, [d for d in found[2] if d.class_name != "person"])
+        ok, buf = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 74])
+        if not ok:
+            return None
+        with self.lock:
+            if not hasattr(self, "variants"):
+                self.variants = {}
+            self.variants[(cam, key)] = (seq, buf.tobytes())
+        return buf.tobytes()
+
     def _render(self, cam: str, frame, seq: int, detect: bool) -> bytes | None:
         image = frame.copy()
         if detect:
             with self.detect_lock:
                 found = self.detector.detect(image)
+            with self.lock:
+                if not hasattr(self, "found"):
+                    self.found = {}
+                self.found[cam] = (seq, frame, found)   # for the viewer's own overlay choice
             draw_detections(image, found)
         ok, buf = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 74])
         if not ok:
@@ -658,7 +688,9 @@ def build_handler(estate: Estate, motion: list[str], catalogue: dict[str, str]):
 
                 self._send(200, "application/json", json.dumps(estate.ages()).encode())
             elif path.startswith("/snap/"):
-                data = estate.snapshot(path[len("/snap/"):].split(".")[0])
+                q = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                data = estate.snapshot(path[len("/snap/"):].split(".")[0],
+                                       boxes=q.get("boxes", ["1"])[0] != "0", people=q.get("people", ["1"])[0] != "0")
                 if data is None:
                     self._send(503, "text/plain", b"warming up")
                 else:

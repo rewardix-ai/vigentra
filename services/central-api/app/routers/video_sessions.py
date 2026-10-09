@@ -479,6 +479,8 @@ async def camera_snapshot(
     camera_id: str,
     settings: SettingsDep,
     user: CurrentUser,
+    boxes: bool = True,
+    people: bool = True,
 ) -> Response:
     from ..schemas import VideoMode
     from ..services import video_grants
@@ -508,7 +510,8 @@ async def camera_snapshot(
     # the VMS's own authorised handle; either way a frame is keyed by the
     # source's id (the grid's without its GRID- prefix).
     snap_id = external[len("GRID-"):] if external.startswith("GRID-") else external
-    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{snap_id}.jpg"
+    # the viewer's overlay choice: detection boxes at all, and people among them
+    url = settings.edge_snapshot_url.rstrip("/") + f"/snap/{snap_id}.jpg?boxes={int(boxes)}&people={int(people)}"
     try:
         upstream = await _snapshot_client().get(url)
     except Exception as exc:  # noqa: BLE001 - never echo the upstream URL

@@ -353,8 +353,11 @@ export const api = {
    * feed a browser player, so the wall shows server-decoded frames instead.
    * `t` is a cache-buster; the browser refreshes it on a timer.
    */
-  snapshotUrl: (cameraId: string, t?: number) =>
-    `${BASE}/api/v1/cameras/${encodeURIComponent(cameraId)}/snapshot${t ? `?t=${t}` : ""}`,
+  snapshotUrl: (cameraId: string, t?: number, overlay?: { boxes: boolean; people: boolean }) =>
+    `${BASE}/api/v1/cameras/${encodeURIComponent(cameraId)}/snapshot?${new URLSearchParams({
+      ...(t ? { t: String(t) } : {}),
+      ...(overlay ? { boxes: overlay.boxes ? "true" : "false", people: overlay.people ? "true" : "false" } : {}),
+    })}`,
 
   // -- video access requests ---------------------------------------------
   // Metadata federates on its own; footage is asked for. These four calls are

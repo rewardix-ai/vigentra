@@ -58,6 +58,7 @@ export function LiveTile({
   onOpenFull,
   compact = false,
   snapshot = false,
+  overlay,
   plates = [],
 }: {
   camera: Camera;
@@ -73,6 +74,8 @@ export function LiveTile({
    * snapshot on the same live permission.
    */
   snapshot?: boolean;
+  /** Snapshot wall: draw detection boxes, and people among them. */
+  overlay?: { boxes: boolean; people: boolean };
   /**
    * Wall mode: the tile is pure video that fills the grid cell it is given,
    * with the camera's name as an overlay instead of a metadata block below.
@@ -340,7 +343,7 @@ export function LiveTile({
 
   if (snapshot) {
     return (
-      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} plates={plates} />
+      <SnapshotTile camera={camera} compact={compact} onOpenFull={onOpenFull} plates={plates} overlay={overlay} />
     );
   }
 
@@ -485,11 +488,13 @@ function SnapshotTile({
   compact,
   onOpenFull,
   plates,
+  overlay,
 }: {
   camera: Camera;
   compact: boolean;
   onOpenFull?: (cameraId: string) => void;
   plates: Sighting[];
+  overlay?: { boxes: boolean; people: boolean };
 }) {
   const holderRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -526,7 +531,7 @@ function SnapshotTile({
     if (!visible) return;
     let alive = true;
     const refresh = () => {
-      if (alive) setSrc(api.snapshotUrl(camera.camera_id, Date.now()));
+      if (alive) setSrc(api.snapshotUrl(camera.camera_id, Date.now(), overlay));
     };
     refresh();
     const timer = setInterval(refresh, focused ? 600 : 2500);
@@ -534,7 +539,7 @@ function SnapshotTile({
       alive = false;
       clearInterval(timer);
     };
-  }, [visible, camera.camera_id, focused]);
+  }, [visible, camera.camera_id, focused, overlay?.boxes, overlay?.people]);
 
   return (
     <div

@@ -252,7 +252,19 @@ export default function IncidentsPage() {
 
                   {incident.suggested_plate && (
                     <div className="text-body-sm text-ink-soft">
-                      Plate read <span className="mono font-semibold text-ink">{incident.suggested_plate}</span>{" "}
+                      Plate read{" "}
+                      {CHALLAN_KINDS.has(incident.kind) && !reviewed ? (
+                        <button
+                          type="button"
+                          className="mono font-semibold text-ink underline decoration-dotted underline-offset-4 hover:decoration-solid"
+                          title="Open the challan with this plate filled in"
+                          onClick={() => setChallanFor(incident)}
+                        >
+                          {incident.suggested_plate}
+                        </button>
+                      ) : (
+                        <span className="mono font-semibold text-ink">{incident.suggested_plate}</span>
+                      )}{" "}
                       <span className="text-muted">
                         · {incident.suggested_plate_confirmed ? "confirmed by the reader" : "unconfirmed"}
                         {incident.suggested_plate_confidence != null && ` · score ${incident.suggested_plate_confidence.toFixed(2)}`}

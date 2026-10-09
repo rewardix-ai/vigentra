@@ -147,7 +147,7 @@ def main() -> int:
     # the plate detector fine-tuned on grid footage (research repo, data/det/grid_clean): on 53 near
     # vehicles the default found no plate on, it boxed the yellow plates of autos and trucks that the
     # default misses outright (8 Oct, cam06 GJ18X..., 0.80-0.83)
-    os.environ.setdefault("ANPR_PLATE_WEIGHTS", "plate_det_grid_clean.pt")
+    os.environ.setdefault("ANPR_PLATE_WEIGHTS", "plate_det_grid_v2.pt")   # 9 Oct: v2 (by-eye checked grid plates); rollback: plate_det_grid_clean.pt
     os.environ.setdefault("EDGE_CONTINUOUS", "true")
     # learned traffic directions survive the restart at every grid refusal window (anpr/incidents.py)
     os.environ.setdefault("INCIDENT_FLOW_DIR", str(Path.home() / "Library" / "Caches" / "vigentra" / "incident-flow"))

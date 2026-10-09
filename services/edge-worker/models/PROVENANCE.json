@@ -1,4 +1,7 @@
 {
+  "awiros/": {
+    "from": "Awiros PP-OCRv5 reader (optional, needs third_party/PaddleOCR)"
+  },
   "helmet_cls.pt": {
     "from": "ANPR models/helmet_cls_v2.pt (renamed on copy)",
     "sha256": "8959825da10858fff8be61dff3ded0d96b9f2508356e13049e9c44a7c1d501f0",
@@ -33,6 +36,11 @@
     "from": "ANPR models/plate_det_grid_clean.pt (identical copy)",
     "sha256": "ec29bb9b7e0fba06f9fbc52593d87de4e2a2bf3485aa0a64e9eae9723c95af4b",
     "bytes": 5441818
+  },
+  "plate_det_grid_v2.pt": {
+    "from": "ANPR runs/plate/auto_ft_v2/weights/best.pt (fine-tuned from plate_det_grid_clean on auto + by-eye-kept grid boxes, 9 Oct)",
+    "sha256": "8a1a81528e9bfee309eb4c381315cea5532dc12037fe2ced147c893b08363692",
+    "bytes": 5447194
   },
   "plate_det_mix_n.pt": {
     "from": "ANPR models/plate_det_mix_n.pt (identical copy)",
@@ -83,8 +91,5 @@
     "from": "Ultralytics release (YOLO-World)",
     "sha256": "9b2c17ab6124a913e9b3a5c170617920d91b0f01111a8479da69f00e2cf27792",
     "bytes": 25923032
-  },
-  "awiros/": {
-    "from": "Awiros PP-OCRv5 reader (optional, needs third_party/PaddleOCR)"
   }
 }

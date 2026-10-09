@@ -141,3 +141,20 @@ def test_a_new_id_picking_the_rider_up_mid_path_is_the_same_rider(monkeypatch):
         out += w.observe(frame, [bike(61, 500, 220 + 10 * i)], 1.3 + 0.2 * i)
     out += w.observe(frame, [], 30.0)
     assert len(out) == 1
+
+
+def test_a_rider_called_again_in_a_grid_replay_is_not_called_twice(tmp_path, monkeypatch):
+    import numpy as np
+
+    from app import helmet as h
+
+    monkeypatch.setenv("HELMET_SEEN_PATH", str(tmp_path / "seen.json"))
+    look = np.random.default_rng(1).random(144).astype("float32")
+    path = [(100.0, 200.0), (110.0, 260.0), (120.0, 320.0)]
+    assert not h._replayed("cam04", path, 90.0, look)            # first call: remembered
+    assert h._replayed("cam04", path, 90.0, look)                # the replay: same path, same colours
+    other = np.random.default_rng(2).random(144).astype("float32")
+    assert not h._replayed("cam04", path, 90.0, other)           # another rider on the same path
+    assert not h._replayed("cam06", path, 90.0, look)            # another camera
+    far = [(x + 900.0, y) for x, y in path]
+    assert not h._replayed("cam04", far, 90.0, look)             # same colours, elsewhere in the frame

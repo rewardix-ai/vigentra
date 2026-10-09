@@ -50,6 +50,11 @@ LOOKALIKE_S, LOOKALIKE_W, LOOKALIKE_CORR = 10.0, 3.0, 0.85  # ...or, with a long
                             # rider for several seconds), one whose colours match: the same rider again
                             # (cam30, 9 Oct: one woman called twice, her second track starting > 2 s later;
                             # her two crops correlate 0.94, two different cam06 riders 0.72)
+REPLAY_W, REPLAY_CORR, REPLAY_HOURS = 1.5, 0.95, 24.0  # the grid replays each recording after its restarts and
+                            # the reader restarts with it, forgetting what it called (cam04, 9 Oct: one rider
+                            # called at 13:45 and again at 13:54, both at footage time 21:00:09). A call whose
+                            # path and colours match an earlier call on the camera (kept on disk, at
+                            # HELMET_SEEN_PATH) is that replay; different riders on one path correlate ~0.72
 TWO_WHEELER_MIN = 0.1       # the vehicle-type classifier must find it plausibly a motorbike or scooter
 PARKED_FRAMES, PARKED_S = 4, 3.0   # only a two-wheeler seen this often, this long, and not moving is parked:
                             # light mode often sees a passing rider in one or two frames (8 Oct: 36 of 78
@@ -106,6 +111,48 @@ def _colours(crop):
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
     hist = cv2.calcHist([hsv], [0, 1], None, [18, 8], [0, 180, 0, 256])
     return cv2.normalize(hist, hist).flatten()
+
+
+def _seen_path():
+    import os
+
+    path = os.environ.get("HELMET_SEEN_PATH")
+    return Path(path) if path else None
+
+
+def _replayed(camera_id: str, path, width: float, look) -> bool:
+    """Was this rider called before on this camera, in an earlier replay of the same footage? Remembers the
+    call either way (only when HELMET_SEEN_PATH is set)."""
+    import json
+    import time
+
+    import cv2
+    import numpy as np
+
+    store = _seen_path()
+    if store is None or look is None:
+        return False
+    try:
+        seen = json.loads(store.read_text()) if store.exists() else {}
+    except (OSError, ValueError):
+        seen = {}
+    now = time.time()
+    mine = [r for r in seen.get(camera_id, []) if now - r["at"] <= REPLAY_HOURS * 3600]
+    for r in mine:
+        far = min(((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5 for a in path for b in r["path"]) / max(width, r["w"], 1.0)
+        corr = float(cv2.compareHist(look, np.asarray(r["hist"], np.float32), cv2.HISTCMP_CORREL))
+        if far <= REPLAY_W and corr >= REPLAY_CORR:
+            return True
+    mine.append({"at": now, "path": [[round(float(x), 1), round(float(y), 1)] for x, y in path][-20:],
+                 "w": round(float(width), 1), "hist": [round(float(h), 5) for h in look]})
+    seen[camera_id] = mine[-200:]
+    try:
+        tmp = store.with_suffix(".tmp")
+        tmp.write_text(json.dumps(seen))
+        tmp.replace(store)
+    except OSError as exc:  # pragma: no cover - a memory, never a reason to stop
+        logger.warning("helmet replay memory not saved: %s", exc)
+    return False
 
 
 class HelmetWatch:
@@ -219,6 +266,9 @@ class HelmetWatch:
 
             if any(same(*r) for r in self.raised):
                 TALLY["same_rider_again"] += 1
+                continue
+            if _replayed(self.camera_id, v["path"], fw, look):
+                TALLY["replayed_rider"] += 1
                 continue
             self.raised = [r for r in self.raised if v["last_pts"] - r[1] <= 15.0] + [
                 (v["first_pts"], v["last_pts"], list(v["path"]), fw, look)]

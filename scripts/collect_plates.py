@@ -214,6 +214,7 @@ def main() -> int:
                        LIGHT_MUNICIPAL_PASSWORD=municipal.get("EDGE_PASSWORD", ""))
             if args.harvest:
                 env["LIGHT_HARVEST_DIR"] = args.harvest
+            env["HELMET_SEEN_PATH"] = str(logs / "helmet_seen.json")   # remembered across restarts (grid replays)
             slot["restart_at"], slot["started"], slot["idle_lines"] = None, time.time(), 0
             slot["watch_at"] = slot["log"].stat().st_size if slot["log"].exists() else 0
             slot["proc"] = subprocess.Popen([sys.executable, "tools/light_readers.py"], cwd=EDGE, env=env,

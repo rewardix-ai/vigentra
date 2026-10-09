@@ -24,9 +24,14 @@ What it does on its own:
 - it holds a macOS caffeinate assertion while it runs, so an idle Mac on power does not sleep;
 - once an hour it appends each camera table's row count to progress.log.
 Logs: ~/Library/Logs/vigentra-readers/ (survives a reboot; the readers themselves do not).
+
+To come back after a reboot or log-in it runs as a LaunchAgent (scripts/launchd/, see its README): at
+start it waits for Docker and central-api (opening Docker Desktop if it is not running), refuses to run
+twice, and does nothing once the deadline has passed.
 """
 import argparse
 import datetime as dt
+import fcntl
 import json
 import os
 import re
@@ -141,6 +146,26 @@ def progress(logs: Path) -> None:
         f.write(f"{dt.datetime.now(IST):%Y-%m-%d %H:%M} {out}\n")
 
 
+def wait_for_stack() -> None:
+    """After a reboot Docker Desktop may not be running (it does not start at log-in here): open it,
+    then wait until postgres and central-api answer."""
+    opened = said = False
+    while True:
+        db = subprocess.run(["docker", "exec", "vigentra-postgres-1", "pg_isready", "-q"], capture_output=True).returncode == 0
+        api = subprocess.run(["curl", "-sf", "--max-time", "10", "-o", "/dev/null", "http://localhost:8000/health"]).returncode == 0
+        if db and api:
+            if said:
+                log("Docker stack is up")
+            return
+        if not said:
+            log("waiting for Docker (postgres and central-api)")
+            said = True
+        if not opened and subprocess.run(["docker", "info"], capture_output=True).returncode != 0:
+            subprocess.run(["open", "-g", "-a", "Docker"])
+            opened = True
+        time.sleep(15)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--until", required=True, help='deadline in IST, e.g. "2026-10-11 23:00"')
@@ -154,6 +179,16 @@ def main() -> int:
     deadline = dt.datetime.strptime(args.until, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
     logs = Path(args.logs).expanduser()
     logs.mkdir(parents=True, exist_ok=True)
+    if dt.datetime.now(IST) >= deadline:
+        log(f"deadline {deadline:%d %b %H:%M} IST has passed: nothing to do")
+        return 0
+    lock = open(logs / "supervisor.lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        log("another supervisor is running: exiting")
+        return 0
+    wait_for_stack()
 
     compose = yaml.safe_load((REPO / "docker-compose.yml").read_text())
     dot = dotenv()

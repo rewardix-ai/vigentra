@@ -67,6 +67,11 @@ Why reading is hard on this grid, with evidence anyone can check:
 
 - **Keep the Mac on power with the lid open.** On 8-9 Oct it slept on battery with the lid closed and
   no camera was read for 15 hours; `caffeinate` prevents idle sleep, not lid-close sleep.
+- **The tracker restarts itself.** It runs as a LaunchAgent (`scripts/launchd/`): it starts at log-in,
+  opens Docker Desktop if needed and waits for central-api, and launchd restarts it within a minute of a
+  crash (tested 9 Oct by killing it). After a reboot someone must log in (FileVault is on, so there is
+  no automatic log-in); nothing reads while the Mac sleeps. Status:
+  `launchctl print gui/$(id -u)/com.vigentra.readers | grep -E "state|pid"`.
 - **New grid cameras (30 -> 50).** They federate on their own, but arrive without map pins (the grid's
   catalogue sends only an id and a name). Run `python scripts/survey_new_grid_cameras.py`, check each
   proposed pin (geocoded from the name, else the town or district centre, labelled so), then

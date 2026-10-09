@@ -13,8 +13,9 @@ import {
   Pill,
   Spinner,
 } from "@/components/ui";
+import { ChallanDialog } from "@/components/ChallanDialog";
 import { api } from "@/lib/api";
-import { ist, relative } from "@/lib/format";
+import { humanise, ist, relative } from "@/lib/format";
 import type { Incident } from "@/lib/types";
 
 /**
@@ -32,11 +33,12 @@ import type { Incident } from "@/lib/types";
 
 const KIND_LABEL: Record<string, string> = {
   WRONG_WAY: "Wrong way",
-  STOPPED_IN_LANE: "Stopped in lane",
-  SUDDEN_STOP: "Sudden stop",
   COLLISION_CANDIDATE: "Possible collision",
   PERSON_ON_CARRIAGEWAY: "Person in traffic",
   INTRUSION: "Intrusion in a restricted zone",
+  NO_PLATE_VISIBLE: "Vehicle without a visible number plate",
+  CROWD_GATHERING: "Crowd gathering",
+  NO_HELMET: "Rider without a helmet",
 };
 
 type Tone = "ok" | "warn" | "bad" | "idle" | "info";
@@ -54,6 +56,9 @@ const STATUS_TONE: Record<string, Tone> = {
   DISMISSED: "idle",
 };
 
+/** Offences: Confirm opens the e-challan popup (central routers/challans.py). */
+const CHALLAN_KINDS = new Set(["NO_HELMET", "NO_PLATE_VISIBLE", "WRONG_WAY"]);
+
 export default function IncidentsPage() {
   const [rows, setRows] = useState<Incident[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +66,7 @@ export default function IncidentsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [sinceHours, setSinceHours] = useState("24");
   const [acting, setActing] = useState<string | null>(null);
+  const [challanFor, setChallanFor] = useState<Incident | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -169,12 +175,12 @@ export default function IncidentsPage() {
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill tone={SEVERITY_TONE[incident.severity] ?? "idle"}>
-                      {incident.severity}
+                      {humanise(incident.severity)}
                     </Pill>
                     <span className="text-body-sm font-semibold text-ink">
                       {KIND_LABEL[incident.kind] ?? incident.kind}
                     </span>
-                    <Pill tone={STATUS_TONE[incident.status] ?? "idle"}>{incident.status}</Pill>
+                    <Pill tone={STATUS_TONE[incident.status] ?? "idle"}>{humanise(incident.status)}</Pill>
                     {incident.owning_department && (
                       <DepartmentTag department={incident.owning_department} />
                     )}
@@ -208,6 +214,24 @@ export default function IncidentsPage() {
                     </div>
                   )}
 
+                  {incident.has_snapshot && (
+                    <a
+                      className="mt-1 block w-fit"
+                      href={api.incidentSnapshotUrl(incident.incident_id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="The frame it was raised on (opens full size)"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        alt={`Frame of ${KIND_LABEL[incident.kind] ?? incident.kind}`}
+                        className="max-h-40 rounded-sm"
+                        loading="lazy"
+                        src={api.incidentSnapshotUrl(incident.incident_id)}
+                      />
+                    </a>
+                  )}
+
                   {incident.reviewed_by && (
                     <div className="text-caption text-muted">
                       reviewed by {incident.reviewed_by} · {ist(incident.reviewed_at)}
@@ -227,7 +251,11 @@ export default function IncidentsPage() {
                     <button
                       className="btn btn-sm btn-primary"
                       disabled={acting === incident.incident_id}
-                      onClick={() => review(incident.incident_id, "CONFIRMED")}
+                      onClick={() =>
+                        CHALLAN_KINDS.has(incident.kind)
+                          ? setChallanFor(incident)
+                          : review(incident.incident_id, "CONFIRMED")
+                      }
                     >
                       Confirm
                     </button>
@@ -238,6 +266,23 @@ export default function IncidentsPage() {
           );
         })}
       </div>
+
+      {challanFor && (
+        <ChallanDialog
+          incident={challanFor}
+          snapshotUrl={challanFor.has_snapshot ? api.incidentSnapshotUrl(challanFor.incident_id) : null}
+          onClose={() => setChallanFor(null)}
+          onIssued={(c) =>
+            setRows((prev) =>
+              (prev ?? []).map((r) =>
+                r.incident_id === challanFor.incident_id
+                  ? { ...r, status: "CONFIRMED", review_note: `Challan ${c.challan_no} to ${c.plate}` }
+                  : r,
+              ),
+            )
+          }
+        />
+      )}
     </div>
   );
 }

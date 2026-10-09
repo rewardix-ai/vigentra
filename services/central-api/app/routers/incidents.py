@@ -15,11 +15,13 @@ evidence block, and a note field for the person who reviews it.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +30,7 @@ from ..database import get_db
 from ..dependencies import client_ip, require_permission
 from ..models import Camera as CameraRow
 from ..models import Incident as IncidentRow
+from ..models import IncidentSnapshot
 from ..schemas import (
     INCIDENT_KINDS,
     INCIDENT_SEVERITIES,
@@ -57,7 +60,28 @@ def _incident_id(camera_id: str, kind: str, track_ids: list[int], first_seen: fl
     return f"inc_{hashlib.sha1(seed.encode()).hexdigest()[:20]}"
 
 
-def _to_out(row: IncidentRow, camera: CameraRow | None) -> IncidentOut:
+#: A re-raised incident extends its row only if that row was seen this recently (see ingest).
+REOPEN_AFTER = timedelta(minutes=30)
+
+#: Decoded snapshot ceiling. A 960 px JPEG at quality 80 is 60-150 KB; anything far larger is not one.
+SNAPSHOT_MAX_BYTES = 384 * 1024
+
+
+def _snapshot_bytes(b64: str | None) -> bytes | None:
+    """The decoded JPEG, or None when absent, malformed, not a JPEG or too large. A bad snapshot
+    never costs the incident itself."""
+    if not b64:
+        return None
+    try:
+        data = base64.b64decode(b64, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    if not data.startswith(b"\xff\xd8") or len(data) > SNAPSHOT_MAX_BYTES:
+        return None
+    return data
+
+
+def _to_out(row: IncidentRow, camera: CameraRow | None, has_snapshot: bool = False) -> IncidentOut:
     return IncidentOut(
         incident_id=row.incident_id,
         camera_id=row.camera_id,
@@ -77,6 +101,7 @@ def _to_out(row: IncidentRow, camera: CameraRow | None) -> IncidentOut:
         reviewed_at=row.reviewed_at,
         review_note=row.review_note,
         is_demo_data=row.is_demo_data,
+        has_snapshot=has_snapshot,
     )
 
 
@@ -140,10 +165,27 @@ async def ingest_incidents(
                 select(IncidentRow).where(IncidentRow.incident_id == incident_id)
             )
         ).scalar_one_or_none()
+        # Grid recordings replay from the start after every refusal window, so stream time and
+        # track ids repeat and a NEW event can hash to a days-old incident (8 Oct: fresh candidates
+        # merged into old rows, keeping their old reason). A match that has been quiet for longer
+        # than REOPEN_AFTER is a different event: it gets its own id for this half hour.
+        last_seen = existing.last_seen_utc if existing is not None else None
+        if last_seen is not None and last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)   # SQLite drops the zone
+        if last_seen is not None and now - last_seen > REOPEN_AFTER:
+            incident_id = f"{incident_id}_{int(now.timestamp() // REOPEN_AFTER.total_seconds())}"
+            existing = (
+                await db.execute(
+                    select(IncidentRow).where(IncidentRow.incident_id == incident_id)
+                )
+            ).scalar_one_or_none()
+        snapshot = _snapshot_bytes(item.snapshot_jpeg_b64)
         if existing is not None:
             # Same incident observed again: extend its window, do not duplicate.
             existing.last_seen_utc = last_seen_utc
             existing.evidence = item.evidence or existing.evidence
+            if snapshot is not None and await db.get(IncidentSnapshot, incident_id) is None:
+                db.add(IncidentSnapshot(incident_id=incident_id, camera_id=item.camera_id, jpeg=snapshot))
             duplicates += 1
             continue
 
@@ -163,6 +205,8 @@ async def ingest_incidents(
                 is_demo_data=camera.provenance.get("surveyed", True) if camera.provenance else True,
             )
         )
+        if snapshot is not None:
+            db.add(IncidentSnapshot(incident_id=incident_id, camera_id=item.camera_id, jpeg=snapshot))
         accepted += 1
 
     await db.commit()
@@ -196,6 +240,8 @@ async def list_incidents(
         stmt = stmt.where(IncidentRow.camera_id == camera_id)
     if kind:
         stmt = stmt.where(IncidentRow.kind == kind.strip().upper())
+    else:   # retired kinds (sudden stop, 8 Oct) stay in the database but are no longer listed
+        stmt = stmt.where(IncidentRow.kind.in_(INCIDENT_KINDS))
     if status_filter:
         stmt = stmt.where(IncidentRow.status == status_filter.strip().upper())
 
@@ -203,11 +249,57 @@ async def list_incidents(
     cameras = {
         row.camera_id: row for row in (await db.execute(select(CameraRow))).scalars().all()
     }
+    with_snapshot = set(
+        (
+            await db.execute(
+                select(IncidentSnapshot.incident_id).where(
+                    IncidentSnapshot.incident_id.in_([row.incident_id for row in rows])
+                )
+            )
+        ).scalars().all()
+    ) if rows else set()
     return [
-        _to_out(row, cameras.get(row.camera_id))
+        _to_out(row, cameras.get(row.camera_id), row.incident_id in with_snapshot)
         for row in rows
         if row.camera_id in cameras and may_read_detections(user, cameras[row.camera_id])
     ]
+
+
+@router.get(
+    "/incidents/{incident_id}/snapshot",
+    summary="The frame an incident was raised on",
+    responses={200: {"content": {"image/jpeg": {}}}},
+)
+async def incident_snapshot(
+    incident_id: str,
+    request: Request,
+    user: DemoUser = Depends(require_permission(Permission.DETECTION_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """The JPEG of the frame, to accounts that may read the camera. Every view is audited: it is
+    a picture of a street, not a statistic."""
+    snap = await db.get(IncidentSnapshot, incident_id)
+    if snap is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No snapshot for this incident")
+    camera = (
+        await db.execute(select(CameraRow).where(CameraRow.camera_id == snap.camera_id))
+    ).scalar_one_or_none()
+    if camera is None or not may_read_detections(user, camera):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Out of scope")
+    await audit_service.record(
+        db,
+        username=user.username,
+        role=user.role,
+        action=AuditAction.INCIDENT_SNAPSHOT_VIEWED,
+        outcome=AuditOutcome.SUCCESS,
+        resource_type=ResourceType.DETECTION,
+        resource_id=incident_id,
+        department=camera.owning_department,
+        client_ip=client_ip(request),
+        details={"camera_id": snap.camera_id},
+    )
+    return Response(content=snap.jpeg, media_type="image/jpeg",
+                    headers={"Cache-Control": "private, max-age=300"})
 
 
 @router.patch(
@@ -263,4 +355,4 @@ async def review_incident(
         client_ip=client_ip(request),
         details={"status": review.status, "kind": row.kind},
     )
-    return _to_out(row, camera)
+    return _to_out(row, camera, await db.get(IncidentSnapshot, incident_id) is not None)

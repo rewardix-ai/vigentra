@@ -30,6 +30,34 @@ export type VideoAccessState =
   | "needs_unit_approval"
   | "camera_unavailable";
 
+/** One vehicle at one camera: its frame detections grouped by the edge tracker. */
+export interface VehicleSeen {
+  camera_id: string;
+  camera_name: string | null;
+  city: string | null;
+  vehicle_type: string;
+  first_seen_utc: string;
+  last_seen_utc: string;
+  frames: number;
+  max_width_px: number;
+  near_enough_to_read: boolean;
+  plate_text: string | null;
+  plate_confidence: number | null;
+  plate_confirmed: boolean | null;
+  plate_withheld: boolean;
+  no_plate_reason: string | null;
+}
+
+export interface VehiclesSeen {
+  since_utc: string;
+  vehicles_seen: number;
+  near_enough_to_read: number;
+  identified: number;
+  identified_share_of_near: number | null;
+  untracked_frames: number;
+  vehicles: VehicleSeen[];
+}
+
 /** One object seen in one frame, as recorded by an edge worker. */
 export interface Detection {
   detection_id: string;
@@ -668,6 +696,21 @@ export interface TrackPoint {
   /** A leg no road vehicle could have driven — usually one of the two reads
    * belongs to a different car. Shown, never silently dropped. */
   implausible_leg: boolean;
+  /** Date and time printed on the footage at this read (grid cameras whose
+   * clock has been sampled), as on screen: no time zone. */
+  video_time: string | null;
+  /** A pursuit's "is this the plate?" match, not a reading: confirm it from the crop. */
+  possible: boolean;
+}
+
+/** A designated vehicle being followed across the cameras right now. */
+export interface Pursuit {
+  id: number;
+  plate: string;
+  started_by: string;
+  started_at: string;
+  /** Where it was seen in the last few minutes, and their nearest neighbours. */
+  hot_cameras: string[];
 }
 
 export interface Track {
@@ -750,6 +793,8 @@ export interface Incident {
   reviewed_at: string | null;
   review_note: string | null;
   is_demo_data: boolean;
+  /** The frame it was raised on is stored: api.incidentSnapshotUrl gives the JPEG. */
+  has_snapshot: boolean;
 }
 
 /** A camera, or a whole department system, that stopped answering the health monitor. */
@@ -771,4 +816,28 @@ export interface HealthAlert {
   note: string | null;
   /** True until the camera or system answers again. */
   open: boolean;
+}
+
+/** Owner and challan preview for a plate (POST /incidents/{id}/challan/lookup). */
+export interface ChallanPreview {
+  plate: string;
+  owner_name: string;
+  mobile_masked: string;
+  owner_source: string;
+  demo: boolean;
+  offence: string;
+  section: string;
+  fine_rupees: number;
+  fine_note: string;
+  verify: string;
+  sms_text: string;
+  sms_provider: string;
+  camera: string | null;
+}
+
+/** An issued e-challan (POST /incidents/{id}/challan). */
+export interface ChallanIssued extends ChallanPreview {
+  challan_no: string;
+  sms_status: "SENT" | "SIMULATED" | "FAILED";
+  issued_at: string;
 }

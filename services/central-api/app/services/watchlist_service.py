@@ -30,12 +30,12 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models import PlateSighting, WatchlistAlert, WatchlistEntry
+from ..models import Detection, PlateSighting, WatchlistAlert, WatchlistEntry
 from . import plate_matching
 from .plate_matching import DEFAULT_MAX_DISTANCE
 
@@ -142,6 +142,33 @@ class PlateRead:
     provenance: dict | None = None
 
 
+#: How far back a settled plate is written onto its vehicle's earlier frame detections. A plate is
+#: decided once, when the vehicle's track closes, but the vehicle was detected in every frame before
+#: that; without this, a detections list shows the vehicle dozens of times with no plate and once with.
+VEHICLE_STAMP_WINDOW = timedelta(minutes=3)
+
+
+async def _stamp_vehicle(db: AsyncSession, read: "PlateRead") -> None:
+    """Give the plate to the frame detections of the same vehicle: same camera, same tracker id, in the
+    minutes before the plate settled. Tracker ids restart with the edge engine, hence the window."""
+    try:
+        track = int((read.provenance or {}).get("track_id"))
+    except (TypeError, ValueError):
+        return
+    await db.execute(
+        update(Detection)
+        .where(
+            Detection.camera_id == read.camera_id,
+            Detection.plate_text.is_(None),
+            Detection.timestamp_utc >= read.timestamp_utc - VEHICLE_STAMP_WINDOW,
+            Detection.timestamp_utc <= read.timestamp_utc,
+            Detection.provenance["track_id"].as_integer() == track,
+        )
+        .values(plate_text=read.plate_text[:24], plate_confidence=read.confidence, plate_reader=read.reader)
+        .execution_options(synchronize_session=False)
+    )
+
+
 async def record_sightings(
     db: AsyncSession,
     reads: list[PlateRead],
@@ -209,6 +236,7 @@ async def record_sightings(
         db.add(sighting)
         existing.add(read.detection_id)
         result.sightings_recorded += 1
+        await _stamp_vehicle(db, read)
 
         for match in plate_matching.best_matches(
             normalised, watch_plates, max_distance=max_distance

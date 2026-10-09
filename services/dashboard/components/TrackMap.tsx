@@ -176,6 +176,9 @@ export function TrackMap({ points, plate }: { points: TrackPoint[]; plate: strin
                     {entry.order}. {entry.point.camera_name ?? entry.point.camera_id}
                   </div>
                   <div>{ist(entry.point.timestamp_utc)}</div>
+                  {entry.point.video_time && (
+                    <div>On footage {entry.point.video_time.replace("T", " ").slice(0, 19)}</div>
+                  )}
                   <div>
                     Read <span className="mono">{entry.point.plate_read}</span>{" "}
                     {entry.point.exact ? (

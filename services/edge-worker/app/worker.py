@@ -50,6 +50,10 @@ try:
 except Exception:  # pragma: no cover - analytics extras absent
     AdaptiveSampler = None  # type: ignore[assignment,misc]
 from .frame_quality import FrameQuality, FrameQualityRouter
+from . import helmet as helmet_check
+from .no_plate import NoPlateWatch
+from .vehicle_type import VehicleTypes
+from . import vehicle_type as vehicle_type_check
 from .plates import PLATE_BEARING_CLASSES
 
 logging.basicConfig(
@@ -564,6 +568,37 @@ def _sighting_payload(
     }
 
 
+def _incident_snapshot(frame, inc, views, detector) -> str | None:
+    """The frame an incident was raised on, as base64 JPEG: the vehicles involved boxed in red, the
+    path each took drawn in yellow, and what was raised written across the top. 960 px wide at most,
+    so one incident costs 60-150 KB. None if it cannot be drawn; the incident goes without it."""
+    try:
+        import base64
+
+        import cv2
+
+        img = frame.copy()
+        boxes = {v.track_id: v.box for v in views}
+        thick = max(2, img.shape[1] // 400)
+        for tid in inc.track_ids:
+            path = [(int(x), int(y)) for x, y in detector.path(tid)]
+            for a, b in zip(path, path[1:]):
+                cv2.line(img, a, b, (0, 220, 255), thick)
+            if tid in boxes:
+                x1, y1, x2, y2 = (int(v) for v in boxes[tid])
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), thick + 1)
+        banner = f"{inc.kind}  {inc.severity}  {inc.camera_id}"
+        cv2.rectangle(img, (0, 0), (img.shape[1], 18 * thick + 8), (0, 0, 0), -1)
+        cv2.putText(img, banner, (8, 14 * thick), cv2.FONT_HERSHEY_SIMPLEX, 0.45 * thick, (255, 255, 255), max(1, thick // 2))
+        if img.shape[1] > 960:
+            img = cv2.resize(img, (960, int(img.shape[0] * 960 / img.shape[1])), interpolation=cv2.INTER_AREA)
+        ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        return base64.b64encode(buf.tobytes()).decode("ascii") if ok else None
+    except Exception as exc:  # pragma: no cover - evidence is best effort
+        logger.warning("incident snapshot failed: %s", exc)
+        return None
+
+
 from dataclasses import dataclass as _dataclass
 
 
@@ -735,6 +770,9 @@ def run(
                              "pts_seconds": None}
     processed = skipped = produced = 0
     started = time.perf_counter()
+    no_plate = None
+    helmet = None
+    vtypes = VehicleTypes() if vehicle_type_check.available() else None
 
     try:
         for frame_index, frame, pts_seconds, discontinuity in frames:
@@ -782,6 +820,14 @@ def run(
             else:
                 detections = detector.detect(frame_to_detect)
 
+            # What kind of vehicle each track is (app/vehicle_type.py): the COCO detector calls autos
+            # trucks and never tells a scooter from a motorbike.
+            if vtypes is not None:
+                try:
+                    vtypes.refine(frame_to_detect, detections, pts_seconds)
+                except Exception as exc:  # pragma: no cover - a side check never stops the pass
+                    logger.warning("vehicle type failed: %s", exc)
+
             # A vehicle wide enough to be carrying a readable plate buys a
             # burst of dense frames - the plate is growing and the best crop is
             # a moment away.
@@ -818,7 +864,9 @@ def run(
                         position,
                         source_mode=source_mode,
                         is_demo_data=source_mode != "authorized_edge",
-                        provenance=dict(base_provenance),
+                        # the tracker id lets central give this vehicle its plate once the plate settles
+                        provenance=dict(base_provenance, **{k: v for k, v in (getattr(detection, "extra", None) or {}).items()
+                                                            if k in ("track_id", "detector_class", "type_score") and v is not None}),
                     )
                 )
             produced += len(detections)
@@ -846,6 +894,24 @@ def run(
                     "" if sighting.confirmed else ", unconfirmed", sighting.track_id,
                 )
 
+            # Vehicles that came close, faced the camera and never showed a plate (app/no_plate.py).
+            if anpr is not None and incidents is not None:
+                if no_plate is None:
+                    no_plate = NoPlateWatch(camera_id)
+                try:
+                    no_plate.observe(frame, detections, pts_seconds)
+                    incident_batch.extend(no_plate.closed(anpr.closed_without_plate(), frame.shape[1], anpr.plate_probe))
+                except Exception as exc:  # pragma: no cover - a side check never stops the pass
+                    logger.warning("no-plate check failed: %s", exc)
+                # Two-wheeler riders who appear bare-headed (app/helmet.py), when the classifier is installed.
+                if helmet is None and helmet_check.available():
+                    helmet = helmet_check.HelmetWatch(camera_id)
+                if helmet is not None:
+                    try:
+                        incident_batch.extend(helmet.observe(frame, detections, pts_seconds))
+                    except Exception as exc:  # pragma: no cover
+                        logger.warning("helmet check failed: %s", exc)
+
             # Incident detection from the same boxes. `detections` carry the
             # tracker's id in `extra`; only tracked vehicles can be judged for
             # motion, so untracked ones are skipped rather than guessed at.
@@ -854,7 +920,11 @@ def run(
                     incidents.reset()
                 views = _incident_views(detections)
                 for inc in incidents.update(views, pts_seconds, frame_size=(frame.shape[1], frame.shape[0])):
-                    incident_batch.append(inc.to_dict())
+                    payload = inc.to_dict()
+                    snapshot = _incident_snapshot(frame, inc, views, incidents)
+                    if snapshot:
+                        payload["snapshot_jpeg_b64"] = snapshot
+                    incident_batch.append(payload)
                     logger.info(
                         "incident %s (%s) on camera %s: %s",
                         inc.kind, inc.severity, camera_id, inc.reason,

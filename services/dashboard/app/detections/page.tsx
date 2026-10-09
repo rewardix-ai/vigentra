@@ -14,10 +14,11 @@ import {
   PageHeader,
   Pill,
   Spinner,
+  Stat,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { footageTime, ist, relative } from "@/lib/format";
-import type { Detection, DetectorHealth } from "@/lib/types";
+import type { Detection, DetectorHealth, VehiclesSeen } from "@/lib/types";
 
 /**
  * What the edge workers saw — on request, and not before.
@@ -33,19 +34,182 @@ import type { Detection, DetectorHealth } from "@/lib/types";
  * follows the footage rules rather than the asset-record ones.
  */
 
-const CLASSES = ["person", "car", "motorcycle", "bus", "truck", "bicycle", "auto-rickshaw"];
+const CLASSES = ["person", "car", "motorcycle", "scooter", "bus", "truck", "bicycle", "auto-rickshaw"];
 
 const CLASS_TONE: Record<string, "ok" | "warn" | "bad" | "idle" | "info"> = {
   person: "info",
   car: "ok",
   motorcycle: "warn",
+  scooter: "warn",
   bus: "idle",
   truck: "idle",
   bicycle: "idle",
   "auto-rickshaw": "idle",
 };
 
+/** "12:04:10" for a moment, "12:04:10–12:04:18" for a span; IST, as everywhere else. */
+function span(from: string, to: string): string {
+  const t = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: false });
+  return from === to ? t(from) : `${t(from)}–${t(to)}`;
+}
+
+/**
+ * One row per vehicle rather than per frame. The edge detects a vehicle in every frame it is in view
+ * and decides its plate once, when it leaves; a frame list shows one car forty times and its plate
+ * once. Here each vehicle appears once, with its plate, or with the reason it has none: too far for a
+ * plate to be read (under 96 px wide), or near enough but not readable.
+ */
+function VehiclesView() {
+  const [data, setData] = useState<VehiclesSeen | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cameraId, setCameraId] = usePersisted("vehicles.camera", "");
+  const [since, setSince] = usePersisted("vehicles.since", "60");
+  const [identifiedOnly, setIdentifiedOnly] = usePersisted("vehicles.identified", "");
+
+  const query = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setData(
+        await api.vehiclesSeen({
+          camera_id: cameraId.trim() || undefined,
+          since_minutes: since,
+          identified_only: identifiedOnly ? "true" : undefined,
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setData(null);
+    } finally {
+      setBusy(false);
+    }
+  }, [cameraId, since, identifiedOnly]);
+
+  const share = data?.identified_share_of_near;
+  return (
+    <div className="space-y-4">
+      {error && <Notice tone="bad">{error}</Notice>}
+      <Card title="Ask for vehicles">
+        <div className="flex flex-wrap items-start gap-3 px-6 py-5">
+          <FloatSelect label="Time window" value={since} onChange={(e) => setSince(e.target.value)}>
+            <option value="15">Last 15 minutes</option>
+            <option value="60">Last hour</option>
+            <option value="180">Last 3 hours</option>
+            <option value="360">Last 6 hours</option>
+          </FloatSelect>
+          <FloatSelect
+            label="Show"
+            value={identifiedOnly}
+            onChange={(e) => setIdentifiedOnly(e.target.value)}
+          >
+            <option value="">Every vehicle</option>
+            <option value="1">Only vehicles with a plate</option>
+          </FloatSelect>
+          <FloatInput
+            label="Camera ID (optional)"
+            className="min-w-[18rem] flex-1"
+            value={cameraId}
+            onChange={(e) => setCameraId(e.target.value)}
+            hint="VIGENTRA-TRAFFIC-BHA-CAM06"
+          />
+          <button className="btn btn-primary btn-lg" onClick={() => void query()} disabled={busy}>
+            {busy && <Spinner />} Show vehicles
+          </button>
+        </div>
+      </Card>
+
+      {data === null ? (
+        <Card title="Nothing retrieved">
+          <div className="px-6 py-6 text-body-sm text-muted">
+            Choose a window and <strong>Show vehicles</strong>. Each vehicle appears once, however
+            many frames it was seen in.
+          </div>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label="Vehicles seen" value={data.vehicles_seen} hint="Distinct vehicles, not frames." />
+            <Stat
+              label="Near enough to read"
+              value={data.near_enough_to_read}
+              hint="At least 96 px wide: a plate can be searched for."
+            />
+            <Stat label="Identified" value={data.identified} hint="A plate was read for the vehicle." />
+            <Stat
+              label="Identified, of those near"
+              value={share == null ? "—" : `${Math.round(share * 100)}%`}
+              hint="The fair rate: a far vehicle's plate is too small for anyone to read."
+            />
+          </div>
+          <Card title={`Vehicles (${data.vehicles.length})`}>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Seen (IST)</th>
+                    <th>Camera</th>
+                    <th>Vehicle</th>
+                    <th>Frames</th>
+                    <th>Closest</th>
+                    <th>Plate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.vehicles.map((v) => (
+                    <tr key={`${v.camera_id}-${v.first_seen_utc}-${v.vehicle_type}`}>
+                      <td className="mono whitespace-nowrap tabular-nums">{span(v.first_seen_utc, v.last_seen_utc)}</td>
+                      <td>
+                        <Link
+                          className="link-quiet"
+                          href={`/registry/${encodeURIComponent(v.camera_id)}`}
+                        >
+                          {v.camera_name ?? v.camera_id}
+                        </Link>
+                        {v.city && <div className="text-caption text-muted">{v.city}</div>}
+                      </td>
+                      <td>
+                        <Pill tone={CLASS_TONE[v.vehicle_type] ?? "idle"}>{v.vehicle_type}</Pill>
+                      </td>
+                      <td className="tabular-nums">{v.frames}</td>
+                      <td className="tabular-nums text-caption text-muted">{Math.round(v.max_width_px)} px</td>
+                      <td className="whitespace-nowrap">
+                        {v.plate_text ? (
+                          <>
+                            <span className="mono font-semibold text-ink">{v.plate_text}</span>
+                            <div className="text-caption text-muted">
+                              {v.plate_confirmed ? "confirmed" : "for review"}
+                              {v.plate_confidence != null && ` · ${v.plate_confidence.toFixed(2)}`}
+                            </div>
+                          </>
+                        ) : v.plate_withheld ? (
+                          <span className="text-caption italic text-muted">withheld for your role</span>
+                        ) : (
+                          <span className="text-caption text-muted">{v.no_plate_reason}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="border-t border-hairline-soft px-6 py-4 text-caption leading-relaxed text-muted">
+              A vehicle is one camera&apos;s track of it: the frames the edge tracker gave one id, with
+              gaps under two minutes. &ldquo;Too far to read&rdquo; means it never came within 96 px
+              wide, where a plate is under 40 px and no reader, human or machine, gets it right.
+              {data.untracked_frames > 0 &&
+                ` ${data.untracked_frames} frames from before tracker ids were recorded are left out.`}
+            </p>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DetectionsPage() {
+  const [view, setView] = usePersisted("detections.view", "vehicles");
   const [rows, setRows] = useState<Detection[] | null>(null);
   const [health, setHealth] = useState<DetectorHealth | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,9 +256,29 @@ export default function DetectionsPage() {
     <>
       <PageHeader
         title="Object detections"
-        subtitle="Objects recognised at the edge, with number plates where ANPR is enabled."
+        subtitle="Vehicles recognised at the edge, each with its number plate or the reason it has none."
       />
 
+      <div role="group" aria-label="Detections view" className="segmented mb-4">
+        <button
+          type="button"
+          aria-pressed={view === "vehicles"}
+          className="segmented-item"
+          onClick={() => setView("vehicles")}
+        >
+          Vehicles
+        </button>
+        <button
+          type="button"
+          aria-pressed={view === "frames"}
+          className="segmented-item"
+          onClick={() => setView("frames")}
+        >
+          Frames
+        </button>
+      </div>
+
+      {view === "vehicles" ? <VehiclesView /> : (
       <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
 
@@ -305,12 +489,12 @@ export default function DetectionsPage() {
           only with the <span className="mono">plate:read</span> permission, is retained on a
           shorter clock than the detection carrying it, and every disclosure is written to the
           audit trail. Plates that do not parse as a valid registration are discarded at the edge
-          rather than stored as a guess. There is still no face recognition, no vehicle
-          re-identification and no cross-camera identity association: a plate here is one
-          observation at one camera, not a track. Inference runs on the edge worker beside the
-          camera; the central API stores the result and never sees a frame.
+          rather than stored as a guess. There is no face recognition and no re-identification by
+          appearance: a vehicle is followed across cameras only through its plate (see Plates). Inference
+          runs on the edge worker beside the camera; the central API stores the result and never sees a frame.
         </p>
       </div>
+      )}
     </>
   );
 }

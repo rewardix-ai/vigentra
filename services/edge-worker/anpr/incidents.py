@@ -16,7 +16,7 @@ WHAT IT WATCHES
 Everything is derived from the tracker's own boxes over time; no extra model, so it costs
 almost nothing on top of detection that is already running.
 
-    SUDDEN_STOP        a vehicle decelerating far harder than traffic around it
+    SUDDEN_STOP        (retired) a vehicle decelerating far harder than traffic around it
     STOPPED_IN_LANE    a vehicle stationary while other vehicles keep moving past it
     COLLISION_CANDIDATE two vehicles overlapping AND both losing speed sharply together
     WRONG_WAY          a vehicle travelling against the camera's established flow
@@ -42,8 +42,12 @@ its own flow. Until then it reports nothing rather than guessing.
 """
 from __future__ import annotations
 
+import json
 import math
+import os
+import re
 import time
+from pathlib import Path
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -76,14 +80,63 @@ FLOW_MIN_TRACKS = 12       # tracks needed before a camera's flow is considered 
 WRONG_WAY_DEG = 115.0      # heading this far from flow is against it
 MIN_TRACK_SECONDS = 1.2    # ignore tracks too short to have a trustworthy velocity
 COOLDOWN_S = 20.0          # per track+kind, so one event is not reported repeatedly
+# A track is only judged on its motion when it is DENSE and CONTINUOUS. Measured on 6 h of live
+# light-mode tracks (8 Oct): a quiet camera gets a frame every few seconds, the tracker hands one id
+# from vehicle to vehicle, and those swaps read as hard stops and reversals. By eye, 0 of 11
+# wrong-way candidates were real; most were swaps, jitter or junction turns.
+TRUST_SAMPLES = 4          # recent samples the judgement rests on
+TRUST_MAX_GAP_S = 1.0      # no gap between those samples longer than this
+TRUST_MAX_STEP_VH = 1.5    # no step longer than this many vehicle heights (an id swap jumps)
+# Flow is learned PER REGION of the frame (FLOW_GRID cells), not per camera. A two-way road has two
+# directions; one camera-wide mean put the whole oncoming lane "against the flow" (86 % of the
+# 547 wrong-way tracks on 8 Oct moved the way at least 15 % of vehicles in their own region did).
+FLOW_GRID = (4, 3)
+# 8 Oct, by eye on 48 live snapshots, none could be confirmed real. Sudden stops were mostly vehicles a
+# few pixels tall (box jitter reads as braking) or cut off at the frame edge (a box shrinking as the
+# vehicle leaves reads as a stop); wrong ways were mostly junction turns in regions that had learned
+# 12-21 vehicles since the last restart. So motion is judged only on vehicles that are big enough and
+# wholly in view, and wrong way only where a region has a clear, well-learned direction.
+# WRONG SIDE by the keep-left rule (Rules of the Road Regulations 1989, reg. 2: keep left, let oncoming
+# traffic pass on your right; reg. 17: one-way roads only in the signed direction; MV Act s. 184). A camera
+# looking along a road sees its own-side traffic recede and the oncoming lane approach. Approaching is read
+# from the box GROWING over the track, receding from it shrinking - robust to perspective, unlike an angle.
+# Each region learns which sense its traffic has (one vote per vehicle); a vehicle going the other sense in
+# a region that is clearly one-sense is on the wrong side. Crossing traffic (box size steady) is never
+# judged, so junction turns (reg. 3) are not flagged.
+SENSE_RATIO = 1.12          # last-third box height / first-third: above = approaching, below 1/x = receding
+WRONG_SIDE_MIN_REGION = 40  # vehicles a region must have learned
+WRONG_SIDE_DOMINANT = 0.85  # ...with at least this share going one sense
+WRONG_SIDE_SHARE = 0.08     # wrong side = a sense under this share of the region's traffic
+# Retired 8 Oct at the operator's request: on live grid footage every sudden stop checked by eye was
+# ordinary braking in traffic, distant-vehicle jitter or a box cut off at the frame edge.
+RAISE_SUDDEN_STOP = False
+# Retired 8 Oct at the operator's request: a vehicle waiting to turn, unloading or queued at a signal
+# looks the same as one broken down in the lane; none checked by eye was worth an alert.
+RAISE_STOPPED_IN_LANE = False
+JUDGE_MIN_HEIGHT_FRAC = 0.06   # box at least this share of the frame height
+EDGE_MARGIN_FRAC = 0.02        # box this close to any frame edge is cut off: not judged
+WRONG_WAY_MIN_REGION = 50      # vehicles a region must have learned before it judges direction
+WRONG_WAY_DOMINANT = 0.6       # ...and at least this share of them must go one way (not a junction)
+WRONG_WAY_SHARE = 0.05     # wrong way = a direction under 5 % of this region's traffic (within 45 deg)
+WRONG_WAY_STRAIGHTNESS = 1.3   # path length / displacement above this is a turn, not a wrong way
 
 #: Labels that behave like traffic. The motion rules below - decelerating,
 #: stopping in a lane, travelling against the flow - are statements about a
 #: VEHICLE, and firing them on a pedestrian produces nonsense: a person who
 #: stops walking has not stopped in a lane, and a person crossing the road is
 #: not going the wrong way.
-VEHICLE_LABELS = frozenset({"car", "motorcycle", "bus", "truck", "auto-rickshaw", "bicycle"})
+VEHICLE_LABELS = frozenset({"car", "motorcycle", "scooter", "bus", "truck", "auto-rickshaw", "bicycle"})
 PERSON_LABEL = "person"
+# CROWD_GATHERING: people bunching up where they usually do not - the visible part of a fight, a
+# collapse or an accident's aftermath. Fight itself is not recognisable at grid distance and resolution,
+# so this does not claim it; a person decides from the snapshot. Learned per region, so a bus stop or a
+# signal crossing that is always busy does not count.
+CROWD_MIN = 6               # people in one group
+CROWD_RADIUS_H = 2.5        # group = within this many person-heights of its centre person
+CROWD_FACTOR = 2.0          # ...and at least this many times the region's usual group size
+CROWD_SECONDS = 10.0        # held this long
+CROWD_HISTORY_S = 1800.0    # usual = 90th percentile of this region's group sizes over this window
+CROWD_COOLDOWN_S = 180.0
 
 #: Image-plane overlap between a person and a MOVING vehicle. Overlap is not
 #: contact and this is not a collision detector - from a typical CCTV angle it
@@ -148,6 +201,12 @@ class _State:
     first_seen: float = 0.0
     last_seen: float = 0.0
     label: str = "?"
+    #: big enough and wholly in view on the latest frame (see IncidentDetector._in_view)
+    in_view: bool = False
+    #: regions this vehicle has already voted a direction in: one vote per vehicle per region
+    voted: set = field(default_factory=set)
+    #: ...and an approaching/receding sense in
+    voted_sense: set = field(default_factory=set)
 
 
 def _in_polygon(x: float, y: float, poly) -> bool:
@@ -188,6 +247,32 @@ class IncidentDetector:
         self._tracks: dict[int, _State] = {}
         self._flow: deque = deque(maxlen=200)      # headings of completed tracks
         self._flow_count = 0
+        self._cells: dict[tuple[int, int], deque] = {}   # region -> recent headings there
+        self._extent = [1.0, 1.0]                         # frame size when none is given
+        self._frame = None
+        #: INCIDENT_FLOW_DIR (opt-in): learned directions are kept per camera across restarts. The
+        #: light reader restarts at every grid refusal window, and each restart used to start blind.
+        self._flow_file = None
+        flow_dir = os.environ.get("INCIDENT_FLOW_DIR")
+        if flow_dir:
+            self._flow_file = Path(flow_dir) / (re.sub(r"[^A-Za-z0-9_.-]", "_", camera_id) + ".json")
+            try:
+                saved = json.loads(self._flow_file.read_text())
+                for key, hs in saved.items():
+                    if key.startswith("s:"):
+                        cx, cy = (int(v) for v in key[2:].split(","))
+                        self._cells[("s", cx, cy)] = deque(hs, maxlen=300)   # moved to _senses below
+                        continue
+                    cx, cy = (int(v) for v in key.split(","))
+                    self._cells[(cx, cy)] = deque(hs, maxlen=300)
+            except (OSError, ValueError):
+                pass
+        self._learned = 0
+        self._senses: dict[tuple[int, int], deque] = {}   # region -> +1 approaching / -1 receding, per vehicle
+        for key in [k for k in list(self._cells) if isinstance(k, tuple) and len(k) == 3]:
+            self._senses[key[1:]] = self._cells.pop(key)   # persisted as ("s", cx, cy)
+        self._crowd_hist: dict[tuple[int, int], deque] = {}   # region -> (time, group size)
+        self._crowd_since: dict[tuple[int, int], float] = {}
         self._cooldown: dict[tuple, float] = {}
 
     def reset(self, *, keep_flow: bool = True) -> None:
@@ -204,6 +289,7 @@ class IncidentDetector:
         if not keep_flow:
             self._flow.clear()
             self._flow_count = 0
+            self._cells.clear()
 
     # ------------------------------------------------------------------ helpers
 
@@ -268,6 +354,94 @@ class IncidentDetector:
             return None                     # barely moved; heading is noise
         return math.degrees(math.atan2(dy, dx))
 
+    def path(self, track_id) -> list[tuple[float, float]]:
+        """Recent centres of a track, oldest first (for drawing evidence)."""
+        st = self._tracks.get(track_id)
+        return list(st.centres) if st else []
+
+    @staticmethod
+    def _trusted(st: _State) -> bool:
+        """Dense, continuous motion over EVERY sample that heading and deceleration are computed
+        from: no long gap, no jump an identity swap would make. (Checking only the last few let a
+        swap earlier in the window through: cam01, 8 Oct, a bus-to-car jump read as wrong way.)"""
+        if len(st.times) < TRUST_SAMPLES:
+            return False
+        times, centres, heights = list(st.times), list(st.centres), list(st.heights)
+        for i in range(1, len(times)):
+            if times[i] - times[i - 1] > TRUST_MAX_GAP_S:
+                return False
+            step = math.hypot(centres[i][0] - centres[i - 1][0], centres[i][1] - centres[i - 1][1])
+            if step / max(heights[i], 1.0) > TRUST_MAX_STEP_VH:
+                return False
+        return True
+
+    def _in_view(self, box, frame_size) -> bool:
+        """Big enough that box jitter is not motion, and not cut off by a frame edge. Without a known
+        frame size there is no edge to judge against, so everything counts as in view."""
+        if not frame_size:
+            return True
+        w, h = frame_size
+        x1, y1, x2, y2 = box
+        mx, my = EDGE_MARGIN_FRAC * w, EDGE_MARGIN_FRAC * h
+        return (y2 - y1) >= JUDGE_MIN_HEIGHT_FRAC * h and x1 > mx and y1 > my and x2 < w - mx and y2 < h - my
+
+    def _save_flow(self) -> None:
+        if self._flow_file is None:
+            return
+        try:
+            self._flow_file.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._flow_file.with_suffix(".tmp")
+            data = {f"{cx},{cy}": [round(h, 1) for h in hs] for (cx, cy), hs in self._cells.items()}
+            data.update({f"s:{cx},{cy}": list(ss) for (cx, cy), ss in self._senses.items()})
+            tmp.write_text(json.dumps(data))
+            tmp.replace(self._flow_file)
+        except OSError:
+            pass
+
+    def _cell(self, st: _State, frame_size) -> tuple[int, int]:
+        w, h = frame_size if frame_size else self._extent
+        cx = sum(c[0] for c in st.centres) / len(st.centres)
+        cy = sum(c[1] for c in st.centres) / len(st.centres)
+        return (min(FLOW_GRID[0] - 1, int(cx / max(w, 1.0) * FLOW_GRID[0])),
+                min(FLOW_GRID[1] - 1, int(cy / max(h, 1.0) * FLOW_GRID[1])))
+
+    @staticmethod
+    def _sense(st: _State) -> int:
+        """+1 approaching the camera (box growing), -1 receding (shrinking), 0 neither (crossing)."""
+        hs = list(st.heights)
+        if len(hs) < 6:
+            return 0
+        k = len(hs) // 3
+        early, late = sum(hs[:k]) / k, sum(hs[-k:]) / k
+        if late >= SENSE_RATIO * early:
+            return 1
+        if early >= SENSE_RATIO * late:
+            return -1
+        return 0
+
+    def _layout(self) -> str:
+        """Does the learned layout match keep-left? From the camera, the oncoming (approaching) lane
+        lies to the right of the own-side (receding) lane."""
+        ax, rx = [], []
+        for (cx, cy), ss in self._senses.items():
+            if len(ss) < WRONG_SIDE_MIN_REGION:
+                continue
+            share = sum(1 for v in ss if v > 0) / len(ss)
+            if share >= WRONG_SIDE_DOMINANT:
+                ax.append(cx)
+            elif share <= 1 - WRONG_SIDE_DOMINANT:
+                rx.append(cx)
+        if not ax or not rx:
+            return "one-way or not yet learned"
+        return "keep-left" if sum(ax) / len(ax) > sum(rx) / len(rx) else "approaching on the left (one-way road or a mirrored view)"
+
+    @staticmethod
+    def _straightness(st: _State) -> float:
+        c = list(st.centres)
+        path = sum(math.hypot(c[i][0] - c[i - 1][0], c[i][1] - c[i - 1][1]) for i in range(1, len(c)))
+        disp = math.hypot(c[-1][0] - c[0][0], c[-1][1] - c[0][1])
+        return path / disp if disp > 0 else float("inf")
+
     def _flow_heading(self) -> float | None:
         if self._flow_count < FLOW_MIN_TRACKS:
             return None
@@ -305,6 +479,7 @@ class IncidentDetector:
             st.last_seen = now
             st.label = getattr(tr, "label", st.label) or st.label
             st.centres.append(((x1 + x2) / 2.0, (y1 + y2) / 2.0))
+            self._extent = [max(self._extent[0], x2), max(self._extent[1], y2)]
             st.heights.append(max(y2 - y1, 1.0))
             st.times.append(now)
             sp = self._speed(st)
@@ -316,6 +491,11 @@ class IncidentDetector:
 
             if now - st.first_seen < MIN_TRACK_SECONDS or sp is None:
                 continue
+            if not self._trusted(st):
+                continue   # sparse or swapped: its speed and heading are not the vehicle's
+            st.in_view = self._in_view((x1, y1, x2, y2), frame_size)
+            if not st.in_view and st.label in VEHICLE_LABELS:
+                continue   # too small or cut off at the edge: its box moves when the vehicle does not
 
             if sp > MOVING_SPEED:
                 st.was_moving = True
@@ -326,13 +506,23 @@ class IncidentDetector:
                 st.stopped_since = None
 
             hd = self._heading(st)
-            if hd is not None and sp > MOVING_SPEED:
+            cell = self._cell(st, frame_size)
+            out.extend(self._per_track(tid, st, sp, hd, tracks, now, cell))
+            sense = self._sense(st)
+            if sense and sp > MOVING_SPEED and cell not in st.voted_sense:
+                st.voted_sense.add(cell)
+                self._senses.setdefault(cell, deque(maxlen=300)).append(sense)
+            if hd is not None and sp > MOVING_SPEED and cell not in st.voted:   # after judging: never votes for itself
+                st.voted.add(cell)
                 self._flow.append(hd)
                 self._flow_count += 1
-
-            out.extend(self._per_track(tid, st, sp, hd, tracks, now))
+                self._cells.setdefault(cell, deque(maxlen=300)).append(hd)
+                self._learned += 1
+                if self._learned % 100 == 0:
+                    self._save_flow()
 
         out.extend(self._pairs(tracks, now))
+        out.extend(self._crowd(tracks, now, frame_size))
 
         # Forget tracks the tracker has dropped, so state does not grow without bound.
         for tid in [t for t in self._tracks if t not in seen
@@ -340,7 +530,7 @@ class IncidentDetector:
             self._tracks.pop(tid, None)
         return out
 
-    def _per_track(self, tid, st, sp, hd, tracks, now) -> list[Incident]:
+    def _per_track(self, tid, st, sp, hd, tracks, now, cell=None) -> list[Incident]:
         # A person is not traffic. The motion rules below describe a vehicle,
         # and applying them to a pedestrian says things that are not true.
         if st.label == PERSON_LABEL:
@@ -359,8 +549,15 @@ class IncidentDetector:
         # near-stationary afterwards costs nothing on a real stop and rejects the
         # artefacts, which do not leave a stationary vehicle behind.
         stopped_now = sp < STOP_SPEED * 2.0
-        if (decel is not None and decel >= HARD_DECEL and stopped_now
-                and self._fire((tid, "SUDDEN_STOP"), now)):
+        # "far harder than traffic around it": braking in a queue is not an incident, so other
+        # trusted vehicles in view must still be moving (cam01, 8 Oct: a car braking behind a bus)
+        others_moving = sum(
+            1 for t in tracks
+            if t.track_id != tid and (o := self._tracks.get(t.track_id)) is not None
+            and o.label in VEHICLE_LABELS and o.speeds and o.speeds[-1][1] > MOVING_SPEED
+            and self._trusted(o))
+        if (decel is not None and decel >= HARD_DECEL and stopped_now and others_moving >= 2
+                and RAISE_SUDDEN_STOP and self._fire((tid, "SUDDEN_STOP"), now)):
             out.append(Incident(
                 self.camera_id, "SUDDEN_STOP", "MEDIUM", [tid], st.first_seen, now,
                 reason=(f"{st.label} lost {decel:.1f} vehicle-heights/s of speed per "
@@ -382,7 +579,7 @@ class IncidentDetector:
                          if t.track_id != tid
                          and (s := self._tracks.get(t.track_id)) is not None
                          and s.speeds and s.speeds[-1][1] > MOVING_SPEED)
-            if movers >= 1 and self._fire((tid, "STOPPED_IN_LANE"), now):
+            if movers >= 1 and RAISE_STOPPED_IN_LANE and self._fire((tid, "STOPPED_IN_LANE"), now):
                 out.append(Incident(
                     self.camera_id, "STOPPED_IN_LANE", "LOW", [tid], st.stopped_since,
                     now,
@@ -392,18 +589,44 @@ class IncidentDetector:
                     evidence={"stationary_s": round(now - st.stopped_since, 1),
                               "other_vehicles_moving": movers, "vehicle": st.label}))
 
-        flow = self._flow_heading()
-        if flow is not None and hd is not None and sp > MOVING_SPEED:
-            diff = abs((hd - flow + 180.0) % 360.0 - 180.0)
-            if diff >= WRONG_WAY_DEG and self._fire((tid, "WRONG_WAY"), now):
+        # wrong side by keep-left: going the other sense in a clearly one-sense region
+        senses = self._senses.get(cell) if cell is not None else None
+        sense = self._sense(st)
+        if senses is not None and len(senses) >= WRONG_SIDE_MIN_REGION and sense and sp > MOVING_SPEED:
+            same = sum(1 for v in senses if v == sense) / len(senses)
+            dominant = max(same, 1 - same)
+            straight = self._straightness(st)
+            if (same < WRONG_SIDE_SHARE and dominant >= WRONG_SIDE_DOMINANT and straight <= WRONG_WAY_STRAIGHTNESS
+                    and self._fire((tid, "WRONG_WAY"), now)):
+                layout = self._layout()
                 out.append(Incident(
                     self.camera_id, "WRONG_WAY", "MEDIUM", [tid], st.first_seen, now,
-                    reason=(f"{st.label} heading {diff:.0f}deg from this camera's "
-                            f"established flow, learned from {self._flow_count} tracks"),
+                    reason=(f"{st.label} {'coming towards the camera' if sense > 0 else 'moving away'} where "
+                            f"{dominant:.0%} of {len(senses)} vehicles go the other way: wrong-side driving "
+                            "(keep left, Rules of the Road Reg. 2; one-way Reg. 17; MV Act s. 184)"),
+                    evidence={"sense": "approaching" if sense > 0 else "receding", "region": list(cell),
+                              "share_same_sense_here": round(same, 3), "region_vehicles": len(senses),
+                              "camera_layout": layout, "straightness": round(straight, 2),
+                              "vehicle": st.label}))
+        here = self._cells.get(cell) if cell is not None else None
+        if here is not None and len(here) >= WRONG_WAY_MIN_REGION and hd is not None and sp > MOVING_SPEED:
+            same = sum(abs((hd - h + 180.0) % 360.0 - 180.0) <= 45.0 for h in here) / len(here)
+            bins = [0] * 12
+            for h in here:
+                bins[int((h + 180.0) // 30.0) % 12] += 1
+            dominant = max(bins[b] + bins[(b - 1) % 12] + bins[(b + 1) % 12] for b in range(12)) / len(here)
+            straight = self._straightness(st)
+            if (same < WRONG_WAY_SHARE and dominant >= WRONG_WAY_DOMINANT and straight <= WRONG_WAY_STRAIGHTNESS
+                    and self._fire((tid, "WRONG_WAY"), now)):
+                out.append(Incident(
+                    self.camera_id, "WRONG_WAY", "MEDIUM", [tid], st.first_seen, now,
+                    reason=(f"{st.label} moving a way only {same:.0%} of {len(here)} vehicles in this "
+                            f"part of the frame went"),
                     evidence={"heading_deg": round(hd, 1),
-                              "flow_deg": round(flow, 1),
-                              "difference_deg": round(diff, 1),
-                              "flow_learned_from_tracks": self._flow_count,
+                              "region": list(cell),
+                              "share_same_direction_here": round(same, 3),
+                              "region_tracks": len(here),
+                              "straightness": round(straight, 2),
                               "vehicle": st.label}))
         return out
 
@@ -442,6 +665,45 @@ class IncidentDetector:
                    f"{now - st.zone_since:.0f}s",
             evidence={"dwell_s": round(now - st.zone_since, 1), "foot_point": [round(x, 3), round(y, 3)],
                       "armed_hours": hours or "always"})]
+
+    def _crowd(self, tracks, now, frame_size) -> list[Incident]:
+        people = [t for t in tracks if getattr(t, "label", "") == PERSON_LABEL]
+        w, h = frame_size if frame_size else self._extent
+        best: list = []
+        for p in people:
+            px, py = (p.box[0] + p.box[2]) / 2.0, (p.box[1] + p.box[3]) / 2.0
+            r = CROWD_RADIUS_H * max(p.box[3] - p.box[1], 1.0)
+            group = [q for q in people
+                     if math.hypot((q.box[0] + q.box[2]) / 2.0 - px, (q.box[1] + q.box[3]) / 2.0 - py) <= r]
+            if len(group) > len(best):
+                best = group
+        if not best:
+            return []
+        cx = sum((q.box[0] + q.box[2]) / 2.0 for q in best) / len(best)
+        cy = sum((q.box[1] + q.box[3]) / 2.0 for q in best) / len(best)
+        cell = (min(FLOW_GRID[0] - 1, int(cx / max(w, 1.0) * FLOW_GRID[0])),
+                min(FLOW_GRID[1] - 1, int(cy / max(h, 1.0) * FLOW_GRID[1])))
+        hist = self._crowd_hist.setdefault(cell, deque())
+        while hist and now - hist[0][0] > CROWD_HISTORY_S:
+            hist.popleft()
+        past = sorted(n for t, n in hist if now - t > CROWD_SECONDS * 2)
+        usual = past[int(0.9 * (len(past) - 1))] if past else None
+        hist.append((now, len(best)))
+        if usual is None or len(past) < 20:
+            return []   # this region's usual is not known yet: say nothing rather than guess
+        if len(best) < max(CROWD_MIN, CROWD_FACTOR * usual):
+            self._crowd_since.pop(cell, None)
+            return []
+        since = self._crowd_since.setdefault(cell, now)
+        if now - since < CROWD_SECONDS or not self._fire((cell, "CROWD"), now):
+            return []
+        self._cooldown[(cell, "CROWD")] = now + CROWD_COOLDOWN_S - COOLDOWN_S
+        return [Incident(
+            self.camera_id, "CROWD_GATHERING", "MEDIUM", [q.track_id for q in best], since, now,
+            reason=(f"{len(best)} people gathered close together for {now - since:.0f}s where "
+                    f"{usual} is usual"),
+            evidence={"people": len(best), "usual_here": usual, "region": list(cell),
+                      "held_s": round(now - since, 1)})]
 
     def _person(self, tid, st, tracks, now) -> list[Incident]:
         """A person in the carriageway while traffic is moving.
@@ -511,6 +773,8 @@ class IncidentDetector:
         cand = [t for t in tracks
                 if (s := self._tracks.get(t.track_id)) is not None
                 and len(s.speeds) >= 4
+                and self._trusted(s)   # both tracks dense and continuous: a swap is not a crash
+                and getattr(s, "in_view", False)   # big enough and not cut off at an edge
                 # Vehicles only: a person overlapping a car is the pedestrian
                 # rule's business, not a two-vehicle collision.
                 and s.label in VEHICLE_LABELS]
@@ -532,6 +796,17 @@ class IncidentDetector:
                 if not (sa.speeds and sb.speeds
                         and sa.speeds[-1][1] < MOVING_SPEED
                         and sb.speeds[-1][1] < MOVING_SPEED):
+                    continue
+                # a queue at a signal is two overlapping vehicles slowing together too: a
+                # collision leaves traffic around it moving (cam01-cam30, 8 Oct: 32 "collisions"
+                # in 6 h with the same overlap-and-slow signature)
+                flowing = sum(
+                    1 for t in tracks
+                    if t.track_id not in (a.track_id, b.track_id)
+                    and (o := self._tracks.get(t.track_id)) is not None
+                    and o.label in VEHICLE_LABELS and o.speeds and o.speeds[-1][1] > MOVING_SPEED
+                    and self._trusted(o))
+                if flowing < 2:
                     continue
                 key = (min(a.track_id, b.track_id), max(a.track_id, b.track_id),
                        "COLLISION")

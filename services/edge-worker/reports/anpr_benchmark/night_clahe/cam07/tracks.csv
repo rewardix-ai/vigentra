@@ -1,0 +1,11 @@
+vehicle_id,vehicle_type,first_frame,last_frame,frames_seen,number_of_plate_candidates,max_plate_width,size_band,best_plate_frame,best_plate_size,best_plate_confidence,best_quality,OCR_result,OCR_confidence,status,reason,valid_format,emitted,emitted_confirmed,final_result
+cam07_s0_t1,car,4,6,2,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam07_s0_t9,car,164,166,2,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam07_s0_t22,motorcycle,282,282,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam07_s0_t20,motorcycle,268,286,10,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam07_s0_t64,motorcycle,548,548,1,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam07_s0_t70,car,606,644,13,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED
+cam07_s0_t91,car,744,806,61,60,78.4,MEDIUM,766,75x33,0.752,0.874,GJ32X7535,0.0494,CANDIDATE,second_reader_only,1,0,0,UNREADABLE
+cam07_s0_t94,car,832,840,6,1,77.1,MEDIUM,840,95x44,0.791,0.964,GJ37KD0418,0.027,CANDIDATE,readers_disagree,1,0,0,UNREADABLE
+cam07_s0_t110,car,902,904,2,2,37.2,VERY_SMALL,904,45x14,0.613,0.603,GJ10A4417,0.0,CANDIDATE,readers_disagree,1,0,0,UNREADABLE
+cam07_s0_t121,motorcycle,994,1002,3,0,0,,,,,,,0.0,UNREADABLE,no_plate_detected,0,0,0,NO_PLATE_DETECTED

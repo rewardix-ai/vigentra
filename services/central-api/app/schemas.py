@@ -894,6 +894,7 @@ DETECTION_CLASSES = [
     "person",
     "car",
     "motorcycle",
+    "scooter",
     "bus",
     "truck",
     "auto-rickshaw",
@@ -1545,6 +1546,11 @@ class TrackPointOut(BaseModel):
     #: it usually means one of the two reads belongs to a different vehicle,
     #: and that is a finding, not noise.
     implausible_leg: bool = False
+    #: The date and time printed on the footage at this read (grid cameras whose
+    #: clock has been sampled); shown as on screen, with no time zone.
+    video_time: datetime | None = None
+    #: A pursuit's target-check match (GET /pursuits/evidence/{sighting_id}), not a confirmed reading.
+    possible: bool = False
 
     @field_serializer("timestamp_utc")
     def _ser_time(self, value: datetime) -> str | None:
@@ -1624,11 +1630,12 @@ class AnalyticsReportRow(BaseModel):
 #: kind is not one of these is a client fault, not a new category.
 INCIDENT_KINDS = (
     "WRONG_WAY",
-    "STOPPED_IN_LANE",
-    "SUDDEN_STOP",
     "COLLISION_CANDIDATE",
     "PERSON_ON_CARRIAGEWAY",
     "INTRUSION",   # a person or vehicle inside a camera's configured restricted zone
+    "NO_PLATE_VISIBLE",   # a vehicle seen close, facing the camera, with no plate found on it
+    "CROWD_GATHERING",   # people bunching up where they usually do not (fight, collapse, accident aftermath)
+    "NO_HELMET",   # a two-wheeler rider who appears bare-headed (classifier trained on grid riders)
 )
 INCIDENT_SEVERITIES = ("LOW", "MEDIUM", "HIGH")
 INCIDENT_STATUSES = ("CANDIDATE", "REVIEWING", "CONFIRMED", "DISMISSED")
@@ -1651,6 +1658,8 @@ class IncidentIn(BaseModel):
     reason: str = ""
     evidence: dict[str, Any] = Field(default_factory=dict)
     status: str = "CANDIDATE"
+    #: The frame it was raised on, JPEG, base64; at most ~384 KB decoded.
+    snapshot_jpeg_b64: str | None = Field(default=None, max_length=524_288)
 
 
 class IncidentBatch(BaseModel):
@@ -1685,6 +1694,8 @@ class IncidentOut(BaseModel):
     reviewed_at: datetime | None = None
     review_note: str | None = None
     is_demo_data: bool = True
+    #: GET /incidents/{incident_id}/snapshot returns the frame when this is true.
+    has_snapshot: bool = False
 
 
 class IncidentReview(BaseModel):
@@ -1692,3 +1703,31 @@ class IncidentReview(BaseModel):
 
     status: str
     note: str | None = None
+
+
+class VehicleSeen(BaseModel):
+    """One vehicle at one camera: its frame detections grouped by the edge tracker's id."""
+    camera_id: str
+    camera_name: str | None = None
+    city: str | None = None
+    vehicle_type: str
+    first_seen_utc: datetime
+    last_seen_utc: datetime
+    frames: int
+    max_width_px: float
+    near_enough_to_read: bool
+    plate_text: str | None = None
+    plate_confidence: float | None = None
+    plate_confirmed: bool | None = None
+    plate_withheld: bool = False
+    no_plate_reason: str | None = None   # "too far to read" | "plate not readable"
+
+
+class VehiclesSeenResponse(BaseModel):
+    since_utc: datetime
+    vehicles_seen: int
+    near_enough_to_read: int
+    identified: int
+    identified_share_of_near: float | None
+    untracked_frames: int
+    vehicles: list[VehicleSeen]

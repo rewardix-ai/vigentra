@@ -1,0 +1,39 @@
+{
+ "true_plates": 17,
+ "decoy_pairs": 487,
+ "baseline_found_exact": 0,
+ "baseline_found_match": 0,
+ "baseline_false_match": 0,
+ "target@-2.0": {
+  "found": 10,
+  "false": 0
+ },
+ "target@-4.0": {
+  "found": 11,
+  "false": 8
+ },
+ "target@-6.0": {
+  "found": 13,
+  "false": 88
+ },
+ "target@-8.0": {
+  "found": 13,
+  "false": 240
+ },
+ "target@-10.0": {
+  "found": 15,
+  "false": 274
+ },
+ "paddle_edits<=0": {
+  "found": 13,
+  "false": 0
+ },
+ "paddle_edits<=1": {
+  "found": 14,
+  "false": 3
+ },
+ "paddle_edits<=2": {
+  "found": 14,
+  "false": 4
+ }
+}

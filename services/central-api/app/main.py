@@ -75,6 +75,8 @@ from .routers import (
     video_grants,
     video_sessions,
     watchlist,
+    challans,
+    pursuits,
 )
 from .services import health_monitor, sync_service
 
@@ -324,6 +326,8 @@ app.include_router(audit.router)
 app.include_router(video_grants.router)
 app.include_router(video_sessions.router)
 app.include_router(watchlist.router)
+app.include_router(pursuits.router)
+app.include_router(challans.router)
 
 
 @app.get("/", tags=["system"], summary="Service banner")

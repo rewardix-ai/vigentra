@@ -7,7 +7,10 @@
  * credential or an internal hostname; the only video URLs it builds
  * (streamUrl, snapshotUrl) are paths on that same proxy.
  */
-import type { Incident,
+import type {
+  ChallanIssued,
+  ChallanPreview,
+  Pursuit, Incident,
   HealthAlert,
   CameraTrafficSummary,
   AccessPolicy,
@@ -38,6 +41,7 @@ import type { Incident,
   Track,
   WatchCategory,
   WatchlistEntry,
+  VehiclesSeen,
 } from "./types";
 
 const BASE = "/api/vigentra";
@@ -197,6 +201,12 @@ export const api = {
 
   reviewIncident: (incidentId: string, status: string, note?: string) =>
     patch<Incident>(`/api/v1/incidents/${encodeURIComponent(incidentId)}`, { status, note }),
+  /** Owner and challan preview for the plate the operator read on the evidence (audited). */
+  challanLookup: (incidentId: string, plate: string) =>
+    post<ChallanPreview>(`/api/v1/incidents/${encodeURIComponent(incidentId)}/challan/lookup`, { plate }),
+  /** Issue the e-challan: owner looked up, SMS sent (simulated until a gateway is configured). */
+  issueChallan: (incidentId: string, plate: string) =>
+    post<ChallanIssued>(`/api/v1/incidents/${encodeURIComponent(incidentId)}/challan`, { plate }),
 
   detections: (filters: {
     camera_id?: string;
@@ -205,6 +215,10 @@ export const api = {
     since_hours?: string;
     limit?: string;
   } = {}) => request<Detection[]>(`/api/v1/detections${query(filters)}`),
+
+  /** Vehicles seen: frames grouped into vehicles, each with its plate or why it has none. */
+  vehiclesSeen: (filters: { camera_id?: string; since_minutes?: string; identified_only?: string } = {}) =>
+    request<VehiclesSeen>(`/api/v1/detections/tracked-vehicles${query(filters)}`),
 
   /** Settled plate reads, newest first. One audited disclosure per call. */
   sightings: (filters: { camera_id?: string; since_hours?: string; limit?: string } = {}) =>
@@ -281,6 +295,13 @@ export const api = {
    * most revealing query here, and an unexplained trace is the one that should
    * never have been run. It is recorded against the account.
    */
+  pursuits: () => request<{ pursuits: Pursuit[] }>("/api/v1/pursuits"),
+  startPursuit: (plate: string, reason: string) =>
+    post<{ id: number; plate: string }>("/api/v1/pursuits", { plate, reason }),
+  endPursuit: (id: number) => post<{ id: number; active: boolean }>(`/api/v1/pursuits/${id}/end`),
+  /** The plate crop behind a possible sighting (JPEG). Each view is audited. */
+  pursuitEvidenceUrl: (sightingId: string) =>
+    `${BASE}/api/v1/pursuits/evidence/${encodeURIComponent(sightingId)}`,
   plateTrack: (
     plate: string,
     params: { reason: string; max_distance?: string; since_hours?: string },
@@ -322,6 +343,9 @@ export const api = {
    * and never learns the central API's address.
    */
   streamUrl: (session: VideoSession) => `/api/vigentra${session.stream_url}`,
+  /** The frame an incident was raised on (JPEG). Each view is audited server-side. */
+  incidentSnapshotUrl: (incidentId: string) =>
+    `${BASE}/api/v1/incidents/${encodeURIComponent(incidentId)}/snapshot`,
 
   /**
    * The URL of a camera's latest still frame, proxied by the API from the

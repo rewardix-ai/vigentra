@@ -65,6 +65,13 @@ class AuditAction(str, Enum):
     #: as learning which vehicle it was.
     PLATE_DATA_VIEWED = "plate_data_viewed"
     INCIDENT_REVIEWED = "incident_reviewed"
+    INCIDENT_SNAPSHOT_VIEWED = "incident_snapshot_viewed"
+    PURSUIT_STARTED = "pursuit_started"
+    PURSUIT_ENDED = "pursuit_ended"
+    PURSUIT_EVIDENCE_VIEWED = "pursuit_evidence_viewed"
+    #: an operator looked up the owner of a plate to issue a challan (personal data disclosed)
+    CHALLAN_OWNER_LOOKUP = "challan_owner_lookup"
+    CHALLAN_ISSUED = "challan_issued"
 
     # plate identity - watchlist, alerts, movement
     WATCHLIST_ENTRY_ADDED = "watchlist_entry_added"
@@ -107,6 +114,7 @@ class ResourceType(str, Enum):
     WATCHLIST_ALERT = "watchlist_alert"
     PLATE_SIGHTING = "plate_sighting"
     HEALTH_ALERT = "health_alert"
+    CHALLAN = "challan"
 
 
 class AuditOutcome(str, Enum):

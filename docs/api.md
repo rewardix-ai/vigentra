@@ -1,5 +1,7 @@
 # Vigentra Central API — specification
 
+Why each endpoint uses its HTTP method (GET, POST, PATCH, DELETE; no PUT): [api-methods.md](api-methods.md), also as a styled page, `api-methods.html`.
+
 **Base URL** — `http://localhost:8000` in the demo · `http://central-api:8000` inside Compose.
 **Auth** — `Authorization: Bearer <token>` on every route except `/`, `/health` and
 `/api/v1/auth/login`. The dashboard exchanges the token for an httpOnly cookie

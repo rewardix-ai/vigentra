@@ -1,0 +1,143 @@
+"""Wrong way is judged per region of the frame, on tracks that can be trusted.
+
+8 Oct, 6 h of live grid tracks: one camera-wide flow put the whole oncoming lane of every two-way road
+"against the flow", and sparse light-mode frames let the tracker pass one id from car to car. Both
+read as wrong-way vehicles; by eye none of 11 sampled was one.
+"""
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+from anpr.incidents import IncidentDetector
+
+FRAME = (1280, 720)
+
+
+def drive(det, track_id, start, step, *, t0, n=12, dt=0.2, y=None, label="car"):
+    """A vehicle moving in a straight line, sampled every dt seconds; returns incidents raised."""
+    out = []
+    x, yy = start
+    for i in range(n):
+        box = (x - 40, yy - 25, x + 40, yy + 25)
+        out += det.update([SimpleNamespace(track_id=track_id, box=box, label=label)], t0 + i * dt, frame_size=FRAME)
+        x, yy = x + step[0], yy + step[1]
+    return out
+
+
+def wrong_way(incidents):
+    return [i for i in incidents if i.kind == "WRONG_WAY"]
+
+
+def test_the_oncoming_lane_of_a_two_way_road_is_not_wrong_way():
+    det = IncidentDetector("cam-two-way")
+    t = 0.0
+    for k in range(70):   # eastbound in the top lane, westbound in the bottom lane
+        drive(det, 100 + k, (60, 150), (40, 0), t0=t, n=29)
+        drive(det, 200 + k, (1220, 550), (-40, 0), t0=t + 0.05, n=29)
+        t += 8
+    assert not wrong_way(drive(det, 999, (1100, 550), (-40, 0), t0=t))   # one more westbound, in its lane
+
+
+def test_against_the_flow_in_its_own_lane_is_wrong_way():
+    det = IncidentDetector("cam-one-way")
+    t = 0.0
+    for k in range(70):
+        drive(det, 100 + k, (60, 150), (40, 0), t0=t, n=29)
+        t += 8
+    assert wrong_way(drive(det, 999, (1100, 150), (-40, 0), t0=t))
+
+
+def test_an_identity_swap_across_the_frame_is_not_judged():
+    det = IncidentDetector("cam-swap")
+    t = 0.0
+    for k in range(70):
+        drive(det, 100 + k, (60, 150), (40, 0), t0=t, n=29)
+        t += 8
+    # sparse frames: the same id lands on a different vehicle 4 s and 600 px later, heading back
+    out = []
+    for i, x in enumerate((1100, 500, 1150, 520, 1180)):
+        out += det.update([SimpleNamespace(track_id=999, box=(x - 40, 125, x + 40, 175), label="car")], t + 4 * i, frame_size=FRAME)
+    assert not out
+
+
+def test_a_junction_with_no_clear_direction_does_not_judge_wrong_way():
+    det = IncidentDetector("cam-junction")
+    t = 0.0
+    for k in range(70):   # the same region crossed four ways, as at a junction
+        step = [(40, 0), (-40, 0), (0, 25), (0, -25)][k % 4]
+        start = {(40, 0): (60, 360), (-40, 0): (1220, 360), (0, 25): (640, 60), (0, -25): (640, 660)}[step]
+        drive(det, 100 + k, start, step, t0=t, n=24)
+        t += 8
+    assert not wrong_way(drive(det, 999, (1100, 360), (-40, 0), t0=t))
+
+
+def test_a_vehicle_too_small_or_cut_off_is_not_judged():
+    det = IncidentDetector("cam-small")
+    out = []
+    for i in range(12):   # a 12 px tall box jittering hard: no stop, no wrong way
+        x = 600 + (30 if i % 2 else -30)
+        out += det.update([SimpleNamespace(track_id=5, box=(x, 300, x + 16, 312), label="car")], i * 0.2, frame_size=FRAME)
+    for i in range(12):   # a car leaving at the left edge, its box shrinking
+        out += det.update([SimpleNamespace(track_id=6, box=(0, 300, max(4, 120 - 10 * i), 380), label="car")], 10 + i * 0.2, frame_size=FRAME)
+    assert not [o for o in out if o.kind in ("SUDDEN_STOP", "WRONG_WAY")]
+
+
+def people(n, cx, cy, start_id=500):
+    return [SimpleNamespace(track_id=start_id + i, box=(cx + 12 * (i % 4), cy + 10 * (i // 4), cx + 12 * (i % 4) + 30, cy + 10 * (i // 4) + 80),
+                            label="person") for i in range(n)]
+
+
+def test_a_crowd_forming_where_there_usually_is_none_is_raised():
+    det = IncidentDetector("cam-crowd")
+    t, out = 0.0, []
+    for _ in range(40):   # an ordinary spot: one or two people
+        det.update(people(2, 600, 300), t, frame_size=FRAME)
+        t += 2
+    for _ in range(10):   # eight people bunch up and stay
+        out += det.update(people(8, 600, 300), t, frame_size=FRAME)
+        t += 2
+    crowd = [o for o in out if o.kind == "CROWD_GATHERING"]
+    assert len(crowd) == 1 and crowd[0].evidence["people"] == 8
+
+
+def test_a_spot_that_is_always_busy_is_not_a_crowd():
+    det = IncidentDetector("cam-busstop")
+    t, out = 0.0, []
+    for _ in range(60):   # a bus stop: eight people waiting all the time
+        out += det.update(people(8, 600, 300), t, frame_size=FRAME)
+        t += 2
+    assert not [o for o in out if o.kind == "CROWD_GATHERING"]
+
+
+def lane(det, track_id, x, *, towards, t0, n=12):
+    """A vehicle in a lane at column x, coming towards the camera (down the frame, box growing) or away."""
+    out = []
+    for i in range(n):
+        k = i if towards else n - 1 - i
+        y, size = 200 + 30 * k, 60 + 6 * k
+        box = (x - size / 2, y - size / 2, x + size / 2, y + size / 2)
+        out += det.update([SimpleNamespace(track_id=track_id, box=box, label="car")], t0 + i * 0.2, frame_size=FRAME)
+    return out
+
+
+def keep_left_road():
+    """Indian two-way road seen from the camera: own-side traffic moves away on the left, oncoming
+    traffic approaches on the right (Rules of the Road Reg. 2)."""
+    det = IncidentDetector("cam-keep-left")
+    t = 0.0
+    for k in range(60):
+        lane(det, 1000 + k, 420, towards=False, t0=t)
+        lane(det, 2000 + k, 860, towards=True, t0=t + 0.05)
+        t += 4
+    return det, t
+
+
+def test_coming_towards_the_camera_in_the_own_side_lane_is_wrong_side():
+    det, t = keep_left_road()
+    out = wrong_way(lane(det, 9001, 420, towards=True, t0=t))
+    assert out and "keep left" in out[0].reason and out[0].evidence["camera_layout"] == "keep-left"
+
+
+def test_the_oncoming_lane_is_not_wrong_side():
+    det, t = keep_left_road()
+    assert not wrong_way(lane(det, 9002, 860, towards=True, t0=t))

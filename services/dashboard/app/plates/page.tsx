@@ -19,7 +19,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ist, relative } from "@/lib/format";
-import type { PlateSearchHit, Track } from "@/lib/types";
+import type { PlateSearchHit, Pursuit, Track } from "@/lib/types";
 
 /**
  * Trace a vehicle across the federated camera network.
@@ -55,6 +55,32 @@ export default function PlatesPage() {
   const [track, setTrack] = useState<Track | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pursuits, setPursuits] = useState<Pursuit[]>([]);
+
+  // Active pursuits, refreshed while the page is open: which vehicles the cameras are following.
+  useEffect(() => {
+    let alive = true;
+    const load = () => api.pursuits().then((r) => alive && setPursuits(r.pursuits)).catch(() => {});
+    load();
+    const id = window.setInterval(load, 10000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, []);
+
+  const follow = useCallback(
+    async (plate: string) => {
+      setError(null);
+      try {
+        await api.startPursuit(plate, reason.trim());
+        setPursuits((await api.pursuits()).pursuits);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [reason],
+  );
 
   // Arriving from an alert pre-fills the plate but never the reason, and never
   // runs the trace. The reason has to be written by the person asking.
@@ -117,6 +143,31 @@ export default function PlatesPage() {
 
       <div className="space-y-4">
         {error && <Notice tone="bad">{error}</Notice>}
+
+        {pursuits.length > 0 && (
+          <Notice tone="info" title="Following live">
+            <div className="space-y-1">
+              {pursuits.map((p) => (
+                <div key={p.id} className="flex flex-wrap items-center gap-2">
+                  <span className="mono font-semibold">{p.plate}</span>
+                  <span className="text-caption text-muted">
+                    {p.hot_cameras.length > 0
+                      ? `${p.hot_cameras.length} camera${p.hot_cameras.length === 1 ? "" : "s"} watched first (last seen and all it could reach)`
+                      : "not seen yet: every camera checks each vehicle against it"}
+                    {" · started by "}
+                    {p.started_by} {relative(p.started_at)}
+                  </span>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => api.endPursuit(p.id).then(() => api.pursuits()).then((r) => setPursuits(r.pursuits))}
+                  >
+                    End
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Notice>
+        )}
 
         <Notice tone="warn" title="This query is recorded against your account">
           Reconstructing a vehicle&apos;s movement is the most revealing thing this platform does.
@@ -291,6 +342,19 @@ export default function PlatesPage() {
 
             <Notice tone="info">{track.caveat}</Notice>
 
+            {!pursuits.some((p) => p.plate === track.query) && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button className="btn btn-primary" disabled={!reasonReady} onClick={() => void follow(track.query)}>
+                  Follow this vehicle live
+                </button>
+                <span className="text-caption text-muted">
+                  The cameras where it was last seen, and every camera it could have reached since, get first claim on frames,
+                  and every vehicle they see is checked against this plate. Matches appear here as
+                  possible sightings, with the plate crop, for you to confirm.
+                </span>
+              </div>
+            )}
+
             {track.implausible_legs > 0 && (
               <Notice tone="bad" title="This route contains a leg no road vehicle could drive">
                 At least one pair of consecutive sightings is too far apart for the time between
@@ -325,6 +389,11 @@ export default function PlatesPage() {
                         <td className="tabular">{index + 1}</td>
                         <td className="whitespace-nowrap">
                           <div>{ist(point.timestamp_utc)}</div>
+                          {point.video_time && (
+                            <div className="text-caption">
+                              On footage {point.video_time.replace("T", " ").slice(0, 19)}
+                            </div>
+                          )}
                           <div className="text-caption text-muted">
                             {relative(point.timestamp_utc)}
                           </div>
@@ -361,6 +430,20 @@ export default function PlatesPage() {
                             <span className="ml-1 text-caption text-warn">
                               ~{point.match_distance.toFixed(2)}
                             </span>
+                          )}
+                          {point.possible && (
+                            <div className="mt-1 font-sans">
+                              <Pill tone="warn">possible: confirm from the crop</Pill>
+                              <a href={api.pursuitEvidenceUrl(point.sighting_id)} target="_blank" rel="noreferrer">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  alt="Plate crop behind this possible sighting"
+                                  className="mt-1 max-h-12 rounded-sm"
+                                  loading="lazy"
+                                  src={api.pursuitEvidenceUrl(point.sighting_id)}
+                                />
+                              </a>
+                            </div>
                           )}
                         </td>
                         <td className="tabular">

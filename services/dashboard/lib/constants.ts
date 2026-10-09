@@ -18,6 +18,7 @@ export const CLASS_COLOUR: Record<string, string> = {
   person: "#f59e0b",
   bicycle: "#a3e635",
   motorcycle: "#22d3ee",
+  scooter: "#38bdf8",
   car: "#4ade80",
   bus: "#c084fc",
   truck: "#fb7185",

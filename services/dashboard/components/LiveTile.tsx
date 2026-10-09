@@ -1,5 +1,6 @@
 "use client";
 
+import { useBackCloses } from "@/lib/backCloses";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, ApiError, errorMessage } from "@/lib/api";
@@ -103,6 +104,7 @@ export function LiveTile({
   // One feed full screen over the wall. The same video element grows, so there
   // is no second session: no second password and no second audited access.
   const [focused, setFocused] = useState(false);
+  useBackCloses(focused, () => setFocused(false));
   useEffect(() => {
     if (!focused) return;
     const onKey = (event: KeyboardEvent) => {
@@ -497,6 +499,7 @@ function SnapshotTile({
   // Click a tile to fill the screen with it (Esc returns). Frames come faster
   // while focused, so the detection boxes follow the traffic.
   const [focused, setFocused] = useState(false);
+  useBackCloses(focused, () => setFocused(false));
   useEffect(() => {
     if (!focused) return;
     const onKey = (event: KeyboardEvent) => {

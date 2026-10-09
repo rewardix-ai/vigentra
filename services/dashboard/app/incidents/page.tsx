@@ -56,6 +56,16 @@ const STATUS_TONE: Record<string, Tone> = {
 };
 
 /** Offences: Confirm opens the e-challan popup (central routers/challans.py). */
+const FINES: Record<string, { amount: string; law: string }> = {
+  // shown on the card; the challan itself takes its figures from central (services/challan_service.py)
+  NO_HELMET: { amount: "₹1,000", law: "MV Act s.129 r/w s.194D" },
+  WRONG_WAY: { amount: "₹1,000", law: "MV Act s.184" },
+};
+
+const clock = (utc: string) =>
+  new Date(utc).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour12: false });
+const day = (utc: string) =>
+  new Date(utc).toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
 const CHALLAN_KINDS = new Set(["NO_HELMET", "WRONG_WAY"]);
 
 export default function IncidentsPage() {
@@ -165,101 +175,110 @@ export default function IncidentsPage() {
         />
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {(rows ?? []).map((incident) => {
           const reviewed = incident.status === "CONFIRMED" || incident.status === "DISMISSED";
+          const label = KIND_LABEL[incident.kind] ?? humanise(incident.kind);
+          const score = typeof incident.evidence?.no_helmet_score === "number" ? (incident.evidence.no_helmet_score as number) : null;
+          const views = Array.isArray(incident.evidence?.view_scores) ? (incident.evidence.view_scores as unknown[]).length : null;
+          const fine = FINES[incident.kind];
+          const busy = acting === incident.incident_id;
           return (
             <Card key={incident.incident_id}>
-              <div className="flex flex-wrap items-start gap-3 px-6 py-5">
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Pill tone={SEVERITY_TONE[incident.severity] ?? "idle"}>
-                      {humanise(incident.severity)}
-                    </Pill>
-                    <span className="text-body-sm font-semibold text-ink">
-                      {KIND_LABEL[incident.kind] ?? incident.kind}
-                    </span>
+              <div className="flex flex-col gap-6 p-5 md:flex-row">
+                {/* The frame it was raised on: the thing a reviewer judges, so it leads. */}
+                <a
+                  className="flex aspect-[16/10] w-full shrink-0 items-center justify-center overflow-hidden rounded-sm bg-canvas-soft md:w-[360px]"
+                  href={incident.has_snapshot ? api.incidentSnapshotUrl(incident.incident_id) : undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={incident.has_snapshot ? "Open the frame full size" : undefined}
+                >
+                  {incident.has_snapshot ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt={`Frame of ${label}`}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                      src={api.incidentSnapshotUrl(incident.incident_id)}
+                    />
+                  ) : (
+                    <span className="text-caption text-muted">No frame saved</span>
+                  )}
+                </a>
+
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2 text-caption text-muted">
+                    <Pill tone={SEVERITY_TONE[incident.severity] ?? "idle"}>{humanise(incident.severity)}</Pill>
                     <Pill tone={STATUS_TONE[incident.status] ?? "idle"}>{humanise(incident.status)}</Pill>
-                    {incident.owning_department && (
-                      <DepartmentTag department={incident.owning_department} />
-                    )}
+                    {incident.owning_department && <DepartmentTag department={incident.owning_department} />}
                   </div>
 
-                  <div className="text-caption text-muted">
-                    <Link
-                      className="mono hover:underline"
-                      href={`/registry/${encodeURIComponent(incident.camera_id)}`}
-                    >
+                  <h2 className="text-h4 text-ink">
+                    {label}
+                    <span className="text-muted"> at </span>
+                    <Link className="hover:underline" href={`/registry/${encodeURIComponent(incident.camera_id)}`}>
                       {incident.camera_name ?? incident.camera_id}
                     </Link>
-                    {" · "}
-                    {relative(incident.last_seen_utc)}
-                    {incident.duration_s != null && ` · over ${incident.duration_s.toFixed(1)}s`}
-                    {incident.track_ids.length > 0 &&
-                      ` · vehicle track ${incident.track_ids.join(", ")}`}
-                  </div>
+                  </h2>
 
-                  <p className="text-caption leading-relaxed text-muted">{incident.reason}</p>
-
-                  {Object.keys(incident.evidence ?? {}).length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-caption text-muted">
-                      {Object.entries(incident.evidence)
-                        .filter(([k]) => k !== "vehicle" && k !== "vehicles")
-                        .map(([k, v]) => (
-                          <span key={k} className="mono">
-                            {k.replace(/_/g, " ")}: {String(v)}
-                          </span>
+                  {score != null && (
+                    <div className="flex items-center gap-2 text-body-sm">
+                      <span className="font-semibold text-ink">{score.toFixed(2)}</span>
+                      <span className="flex gap-0.5" aria-label={`model confidence ${Math.round(score * 100)} %`}>
+                        {[0.2, 0.4, 0.6, 0.8, 1].map((step) => (
+                          <span key={step} className={`h-2 w-5 rounded-full ${score >= step - 0.1 ? "bg-ink" : "bg-hairline"}`} />
                         ))}
+                      </span>
+                      <span className="text-muted">model confidence{views ? ` over ${views} view${views > 1 ? "s" : ""}` : ""}</span>
                     </div>
                   )}
 
-                  {incident.has_snapshot && (
-                    <a
-                      className="mt-1 block w-fit"
-                      href={api.incidentSnapshotUrl(incident.incident_id)}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="The frame it was raised on (opens full size)"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        alt={`Frame of ${KIND_LABEL[incident.kind] ?? incident.kind}`}
-                        className="max-h-40 rounded-sm"
-                        loading="lazy"
-                        src={api.incidentSnapshotUrl(incident.incident_id)}
-                      />
-                    </a>
+                  <div className="flex flex-wrap items-baseline gap-x-3">
+                    <span className="text-h3 tabular-nums text-ink">{clock(incident.last_seen_utc)}</span>
+                    <span className="text-body-sm text-muted">
+                      {day(incident.last_seen_utc)} · {relative(incident.last_seen_utc)}
+                    </span>
+                  </div>
+
+                  {fine && (
+                    <div className="text-body-sm text-ink-soft">
+                      Fine if confirmed <strong>{fine.amount}</strong> <span className="text-muted">· {fine.law}</span>
+                    </div>
                   )}
+
+                  <p className="max-w-2xl text-body-sm text-muted">{incident.reason}</p>
 
                   {incident.reviewed_by && (
                     <div className="text-caption text-muted">
-                      reviewed by {incident.reviewed_by} · {ist(incident.reviewed_at)}
+                      Reviewed by {incident.reviewed_by} · {ist(incident.reviewed_at)}
+                      {incident.review_note ? ` · ${incident.review_note}` : ""}
+                    </div>
+                  )}
+
+                  {!reviewed && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        className="btn btn-lg btn-primary min-w-[16rem]"
+                        disabled={busy}
+                        onClick={() =>
+                          CHALLAN_KINDS.has(incident.kind)
+                            ? setChallanFor(incident)
+                            : review(incident.incident_id, "CONFIRMED")
+                        }
+                      >
+                        {CHALLAN_KINDS.has(incident.kind) ? "Confirm & issue challan" : "Confirm"}
+                      </button>
+                      <button
+                        className="btn btn-lg"
+                        disabled={busy}
+                        onClick={() => review(incident.incident_id, "DISMISSED")}
+                      >
+                        Dismiss
+                      </button>
                     </div>
                   )}
                 </div>
-
-                {!reviewed && (
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      className="btn btn-sm"
-                      disabled={acting === incident.incident_id}
-                      onClick={() => review(incident.incident_id, "DISMISSED")}
-                    >
-                      Dismiss
-                    </button>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      disabled={acting === incident.incident_id}
-                      onClick={() =>
-                        CHALLAN_KINDS.has(incident.kind)
-                          ? setChallanFor(incident)
-                          : review(incident.incident_id, "CONFIRMED")
-                      }
-                    >
-                      Confirm
-                    </button>
-                  </div>
-                )}
               </div>
             </Card>
           );

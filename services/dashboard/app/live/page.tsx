@@ -14,6 +14,7 @@ import {
   Notice,
   PageHeader,
 } from "@/components/ui";
+import { useBackCloses } from "@/lib/backCloses";
 import { api } from "@/lib/api";
 import { usePersisted } from "@/lib/persist";
 import { relative } from "@/lib/format";
@@ -61,6 +62,8 @@ export default function LiveWallPage() {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
+
+  useBackCloses(wall, () => setWall(false));
 
   useEffect(() => {
     if (!wall) return;

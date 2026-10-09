@@ -899,6 +899,12 @@ DETECTION_CLASSES = [
     "truck",
     "auto-rickshaw",
     "bicycle",
+    # Indian classes from the edge's vehicle-type classifier (9 Oct): goods three-wheeler (L5N),
+    # light goods vehicle (N1: Tata Ace, pickup, tempo), minibus (M2: Tempo Traveller), tractor
+    "goods-auto",
+    "lcv",
+    "minibus",
+    "tractor",
 ]
 
 

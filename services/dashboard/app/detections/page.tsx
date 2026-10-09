@@ -34,7 +34,7 @@ import type { Detection, DetectorHealth, VehiclesSeen } from "@/lib/types";
  * follows the footage rules rather than the asset-record ones.
  */
 
-const CLASSES = ["person", "car", "motorcycle", "scooter", "bus", "truck", "bicycle", "auto-rickshaw"];
+const CLASSES = ["person", "car", "motorcycle", "scooter", "bus", "minibus", "truck", "lcv", "tractor", "bicycle", "auto-rickshaw", "goods-auto"];
 
 const CLASS_TONE: Record<string, "ok" | "warn" | "bad" | "idle" | "info"> = {
   person: "info",
@@ -45,6 +45,10 @@ const CLASS_TONE: Record<string, "ok" | "warn" | "bad" | "idle" | "info"> = {
   truck: "idle",
   bicycle: "idle",
   "auto-rickshaw": "idle",
+  "goods-auto": "idle",
+  lcv: "idle",
+  minibus: "idle",
+  tractor: "idle",
 };
 
 /** "12:04:10" for a moment, "12:04:10–12:04:18" for a span; IST, as everywhere else. */

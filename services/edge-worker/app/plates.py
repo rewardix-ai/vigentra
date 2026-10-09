@@ -8,7 +8,8 @@ from __future__ import annotations
 
 #: Only these classes are examined. Reading text off a person is not a thing
 #: this system does.
-PLATE_BEARING_CLASSES = frozenset({"car", "motorcycle", "scooter", "bus", "truck", "auto-rickshaw"})
+PLATE_BEARING_CLASSES = frozenset({"car", "motorcycle", "scooter", "bus", "truck", "auto-rickshaw",
+                                   "goods-auto", "lcv", "minibus", "tractor"})
 
 
 #: a read this close (character edits, same first two letters) to a camera's known scene text is that

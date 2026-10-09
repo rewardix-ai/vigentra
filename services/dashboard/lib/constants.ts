@@ -23,6 +23,10 @@ export const CLASS_COLOUR: Record<string, string> = {
   bus: "#c084fc",
   truck: "#fb7185",
   "auto-rickshaw": "#fbbf24",
+  "goods-auto": "#f97316",
+  lcv: "#e879f9",
+  minibus: "#a78bfa",
+  tractor: "#84cc16",
 };
 
 /** Installation form vocabularies (single form and bulk CSV upload). */

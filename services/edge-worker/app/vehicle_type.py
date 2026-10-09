@@ -29,7 +29,11 @@ MAX_LOOKS = 3
 FORGET_S = 120.0
 #: classifier class -> the class name the platform uses (central schemas.DETECTION_CLASSES)
 NAMES = {"auto": "auto-rickshaw", "bus": "bus", "car": "car", "motorcycle": "motorcycle",
-         "scooter": "scooter", "truck": "truck"}
+         "scooter": "scooter", "truck": "truck",
+         # Indian classes (CMVR / AIS-053), 9 Oct: L5N, N1, M2 and agricultural tractors
+         "goods3w": "goods-auto", "lcv": "lcv", "minibus": "minibus", "tractor": "tractor"}
+#: a crop the classifier is sure is no vehicle at all (a sign board boxed as a bus) is dropped
+NOT_VEHICLE = "notvehicle"
 VEHICLES = frozenset({"car", "motorcycle", "bus", "truck"})
 
 _model = None
@@ -98,9 +102,13 @@ class VehicleTypes:
                     t["looked_w"], t["looks"] = bw, t["looks"] + 1
                     if name in NAMES and score >= CONFIDENT:
                         t["type"], t["score"] = NAMES[name], score
+                    elif name == NOT_VEHICLE and score >= CONFIDENT and t["type"] is None:
+                        t["type"], t["score"] = NOT_VEHICLE, score
             if t["type"] and t["type"] != d.class_name:
                 extra["detector_class"] = d.class_name
                 extra["type_score"] = round(t["score"], 3)
                 d.class_name = t["type"]
+        if isinstance(detections, list):
+            detections[:] = [d for d in detections if d.class_name != NOT_VEHICLE]
         for tid in [k for k, v in self.tracks.items() if pts - v.get("last", pts) > FORGET_S]:
             self.tracks.pop(tid, None)

@@ -67,6 +67,8 @@ Why reading is hard on this grid, with evidence anyone can check:
 
 - **Keep the Mac on power with the lid open.** On 8-9 Oct it slept on battery with the lid closed and
   no camera was read for 15 hours; `caffeinate` prevents idle sleep, not lid-close sleep.
+- **Watchlist is loaded.** Six DEMO plates that recur on the grid (case DEMO-SENTINEL-2026, expire 14 Oct)
+  raise live alerts; add the designated plate to the watchlist as soon as it is named.
 - **The tracker restarts itself.** It runs as a LaunchAgent (`scripts/launchd/`): it starts at log-in,
   opens Docker Desktop if needed and waits for central-api, and launchd restarts it within a minute of a
   crash (tested 9 Oct by killing it). After a reboot someone must log in (FileVault is on, so there is

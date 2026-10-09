@@ -216,6 +216,10 @@ central keeps only plates, detections and incidents; see the scalability note.</
 no camera was read for 15 hours; <code>caffeinate</code> prevents idle sleep, not lid-close sleep.</p>
 </li>
 <li>
+<p><strong>Watchlist is loaded.</strong> Six DEMO plates that recur on the grid (case DEMO-SENTINEL-2026, expire 14 Oct)
+raise live alerts; add the designated plate to the watchlist as soon as it is named.</p>
+</li>
+<li>
 <p><strong>The tracker restarts itself.</strong> It runs as a LaunchAgent (<code>scripts/launchd/</code>): it starts at log-in,
 opens Docker Desktop if needed and waits for central-api, and launchd restarts it within a minute of a
 crash (tested 9 Oct by killing it). After a reboot someone must log in (FileVault is on, so there is

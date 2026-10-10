@@ -59,7 +59,7 @@ def main() -> int:
     order = scenes()
     parts = [f"<title>Vigentra Keynote Speech</title>", f"<style>{CSS}</style>",
              '<header class="mast"><div class="in"><div class="k">Presenter guide · From pixels to information</div>',
-             f"<h1>What to say, scene by scene</h1><p>{len(order)} scenes, about 20 minutes. Read the green line aloud; "
+             f"<h1>What to say, scene by scene</h1><p>{len(order)} scenes: about 14½ minutes as scripted, 16–18 with the live moments. Read the green line aloud; "
              "the rest is for you. Generated from the deck's own speaker notes (js/data/storyboard.js).</p></div></header>",
              '<main class="in"><div class="tips">',
              '<div class="tip"><b>Start</b>python3 deliverables/anpr-keynote/tools/serve.py, open http://127.0.0.1:8765, press S for this view on your screen, F for fullscreen.</div>',

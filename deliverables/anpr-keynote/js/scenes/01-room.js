@@ -14,7 +14,7 @@
       const lines = [
         ["Hackathon model", "Model 1 + Model 3"],
         ["Cameras", "30 grid · Delhi street"],
-        ["Vehicle detector", "YOLO11s"],
+        ["Vehicle detector", "YOLO11s · YOLO11n live"],
         ["Tracker", "ByteTrack"],
         ["Plate detector", "YOLO11n"],
         ["Readers", "CRNN · vote across frames"],

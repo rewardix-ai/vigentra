@@ -30,24 +30,24 @@ K.DATA = {
   // What sets Vigentra apart: its own design choices, each with where it is shown. Nothing here is
   // a claim about other products.
   distinct: [
-    ["Works on the cameras you have", "Reads the streams the department already runs; nothing is installed at the camera.", "RTSP · HLS fallback", "EW/app/grid.py"],
-    ["It doesn't guess", "A plate is saved only when many frames agree, in a valid Indian format.", "0 wrong · 36 of 48 read", "final2 benchmark"],
-    ["Video stays with its owner", "Plates travel as text; another unit sees video only with the owner's permission.", "text only", "worker.py · central-api access model"],
-    ["Built for Indian plates", "Standard, Delhi short, BH series, diplomatic, vintage and temporary formats.", "40 state codes · 39 Gujarat RTOs", "EW/anpr/plate_grammar.py · config/india_codes.yaml"],
-    ["Every act on record", "Searches, traces, reports and alerts are audited; alerts go out signed.", "audit log · HMAC-signed", "docs/scalability.md · alert_webhook.py"],
-    ["Knows when a camera goes dark", "A camera that misses two health checks in a row raises an alert, and clears itself on recovery.", "about 40 s", "services/health_alerts.py"],
+    ["Nothing new at the camera", "Federates the cameras and VMS each department already runs, and reads their streams as they are.", "Model 1 + Model 3", "docs/hld.md §2 · EW/app/grid.py"],
+    ["A wrong plate is worse than a missed one", "A model that reads more plates but adds one wrong plate is not adopted, however good it looks.", "zero-false rule", "reports/plate_ab_auto_ft_v2.md · bench pd_v2 (9 Oct)"],
+    ["Built for Indian roads", "Plate formats down to BH series and temporary plates; CMVR vehicle classes; MV Act sections on challans.", "40 state codes · 39 Gujarat RTOs", "EW/anpr/plate_grammar.py · config/india_codes.yaml"],
+    ["Private by design", "No central video store, and plate records expire on a clock that is enforced on every read.", "retention on read", "docs/scalability.md §4"],
+    ["Trained on Gujarat's own footage", "Plate boxes, vehicles and riders from our grid cameras, each one labelled by a person.", "4,891 boxes · 2,160 vehicles · 1,317 riders", "reports/review/harvest_a · data/cls/vtype · data/cls/helmet"],
+    ["The department stays in control", "Live video crosses to another unit only on a grant the owner can refuse or revoke.", "grant · deny · revoke", "services/video_grants.py"],
   ],
 
   // What we intend to do next: each starts from a limit the project's own reports record.
   roadmap: [
-    ["GPU servers at the edge", "One laptop keeps pace with one camera today; every grid feed live needs GPU hosts.", "Next"],
-    ["No record lost offline", "Hold plate records through a network outage and replay them; ingest already ignores duplicates.", "Planned"],
-    ["Indian vehicle types", "Done 9 Oct: auto, minibus, light goods vehicle, truck, from 2,160 grid crops labelled by eye; e-rickshaw and tractor still to come.", "Done"],
+    ["A reader for borderline plates", "The plate detector already finds more plates than the reader can read safely; retrain the reader on labels checked by eye.", "Next"],
     ["Night and small plates", "Camera placement and IR guidance, and a small-plate detector trained on human-checked hard cases.", "Planned"],
-    ["State-scale monitoring", "Dashboards and alerts for cameras offline, ingest lag and reader speed.", "Planned"],
-    ["Recovery targets", "Design goals, not yet tested at scale: lose at most 5 minutes of data, back within an hour.", "Planned"],
+    ["More Indian vehicle classes", "E-rickshaws, goods autos and tractors: too few on our cameras so far to learn them.", "Planned"],
+    ["More offences", "Red light, triple riding and no seat belt, each with its evidence and a person to confirm it.", "Planned"],
+    ["Real owner lookup and SMS", "Replace the demo owner list and the simulated SMS with VAHAN and a DLT-registered gateway.", "Next"],
+    ["Proven at load", "Kafka between ingest and matching, tested well past today's 164 plate reads a second.", "Planned"],
   ],
-  roadmapSrc: "docs/scalability.md (edge buffering, monitoring, HA/DR targets) · known limits from the benchmark and the CAM06 day study",
+  roadmapSrc: "plate detector A/B 9 Oct (reports/plate_ab_auto_ft_v2.md) · data/cls/vtype (class counts) · services/challan_service.py (demo owners, simulated SMS) · docs/scalability.md §5 (164 reads/s), §6 (Kafka)",
 
   // Under the hood: each layer, what it runs on, and why. TECHNICAL.md has the full reasoning.
   // Every feature (deck scenes "features-find", "features-act"): [name, what it does]
@@ -70,41 +70,41 @@ K.DATA = {
     ["Wrong way + incidents", "Wrong side, possible collision, person in traffic, intrusion."],
     ["Incident review", "Snapshot-led cards; a person confirms or dismisses each."],
     ["E-challan", "Plate filled in, owner looked up, MV Act section, SMS sent."],
-    ["Camera health alerts", "A camera or system that stops is told within seconds."],
+    ["Camera health alerts", "A camera or system that stops is told within about 40 seconds."],
     ["Footage quality alerts", "Black or broken pictures raise an alert within a minute."],
     ["Gap analysis", "Thin districts, ageing cameras, footage that is unusable."],
     ["Video access requests", "Ask another unit for its video; grant, deny or revoke."],
     ["Role + zone access", "Each user sees only their department, city and zone."],
     ["Audit log", "Every sign-in, trace, lookup and refusal, append-only."],
     ["Alert push", "Alerts sent to another system, signed, when configured."],
-    ["Self-healing reader", "Restarts itself after crashes, grid outages and reboots."],
+    ["Self-healing reader", "Restarts itself after crashes and grid outages; starts again at log-in."],
   ],
   featuresSrc: "services/central-api · services/edge-worker · services/dashboard · scripts/collect_plates.py, scripts/launchd",
 
   // 80,000 cameras (scenes "scale-possible", "scale-needs"). Figures: docs/scalability.md
   possible: [
-    ["Statewide vehicle trace", "A named plate's route across every department's cameras in one query, with the evidence at each point.", "Built on 30"],
+    ["Statewide vehicle trace", "A named plate's route across every department's cameras, with the evidence at each point.", "Built on 30"],
     ["Pursuit across districts", "The cameras a vehicle can reach next get the GPU first; PostGIS corridors predict where to look.", "Built on 30"],
     ["Watchlist at every junction", "Stolen and wanted vehicles flagged at the moment of the read, statewide.", "Built on 30"],
-    ["Automated e-challan", "Helmet and wrong side today; red light, triple riding and seat belt next; VAHAN gives the owner.", "Next"],
+    ["E-challan at state scale", "Every confirmed helmet and wrong-side offence becomes a challan, wherever it was seen.", "Built on 30"],
     ["Traffic by vehicle class", "Cars, autos, buses, light and heavy goods per junction and hour; goods vehicles in no-entry hours.", "Next"],
-    ["A self-reporting estate", "Every camera's health and picture watched; outages told to the owning department in a minute.", "Built on 30"],
+    ["Journey times and flows", "Origin-to-destination flows and travel times between districts, from plate reads alone.", "Next"],
   ],
   needsBig: [["~160 Gbps", "into the data centre if video were sent centrally, ~1.7 PB a day"], ["~0.6–1 Gbps", "with Vigentra: only metadata, 40–250× less"]],
   needs: [
     ["Edge compute", "~3,000 GPU nodes in department sites (1× T4-class GPU, 8 vCPU, 32 GB)", "ANPR only where the optics allow, set at onboarding"],
     ["Regional", "33 districts × 2 nodes (16 vCPU, 64 GB, 2 TB NVMe)", "adapters, an ingest buffer for WAN outages"],
     ["Central", "2 sites, primary + DR; API 6–10 replicas; PostgreSQL 2 × 32 vCPU / 256 GB / 10 TB", "lose at most 5 min of data, back within 1 h"],
-    ["Storage", "No video. Metadata hot 30 days, warm 1 year, cold 7 years", "plates on a shorter clock, 30 days"],
-    ["Integrations", "Each department's VMS API; VAHAN owner lookup; DLT-registered SMS; GSWAN", "MV Act s.136A, CMVR r.167A"],
+    ["Storage", "No video. Metadata hot 30 days, warm 1 year, cold 7 years", "the audit log is kept in full"],
+    ["Integrations", "Each department's VMS API and credentials; GSWAN to every site", "the network the sites already share"],
     ["People", "District operators; a camera-health desk; a small labelling team", "a person confirms every alert and challan"],
-    ["Cost", "Edge GPUs ₹90–120 crore over the phases; software open source", "no VMS replaced, no central video store"],
+    ["Cost", "Edge GPUs ₹90–120 crore over the phases; software open source", "the one large line; the rest is ordinary servers"],
   ],
   scaleSrc: "docs/scalability.md §2 hardware, §3 network, §4 storage, §5 AI capacity, §7 HA/DR, §10 cost-benefit (estimates, for planning)",
 
   stack: [
     ["Capture", "RTSP over TCP · FFmpeg", "Reads the streams cameras already send, timed by the stream's own clock."],
-    ["Vehicles", "YOLO11s + ByteTrack", "One identity per vehicle, so its plate is decided once."],
+    ["Vehicles", "YOLO11s + ByteTrack (YOLO11n on the live reader)", "One identity per vehicle, so its plate is decided once."],
     ["Plates", "YOLO11n, inside each vehicle", "A small search: small plates found, hoardings never proposed."],
     ["Reading", "2 CRNN readers + PaddleOCR", "Different kinds of reader make different mistakes."],
     ["Deciding", "Votes · plate rules · glyph check", "A plate is right or absent, never a guess."],

@@ -6,7 +6,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *Vigentra*
 
 - **Story purpose.** Open on the name, as a control room powering up.
-- **Visual.** Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: the hackathon model (Model 1 + Model 3), cameras, the vehicle detector, the tracker, the plate detector, the readers, the plate rules.
+- **Visual.** Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: the hackathon model (Model 1 + Model 3), cameras, the vehicle detector (YOLO11s, YOLO11n on the live reader), the tracker, the plate detector, the readers, the plate rules.
 - **Speaker narration.** This is Vigentra. Vigilance, intelligence, safer roads. We are building Model 1 and Model 3: one statewide camera registry, federated with every department's system. [pause] It reads number plates from the CCTV that is already on our roads. Let me show you how.
 - **Audience should understand.** Who we are, and that this is a working system.
 - **Transition.** 11 s, then the control room's wall. Moves on by itself (press A to hold).
@@ -146,8 +146,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *The system*
 
 - **Story purpose.** The high-level design in four tiers.
-- **Visual.** A live schematic: cameras, edge, regional, central, console; a red dashed line between edge and regional: only metadata crosses. Squares carry video into the edge and text beyond it.
-- **Speaker narration.** Four tiers. Cameras stay with their departments. The edge reads the video in the site. Districts federate and buffer. Central keeps the records, in two sites. [beat] Only metadata crosses this line. Video never leaves the site.
+- **Visual.** A live schematic: cameras, edge in the site, regional per district, central for the state, the console; a red dashed line between edge and regional marks where only metadata crosses. Squares carry video into the edge and text beyond it.
+- **Speaker narration.** Zoom out to the state. Four tiers. The edge reads video where it is recorded. Each district speaks its local systems and holds records through a network drop. Central keeps the records and decides who sees what. [beat] Each tier grows on its own: more GPUs, more districts, more replicas.
 - **Audience should understand.** Why it scales: video stays local, text travels.
 - **Transition.** 22 s, then the banner. Moves on by itself (press A to hold).
 - **Real asset.** K.CHARTS.hld()
@@ -216,8 +216,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *Next*
 
 - **Story purpose.** What we will do next, from today's limits.
-- **Visual.** A deployment plan: GPU servers at the edge (next); no record lost offline; Indian vehicle types; night and small plates; state-scale monitoring; recovery targets.
-- **Speaker narration.** And what's next. GPU servers at the edge, so every grid feed is read live. No record lost when the network drops. Indian vehicle types are already done. Better reading at night and at a distance. Monitoring at state scale, and recovery targets of five minutes of data and one hour.
+- **Visual.** A deployment plan: a reader for borderline plates (next); night and small plates; more Indian vehicle classes; more offences; real owner lookup and SMS (next); proven at load.
+- **Speaker narration.** What we do next. A better reader, because the detector now finds more plates than we can read safely. Night and small plates. E-rickshaws, goods autos and tractors. Red light, triple riding and seat belts. The real VAHAN lookup and SMS gateway. And proof at load, well past a hundred and sixty-four plate reads a second.
 - **Audience should understand.** A concrete plan, grounded in what the project measured.
 - **Transition.** You move on.
 - **Real asset.** docs/scalability.md; js/data/project.js (roadmap)
@@ -226,8 +226,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *80,000 cameras*
 
 - **Story purpose.** What 80,000 cameras make possible.
-- **Visual.** Six cards: statewide trace, pursuit across districts, watchlist at every junction, automated e-challan, traffic by vehicle class, a self-reporting estate; each tagged Built on 30 or Next.
-- **Speaker narration.** At eighty thousand cameras: one query instead of twenty-six footage requests. A vehicle traced statewide. Pursued across districts. Flagged at any junction. Challans with evidence. Traffic counted by Indian vehicle class. And cameras that report their own faults.
+- **Visual.** Six cards: statewide vehicle trace, pursuit across districts, watchlist at every junction, e-challan at state scale, traffic by vehicle class, journey times and flows; each tagged Built on 30 or Next.
+- **Speaker narration.** At eighty thousand cameras: one query instead of twenty-six footage requests. A vehicle traced across every department. Pursued across districts. Flagged at any junction. Challans wherever the offence was seen. Traffic counted by Indian vehicle class. And journey times between districts, from plate reads alone.
 - **Audience should understand.** The value grows with every camera added.
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js possible
@@ -237,7 +237,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 
 - **Story purpose.** What it takes, honestly sized.
 - **Visual.** Two big numbers: about 160 Gbps if video went central, about 1 Gbps with Vigentra; then the requirements table, tier by tier: edge GPUs, regional, central, storage, integrations, people, cost.
-- **Speaker narration.** Sending every camera's video centrally would need about a hundred and sixty gigabits a second. Vigentra needs about one. [beat] What it does need: about three thousand edge GPUs, two nodes per district, two central sites, VAHAN and an SMS gateway, people to confirm. Ninety to a hundred and twenty crore for the edge, and no software licences.
+- **Speaker narration.** Sending every camera's video to the centre would need about a hundred and sixty gigabits a second. Vigentra needs about one. [beat] What it does need: about three thousand edge GPUs, two nodes per district, two central sites, the departments' VMS access and the state network, and people to confirm. Ninety to a hundred and twenty crore for the edge, and no software licences.
 - **Audience should understand.** It is feasible, and the cost is in one known place.
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js needsBig, needs · docs/scalability.md
@@ -246,8 +246,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *Why Vigentra*
 
 - **Story purpose.** What sets Vigentra apart, as design choices with evidence.
-- **Visual.** Six panels: works on the cameras you have; it doesn't guess (0 wrong, 36 of 48); video stays with its owner; built for Indian plates (40 state codes, 39 Gujarat RTOs); every act on record (audit log, signed alerts); knows when a camera goes dark (about 40 s).
-- **Speaker narration.** So what makes Vigentra different? It works on the cameras you already have. It doesn't guess: zero wrong plates. Video stays with its owner; only text travels. It is built for Indian plates. Every act is on record, and alerts go out signed. And it knows within about forty seconds when a camera goes dark.
+- **Visual.** Six panels: nothing new at the camera (Model 1 + Model 3); a wrong plate is worse than a missed one (the zero-false rule); built for Indian roads (40 state codes, 39 Gujarat RTOs); private by design (retention enforced on read); trained on Gujarat's own footage (4,891 plate boxes, 2,160 vehicles, 1,317 riders labelled by people); the department stays in control (grant, deny, revoke).
+- **Speaker narration.** So, to close: what makes Vigentra different? Nothing new at the camera. A wrong plate counts for more than a missed one, so a model that adds one is not used. Built for Indian roads. Private by design: no central video, and plates expire on a clock checked on every read. Trained on our own footage, labelled by people. And every department stays in control of its video.
 - **Audience should understand.** Vigentra's choices: existing cameras, no guessing, federated video, Indian plates, accountability, health.
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (distinct, with sources)

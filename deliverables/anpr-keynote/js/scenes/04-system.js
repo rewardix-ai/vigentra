@@ -44,11 +44,11 @@
       const tag = S.at(975, 690, 420, 40, h("div", { style: { font: "700 18px var(--mono)", letterSpacing: "0.12em", color: "#e5484d" } }, "ONLY METADATA CROSSES"), "r");
       line.id = "ml"; tag.id = "mt";
       ctx.el.append(
-        S.title("The high-level design", "Four tiers. Video stays."),
+        S.title("The high-level design", "Four tiers."),
         S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
         chart, line, tag,
-        S.banner("By design", "Departments keep their cameras, VMS and footage. Vigentra federates them.", { id: "b1" }),
-        S.tech(["<b>Edge</b> ~3,000 GPU nodes in department sites", "<b>Regional</b> 33 districts × 2 nodes", "<b>Central</b> 2 sites, primary + DR"], "docs/hld.md · docs/scalability.md §2")
+        S.banner("Grows tier by tier", "Add GPUs, districts or replicas without touching the other tiers.", { id: "b1" }),
+        S.tech(["<b>Edge</b> reads the video where it is recorded", "<b>Regional</b> speaks each local VMS and buffers outages", "<b>Central</b> keeps the records and decides access"], "docs/hld.md §3 · docs/scalability.md §1")
       );
       return [
         async () => {

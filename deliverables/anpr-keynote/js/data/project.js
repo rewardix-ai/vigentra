@@ -44,10 +44,10 @@ K.DATA = {
     ["Night and small plates", "Camera placement and IR guidance, and a small-plate detector trained on human-checked hard cases.", "Planned"],
     ["More Indian vehicle classes", "E-rickshaws, goods autos and tractors: too few on our cameras so far to learn them.", "Planned"],
     ["More offences", "Red light, triple riding and no seat belt, each with its evidence and a person to confirm it.", "Planned"],
-    ["Real owner lookup and SMS", "Replace the demo owner list and the simulated SMS with VAHAN and a DLT-registered gateway.", "Next"],
+    ["Real owner lookup", "Replace the demo owner list with the state VAHAN registry, under MV Act s.136A.", "Next"],
     ["Proven at load", "Kafka between ingest and matching, tested well past today's 164 plate reads a second.", "Planned"],
   ],
-  roadmapSrc: "plate detector A/B 9 Oct (reports/plate_ab_auto_ft_v2.md) · data/cls/vtype (class counts) · services/challan_service.py (demo owners, simulated SMS) · docs/scalability.md §5 (164 reads/s), §6 (Kafka)",
+  roadmapSrc: "plate detector A/B 9 Oct (reports/plate_ab_auto_ft_v2.md) · data/cls/vtype (class counts) · services/challan_service.py (demo owners) · docs/scalability.md §5 (164 reads/s), §6 (Kafka)",
 
   // Under the hood: each layer, what it runs on, and why. TECHNICAL.md has the full reasoning.
   // Every feature (deck scenes "features-find", "features-act"): [name, what it does]
@@ -69,7 +69,7 @@ K.DATA = {
     ["Helmet detection", "Rider without a helmet, with snapshot, one call per rider."],
     ["Wrong way + incidents", "Wrong side, possible collision, person in traffic, intrusion."],
     ["Incident review", "Snapshot-led cards; a person confirms or dismisses each."],
-    ["E-challan", "Plate filled in, owner looked up, MV Act section, SMS sent."],
+    ["E-challan", "Plate filled in, owner looked up, MV Act section and fine."],
     ["Camera health alerts", "A camera or system that stops is told within about 40 seconds."],
     ["Footage quality alerts", "Black or broken pictures raise an alert within a minute."],
     ["Gap analysis", "Thin districts, ageing cameras, footage that is unusable."],

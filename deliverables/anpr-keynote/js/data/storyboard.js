@@ -158,8 +158,8 @@ K.STORY = {
   },
   roadmap: {
     purpose: "What we will do next, from today's limits.",
-    sees: "A deployment plan: a reader for borderline plates (next); night and small plates; more Indian vehicle classes; more offences; real owner lookup and SMS (next); proven at load.",
-    say: "What we do next. A better reader, because the detector now finds more plates than we can read safely. Night and small plates. E-rickshaws, goods autos and tractors. Red light, triple riding and seat belts. The real VAHAN lookup and SMS gateway. And proof at load, well past a hundred and sixty-four plate reads a second.",
+    sees: "A deployment plan: a reader for borderline plates (next); night and small plates; more Indian vehicle classes; more offences; real owner lookup (next); proven at load.",
+    say: "What we do next. A better reader, because the detector now finds more plates than we can read safely. Night and small plates. E-rickshaws, goods autos and tractors. Red light, triple riding and seat belts. The real VAHAN owner lookup. And proof at load, well past a hundred and sixty-four plate reads a second.",
     understand: "A concrete plan, grounded in what the project measured.",
     transition: "You move on.",
     asset: "docs/scalability.md; js/data/project.js (roadmap)",
@@ -175,7 +175,7 @@ K.STORY = {
   "features-act": {
     purpose: "Every feature, part 2: acting and governing.",
     sees: "Twelve cards: helmet detection, wrong way and incidents, incident review, e-challan, camera health alerts, footage quality alerts, gap analysis, video access requests, role and zone access, audit log, alert push, self-healing reader.",
-    say: "Second, acting on it. Riders without helmets and wrong-way vehicles, with evidence; a person confirms, and the challan goes out. Cameras that stop or break are told in a minute. Gaps in coverage are shown. And every user sees only what their role allows, with every act audited.",
+    say: "Second, acting on it. Riders without helmets and wrong-way vehicles, with evidence; a person confirms, and the challan is issued. Cameras that stop or break are told in a minute. Gaps in coverage are shown. And every user sees only what their role allows, with every act audited.",
     understand: "Every action has evidence and a person behind it.",
     transition: "You move on, row by row.",
     asset: "js/data/project.js featuresAct",

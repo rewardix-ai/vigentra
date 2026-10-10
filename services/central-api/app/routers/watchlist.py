@@ -25,7 +25,7 @@ import io
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -732,6 +732,45 @@ async def plate_track(
 # ---------------------------------------------------------------------------
 
 @router.get(
+    "/sightings/{sighting_id}/evidence",
+    summary="The photo behind a plate read: the vehicle in its best frame, plate boxed",
+    responses={200: {"content": {"image/jpeg": {}}}},
+)
+async def sighting_evidence(
+    sighting_id: str,
+    request: Request,
+    settings: SettingsDep,
+    user: DemoUser = Depends(require_permission(Permission.PLATE_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """To accounts that may read the camera's plates, only while the plate is within retention;
+    every view is audited (a picture of a vehicle and its registration)."""
+    from ..models import PlateEvidence
+
+    photo = await db.get(PlateEvidence, sighting_id)
+    sighting = (await db.execute(select(PlateSighting).where(PlateSighting.sighting_id == sighting_id))).scalar_one_or_none()
+    if photo is None or sighting is None or not _within_retention(sighting.timestamp_utc, _plate_horizon(settings)):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No photo for this reading")
+    cameras = await _readable_cameras(db, user)
+    camera = cameras.get(sighting.camera_id)
+    if camera is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Out of scope")
+    await audit_service.record(
+        db,
+        username=user.username,
+        role=user.role,
+        action=AuditAction.PLATE_EVIDENCE_VIEWED,
+        outcome=AuditOutcome.SUCCESS,
+        resource_type=ResourceType.DETECTION,
+        resource_id=sighting_id,
+        department=camera.owning_department,
+        client_ip=client_ip(request),
+        details={"camera_id": sighting.camera_id},
+    )
+    return Response(content=photo.jpeg, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=300"})
+
+
+@router.get(
     "/reports/anpr",
     response_model=list[AnalyticsReportRow],
     summary="ANPR output report - detected plates with timestamps",
@@ -777,6 +816,11 @@ async def anpr_report(
         ).scalars().all()
     }
 
+    from ..models import PlateEvidence
+
+    with_photo = set((await db.execute(
+        select(PlateEvidence.sighting_id).where(PlateEvidence.sighting_id.in_({row.sighting_id for row in rows} or {""}))
+    )).scalars().all())
     horizon = _plate_horizon(settings)
     report = []
     for row in rows:
@@ -798,6 +842,8 @@ async def anpr_report(
                 timestamp_utc=row.timestamp_utc,
                 confidence=row.confidence,
                 observations=row.observations,
+                sighting_id=row.sighting_id,
+                has_evidence=row.sighting_id in with_photo and _within_retention(row.timestamp_utc, horizon),
                 watchlist_hit=alert is not None,
                 watchlist_category=alert.category if alert else None,
             )

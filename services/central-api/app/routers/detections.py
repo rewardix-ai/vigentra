@@ -154,6 +154,30 @@ def _to_out(
 # Ingest
 # ---------------------------------------------------------------------------
 
+#: A plate photo is a vehicle crop at most 480 px wide: 20-80 KB. Anything far larger is not one.
+PLATE_PHOTO_MAX_BYTES = 384 * 1024
+
+
+async def _store_plate_photos(db: AsyncSession, photos: dict[str, str]) -> None:
+    """Keep each read's proof photo beside the sighting it became, in the ingest's transaction.
+    A malformed or oversized photo is dropped; it never costs the reading itself."""
+    import base64
+    import binascii
+
+    from ..models import PlateEvidence, PlateSighting
+
+    rows = (await db.execute(select(PlateSighting).where(PlateSighting.detection_id.in_(list(photos))))).scalars().all()
+    for row in rows:
+        if await db.get(PlateEvidence, row.sighting_id) is not None:
+            continue
+        try:
+            data = base64.b64decode(photos[row.detection_id], validate=True)
+        except (binascii.Error, ValueError):
+            continue
+        if data.startswith(b"\xff\xd8") and len(data) <= PLATE_PHOTO_MAX_BYTES:
+            db.add(PlateEvidence(sighting_id=row.sighting_id, camera_id=row.camera_id, jpeg=data))
+
+
 @router.post(
     "/detections/ingest",
     response_model=DetectionIngestResult,
@@ -178,6 +202,7 @@ async def ingest_detections(
     """
     accepted = duplicates = rejected = 0
     errors: list[dict] = []
+    plate_photos: dict[str, str] = {}
     plate_reads: list[watchlist_service.PlateRead] = []
     now = datetime.now(timezone.utc)
 
@@ -294,6 +319,8 @@ async def ingest_detections(
         # here and written below so the sighting, the alert it raises and the
         # detection they came from all land in one transaction - an alert
         # whose evidence rolled back is worse than no alert.
+        if item.plate_text and item.plate_evidence_jpeg_b64:
+            plate_photos[item.detection_id] = item.plate_evidence_jpeg_b64
         if item.plate_text:
             plate_reads.append(
                 watchlist_service.PlateRead(
@@ -316,6 +343,8 @@ async def ingest_detections(
         await _touch_model_version(db, model_seen[0], model_seen[1], accepted)
 
     identity = await watchlist_service.record_sightings(db, plate_reads)
+    if plate_photos:
+        await _store_plate_photos(db, plate_photos)
 
     await db.commit()
 

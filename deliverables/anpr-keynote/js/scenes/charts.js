@@ -101,7 +101,7 @@
           media: () => h("div.mosaic", null, ["wall_cam04", "wall_cam12", "wall_cam15", "delhi_raw"].map((k) => K.media.video(k, { cls: "media-cover" }))),
           say: "the department's own cameras, unchanged" },
         { id: "reader", n: 2, x: X[1], y: R, title: "Vigentra reader", sub: "find · follow · read", media: () => S.carThumb({ plate: true }),
-          say: "reads the plates; only a confirmed plate leaves it, as text" },
+          say: "reads the plates; a reading leaves it as text with one proof photo, never video" },
         { id: "central", n: 3, x: X[2], y: R, title: "Vigentra central", sub: "plate records · watchlist",
           media: () => h("div.fc-rec", null, [h("div", null, E.plate), h("span", null, "plate · time · camera")]),
           say: "stores the record, checks the watchlist as it arrives" },

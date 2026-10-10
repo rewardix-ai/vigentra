@@ -943,6 +943,9 @@ class DetectionIn(BaseModel):
     plate_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     plate_bbox_xyxy: list[float] | None = None
     plate_reader: str | None = Field(default=None, max_length=80)
+    #: The vehicle in the frame its plate was best seen, plate boxed (JPEG, base64): the proof
+    #: shown beside the reading in the ANPR report.
+    plate_evidence_jpeg_b64: str | None = Field(default=None, max_length=600_000)
 
     @field_validator("bbox_xyxy")
     @classmethod
@@ -1645,6 +1648,9 @@ class AnalyticsReportRow(BaseModel):
     observations: int = 1
     watchlist_hit: bool = False
     watchlist_category: str | None = None
+    sighting_id: str | None = None
+    #: a photo of the vehicle is stored (GET /sightings/{sighting_id}/evidence)
+    has_evidence: bool = False
 
     @field_serializer("timestamp_utc")
     def _ser_time(self, value: datetime) -> str | None:

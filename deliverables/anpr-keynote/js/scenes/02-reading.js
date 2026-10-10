@@ -194,7 +194,7 @@
       const fields = [
         ["Plate", E.plate], ["Camera", (E.camera || "cam06").toUpperCase()], ["Status", "Confirmed"],
         ["Readings", `${rows[0][1]} of ${total} agree`], ["Frames", `${E.frames.agreeing} agree`],
-        ["Format", D.grammar.segments.map((s) => s[0]).join(" · ")], ["Sent", "text only · no image · no video"],
+        ["Format", D.grammar.segments.map((s) => s[0]).join(" · ")], ["Sent", "text + one proof photo · no video"],
       ];
       const rec = h("div.recfields", null, fields.map(([k]) => h("div.rf", null, [h("span.rf-k", null, k), h("span.rf-v")])));
       ctx.el.append(

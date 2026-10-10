@@ -758,6 +758,9 @@ export interface AnprReportRow {
   observations: number;
   watchlist_hit: boolean;
   watchlist_category: string | null;
+  sighting_id?: string | null;
+  /** A photo of the vehicle in its best frame is stored (api.sightingEvidenceUrl). */
+  has_evidence?: boolean;
 }
 
 

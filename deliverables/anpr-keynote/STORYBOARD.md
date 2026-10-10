@@ -96,9 +96,9 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *How Vigentra reads*
 
 - **Story purpose.** Many readings, one confirmed answer, one saved record.
-- **Visual.** A tally of the 136 real readings: GJ23H1546 leads with 73; the others fade; CONFIRMED. Then the saved record types out: plate, camera, status, readings, frames, format, sent as text only.
-- **Speaker narration.** One car gave us many frames, and our readers produced a hundred and thirty-six readings of this plate. [beat] Seventy-three of them say G J 23 H 1546; the rest scatter. [beat] Only when enough frames agree is the plate confirmed. [pause] And this is everything that is saved: the plate, the camera, the time, how many frames agreed, and the format. It travels as text. No image of a face, no video.
-- **Audience should understand.** Vigentra confirms by agreement and stores only text.
+- **Visual.** A tally of the 136 real readings: GJ23H1546 leads with 73; the others fade; CONFIRMED. Then the saved record types out: plate, camera, status, readings, frames, format, sent as text with one proof photo.
+- **Speaker narration.** One car gave us many frames, and our readers produced a hundred and thirty-six readings of this plate. [beat] Seventy-three of them say G J 23 H 1546; the rest scatter. [beat] Only when enough frames agree is the plate confirmed. [pause] And this is everything that is saved: the plate, the camera, the time, how many frames agreed, the format, and one small photo of the vehicle in its best frame, so anyone checking the report can see the proof. Never video.
+- **Audience should understand.** Vigentra confirms by agreement and keeps the proof, never the video.
 - **Transition.** You move on.
 - **Real asset.** K.EVIDENCE.top_readings (evidence/confirmed/cam06_s0_t132.json)
 
@@ -137,8 +137,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 
 - **Story purpose.** How the system fits together.
 - **Visual.** A schematic: Cameras (four live feeds) → Vigentra reader → Vigentra central → Console. On the watchlist? YES → Alert; NO → kept for search. A dashed lane: live video, only with the owning unit's permission. Squares travel each route; the event log explains each box.
-- **Speaker narration.** Now step back from the single car to the system. [beat] Video comes in from the department's cameras; text goes out. The reader sends only a confirmed plate, its time and its camera to Vigentra central. Central checks every plate against the watchlist as it arrives: on the list means an alert, prioritised for an operator; not on the list means it is kept for search and tracing. [beat] Live video is a separate lane. Another unit sees it only when the owning department grants it.
-- **Audience should understand.** Vigentra moves plates as text, and video only with permission.
+- **Speaker narration.** Now step back from the single car to the system. [beat] Video comes in from the department's cameras; text goes out. The reader sends the plate, its time, its camera and one proof photo of the vehicle to Vigentra central; never the video. Central checks every plate against the watchlist as it arrives: on the list means an alert, prioritised for an operator; not on the list means it is kept for search and tracing. [beat] Live video is a separate lane. Another unit sees it only when the owning department grants it.
+- **Audience should understand.** Vigentra moves plates as text with a proof photo, and video only with permission.
 - **Transition.** 27 s: schematic 22 · line 5. Moves on by itself (press A to hold).
 - **Real asset.** services/edge-worker/app/worker.py (the plate record); central-api access model
 

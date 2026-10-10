@@ -78,9 +78,9 @@ K.STORY = {
   },
   vote: {
     purpose: "Many readings, one confirmed answer, one saved record.",
-    sees: "A tally of the 136 real readings: GJ23H1546 leads with 73; the others fade; CONFIRMED. Then the saved record types out: plate, camera, status, readings, frames, format, sent as text only.",
-    say: "One car gave us many frames, and our readers produced a hundred and thirty-six readings of this plate. [beat] Seventy-three of them say G J 23 H 1546; the rest scatter. [beat] Only when enough frames agree is the plate confirmed. [pause] And this is everything that is saved: the plate, the camera, the time, how many frames agreed, and the format. It travels as text. No image of a face, no video.",
-    understand: "Vigentra confirms by agreement and stores only text.",
+    sees: "A tally of the 136 real readings: GJ23H1546 leads with 73; the others fade; CONFIRMED. Then the saved record types out: plate, camera, status, readings, frames, format, sent as text with one proof photo.",
+    say: "One car gave us many frames, and our readers produced a hundred and thirty-six readings of this plate. [beat] Seventy-three of them say G J 23 H 1546; the rest scatter. [beat] Only when enough frames agree is the plate confirmed. [pause] And this is everything that is saved: the plate, the camera, the time, how many frames agreed, the format, and one small photo of the vehicle in its best frame, so anyone checking the report can see the proof. Never video.",
+    understand: "Vigentra confirms by agreement and keeps the proof, never the video.",
     transition: "You move on.",
     asset: "K.EVIDENCE.top_readings (evidence/confirmed/cam06_s0_t132.json)",
   },
@@ -111,8 +111,8 @@ K.STORY = {
   system: {
     purpose: "How the system fits together.",
     sees: "A schematic: Cameras (four live feeds) → Vigentra reader → Vigentra central → Console. On the watchlist? YES → Alert; NO → kept for search. A dashed lane: live video, only with the owning unit's permission. Squares travel each route; the event log explains each box.",
-    say: "Now step back from the single car to the system. [beat] Video comes in from the department's cameras; text goes out. The reader sends only a confirmed plate, its time and its camera to Vigentra central. Central checks every plate against the watchlist as it arrives: on the list means an alert, prioritised for an operator; not on the list means it is kept for search and tracing. [beat] Live video is a separate lane. Another unit sees it only when the owning department grants it.",
-    understand: "Vigentra moves plates as text, and video only with permission.",
+    say: "Now step back from the single car to the system. [beat] Video comes in from the department's cameras; text goes out. The reader sends the plate, its time, its camera and one proof photo of the vehicle to Vigentra central; never the video. Central checks every plate against the watchlist as it arrives: on the list means an alert, prioritised for an operator; not on the list means it is kept for search and tracing. [beat] Live video is a separate lane. Another unit sees it only when the owning department grants it.",
+    understand: "Vigentra moves plates as text with a proof photo, and video only with permission.",
     transition: "27 s: schematic 22 · line 5. Moves on by itself (press A to hold).",
     asset: "services/edge-worker/app/worker.py (the plate record); central-api access model",
   },

@@ -17,8 +17,8 @@
         S.title("The system", "How the pieces connect."),
         S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
         chart,
-        S.banner("By design", "Plates travel as text. Video is shared only with its owner's permission.", { id: "b1" }),
-        S.tech(["<b>Plate record</b> plate, camera, time, confidence and boxes; no image, no video", "<b>Unconfirmed readings</b> not sent (ANPR_EMIT_UNCONFIRMED=false)", "<b>Video</b> central oversight roles need the owning unit's grant"], "services/edge-worker/app/worker.py · services/central-api (access model)")
+        S.banner("By design", "Plates travel as text with one proof photo. Video stays with its owner.", { id: "b1" }),
+        S.tech(["<b>Plate record</b> plate, camera, time, confidence, boxes and one proof photo of the vehicle; no video", "<b>Unconfirmed readings</b> kept, flagged unconfirmed (live reader: ANPR_EMIT_UNCONFIRMED=true)", "<b>Video</b> central oversight roles need the owning unit's grant"], "services/edge-worker/app/worker.py · services/central-api (access model)")
       );
       return [
         async () => {

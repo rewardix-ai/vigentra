@@ -115,6 +115,8 @@ class PlateSighting:
     frame_index: int
     method: str = ""
     quality: dict = field(default_factory=dict)
+    #: the vehicle in the frame its plate was best seen, plate boxed (JPEG): the reading's proof
+    evidence_jpeg: bytes | None = None
 
 
 def _track_number(raw: Any) -> int:
@@ -151,6 +153,9 @@ class AnprEngine:
         #: Track keys already emitted, so a settled plate is sent once even
         #: though its record stays on the pipeline.
         self._emitted: set[str] = set()
+        #: per track, (score, JPEG) of its best view so far: the vehicle when its plate was largest
+        #: and surest. Attached to the reading when the track settles (the ANPR report's proof).
+        self._proof: dict[str, tuple[float, bytes]] = {}
         #: Plates that settled before the caller asked for them - a scene cut
         #: mid-pass closes tracks, and those readings must survive to the next
         #: finish() rather than being dropped on the floor.
@@ -232,6 +237,7 @@ class AnprEngine:
         vehicles = getattr(self._pipeline, "vehicles", None)
         if vehicles is not None and hasattr(vehicles, "reset"):
             vehicles.reset()
+        self.__dict__.setdefault("_proof", {}).clear()   # track ids start again: a kept view must never land on a new vehicle
 
     def new_stream(self) -> None:
         """A new capture of the same camera.
@@ -240,6 +246,7 @@ class AnprEngine:
         but the camera has not moved, so what it has learned about where its
         burned-in clock sits is kept.
         """
+        self.__dict__.setdefault("_proof", {}).clear()
         self.reset()
 
     # -- per frame ---------------------------------------------------------
@@ -269,6 +276,10 @@ class AnprEngine:
         )
         self._frames += 1
         latency_ms = (time.perf_counter() - started) * 1000.0
+        try:
+            self._keep_proof(frame)
+        except Exception as exc:  # pragma: no cover - proof is a side product, never stops a pass
+            logger.debug("plate proof not kept: %s", exc)
 
         detections: list[Detection] = []
         for track_id, box, cls_name, conf in getattr(self._pipeline, "last_vehicles", []):
@@ -291,6 +302,56 @@ class AnprEngine:
         self._harvest()
         settled, self._pending = self._pending, []
         return detections, self._not_scene_text(settled)
+
+    #: proof photos: at most this wide, kept for this many open tracks
+    PROOF_WIDTH, PROOF_TRACKS = 480, 400
+
+    def _keep_proof(self, frame) -> None:
+        """Remember, for each vehicle with a plate box in this frame, the view where its plate is
+        widest and surest: the vehicle cropped with a margin, the plate boxed. Encoded only when it
+        beats the view kept so far, so a vehicle costs a handful of small JPEGs at most."""
+        import cv2
+
+        plates = getattr(self._pipeline, "last_plates", None) or []
+        if not plates or frame is None:
+            return
+        self.__dict__.setdefault("_proof", {})
+        vehicles = {str(t): box for t, box, _c, _s in getattr(self._pipeline, "last_vehicles", [])}
+        h, w = frame.shape[:2]
+        for tid, pbox, _src, conf in plates:
+            key, vbox = str(tid), vehicles.get(str(tid))
+            if vbox is None:
+                continue
+            score = float(pbox[2] - pbox[0]) * float(conf or 0.0)
+            old = self._proof.get(key)
+            if old is not None and score <= old[0] * 1.05:
+                continue
+            x1, y1, x2, y2 = (float(v) for v in vbox)
+            mx, my = 0.12 * (x2 - x1), 0.12 * (y2 - y1)
+            cx1, cy1, cx2, cy2 = int(max(0, x1 - mx)), int(max(0, y1 - my)), int(min(w, x2 + mx)), int(min(h, y2 + my))
+            crop = frame[cy1:cy2, cx1:cx2].copy()
+            if crop.size == 0:
+                continue
+            px1, py1, px2, py2 = (int(v) for v in pbox)
+            cv2.rectangle(crop, (px1 - cx1, py1 - cy1), (px2 - cx1, py2 - cy1), (60, 220, 90), 2)
+            if crop.shape[1] > self.PROOF_WIDTH:
+                k = self.PROOF_WIDTH / crop.shape[1]
+                crop = cv2.resize(crop, (self.PROOF_WIDTH, max(1, int(crop.shape[0] * k))), interpolation=cv2.INTER_AREA)
+            ok, buf = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 82])
+            if ok:
+                self._proof.pop(key, None)
+                self._proof[key] = (score, buf.tobytes())
+        while len(self._proof) > self.PROOF_TRACKS:
+            self._proof.pop(next(iter(self._proof)))
+
+    def _take_proof(self, keys) -> bytes | None:
+        """The best kept view among a vehicle's track ids (fragments of one vehicle merge)."""
+        best, proof = None, self.__dict__.setdefault("_proof", {})
+        for k in {str(k) for k in keys}:
+            got = proof.pop(k, None)
+            if got is not None and (best is None or got[0] > best[0]):
+                best = got
+        return best[1] if best else None
 
     # -- end of pass -------------------------------------------------------
 
@@ -376,6 +437,7 @@ class AnprEngine:
                     frame_index=int(rec.get("best_frame") or rec.get("last_frame") or 0),
                     method=str(rec.get("reason") or ""),
                     quality=dict(rec.get("quality") or {}),
+                    evidence_jpeg=self._take_proof([key, *group]),
                 )
             )
 

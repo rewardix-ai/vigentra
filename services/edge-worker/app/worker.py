@@ -24,6 +24,7 @@ Environment: see docs/yolo-setup.md.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import logging
 import os
@@ -543,6 +544,9 @@ def _sighting_payload(
         "class_id": 2,
         "confidence": round(float(sighting.confidence), 4),
         "bbox_xyxy": sighting.vehicle_bbox or sighting.plate_bbox or [0.0, 0.0, 1.0, 1.0],
+        # the vehicle in its best frame, plate boxed: shown beside the reading in the ANPR report
+        **({"plate_evidence_jpeg_b64": base64.b64encode(sighting.evidence_jpeg).decode("ascii")}
+           if getattr(sighting, "evidence_jpeg", None) else {}),
         "model_name": "vigentra-anpr-consensus",
         "model_version": reader_version.split("/", 1)[-1],
         "source_mode": source_mode,

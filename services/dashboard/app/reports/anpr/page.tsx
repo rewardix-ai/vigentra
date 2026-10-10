@@ -16,6 +16,7 @@ import {
   Spinner,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { useBackCloses } from "@/lib/backCloses";
 import { ist } from "@/lib/format";
 import type { AnprReportRow } from "@/lib/types";
 
@@ -33,6 +34,8 @@ import type { AnprReportRow } from "@/lib/types";
  */
 
 export default function AnprReportPage() {
+  const [photo, setPhoto] = useState<AnprReportRow | null>(null);
+  useBackCloses(photo !== null, () => setPhoto(null));
   const [rows, setRows] = useState<AnprReportRow[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +157,7 @@ export default function AnprReportPage() {
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th>Proof</th>
                     <th>Timestamp (IST)</th>
                     <th>Plate</th>
                     <th>Camera</th>
@@ -167,6 +171,22 @@ export default function AnprReportPage() {
                 <tbody>
                   {rows.map((row, index) => (
                     <tr key={`${row.camera_id}-${row.timestamp_utc}-${index}`}>
+                      <td>
+                        {row.has_evidence && row.sighting_id ? (
+                          <button
+                            type="button"
+                            title="The vehicle in its best frame, plate boxed (opens larger)"
+                            onClick={() => setPhoto(row)}
+                            className="block h-12 w-20 overflow-hidden rounded-sm bg-canvas-soft"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img alt={`Vehicle read as ${row.plate ?? "withheld"}`} className="h-full w-full object-cover"
+                                 loading="lazy" src={api.sightingEvidenceUrl(row.sighting_id)} />
+                          </button>
+                        ) : (
+                          <span className="text-caption text-muted" title="Read before photos were kept (10 Oct)">—</span>
+                        )}
+                      </td>
                       <td className="whitespace-nowrap">{ist(row.timestamp_utc)}</td>
                       <td className="mono font-semibold">
                         {row.plate ?? (
@@ -213,6 +233,18 @@ export default function AnprReportPage() {
             </div>
           </Card>
         )}
+      {photo && photo.sighting_id && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/80 p-4"
+             onClick={() => setPhoto(null)} role="dialog" aria-label="Plate read evidence">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={`Vehicle read as ${photo.plate ?? "withheld"}`} className="max-h-[80vh] max-w-full rounded-sm object-contain"
+               src={api.sightingEvidenceUrl(photo.sighting_id)} />
+          <div className="rounded-full bg-canvas px-4 py-2 text-body-sm text-ink">
+            <span className="mono font-semibold">{photo.plate ?? "withheld"}</span> · {photo.camera_name ?? photo.camera_id} ·{" "}
+            {ist(photo.timestamp_utc)} · {photo.observations} frames agreed
+          </div>
+        </div>
+      )}
       </div>
     </>
   );

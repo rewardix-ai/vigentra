@@ -56,7 +56,7 @@ K.DATA = {
     ["Camera onboarding", "Request, approve and add cameras, one at a time or by CSV."],
     ["Department federation", "Each VMS joins through an adapter; nothing is replaced."],
     ["Live wall", "Every camera at once; detection boxes and people on or off."],
-    ["Live ANPR", "Plates read at the edge, settled across frames, sent as text."],
+    ["Live ANPR", "Plates read at the edge, settled across frames, each with a proof photo."],
     ["Plate search", "Find any plate, allowing for misreads like 0/O and 8/B."],
     ["Vehicle trace", "A plate's route on the map: place, read time, footage time."],
     ["Live pursuit", "The cameras a vehicle can reach next get the GPU first."],

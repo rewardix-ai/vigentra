@@ -895,6 +895,24 @@ class IncidentSnapshot(Base):
     )
 
 
+class PlateEvidence(Base):
+    """The proof behind a plate read: the vehicle in the frame its plate was best seen, plate boxed.
+
+    Added 10 Oct for the ANPR report, so every reading can be checked by eye. One small JPEG per
+    sighting, served only to accounts that may read the camera's plates, only while the plate itself
+    is within its retention window, and every view is audited (routers/watchlist.py).
+    """
+
+    __tablename__ = "plate_evidence"
+
+    sighting_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    camera_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    jpeg: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+
 class Pursuit(Base):
     """A designated vehicle being followed across the cameras right now.
 

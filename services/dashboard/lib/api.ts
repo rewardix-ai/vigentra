@@ -344,6 +344,9 @@ export const api = {
    */
   streamUrl: (session: VideoSession) => `/api/vigentra${session.stream_url}`,
   /** The frame an incident was raised on (JPEG). Each view is audited server-side. */
+  /** The vehicle in the frame its plate was best seen, plate boxed (JPEG). Each view is audited. */
+  sightingEvidenceUrl: (sightingId: string) =>
+    `${BASE}/api/v1/sightings/${encodeURIComponent(sightingId)}/evidence`,
   incidentSnapshotUrl: (incidentId: string) =>
     `${BASE}/api/v1/incidents/${encodeURIComponent(incidentId)}/snapshot`,
 

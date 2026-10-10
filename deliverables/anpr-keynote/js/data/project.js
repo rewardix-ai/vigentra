@@ -81,6 +81,18 @@ K.DATA = {
   ],
   featuresSrc: "services/central-api · services/edge-worker · services/dashboard · scripts/collect_plates.py, scripts/launchd",
 
+  // The console today (scene "tour"): screenshots taken 10 Oct by deliverables/tools/snap_app.py; each line says what is visible
+  tour: [
+    ["Operations overview", "app_v2_overview", "70 cameras registered, 50 in service, three department systems connected; onboarding and camera health on one page."],
+    ["Camera registry map", "app_v2_registry", "All 50 cameras with coordinates on the map of Gujarat, coloured by department and by health."],
+    ["Live wall", "app_v2_live", "28 grid cameras this account may watch, live, with detection boxes; the plates just read run along the top."],
+    ["Trace a vehicle", "app_v2_trace", "GJ39CB0189: four reads at Gandhidham Rambaugh, each with its time, place, department and how many frames agreed."],
+    ["Incident review", "app_v2_incidents", "Riders without helmets, each card led by its snapshot, with model confidence, time and the fine if confirmed."],
+    ["Alerts", "app_v2_alerts", "Cameras whose picture is breaking up, raised by the footage check within a minute, for an operator to take on."],
+    ["Footage quality", "app_v2_footage", "Per camera, the frames that were broken, black, dark, glared or blurred in the last 24 hours, worst first."],
+  ],
+  tourSrc: "Screenshots of the running console, 10 Oct 2026 (deliverables/tools/snap_app.py; demo department admin account)",
+
   // 80,000 cameras (scenes "scale-possible", "scale-needs"). Figures: docs/scalability.md
   possible: [
     ["Statewide vehicle trace", "A named plate's route across every department's cameras, with the evidence at each point.", "Built on 30"],

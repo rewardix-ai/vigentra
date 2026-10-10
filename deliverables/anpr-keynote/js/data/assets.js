@@ -25,5 +25,12 @@ K.ASSETS = {
   journey_best: { src: "assets/img/journey_best.png", label: "Best crop, GJ23H1546", need: "[REAL PLATE CROP REQUIRED]" },
   journey_fused: { src: "assets/img/journey_fused.png", label: "Frames fused", need: "[FUSED CROP REQUIRED]" },
   journey_enhanced: { src: "assets/img/journey_enhanced.png", label: "Enhanced", need: "[ENHANCED CROP REQUIRED]" },
+  app_v2_overview: { src: "assets/img/app_v2_overview.jpg", label: "Vigentra console today, operations overview", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
+  app_v2_registry: { src: "assets/img/app_v2_registry.jpg", label: "Vigentra console today, camera registry map", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
+  app_v2_live: { src: "assets/img/app_v2_live.jpg", label: "Vigentra console today, live wall", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
+  app_v2_trace: { src: "assets/img/app_v2_trace.jpg", label: "Vigentra console today, trace a vehicle", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
+  app_v2_incidents: { src: "assets/img/app_v2_incidents.jpg", label: "Vigentra console today, incident review", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
+  app_v2_alerts: { src: "assets/img/app_v2_alerts.jpg", label: "Vigentra console today, alerts", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
+  app_v2_footage: { src: "assets/img/app_v2_footage.jpg", label: "Vigentra console today, gap analysis, footage quality", need: "[CONSOLE SCREENSHOT REQUIRED: deliverables/tools/snap_app.py]" },
   app_trace: { src: "assets/img/app_trace.jpg", label: "Vigentra console, trace a vehicle", need: "[CONSOLE SCREENSHOT REQUIRED]" },
 };

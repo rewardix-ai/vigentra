@@ -102,6 +102,32 @@
     },
   });
 
+  /* ---------------------------------------------------------------- the console today: screenshots */
+  K.scene({
+    id: "tour", act: "The system", title: "The console today", src: "SRC " + K.DATA.tourSrc,
+    build(ctx) {
+      const D = K.DATA;
+      const shots = D.tour.map(([, key]) => h("div.fill", { style: { opacity: "0", transition: "opacity .5s ease" } }, K.media.img(key, { cls: "media-fit" })));
+      const items = D.tour.map(([name], i) => h("div.feat", null, [h("span.feat-n.num", null, String(i + 1).padStart(2, "0")), h("span", null, name)]));
+      const line = h("div", { style: { font: "500 26px/1.4 var(--text)", color: "var(--ink)", padding: "18px 22px" } }, "");
+      const show = (i) => {
+        shots.forEach((el, j) => { el.style.opacity = j === i ? "1" : "0"; });
+        items.forEach((el, j) => el.classList.toggle("now", j === i));
+        line.textContent = D.tour[i][2];
+      };
+      ctx.el.append(
+        S.panel(40, 70, 1380, 780, "Vigentra console · today", h("div.fill", null, shots), { id: "cp", right: "screenshot" }),
+        S.panel(1440, 70, 440, 780, "Page", h("div.feats", null, items), { id: "fp" }),
+        S.panel(40, 870, 1840, 120, "What you see", line, { id: "lp" }),
+        S.tech([D.tourSrc], "")
+      );
+      return D.tour.map((_, i) => async () => {
+        if (i === 0) { ctx.in("#cp"); ctx.in("#fp"); await ctx.in("#lp"); }
+        show(i);
+      });
+    },
+  });
+
   /* ---------------------------------------------------------------- every feature, in two scenes */
   function featureScene(id, kicker, line, rows, right) {
     K.scene({

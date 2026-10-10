@@ -57,10 +57,13 @@ def say_html(text: str) -> str:
 def main() -> int:
     notes = story()
     order = scenes()
+    words = sum(len(re.sub(r"\[(pause|beat)\]", "", notes.get(sid, {}).get("say", "")).split()) for sid, _, _ in order)
+    minutes = words / 130
     parts = [f"<title>Vigentra Keynote Speech</title>", f"<style>{CSS}</style>",
              '<header class="mast"><div class="in"><div class="k">Presenter guide · From pixels to information</div>',
-             f"<h1>What to say, scene by scene</h1><p>{len(order)} scenes: about 14½ minutes as scripted, 16–18 with the live moments. Read the green line aloud; "
-             "the rest is for you. Generated from the deck's own speaker notes (js/data/storyboard.js).</p></div></header>",
+             f"<h1>What to say, scene by scene</h1><p>{len(order)} scenes, {words:,} words: about {minutes:.0f} minutes at a calm 130 words a minute, "
+             "a little more with the live moments. Read the green line aloud; the rest is for you. Generated from the deck's own "
+             "speaker notes (js/data/storyboard.js), which the presenter view (S) and the stage notes (N) also show.</p></div></header>",
              '<main class="in"><div class="tips">',
              '<div class="tip"><b>Start</b>python3 deliverables/anpr-keynote/tools/serve.py, open http://127.0.0.1:8765, press S for this view on your screen, F for fullscreen.</div>',
              '<div class="tip"><b>Move</b>→ or Space for the next beat, ← to go back. Video scenes move on by themselves; A holds them.</div>',

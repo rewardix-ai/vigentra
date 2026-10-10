@@ -159,7 +159,7 @@ K.STORY = {
   roadmap: {
     purpose: "What we will do next, from today's limits.",
     sees: "A deployment plan: GPU servers at the edge (next); no record lost offline; Indian vehicle types; night and small plates; state-scale monitoring; recovery targets.",
-    say: "And what's next. GPU servers at the edge, so every grid feed is read live. No record lost when the network drops. Vehicle types for Indian roads. Better reading at night and at a distance. Monitoring at state scale, and recovery targets of five minutes of data and one hour.",
+    say: "And what's next. GPU servers at the edge, so every grid feed is read live. No record lost when the network drops. Indian vehicle types are already done. Better reading at night and at a distance. Monitoring at state scale, and recovery targets of five minutes of data and one hour.",
     understand: "A concrete plan, grounded in what the project measured.",
     transition: "You move on.",
     asset: "docs/scalability.md; js/data/project.js (roadmap)",

@@ -142,7 +142,17 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** 27 s: schematic 22 · line 5. Moves on by itself (press A to hold).
 - **Real asset.** services/edge-worker/app/worker.py (the plate record); central-api access model
 
-## 15. The Vigentra console
+## 15. The high-level design
+*The system*
+
+- **Story purpose.** The high-level design in four tiers.
+- **Visual.** A live schematic: cameras, edge, regional, central, console; a red dashed line between edge and regional: only metadata crosses. Squares carry video into the edge and text beyond it.
+- **Speaker narration.** Four tiers. Cameras stay with their departments. The edge reads the video in the site. Districts federate and buffer. Central keeps the records, in two sites. [beat] Only metadata crosses this line. Video never leaves the site.
+- **Audience should understand.** Why it scales: video stays local, text travels.
+- **Transition.** 22 s, then the banner. Moves on by itself (press A to hold).
+- **Real asset.** K.CHARTS.hld()
+
+## 16. The Vigentra console
 *The system*
 
 - **Story purpose.** What an operator uses.
@@ -152,7 +162,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** 82 s (1:16-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
 - **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
 
-## 16. See every camera. Find any vehicle.
+## 17. See every camera. Find any vehicle.
 *The system*
 
 - **Story purpose.** Every feature, part 1: seeing and finding.
@@ -162,7 +172,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on, row by row.
 - **Real asset.** js/data/project.js featuresFind
 
-## 17. Act on it, with a person in charge.
+## 18. Act on it, with a person in charge.
 *The system*
 
 - **Story purpose.** Every feature, part 2: acting and governing.
@@ -171,16 +181,6 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Audience should understand.** Every action has evidence and a person behind it.
 - **Transition.** You move on, row by row.
 - **Real asset.** js/data/project.js featuresAct
-
-## 18. The high-level design
-*The system*
-
-- **Story purpose.** The high-level design in four tiers.
-- **Visual.** A live schematic: cameras, edge, regional, central, console; a red dashed line between edge and regional: only metadata crosses. Squares carry video into the edge and text beyond it.
-- **Speaker narration.** Four tiers. Cameras stay with their departments. The edge reads the video in the site. Districts federate and buffer. Central keeps the records, in two sites. [beat] Only metadata crosses this line. Video never leaves the site.
-- **Audience should understand.** Why it scales: video stays local, text travels.
-- **Transition.** 22 s, then the banner. Moves on by itself (press A to hold).
-- **Real asset.** K.CHARTS.hld()
 
 ## 19. What Vigentra is built with
 *Under the hood*
@@ -212,27 +212,17 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (dropped) · docs/anpr-optimisation.md
 
-## 22. What makes Vigentra different
-*Why Vigentra*
-
-- **Story purpose.** What sets Vigentra apart, as design choices with evidence.
-- **Visual.** Six panels: works on the cameras you have; it doesn't guess (0 wrong, 36 of 48); video stays with its owner; built for Indian plates (40 state codes, 39 Gujarat RTOs); every act on record (audit log, signed alerts); knows when a camera goes dark (about 40 s).
-- **Speaker narration.** So what makes Vigentra different? It works on the cameras you already have. It doesn't guess: zero wrong plates. Video stays with its owner; only text travels. It is built for Indian plates. Every act is on record, and alerts go out signed. And it knows within about forty seconds when a camera goes dark.
-- **Audience should understand.** Vigentra's choices: existing cameras, no guessing, federated video, Indian plates, accountability, health.
-- **Transition.** You move on.
-- **Real asset.** js/data/project.js (distinct, with sources)
-
-## 23. What we will do next
+## 22. What we will do next
 *Next*
 
 - **Story purpose.** What we will do next, from today's limits.
 - **Visual.** A deployment plan: GPU servers at the edge (next); no record lost offline; Indian vehicle types; night and small plates; state-scale monitoring; recovery targets.
-- **Speaker narration.** And what's next. GPU servers at the edge, so every grid feed is read live. No record lost when the network drops. Vehicle types for Indian roads. Better reading at night and at a distance. Monitoring at state scale, and recovery targets of five minutes of data and one hour.
+- **Speaker narration.** And what's next. GPU servers at the edge, so every grid feed is read live. No record lost when the network drops. Indian vehicle types are already done. Better reading at night and at a distance. Monitoring at state scale, and recovery targets of five minutes of data and one hour.
 - **Audience should understand.** A concrete plan, grounded in what the project measured.
 - **Transition.** You move on.
 - **Real asset.** docs/scalability.md; js/data/project.js (roadmap)
 
-## 24. What becomes possible
+## 23. What becomes possible
 *80,000 cameras*
 
 - **Story purpose.** What 80,000 cameras make possible.
@@ -242,7 +232,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js possible
 
-## 25. What it needs
+## 24. What it needs
 *80,000 cameras*
 
 - **Story purpose.** What it takes, honestly sized.
@@ -251,6 +241,16 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Audience should understand.** It is feasible, and the cost is in one known place.
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js needsBig, needs · docs/scalability.md
+
+## 25. What makes Vigentra different
+*Why Vigentra*
+
+- **Story purpose.** What sets Vigentra apart, as design choices with evidence.
+- **Visual.** Six panels: works on the cameras you have; it doesn't guess (0 wrong, 36 of 48); video stays with its owner; built for Indian plates (40 state codes, 39 Gujarat RTOs); every act on record (audit log, signed alerts); knows when a camera goes dark (about 40 s).
+- **Speaker narration.** So what makes Vigentra different? It works on the cameras you already have. It doesn't guess: zero wrong plates. Video stays with its owner; only text travels. It is built for Indian plates. Every act is on record, and alerts go out signed. And it knows within about forty seconds when a camera goes dark.
+- **Audience should understand.** Vigentra's choices: existing cameras, no guessing, federated video, Indian plates, accountability, health.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js (distinct, with sources)
 
 ## 26. From pixels to information
 *Vigentra*

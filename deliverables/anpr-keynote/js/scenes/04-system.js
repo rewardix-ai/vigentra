@@ -32,6 +32,37 @@
     },
   });
 
+  /* ---------------------------------------------------------------- the high-level design */
+  K.scene({
+    id: "hld", act: "The system", title: "The high-level design", src: "Schematic · docs/hld.md · docs/scalability.md §1-2",
+    build(ctx) {
+      const C = K.CHARTS.hld();
+      const log = S.log({ max: 2 });
+      log.add("··", C.intro);
+      const chart = K.ui.flow({ nodes: C.nodes, edges: C.edges, caption: log });
+      const line = S.at(955, 300, 6, 430, h("div", { style: { height: "100%", borderLeft: "4px dashed #e5484d" } }), "r");
+      const tag = S.at(975, 690, 420, 40, h("div", { style: { font: "700 18px var(--mono)", letterSpacing: "0.12em", color: "#e5484d" } }, "ONLY METADATA CROSSES"), "r");
+      line.id = "ml"; tag.id = "mt";
+      ctx.el.append(
+        S.title("The high-level design", "Four tiers. Video stays."),
+        S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
+        chart, line, tag,
+        S.banner("By design", "Departments keep their cameras, VMS and footage. Vigentra federates them.", { id: "b1" }),
+        S.tech(["<b>Edge</b> ~3,000 GPU nodes in department sites", "<b>Regional</b> 33 districts × 2 nodes", "<b>Central</b> 2 sites, primary + DR"], "docs/hld.md · docs/scalability.md §2")
+      );
+      return [
+        async () => {
+          ctx.auto(22);
+          ctx.in("#lp");
+          await chart.reveal(ctx, { gap: 160 });
+          await ctx.in("#ml"); await ctx.in("#mt");
+          chart.run(ctx, C.routes);
+        },
+        () => { ctx.auto(5); chart.classList.add("dimmed"); return S.show(ctx, "#b1"); },
+      ];
+    },
+  });
+
   /* ---------------------------------------------------------------- console */
   K.scene({
     id: "console", act: "The system", title: "The Vigentra console", src: "SRC Vigentra console · screen recording · 1:15–1:24 and 1:28–2:42",
@@ -89,37 +120,6 @@
   featureScene("features-act", "Every feature · 2 of 2", "Act on it, with a person in charge.", K.DATA.featuresAct,
     "<b>Offences</b> candidates with evidence, confirmed by a person · <b>Governance</b> access by role and zone, everything audited");
 
-  /* ---------------------------------------------------------------- the high-level design */
-  K.scene({
-    id: "hld", act: "The system", title: "The high-level design", src: "Schematic · docs/hld.md · docs/scalability.md §1-2",
-    build(ctx) {
-      const C = K.CHARTS.hld();
-      const log = S.log({ max: 2 });
-      log.add("··", C.intro);
-      const chart = K.ui.flow({ nodes: C.nodes, edges: C.edges, caption: log });
-      const line = S.at(955, 300, 6, 430, h("div", { style: { height: "100%", borderLeft: "4px dashed #e5484d" } }), "r");
-      const tag = S.at(975, 690, 420, 40, h("div", { style: { font: "700 18px var(--mono)", letterSpacing: "0.12em", color: "#e5484d" } }, "ONLY METADATA CROSSES"), "r");
-      line.id = "ml"; tag.id = "mt";
-      ctx.el.append(
-        S.title("The high-level design", "Four tiers. Video stays."),
-        S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
-        chart, line, tag,
-        S.banner("By design", "Departments keep their cameras, VMS and footage. Vigentra federates them.", { id: "b1" }),
-        S.tech(["<b>Edge</b> ~3,000 GPU nodes in department sites", "<b>Regional</b> 33 districts × 2 nodes", "<b>Central</b> 2 sites, primary + DR"], "docs/hld.md · docs/scalability.md §2")
-      );
-      return [
-        async () => {
-          ctx.auto(22);
-          ctx.in("#lp");
-          await chart.reveal(ctx, { gap: 160 });
-          await ctx.in("#ml"); await ctx.in("#mt");
-          chart.run(ctx, C.routes);
-        },
-        () => { ctx.auto(5); chart.classList.add("dimmed"); return S.show(ctx, "#b1"); },
-      ];
-    },
-  });
-
   /* ---------------------------------------------------------------- under the hood: the stack */
   K.scene({
     id: "stack", act: "Under the hood", title: "What Vigentra is built with", src: "All open source · the reasoning for each part is in TECHNICAL.md",
@@ -164,22 +164,6 @@
       return [
         async () => { await ctx.in("#dp"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 3); },
         () => S.rows(ctx, 3, D.dropped.length),
-      ];
-    },
-  });
-
-  /* ---------------------------------------------------------------- different */
-  K.scene({
-    id: "different", act: "Why Vigentra", title: "What makes Vigentra different", src: "Each point is a design choice in the code, with its evidence on screen",
-    build(ctx) {
-      const D = K.DATA;
-      const cards = D.distinct.map(([title, line, proof], i) => S.panel(80 + (i % 3) * 600, 230 + Math.floor(i / 3) * 330, 570, 300, `${String(i + 1).padStart(2, "0")} · ${title}`,
-        h("div.dist", null, [h("p", null, line), h("span.dist-proof", null, proof)]), { id: `d${i}` }));
-      ctx.el.append(S.title("Why Vigentra", "What makes Vigentra different."), ...cards,
-        S.tech(D.distinct.map(([t, , , src]) => `<b>${t}</b> ${src}`), "Design choices, not claims about other products"));
-      return [
-        async () => { for (let i = 0; i < 3; i += 1) { ctx.$(`#d${i}`).classList.add("in"); await ctx.wait(220); } },
-        async () => { for (let i = 3; i < 6; i += 1) { ctx.$(`#d${i}`).classList.add("in"); await ctx.wait(220); } },
       ];
     },
   });
@@ -236,6 +220,22 @@
         async () => { await ctx.in("#g0"); await ctx.wait(500); await ctx.in("#g1"); },
         async () => { await ctx.in("#np"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 4); },
         () => S.rows(ctx, 4, D.needs.length),
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- different */
+  K.scene({
+    id: "different", act: "Why Vigentra", title: "What makes Vigentra different", src: "Each point is a design choice in the code, with its evidence on screen",
+    build(ctx) {
+      const D = K.DATA;
+      const cards = D.distinct.map(([title, line, proof], i) => S.panel(80 + (i % 3) * 600, 230 + Math.floor(i / 3) * 330, 570, 300, `${String(i + 1).padStart(2, "0")} · ${title}`,
+        h("div.dist", null, [h("p", null, line), h("span.dist-proof", null, proof)]), { id: `d${i}` }));
+      ctx.el.append(S.title("Why Vigentra", "What makes Vigentra different."), ...cards,
+        S.tech(D.distinct.map(([t, , , src]) => `<b>${t}</b> ${src}`), "Design choices, not claims about other products"));
+      return [
+        async () => { for (let i = 0; i < 3; i += 1) { ctx.$(`#d${i}`).classList.add("in"); await ctx.wait(220); } },
+        async () => { for (let i = 3; i < 6; i += 1) { ctx.$(`#d${i}`).classList.add("in"); await ctx.wait(220); } },
       ];
     },
   });

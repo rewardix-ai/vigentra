@@ -6,8 +6,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *Vigentra*
 
 - **Story purpose.** Open on the name, as a control room powering up.
-- **Visual.** Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: cameras, the vehicle detector, the tracker, the plate detector, the readers, the plate rules.
-- **Speaker narration.** This is Vigentra. Vigilance, intelligence, safer roads. [pause] It reads number plates from the CCTV that is already on our roads. Let me show you how.
+- **Visual.** Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: the hackathon model (Model 1 + Model 3), cameras, the vehicle detector, the tracker, the plate detector, the readers, the plate rules.
+- **Speaker narration.** This is Vigentra. Vigilance, intelligence, safer roads. We are building Model 1 and Model 3: one statewide camera registry, federated with every department's system. [pause] It reads number plates from the CCTV that is already on our roads. Let me show you how.
 - **Audience should understand.** Who we are, and that this is a working system.
 - **Transition.** 11 s, then the control room's wall. Moves on by itself (press A to hold).
 - **Real asset.** brand/*.png; assets/video/cam06_1080p, delhi_raw, reel_cam04, reel_cam15
@@ -152,25 +152,25 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** 82 s (1:16-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
 - **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
 
-## 16. The edge reads the video so nothing else has to.
+## 16. See every camera. Find any vehicle.
 *The system*
 
-- **Story purpose.** What each edge module does.
-- **Visual.** Six cards one after another: live reader, supervisor, ANPR engine, Indian vehicle types, offence analytics, footage quality; each names its file.
-- **Speaker narration.** At the camera, six modules. The live reader and its supervisor keep every camera read. The ANPR engine reads plates. Vehicle types follow Indian classes. Offences come with a snapshot. And a broken picture is told in a minute.
-- **Audience should understand.** The edge does the heavy work, next to the video.
-- **Transition.** You move on.
-- **Real asset.** js/data/project.js modulesEdge
+- **Story purpose.** Every feature, part 1: seeing and finding.
+- **Visual.** Twelve cards appear row by row: camera registry and GIS, onboarding, department federation, live wall, live ANPR, plate search, vehicle trace, live pursuit, watchlist alerts, Indian vehicle types, traffic counts, ANPR report.
+- **Speaker narration.** Everything Vigentra does, in two screens. First, seeing and finding. Every camera on one map, onboarded and federated from each department. A live wall. Plates read live, searched, traced and pursued. A watchlist that alerts in seconds. And every vehicle typed in Indian classes and counted.
+- **Audience should understand.** The breadth of the working system.
+- **Transition.** You move on, row by row.
+- **Real asset.** js/data/project.js featuresFind
 
-## 17. Central holds the facts; a person stays in charge.
+## 17. Act on it, with a person in charge.
 *The system*
 
-- **Story purpose.** What each central module does.
-- **Visual.** Six cards: federation adapters, registry and GIS, watchlist and alerts, trace and pursuit, incidents and e-challan, video access and audit.
-- **Speaker narration.** Centrally, six more. Adapters federate each department's system. The registry puts every camera on one map. The watchlist checks every plate as it arrives. Trace and pursuit follow a vehicle. A person confirms every challan. And every act is audited.
-- **Audience should understand.** Central keeps facts and puts a person in charge.
-- **Transition.** You move on.
-- **Real asset.** js/data/project.js modulesCentral
+- **Story purpose.** Every feature, part 2: acting and governing.
+- **Visual.** Twelve cards: helmet detection, wrong way and incidents, incident review, e-challan, camera health alerts, footage quality alerts, gap analysis, video access requests, role and zone access, audit log, alert push, self-healing reader.
+- **Speaker narration.** Second, acting on it. Riders without helmets and wrong-way vehicles, with evidence; a person confirms, and the challan goes out. Cameras that stop or break are told in a minute. Gaps in coverage are shown. And every user sees only what their role allows, with every act audited.
+- **Audience should understand.** Every action has evidence and a person behind it.
+- **Transition.** You move on, row by row.
+- **Real asset.** js/data/project.js featuresAct
 
 ## 18. The high-level design
 *The system*

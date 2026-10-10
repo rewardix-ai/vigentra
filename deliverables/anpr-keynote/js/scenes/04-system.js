@@ -71,25 +71,23 @@
     },
   });
 
-  /* ---------------------------------------------------------------- modules: at the camera, then central */
-  function moduleScene(id, kicker, line, rows, where) {
+  /* ---------------------------------------------------------------- every feature, in two scenes */
+  function featureScene(id, kicker, line, rows, right) {
     K.scene({
-      id, act: "The system", title: line, src: "SRC " + K.DATA.modulesSrc,
+      id, act: "The system", title: line, src: "SRC " + K.DATA.featuresSrc,
       build(ctx) {
-        const cards = rows.map(([title, what, file], i) => S.panel(80 + (i % 3) * 600, 230 + Math.floor(i / 3) * 330, 570, 300, `${String(i + 1).padStart(2, "0")} · ${title}`,
-          h("div.dist", null, [h("p", null, what), h("span.dist-proof", null, file)]), { id: `m${i}` }));
-        ctx.el.append(S.title(kicker, line), ...cards, S.tech([where], K.DATA.modulesSrc));
-        return [
-          async () => { for (let i = 0; i < 3; i += 1) { ctx.$(`#m${i}`).classList.add("in"); await ctx.wait(220); } },
-          async () => { for (let i = 3; i < 6; i += 1) { ctx.$(`#m${i}`).classList.add("in"); await ctx.wait(220); } },
-        ];
+        const cards = rows.map(([name, what], i) => S.panel(80 + (i % 4) * 445, 230 + Math.floor(i / 4) * 255, 420, 235, `${String(i + 1).padStart(2, "0")} · ${name}`,
+          h("div.dist", null, [h("p", { style: { fontSize: "25px" } }, what)]), { id: `f${i}` }));
+        ctx.el.append(S.title(kicker, line), ...cards, S.tech([right], K.DATA.featuresSrc));
+        const row = (r) => async () => { for (let i = r * 4; i < r * 4 + 4; i += 1) { ctx.$(`#f${i}`).classList.add("in"); await ctx.wait(160); } };
+        return [row(0), row(1), row(2)];
       },
     });
   }
-  moduleScene("modules-edge", "Our modules · at the camera", "The edge reads the video so nothing else has to.", K.DATA.modulesEdge,
-    "<b>Edge</b> one process per site reads every camera; only text, boxes, crops and snapshots leave it");
-  moduleScene("modules-central", "Our modules · central and console", "Central holds the facts; a person stays in charge.", K.DATA.modulesCentral,
-    "<b>Central</b> FastAPI + PostgreSQL behind a Next.js console; every disclosure audited");
+  featureScene("features-find", "Every feature · 1 of 2", "See every camera. Find any vehicle.", K.DATA.featuresFind,
+    "<b>Model 1</b> registry, GIS and onboarding · <b>Model 3</b> federation · ANPR, trace, pursuit and alerts on top");
+  featureScene("features-act", "Every feature · 2 of 2", "Act on it, with a person in charge.", K.DATA.featuresAct,
+    "<b>Offences</b> candidates with evidence, confirmed by a person · <b>Governance</b> access by role and zone, everything audited");
 
   /* ---------------------------------------------------------------- the high-level design */
   K.scene({

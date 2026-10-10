@@ -6,8 +6,8 @@ window.K = window.K || {};
 K.STORY = {
   boot: {
     purpose: "Open on the name, as a control room powering up.",
-    sees: "Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: cameras, the vehicle detector, the tracker, the plate detector, the readers, the plate rules.",
-    say: "This is Vigentra. Vigilance, intelligence, safer roads. [pause] It reads number plates from the CCTV that is already on our roads. Let me show you how.",
+    sees: "Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: the hackathon model (Model 1 + Model 3), cameras, the vehicle detector, the tracker, the plate detector, the readers, the plate rules.",
+    say: "This is Vigentra. Vigilance, intelligence, safer roads. We are building Model 1 and Model 3: one statewide camera registry, federated with every department's system. [pause] It reads number plates from the CCTV that is already on our roads. Let me show you how.",
     understand: "Who we are, and that this is a working system.",
     transition: "11 s, then the control room's wall. Moves on by itself (press A to hold).",
     asset: "brand/*.png; assets/video/cam06_1080p, delhi_raw, reel_cam04, reel_cam15",
@@ -164,21 +164,21 @@ K.STORY = {
     transition: "You move on.",
     asset: "docs/scalability.md; js/data/project.js (roadmap)",
   },
-  "modules-edge": {
-    purpose: "What each edge module does.",
-    sees: "Six cards one after another: live reader, supervisor, ANPR engine, Indian vehicle types, offence analytics, footage quality; each names its file.",
-    say: "At the camera, six modules. The live reader and its supervisor keep every camera read. The ANPR engine reads plates. Vehicle types follow Indian classes. Offences come with a snapshot. And a broken picture is told in a minute.",
-    understand: "The edge does the heavy work, next to the video.",
-    transition: "You move on.",
-    asset: "js/data/project.js modulesEdge",
+  "features-find": {
+    purpose: "Every feature, part 1: seeing and finding.",
+    sees: "Twelve cards appear row by row: camera registry and GIS, onboarding, department federation, live wall, live ANPR, plate search, vehicle trace, live pursuit, watchlist alerts, Indian vehicle types, traffic counts, ANPR report.",
+    say: "Everything Vigentra does, in two screens. First, seeing and finding. Every camera on one map, onboarded and federated from each department. A live wall. Plates read live, searched, traced and pursued. A watchlist that alerts in seconds. And every vehicle typed in Indian classes and counted.",
+    understand: "The breadth of the working system.",
+    transition: "You move on, row by row.",
+    asset: "js/data/project.js featuresFind",
   },
-  "modules-central": {
-    purpose: "What each central module does.",
-    sees: "Six cards: federation adapters, registry and GIS, watchlist and alerts, trace and pursuit, incidents and e-challan, video access and audit.",
-    say: "Centrally, six more. Adapters federate each department's system. The registry puts every camera on one map. The watchlist checks every plate as it arrives. Trace and pursuit follow a vehicle. A person confirms every challan. And every act is audited.",
-    understand: "Central keeps facts and puts a person in charge.",
-    transition: "You move on.",
-    asset: "js/data/project.js modulesCentral",
+  "features-act": {
+    purpose: "Every feature, part 2: acting and governing.",
+    sees: "Twelve cards: helmet detection, wrong way and incidents, incident review, e-challan, camera health alerts, footage quality alerts, gap analysis, video access requests, role and zone access, audit log, alert push, self-healing reader.",
+    say: "Second, acting on it. Riders without helmets and wrong-way vehicles, with evidence; a person confirms, and the challan goes out. Cameras that stop or break are told in a minute. Gaps in coverage are shown. And every user sees only what their role allows, with every act audited.",
+    understand: "Every action has evidence and a person behind it.",
+    transition: "You move on, row by row.",
+    asset: "js/data/project.js featuresAct",
   },
   hld: {
     purpose: "The high-level design in four tiers.",

@@ -12,6 +12,7 @@
       const tiles = [["cam06_1080p", 30], ["delhi_raw", 4], ["reel_cam04", 0], ["reel_cam15", 0]];
       const bg = h("div.fill.brand-bg", null, tiles.map(([slot, start]) => h("div.bg-tile", null, K.media.video(slot, { start, cls: "media-cover" }))));
       const lines = [
+        ["Hackathon model", "Model 1 + Model 3"],
         ["Cameras", "30 grid · Delhi street"],
         ["Vehicle detector", "YOLO11s"],
         ["Tracker", "ByteTrack"],
@@ -26,7 +27,7 @@
       ctx.el.append(bg, h("div.fill.brand-shade"), h("div.center", null, h("div.stack.boot-stack", null, [S.lockup({ size: 0.75 }), boot])));
       return [
         async () => {
-          ctx.auto(11);
+          ctx.auto(14);
           await ctx.wait(200);
           bg.classList.add("in");
           await ctx.in(".lk-mark");
@@ -41,7 +42,7 @@
           }
           const fin = ctx.$(".bl.final");
           fin.classList.add("in");
-          await ctx.type(fin, "Number-plate recognition on real CCTV", 45);
+          await ctx.type(fin, "Model 1 registry + Model 3 federation", 45);
         },
       ];
     },

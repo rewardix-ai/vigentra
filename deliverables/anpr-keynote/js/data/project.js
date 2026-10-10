@@ -50,24 +50,36 @@ K.DATA = {
   roadmapSrc: "docs/scalability.md (edge buffering, monitoring, HA/DR targets) · known limits from the benchmark and the CAM06 day study",
 
   // Under the hood: each layer, what it runs on, and why. TECHNICAL.md has the full reasoning.
-  // What each module does (deck scenes "modules-edge", "modules-central"): [title, what it does, where]
-  modulesEdge: [
-    ["Live reader", "Every grid camera at once on one GPU; cameras with a vehicle near the lens go first.", "light_readers.py"],
-    ["Supervisor", "Restarts the reader after a crash, a grid outage or idle cameras, and starts it at boot.", "collect_plates.py"],
-    ["ANPR engine", "Finds the plate, keeps its best crops, reads them twice, votes across frames.", "anpr/pipeline.py"],
-    ["Indian vehicle types", "Scooter, motorcycle, auto, car, minibus, bus, light goods, truck; sign boards dropped.", "vehicle_type.py"],
-    ["Offence analytics", "Rider without a helmet and wrong way, each with its snapshot, one call per rider.", "helmet.py · incidents.py"],
-    ["Footage quality", "Corrupted, black, dark or blurred pictures flagged; a broken camera alerts in a minute.", "frame_quality.py"],
+  // Every feature (deck scenes "features-find", "features-act"): [name, what it does]
+  featuresFind: [
+    ["Camera registry + GIS", "Every department's cameras on one map, with owner, purpose and health."],
+    ["Camera onboarding", "Request, approve and add cameras, one at a time or by CSV."],
+    ["Department federation", "Each VMS joins through an adapter; nothing is replaced."],
+    ["Live wall", "Every camera at once; detection boxes and people on or off."],
+    ["Live ANPR", "Plates read at the edge, settled across frames, sent as text."],
+    ["Plate search", "Find any plate, allowing for misreads like 0/O and 8/B."],
+    ["Vehicle trace", "A plate's route on the map: place, read time, footage time."],
+    ["Live pursuit", "The cameras a vehicle can reach next get the GPU first."],
+    ["Watchlist alerts", "A listed plate raises a prioritised alert within seconds."],
+    ["Indian vehicle types", "Scooter, motorcycle, auto, car, minibus, bus, light goods, truck."],
+    ["Traffic counts", "Vehicles by class, per camera and hour."],
+    ["ANPR report", "What was read, where, when and how sure."],
   ],
-  modulesCentral: [
-    ["Federation adapters", "One adapter per department system; each keeps its own VMS, footage and rules.", "adapters/"],
-    ["Registry and GIS", "Every camera on one map, with owner, health and coverage gaps.", "registry · gap analysis"],
-    ["Watchlist and alerts", "Every plate checked as it arrives, allowing for 0/O and 8/B; alert in seconds.", "watchlist_service.py"],
-    ["Trace and pursuit", "A plate and a reason give its route; a pursuit points the GPU where it can go next.", "track_service.py"],
-    ["Incidents and e-challan", "A person confirms each candidate; the plate is filled in, owner found, SMS sent.", "challans.py"],
-    ["Video access and audit", "Live video only by role, department and zone; every act in an append-only log.", "video_permissions.py"],
+  featuresAct: [
+    ["Helmet detection", "Rider without a helmet, with snapshot, one call per rider."],
+    ["Wrong way + incidents", "Wrong side, possible collision, person in traffic, intrusion."],
+    ["Incident review", "Snapshot-led cards; a person confirms or dismisses each."],
+    ["E-challan", "Plate filled in, owner looked up, MV Act section, SMS sent."],
+    ["Camera health alerts", "A camera or system that stops is told within seconds."],
+    ["Footage quality alerts", "Black or broken pictures raise an alert within a minute."],
+    ["Gap analysis", "Thin districts, ageing cameras, footage that is unusable."],
+    ["Video access requests", "Ask another unit for its video; grant, deny or revoke."],
+    ["Role + zone access", "Each user sees only their department, city and zone."],
+    ["Audit log", "Every sign-in, trace, lookup and refusal, append-only."],
+    ["Alert push", "Alerts sent to another system, signed, when configured."],
+    ["Self-healing reader", "Restarts itself after crashes, grid outages and reboots."],
   ],
-  modulesSrc: "services/edge-worker · services/central-api · services/dashboard · scripts/collect_plates.py",
+  featuresSrc: "services/central-api · services/edge-worker · services/dashboard · scripts/collect_plates.py, scripts/launchd",
 
   // 80,000 cameras (scenes "scale-possible", "scale-needs"). Figures: docs/scalability.md
   possible: [

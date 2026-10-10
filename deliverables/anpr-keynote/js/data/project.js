@@ -42,7 +42,7 @@ K.DATA = {
   roadmap: [
     ["GPU servers at the edge", "One laptop keeps pace with one camera today; every grid feed live needs GPU hosts.", "Next"],
     ["No record lost offline", "Hold plate records through a network outage and replay them; ingest already ignores duplicates.", "Planned"],
-    ["Indian vehicle types", "The current model has no auto-rickshaw or e-rickshaw class; train one on our own footage.", "Planned"],
+    ["Indian vehicle types", "Done 9 Oct: auto, minibus, light goods vehicle, truck, from 2,160 grid crops labelled by eye; e-rickshaw and tractor still to come.", "Done"],
     ["Night and small plates", "Camera placement and IR guidance, and a small-plate detector trained on human-checked hard cases.", "Planned"],
     ["State-scale monitoring", "Dashboards and alerts for cameras offline, ingest lag and reader speed.", "Planned"],
     ["Recovery targets", "Design goals, not yet tested at scale: lose at most 5 minutes of data, back within an hour.", "Planned"],
@@ -50,6 +50,46 @@ K.DATA = {
   roadmapSrc: "docs/scalability.md (edge buffering, monitoring, HA/DR targets) · known limits from the benchmark and the CAM06 day study",
 
   // Under the hood: each layer, what it runs on, and why. TECHNICAL.md has the full reasoning.
+  // What each module does (deck scenes "modules-edge", "modules-central"): [title, what it does, where]
+  modulesEdge: [
+    ["Live reader", "Every grid camera at once on one GPU; cameras with a vehicle near the lens go first.", "light_readers.py"],
+    ["Supervisor", "Restarts the reader after a crash, a grid outage or idle cameras, and starts it at boot.", "collect_plates.py"],
+    ["ANPR engine", "Finds the plate, keeps its best crops, reads them twice, votes across frames.", "anpr/pipeline.py"],
+    ["Indian vehicle types", "Scooter, motorcycle, auto, car, minibus, bus, light goods, truck; sign boards dropped.", "vehicle_type.py"],
+    ["Offence analytics", "Rider without a helmet and wrong way, each with its snapshot, one call per rider.", "helmet.py · incidents.py"],
+    ["Footage quality", "Corrupted, black, dark or blurred pictures flagged; a broken camera alerts in a minute.", "frame_quality.py"],
+  ],
+  modulesCentral: [
+    ["Federation adapters", "One adapter per department system; each keeps its own VMS, footage and rules.", "adapters/"],
+    ["Registry and GIS", "Every camera on one map, with owner, health and coverage gaps.", "registry · gap analysis"],
+    ["Watchlist and alerts", "Every plate checked as it arrives, allowing for 0/O and 8/B; alert in seconds.", "watchlist_service.py"],
+    ["Trace and pursuit", "A plate and a reason give its route; a pursuit points the GPU where it can go next.", "track_service.py"],
+    ["Incidents and e-challan", "A person confirms each candidate; the plate is filled in, owner found, SMS sent.", "challans.py"],
+    ["Video access and audit", "Live video only by role, department and zone; every act in an append-only log.", "video_permissions.py"],
+  ],
+  modulesSrc: "services/edge-worker · services/central-api · services/dashboard · scripts/collect_plates.py",
+
+  // 80,000 cameras (scenes "scale-possible", "scale-needs"). Figures: docs/scalability.md
+  possible: [
+    ["Statewide vehicle trace", "A named plate's route across every department's cameras in one query, with the evidence at each point.", "Built on 30"],
+    ["Pursuit across districts", "The cameras a vehicle can reach next get the GPU first; PostGIS corridors predict where to look.", "Built on 30"],
+    ["Watchlist at every junction", "Stolen and wanted vehicles flagged at the moment of the read, statewide.", "Built on 30"],
+    ["Automated e-challan", "Helmet and wrong side today; red light, triple riding and seat belt next; VAHAN gives the owner.", "Next"],
+    ["Traffic by vehicle class", "Cars, autos, buses, light and heavy goods per junction and hour; goods vehicles in no-entry hours.", "Next"],
+    ["A self-reporting estate", "Every camera's health and picture watched; outages told to the owning department in a minute.", "Built on 30"],
+  ],
+  needsBig: [["~160 Gbps", "into the data centre if video were sent centrally, ~1.7 PB a day"], ["~0.6–1 Gbps", "with Vigentra: only metadata, 40–250× less"]],
+  needs: [
+    ["Edge compute", "~3,000 GPU nodes in department sites (1× T4-class GPU, 8 vCPU, 32 GB)", "ANPR only where the optics allow, set at onboarding"],
+    ["Regional", "33 districts × 2 nodes (16 vCPU, 64 GB, 2 TB NVMe)", "adapters, an ingest buffer for WAN outages"],
+    ["Central", "2 sites, primary + DR; API 6–10 replicas; PostgreSQL 2 × 32 vCPU / 256 GB / 10 TB", "lose at most 5 min of data, back within 1 h"],
+    ["Storage", "No video. Metadata hot 30 days, warm 1 year, cold 7 years", "plates on a shorter clock, 30 days"],
+    ["Integrations", "Each department's VMS API; VAHAN owner lookup; DLT-registered SMS; GSWAN", "MV Act s.136A, CMVR r.167A"],
+    ["People", "District operators; a camera-health desk; a small labelling team", "a person confirms every alert and challan"],
+    ["Cost", "Edge GPUs ₹90–120 crore over the phases; software open source", "no VMS replaced, no central video store"],
+  ],
+  scaleSrc: "docs/scalability.md §2 hardware, §3 network, §4 storage, §5 AI capacity, §7 HA/DR, §10 cost-benefit (estimates, for planning)",
+
   stack: [
     ["Capture", "RTSP over TCP · FFmpeg", "Reads the streams cameras already send, timed by the stream's own clock."],
     ["Vehicles", "YOLO11s + ByteTrack", "One identity per vehicle, so its plate is decided once."],

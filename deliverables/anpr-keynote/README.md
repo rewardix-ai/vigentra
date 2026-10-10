@@ -3,7 +3,7 @@
 A keynote about how Vigentra reads number plates, built as a Vigentra control room: monitors of
 real footage, the deployed models' real boxes, event logs that narrate what the system does, and
 live schematics. Everything shown is the project's own footage, model output and measured
-results. 21 scenes, about 16 minutes. Storyboard and speaker notes: [STORYBOARD.md](STORYBOARD.md).
+results. 26 scenes, about 20 minutes. Storyboard and speaker notes: [STORYBOARD.md](STORYBOARD.md).
 Every technical choice, why it was made and what it beats, for the questions: [TECHNICAL.md](TECHNICAL.md), also as a
 standalone styled page, `TECHNICAL.html` (rebuild it with `tools/technical_html.py` after editing the Markdown).
 

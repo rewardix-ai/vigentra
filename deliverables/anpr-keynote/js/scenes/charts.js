@@ -56,6 +56,41 @@
       ] };
     },
 
+    /** The high-level design in four tiers: what runs where, and the line only metadata crosses. */
+    hld() {
+      const S = K.S;
+      const E = K.EVIDENCE || { plate: "" };
+      const X = [250, 720, 1190, 1660];
+      const [R, R2] = [500, 830];
+      const nodes = [
+        { id: "cams", n: 1, x: X[0], y: R, tone: "io", title: "~80,000 cameras", sub: "26 departments · their own VMS",
+          media: () => h("div.mosaic", null, ["wall_cam04", "wall_cam12", "wall_cam15", "delhi_raw"].map((k) => K.media.video(k, { cls: "media-cover" }))),
+          say: "every department keeps its cameras, its VMS and its footage" },
+        { id: "edge", n: 2, x: X[1], y: R, title: "Edge · ~3,000 GPUs", sub: "detect · read · classify · offences", media: () => S.carThumb({ plate: true }),
+          say: "in the department's site: plates, vehicle types, helmets, footage quality" },
+        { id: "regional", n: 3, x: X[2], y: R, title: "Regional · 33 districts", sub: "adapters · ingest buffer",
+          media: () => h("div.fc-rec", null, [h("div", null, "2 nodes"), h("span", null, "per district")]),
+          say: "speaks each local VMS's dialect and keeps records through a WAN outage" },
+        { id: "central", n: 4, x: X[3], y: R, title: "Central · 2 sites", sub: "registry · watchlist · trace · audit",
+          media: () => h("div.fc-rec", null, [h("div", null, E.plate), h("span", null, "plate · time · camera")]),
+          say: "primary and DR: at most 5 minutes of data lost, back within an hour" },
+        { id: "console", type: "end", tone: "ok", x: X[3], y: R2, w: 340, h: 116, title: "Console", sub: "map · alerts · traces · challans",
+          say: "operators search, trace and confirm; every act is audited" },
+        { id: "footage", type: "end", tone: "video", x: X[0], y: R2, w: 340, h: 116, title: "Footage stays", sub: "with the owning department",
+          say: "no central video store: ~1.7 PB a day not moved, not bought" },
+      ];
+      const edges = [
+        { from: "cams", to: "edge", label: "VIDEO · LAN", at: [X[0] + 150, R - 14] },
+        { from: "edge", to: "regional", label: "TEXT", at: [X[1] + 180, R - 14] },
+        { from: "regional", to: "central", label: "~1 GBPS", at: [X[2] + 160, R - 14] },
+        { from: "central", to: "console", out: "bottom", in: "top" },
+        { from: "cams", to: "footage", out: "bottom", in: "top", kind: "video" },
+      ];
+      return { nodes, edges, intro: "<b>Four tiers</b> video stays in the site; only text crosses the red line", routes: [
+        { path: ["cams", "edge", "regional", "central", "console"], every: 9000, main: true },
+        { path: ["cams", "footage"], every: 7000, offset: 2500, cls: "video" },
+      ] };
+    },
     system() {
       const S = K.S;
       const E = K.EVIDENCE || { plate: "" };

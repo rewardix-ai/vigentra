@@ -31,8 +31,11 @@ def story() -> dict:
 def scenes() -> list[tuple[str, str, str]]:
     out = []
     for path in sorted((HERE / "js/scenes").glob("0*.js")):
-        for m in re.finditer(r'id: "([a-z]+)", act: "([^"]+)", title: "([^"]+)"', path.read_text()):
-            out.append(m.groups())
+        # K.scene({ id, act, title }) and the module scenes built by moduleScene(id, kicker, title, ...)
+        pattern = r'id: "([a-z-]+)", act: "([^"]+)", title: "([^"]+)"|moduleScene\("([a-z-]+)", "([^"]+)", "([^"]+)"'
+        for m in re.finditer(pattern, path.read_text()):
+            g = m.groups()
+            out.append(g[:3] if g[0] else (g[3], "The system", g[5]))
     return out
 
 

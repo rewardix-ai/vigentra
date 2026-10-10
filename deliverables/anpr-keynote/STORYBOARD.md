@@ -152,7 +152,37 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** 82 s (1:16-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
 - **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
 
-## 16. What Vigentra is built with
+## 16. The edge reads the video so nothing else has to.
+*The system*
+
+- **Story purpose.** What each edge module does.
+- **Visual.** Six cards one after another: live reader, supervisor, ANPR engine, Indian vehicle types, offence analytics, footage quality; each names its file.
+- **Speaker narration.** At the camera, six modules. The live reader and its supervisor keep every camera read. The ANPR engine reads plates. Vehicle types follow Indian classes. Offences come with a snapshot. And a broken picture is told in a minute.
+- **Audience should understand.** The edge does the heavy work, next to the video.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js modulesEdge
+
+## 17. Central holds the facts; a person stays in charge.
+*The system*
+
+- **Story purpose.** What each central module does.
+- **Visual.** Six cards: federation adapters, registry and GIS, watchlist and alerts, trace and pursuit, incidents and e-challan, video access and audit.
+- **Speaker narration.** Centrally, six more. Adapters federate each department's system. The registry puts every camera on one map. The watchlist checks every plate as it arrives. Trace and pursuit follow a vehicle. A person confirms every challan. And every act is audited.
+- **Audience should understand.** Central keeps facts and puts a person in charge.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js modulesCentral
+
+## 18. The high-level design
+*The system*
+
+- **Story purpose.** The high-level design in four tiers.
+- **Visual.** A live schematic: cameras, edge, regional, central, console; a red dashed line between edge and regional: only metadata crosses. Squares carry video into the edge and text beyond it.
+- **Speaker narration.** Four tiers. Cameras stay with their departments. The edge reads the video in the site. Districts federate and buffer. Central keeps the records, in two sites. [beat] Only metadata crosses this line. Video never leaves the site.
+- **Audience should understand.** Why it scales: video stays local, text travels.
+- **Transition.** 22 s, then the banner. Moves on by itself (press A to hold).
+- **Real asset.** K.CHARTS.hld()
+
+## 19. What Vigentra is built with
 *Under the hood*
 
 - **Story purpose.** What Vigentra is built on, with one line of reason per layer.
@@ -162,7 +192,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (stack) · TECHNICAL.md
 
-## 17. Why this, not that
+## 20. Why this, not that
 *Under the hood*
 
 - **Story purpose.** Why each big choice beats the obvious alternative, with its evidence.
@@ -172,7 +202,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (choices) · TECHNICAL.md
 
-## 18. What we tested and dropped
+## 21. What we tested and dropped
 *Under the hood*
 
 - **Story purpose.** Engineering discipline: what we tried, measured and dropped.
@@ -182,7 +212,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (dropped) · docs/anpr-optimisation.md
 
-## 19. What makes Vigentra different
+## 22. What makes Vigentra different
 *Why Vigentra*
 
 - **Story purpose.** What sets Vigentra apart, as design choices with evidence.
@@ -192,7 +222,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (distinct, with sources)
 
-## 20. What we will do next
+## 23. What we will do next
 *Next*
 
 - **Story purpose.** What we will do next, from today's limits.
@@ -202,7 +232,27 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** docs/scalability.md; js/data/project.js (roadmap)
 
-## 21. From pixels to information
+## 24. What becomes possible
+*80,000 cameras*
+
+- **Story purpose.** What 80,000 cameras make possible.
+- **Visual.** Six cards: statewide trace, pursuit across districts, watchlist at every junction, automated e-challan, traffic by vehicle class, a self-reporting estate; each tagged Built on 30 or Next.
+- **Speaker narration.** At eighty thousand cameras: one query instead of twenty-six footage requests. A vehicle traced statewide. Pursued across districts. Flagged at any junction. Challans with evidence. Traffic counted by Indian vehicle class. And cameras that report their own faults.
+- **Audience should understand.** The value grows with every camera added.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js possible
+
+## 25. What it needs
+*80,000 cameras*
+
+- **Story purpose.** What it takes, honestly sized.
+- **Visual.** Two big numbers: about 160 Gbps if video went central, about 1 Gbps with Vigentra; then the requirements table, tier by tier: edge GPUs, regional, central, storage, integrations, people, cost.
+- **Speaker narration.** Sending every camera's video centrally would need about a hundred and sixty gigabits a second. Vigentra needs about one. [beat] What it does need: about three thousand edge GPUs, two nodes per district, two central sites, VAHAN and an SMS gateway, people to confirm. Ninety to a hundred and twenty crore for the edge, and no software licences.
+- **Audience should understand.** It is feasible, and the cost is in one known place.
+- **Transition.** You move on.
+- **Real asset.** js/data/project.js needsBig, needs · docs/scalability.md
+
+## 26. From pixels to information
 *Vigentra*
 
 - **Story purpose.** Close on the idea and the name.

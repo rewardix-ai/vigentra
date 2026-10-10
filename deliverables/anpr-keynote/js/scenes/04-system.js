@@ -71,6 +71,57 @@
     },
   });
 
+  /* ---------------------------------------------------------------- modules: at the camera, then central */
+  function moduleScene(id, kicker, line, rows, where) {
+    K.scene({
+      id, act: "The system", title: line, src: "SRC " + K.DATA.modulesSrc,
+      build(ctx) {
+        const cards = rows.map(([title, what, file], i) => S.panel(80 + (i % 3) * 600, 230 + Math.floor(i / 3) * 330, 570, 300, `${String(i + 1).padStart(2, "0")} · ${title}`,
+          h("div.dist", null, [h("p", null, what), h("span.dist-proof", null, file)]), { id: `m${i}` }));
+        ctx.el.append(S.title(kicker, line), ...cards, S.tech([where], K.DATA.modulesSrc));
+        return [
+          async () => { for (let i = 0; i < 3; i += 1) { ctx.$(`#m${i}`).classList.add("in"); await ctx.wait(220); } },
+          async () => { for (let i = 3; i < 6; i += 1) { ctx.$(`#m${i}`).classList.add("in"); await ctx.wait(220); } },
+        ];
+      },
+    });
+  }
+  moduleScene("modules-edge", "Our modules · at the camera", "The edge reads the video so nothing else has to.", K.DATA.modulesEdge,
+    "<b>Edge</b> one process per site reads every camera; only text, boxes, crops and snapshots leave it");
+  moduleScene("modules-central", "Our modules · central and console", "Central holds the facts; a person stays in charge.", K.DATA.modulesCentral,
+    "<b>Central</b> FastAPI + PostgreSQL behind a Next.js console; every disclosure audited");
+
+  /* ---------------------------------------------------------------- the high-level design */
+  K.scene({
+    id: "hld", act: "The system", title: "The high-level design", src: "Schematic · docs/hld.md · docs/scalability.md §1-2",
+    build(ctx) {
+      const C = K.CHARTS.hld();
+      const log = S.log({ max: 2 });
+      log.add("··", C.intro);
+      const chart = K.ui.flow({ nodes: C.nodes, edges: C.edges, caption: log });
+      const line = S.at(955, 300, 6, 430, h("div", { style: { height: "100%", borderLeft: "4px dashed #e5484d" } }), "r");
+      const tag = S.at(975, 690, 420, 40, h("div", { style: { font: "700 18px var(--mono)", letterSpacing: "0.12em", color: "#e5484d" } }, "ONLY METADATA CROSSES"), "r");
+      line.id = "ml"; tag.id = "mt";
+      ctx.el.append(
+        S.title("The high-level design", "Four tiers. Video stays."),
+        S.panel(1040, 68, 840, 160, "Event log", log, { id: "lp", right: S.rec() }),
+        chart, line, tag,
+        S.banner("By design", "Departments keep their cameras, VMS and footage. Vigentra federates them.", { id: "b1" }),
+        S.tech(["<b>Edge</b> ~3,000 GPU nodes in department sites", "<b>Regional</b> 33 districts × 2 nodes", "<b>Central</b> 2 sites, primary + DR"], "docs/hld.md · docs/scalability.md §2")
+      );
+      return [
+        async () => {
+          ctx.auto(22);
+          ctx.in("#lp");
+          await chart.reveal(ctx, { gap: 160 });
+          await ctx.in("#ml"); await ctx.in("#mt");
+          chart.run(ctx, C.routes);
+        },
+        () => { ctx.auto(5); chart.classList.add("dimmed"); return S.show(ctx, "#b1"); },
+      ];
+    },
+  });
+
   /* ---------------------------------------------------------------- under the hood: the stack */
   K.scene({
     id: "stack", act: "Under the hood", title: "What Vigentra is built with", src: "All open source · the reasoning for each part is in TECHNICAL.md",
@@ -151,6 +202,43 @@
         S.tech([D.roadmapSrc], "")
       );
       return [async () => { await ctx.in("#rp"); for (const r of ctx.$$(".rm")) { r.classList.add("in"); await ctx.wait(260); } }];
+    },
+  });
+
+  /* ---------------------------------------------------------------- 80,000 cameras: what becomes possible */
+  K.scene({
+    id: "scale-possible", act: "80,000 cameras", title: "What becomes possible", src: "SRC " + K.DATA.scaleSrc,
+    build(ctx) {
+      const D = K.DATA;
+      const cards = D.possible.map(([title, line, tag], i) => S.panel(80 + (i % 3) * 600, 230 + Math.floor(i / 3) * 330, 570, 300, `${String(i + 1).padStart(2, "0")} · ${title}`,
+        h("div.dist", null, [h("p", null, line), h("span.dist-proof", null, tag)]), { id: `p${i}` }));
+      ctx.el.append(S.title("At 80,000 cameras", "One query instead of 26 footage requests."), ...cards,
+        S.banner("Today", "Built and running on the 30-camera grid; the rest extends the same pipeline.", { id: "b1" }),
+        S.tech(["<b>Built on 30</b> running live on the Sentinel grid today", "<b>Next</b> the same edge and central, new models and integrations"], D.scaleSrc));
+      return [
+        async () => { for (let i = 0; i < 3; i += 1) { ctx.$(`#p${i}`).classList.add("in"); await ctx.wait(220); } },
+        async () => { for (let i = 3; i < 6; i += 1) { ctx.$(`#p${i}`).classList.add("in"); await ctx.wait(220); } },
+        () => S.show(ctx, "#b1"),
+      ];
+    },
+  });
+
+  /* ---------------------------------------------------------------- 80,000 cameras: what it needs */
+  K.scene({
+    id: "scale-needs", act: "80,000 cameras", title: "What it needs", src: "SRC " + K.DATA.scaleSrc,
+    build(ctx) {
+      const D = K.DATA;
+      const big = D.needsBig.map(([n, l], i) => S.panel(80 + i * 890, 210, 860, 210, i ? "Vigentra: metadata only" : "Streaming every camera centrally",
+        h("div.dist", null, [h("p", { style: { font: "800 92px/1 var(--text)", color: i ? "var(--track)" : "#e5484d" } }, n), h("p", null, l)]), { id: `g${i}` }));
+      const table = S.table(["Need", "Requirement (estimate)", "Why"], D.needs, "250px 1fr 560px", { cls: "choices" });
+      ctx.el.append(S.title("At 80,000 cameras", "What it needs, tier by tier."), ...big,
+        S.panel(80, 440, 1760, 580, "Requirements", table, { id: "np", right: "for planning" }),
+        S.tech([D.scaleSrc], "Estimates from the project's scalability plan"));
+      return [
+        async () => { await ctx.in("#g0"); await ctx.wait(500); await ctx.in("#g1"); },
+        async () => { await ctx.in("#np"); ctx.$(".tr.th").classList.add("in"); await S.rows(ctx, 0, 4); },
+        () => S.rows(ctx, 4, D.needs.length),
+      ];
     },
   });
 

@@ -285,6 +285,117 @@
   <p class="mute" style="margin-top:22px; font-size:15px">Mapped to the code that does each one in <span class="mono">docs/sentinel-grid.md</span>.</p>
 </section>
 
+<!-- 9c. Modules: edge -->
+<section class="slide">
+  <div class="kicker">What each module does · 1 of 2 · at the camera</div>
+  <h1>The edge reads the video so nothing else has to</h1>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:16px; margin-top:26px">
+    <div class="card"><h2>Live reader</h2><p style="font-size:14.5px">Reads every grid camera at once on one GPU; cameras with a vehicle near the lens get it first. A supervisor restarts it after a crash, a grid outage or idle cameras, and starts it at boot.</p></div>
+    <div class="card"><h2>ANPR engine</h2><p style="font-size:14.5px">Finds each vehicle's plate, keeps its best crops, enhances them, reads them with two readers and an Indian-plate grammar, and votes across frames. Unsure reads are kept as candidates, never as facts.</p></div>
+    <div class="card"><h2>Vehicle types, Indian classes</h2><p style="font-size:14.5px">Scooter, motorcycle, auto, car/jeep (M1), minibus (M2), bus (M3), light goods (N1: Tata Ace, pickup), truck. Drops sign boards and barricades the detector takes for buses. 86 % right against 50 %.</p></div>
+    <div class="card"><h2>Offence analytics</h2><p style="font-size:14.5px">Rider without a helmet (4 classifiers, one call per rider, replays remembered) and wrong way; collision, person in traffic and intrusion as candidates. Every call carries its snapshot.</p></div>
+    <div class="card"><h2>Pursuit check</h2><p style="font-size:14.5px">While a vehicle is followed, every vehicle at the cameras it can reach is tested against its plate, so a half-read plate can still raise a "possible" for a person to confirm.</p></div>
+    <div class="card"><h2>Footage quality</h2><p style="font-size:14.5px">Flags frames that are corrupted, black, dark, glared or blurred; a broken picture raises a camera alert within a minute. Only text, boxes and crops leave the site, never video.</p></div>
+  </div>
+  <div class="foot"><span>services/edge-worker · tools/light_readers.py · scripts/collect_plates.py</span><span>Vigentra</span></div>
+</section>
+
+<!-- 9d. Modules: central and console -->
+<section class="slide">
+  <div class="kicker">What each module does · 2 of 2 · central and console</div>
+  <h1>Central holds the facts; the console puts a person in charge</h1>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:16px; margin-top:26px">
+    <div class="card"><h2>Federation adapters</h2><p style="font-size:14.5px">One adapter per department system or vendor turns its API into one camera model; departments keep their own VMS, footage and retention.</p></div>
+    <div class="card"><h2>Registry, GIS and gap analysis</h2><p style="font-size:14.5px">Every camera on one map with owner, purpose and health; districts that are thin, cameras that are ageing, and footage that is online but unusable.</p></div>
+    <div class="card"><h2>Watchlist and alerts</h2><p style="font-size:14.5px">Each plate read is matched at ingest, allowing for OCR confusions (0/O, 8/B); an alert is raised in seconds, prioritised, and closed by a person.</p></div>
+    <div class="card"><h2>Trace and pursuit</h2><p style="font-size:14.5px">A plate and a reason give the route on the map: camera, place, time read and time on the footage, how many frames agreed; impossible legs flagged.</p></div>
+    <div class="card"><h2>Incident review and e-challan</h2><p style="font-size:14.5px">Candidates as cards led by the snapshot; Confirm opens the challan with the read plate filled in, owner looked up, SMS sent (demo stand-ins for VAHAN and the gateway).</p></div>
+    <div class="card"><h2>Video broker, access and audit</h2><p style="font-size:14.5px">Live video only through an audited session, by role, department and zone; grants between units; every sign-in, trace, lookup and refusal in an append-only log.</p></div>
+  </div>
+  <div class="foot"><span>services/central-api · services/dashboard</span><span>Vigentra</span></div>
+</section>
+
+<!-- 9e. HLD -->
+<section class="slide">
+  <div class="kicker">High-level design</div>
+  <h1>Four tiers; only metadata crosses the line</h1>
+  <svg viewBox="0 0 1150 470" style="width:1150px; height:470px; margin-top:18px" font-family="-apple-system, Helvetica Neue, Arial" font-size="14">
+    <defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2463b8"/></marker></defs>
+    <g font-size="12.5" font-weight="700" fill="#5b6670" letter-spacing="1.4">
+      <text x="0" y="18">CAMERA</text><text x="290" y="18">EDGE · in the department site</text><text x="610" y="18">REGIONAL · per district</text><text x="880" y="18">CENTRAL · state data centre</text></g>
+    <rect x="0" y="34" width="250" height="410" rx="12" fill="#f1f6fc" stroke="#bcc6d2"/>
+    <g fill="#1f2933"><text x="16" y="66" font-weight="700">~80,000 cameras</text><text x="16" y="88" font-size="13" fill="#5b6670">26 departments</text>
+      <text x="16" y="124" font-weight="700">Department VMS</text><text x="16" y="146" font-size="13" fill="#5b6670">many vendors and dialects</text>
+      <text x="16" y="168" font-size="13" fill="#5b6670">keep their own footage</text>
+      <text x="16" y="204" font-weight="700">Sentinel-style grids</text><text x="16" y="226" font-size="13" fill="#5b6670">RTSP · HLS · live only</text>
+      <text x="16" y="262" font-weight="700">Analog and legacy</text><text x="16" y="284" font-size="13" fill="#5b6670">through an encoder</text></g>
+    <path d="M252 150 L288 150" stroke="#2463b8" stroke-width="2" marker-end="url(#h)"/>
+    <text x="252" y="140" font-size="11.5" fill="#5b6670">video, LAN</text>
+    <rect x="290" y="34" width="290" height="410" rx="12" fill="#e3edf9"/>
+    <g fill="#1f2933"><text x="306" y="66" font-weight="800" fill="#1b4f9c">Edge worker · ~3,000 GPU nodes</text>
+      <text x="306" y="96">capture, frame quality</text><text x="306" y="120">detection + tracking (YOLO11)</text>
+      <text x="306" y="144">ANPR: detect, enhance, read, vote</text><text x="306" y="168">vehicle type, Indian classes</text>
+      <text x="306" y="192">helmet, wrong way, incidents</text><text x="306" y="216">pursuit check against a plate</text>
+      <text x="306" y="252" font-size="13" fill="#5b6670">sends: plate text, boxes, crops,</text><text x="306" y="272" font-size="13" fill="#5b6670">snapshots, health. Never video.</text></g>
+    <line x1="595" y1="30" x2="595" y2="450" stroke="#b3261e" stroke-width="1.6" stroke-dasharray="4 5"/>
+    <text x="602" y="440" font-size="12" fill="#b3261e" font-weight="700">only metadata crosses</text>
+    <path d="M582 150 L608 150" stroke="#2463b8" stroke-width="2" marker-end="url(#h)"/>
+    <rect x="610" y="34" width="240" height="410" rx="12" fill="#f1f6fc" stroke="#bcc6d2"/>
+    <g fill="#1f2933"><text x="626" y="66" font-weight="800" fill="#1b4f9c">~33 districts × 2 nodes</text>
+      <text x="626" y="96">adapters for local VMS</text><text x="626" y="120">ingest buffer: keeps working</text><text x="626" y="140">when the WAN drops</text>
+      <text x="626" y="164">registry cache</text><text x="626" y="188">local health checks</text></g>
+    <path d="M852 150 L878 150" stroke="#2463b8" stroke-width="2" marker-end="url(#h)"/>
+    <text x="852" y="140" font-size="11.5" fill="#5b6670">~1 Gbps</text>
+    <rect x="880" y="34" width="270" height="300" rx="12" fill="#0e1e33"/>
+    <g fill="#fff"><text x="896" y="66" font-weight="800">Vigentra central · 2 sites</text>
+      <text x="896" y="96" fill="#aebdd1">API, 6–10 replicas</text><text x="896" y="120" fill="#aebdd1">registry + GIS (PostGIS)</text>
+      <text x="896" y="144" fill="#aebdd1">watchlist match at ingest</text><text x="896" y="168" fill="#aebdd1">trace, pursuit, incidents</text>
+      <text x="896" y="192" fill="#aebdd1">video broker, access rules</text><text x="896" y="216" fill="#aebdd1">audit, append-only</text>
+      <text x="896" y="246" fill="#aebdd1">PostgreSQL + TimescaleDB</text><text x="896" y="270" fill="#aebdd1">Kafka between ingest and match</text>
+      <text x="896" y="300" fill="#7ddc9f" font-weight="700">primary + DR · RPO 5 min · RTO 1 h</text></g>
+    <path d="M1015 336 L1015 362" stroke="#2463b8" stroke-width="2" marker-end="url(#h)"/>
+    <rect x="880" y="364" width="270" height="80" rx="12" fill="#f1f6fc" stroke="#bcc6d2"/>
+    <g fill="#1f2933"><text x="896" y="392" font-weight="800" fill="#1b4f9c">Operator console</text><text x="896" y="416" font-size="13">map, live wall, alerts, traces,</text><text x="896" y="434" font-size="13">incidents, challans, audit</text></g>
+  </svg>
+  <div class="foot"><span>docs/hld.md · docs/scalability.md</span><span>Vigentra</span></div>
+</section>
+
+<!-- 9f. 80,000: possibilities -->
+<section class="slide dark">
+  <div class="kicker">At 80,000 cameras · what becomes possible</div>
+  <h1>One query instead of 26 footage requests</h1>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:16px; margin-top:26px">
+    <div class="card"><h2>Statewide vehicle trace</h2><p style="font-size:14.5px">A named plate's route across every department's cameras, in minutes, with the evidence crop at each point.</p></div>
+    <div class="card"><h2>Live pursuit across districts</h2><p style="font-size:14.5px">The next cameras a vehicle can reach get priority as it moves; route corridors on PostGIS predict where to look.</p></div>
+    <div class="card"><h2>Watchlist at every junction</h2><p style="font-size:14.5px">Stolen and wanted vehicles flagged at the moment of the read, across the whole state; a bloom filter keeps millions of entries cheap.</p></div>
+    <div class="card"><h2>Automated e-challan</h2><p style="font-size:14.5px">Helmet, wrong side, red light, triple riding, no seat belt: candidates with evidence, a person confirms, VAHAN gives the owner, SMS goes out.</p></div>
+    <div class="card"><h2>Traffic planning by vehicle class</h2><p style="font-size:14.5px">Counts and origin-destination flows of cars, autos, buses, light and heavy goods vehicles per junction and hour; goods vehicles in no-entry hours.</p></div>
+    <div class="card"><h2>A camera estate that maintains itself</h2><p style="font-size:14.5px">Every camera's health and footage quality watched; outages, black screens and broken pictures raised to the owning department the same minute.</p></div>
+  </div>
+  <p class="mute" style="margin-top:20px; font-size:14.5px">Built and running today on the 30-camera grid: trace, pursuit, watchlist, helmet and wrong way with the challan flow (demo owners), Indian vehicle classes, footage alerts. The rest extends the same pipeline.</p>
+  <div class="foot"><span>Roadmap</span><span>Vigentra</span></div>
+</section>
+
+<!-- 9g. 80,000: requirements -->
+<section class="slide">
+  <div class="kicker">At 80,000 cameras · what it needs</div>
+  <h1>The requirements, tier by tier</h1>
+  <table style="margin-top:20px">
+    <thead><tr><th style="width:190px">Need</th><th>Requirement (estimate, for planning)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Edge compute</b></td><td>~3,000 GPU nodes in department sites (1× T4-class GPU, 8 vCPU, 32 GB RAM each): object detection everywhere, ANPR only where the optics allow, classified at onboarding (~15 ANPR cameras or ~30 detection cameras per GPU)</td></tr>
+      <tr><td><b>Regional</b></td><td>33 districts × 2 nodes (16 vCPU, 64 GB RAM, 2 TB NVMe): adapters, ingest buffer for WAN outages, registry cache</td></tr>
+      <tr><td><b>Central</b></td><td>2 sites, primary + DR: API 6–10 replicas; PostgreSQL 2 × 32 vCPU / 256 GB / 10 TB NVMe with read replicas; object storage for backups and cold data</td></tr>
+      <tr><td><b>Network</b></td><td>~0.6–1 Gbps statewide into the data centre (metadata only; central video would need ~160 Gbps); camera-to-edge video stays on the site LAN</td></tr>
+      <tr><td><b>Storage</b></td><td>No video. Metadata hot 30 days, warm 1 year, cold 7 years; plates on a shorter clock (30 days by default); audit log kept in full</td></tr>
+      <tr><td><b>Integrations</b></td><td>Each department's VMS API and credentials; VAHAN owner lookup (MV Act s.136A, CMVR r.167A); a DLT-registered SMS gateway; the state network (GSWAN) to every site</td></tr>
+      <tr><td><b>People</b></td><td>District operators to confirm alerts and incidents; a monitoring desk for camera health; a small team labelling footage to retrain the models</td></tr>
+      <tr><td><b>Cost</b></td><td>Edge accelerators ₹90–120 crore over the rollout phases; all software open source, no licences. Avoided: 160 Gbps of WAN, ~1.7 PB of video a day, replacing 26 VMS</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><span>docs/scalability.md §2, §3, §4, §5, §10</span><span>Vigentra</span></div>
+</section>
+
 <!-- 10. Scale -->
 <section class="slide">
   <div class="kicker">Plan for scale</div>

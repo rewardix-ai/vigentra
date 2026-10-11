@@ -10,15 +10,15 @@
  * scripts/brand_assets.py with its ground made transparent:
  *   /brand/vigentra-logo.png        the full lockup, exactly as drawn (light surfaces)
  *   /brand/vigentra-mark.png        the mark alone, in its own colours (light surfaces)
- *   /brand/vigentra-mark-light.png  the mark reversed to white (the ink footer)
+ *   /brand/vigentra-mark-light.png  the mark reversed to white (dark surfaces)
  * Re-run that script when the logo changes; nothing here needs editing.
  */
 
 export const PRODUCT_NAME = "Vigentra";
 
 /**
- * The mark alone. `tone` picks the cut: the reversed white one for the ink
- * footer band, the original colours on light surfaces. `labelled` when it
+ * The mark alone. `tone` picks the cut: the reversed white one for a dark
+ * surface, the original colours on light surfaces. `labelled` when it
  * stands without the wordmark, so a screen reader is not handed an unlabelled link.
  */
 export function VigentraMark({
@@ -86,8 +86,9 @@ function LogoTagline({ width, dark }: { width: number; dark: boolean }) {
 /**
  * Mark plus wordmark plus the line under it.
  *
- * `tone` picks the two places this appears: `onDark` on the ink footer band,
- * `onLight` in the navigation pill and on any other light surface. The
+ * `tone` picks the cut: `onLight` in the navigation pill, on the sign-in page
+ * and on any other light surface; `onDark` is the reversed lockup for a dark
+ * one, which the console does not currently have. The
  * tagline's capitals and tracking belong to the logo artwork, which is why
  * they survive in an interface that otherwise sets no type that way.
  * `size="lg"` on a light surface is the full

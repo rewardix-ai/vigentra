@@ -305,27 +305,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* -------------------------------------------------------------- */}
-        <main className="min-w-0 flex-1 pb-section pt-2 lg:pl-4">{children}</main>
+        <main className="min-w-0 flex-1 pb-12 pt-2 lg:pl-4">{children}</main>
       </div>
-
-      <PageFooter />
     </div>
-  );
-}
-
-/**
- * Every page ends on the same inverted band - ink where the rest is white,
- * rounded where it meets the canvas. Shared with the sign-in page, which has
- * no shell around it but should still end the way the console does.
- */
-export function PageFooter() {
-  return (
-    <footer className="mx-auto w-full max-w-[1792px] px-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 rounded-t-md bg-ink px-6 py-6 sm:px-8">
-        <BrandLockup tone="onDark" />
-        <p className="text-caption text-faint">All times are shown in IST</p>
-      </div>
-    </footer>
   );
 }
 

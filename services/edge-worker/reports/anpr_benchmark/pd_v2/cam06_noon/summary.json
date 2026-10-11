@@ -1,0 +1,98 @@
+{
+ "camera": "cam06_noon",
+ "clip": "cam06_noon.mp4",
+ "resolution": "854x480",
+ "fps": 25.0,
+ "frames": 3000,
+ "duration_s": 120.0,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_grid_v2/reader_crnn",
+  "camera": "cam06_noon",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_grid_v2.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "cam06"
+ },
+ "frames_processed": 2639,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "normal": 2639
+ },
+ "realtime": false,
+ "frames_dropped_late": 0,
+ "frames_the_sampler_wanted": 2639,
+ "sampler": {
+  "looked": 3000,
+  "processed": 2639,
+  "bursts": 13,
+  "stride": 2,
+  "paced_stride": 2,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 10045,
+ "unique_vehicle_tracks": 127,
+ "tracks_with_plate_candidates": 56,
+ "tracks_by_size_band": {
+  "SMALL": 6,
+  "EXTREMELY_TINY": 3,
+  "VERY_SMALL": 26,
+  "MEDIUM": 20,
+  "LARGE": 1
+ },
+ "plate_detections": 4250,
+ "plate_candidates_banked": 3174,
+ "ocr_calls": 4652,
+ "ocr_images": 5105,
+ "tracks_with_ocr_result": 53,
+ "unique_ocr_results": 51,
+ "status_counts": {
+  "UNREADABLE": 74,
+  "CANDIDATE": 36,
+  "CONFIRMED": 17
+ },
+ "confirmed_plates": [
+  "GJ03EL4466",
+  "GJ05CS1117",
+  "GJ11BH6725",
+  "GJ11BR5399",
+  "GJ11CD1448",
+  "GJ11CD3844",
+  "GJ11CH3002",
+  "GJ11CH7598",
+  "GJ11DB3063",
+  "GJ11R6061",
+  "GJ11VV7988",
+  "GJ14BA3377",
+  "GJ18EC0510",
+  "GJ37T9052",
+  "RJ24TA3407"
+ ],
+ "emitted": [],
+ "unreadable_reasons": {
+  "no_plate_detected": 71,
+  "static_scene_text": 1,
+  "sharpness_below_gate": 1,
+  "width_below_gate": 1
+ },
+ "wall_s": 798.7,
+ "finish_s": 1.4,
+ "processed_fps": 3.3,
+ "clip_seconds_per_wall_second": 0.15,
+ "frame_latency_ms_p50": 100.4,
+ "frame_latency_ms_p95": 287.1,
+ "cpu_percent_mean": 149.8,
+ "cpu_cores": 8,
+ "rss_max_mb": 3228,
+ "gpu_mem_max_mb": 1186
+}

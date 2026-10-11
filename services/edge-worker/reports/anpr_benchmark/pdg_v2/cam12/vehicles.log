@@ -1,0 +1,71 @@
+[CAM12] Vehicle ID: cam12_s0_t1 (truck)
+Track duration: 0.5 s  frames 4-14
+Plate candidates: 3  best frame: 4  plate size: 34x23  quality: 0.525
+OCR (per candidate, first 40):
+  f    4 27x15 q=0.53 det=0.78 -> - 0.00
+  f    6 26x12 q=0.52 det=0.54 -> - 0.00
+  f    8 26x13 q=0.52 det=0.50 -> HR302222 0.52
+FINAL: GJ20L1246  status CANDIDATE  confidence 0.0001  readers_disagree  emitted: no
+
+[CAM12] Vehicle ID: cam12_s0_t2 (car)
+Track duration: 0.8 s  frames 84-100
+Plate candidates: 1  best frame: 88  plate size: 37x20  quality: 0.448
+OCR (per candidate, first 40):
+  f   88 30x13 q=0.45 det=0.47 -> - 0.00
+FINAL: GJ23A77  status CANDIDATE  confidence 0.0006  readers_disagree  emitted: no
+
+[CAM12] Vehicle ID: cam12_s0_t5 (car)
+Track duration: 4.1 s  frames 120-202
+Plate candidates: 42  best frame: 162  plate size: 44x20  quality: 0.609
+OCR (per candidate, first 40):
+  f  120 22x12 q=0.45 det=0.61 -> - 0.00
+  f  122 24x12 q=0.44 det=0.80 -> - 0.00
+  f  124 28x13 q=0.48 det=0.78 -> - 0.00
+  f  126 29x12 q=0.47 det=0.88 -> - 0.00
+  f  128 33x13 q=0.51 det=0.85 -> - 0.00
+  f  130 34x12 q=0.51 det=0.86 -> - 0.00
+  f  132 37x14 q=0.55 det=0.47 -> - 0.00
+  f  134 37x15 q=0.55 det=0.83 -> DL02C6013 0.51
+  f  136 38x16 q=0.56 det=0.78 -> - 0.00
+  f  138 37x14 q=0.56 det=0.74 -> - 0.00
+  f  140 36x14 q=0.55 det=0.90 -> - 0.00
+  f  142 36x13 q=0.56 det=0.89 -> TS07KZ3817 0.64
+  f  144 36x12 q=0.56 det=0.87 -> - 0.00
+  f  146 35x12 q=0.57 det=0.89 -> - 0.00
+  f  148 35x12 q=0.59 det=0.88 -> - 0.00
+  f  150 35x13 q=0.58 det=0.88 -> GJ02EE7225 0.58
+  f  152 36x12 q=0.58 det=0.89 -> - 0.00
+  f  154 35x13 q=0.58 det=0.89 -> GJ17EE3215 0.63
+  f  156 35x13 q=0.57 det=0.91 -> GJ07EX3815 0.74
+  f  158 35x13 q=0.59 det=0.90 -> - 0.00
+  f  160 36x14 q=0.60 det=0.90 -> GJ10ER3805 0.52
+  f  162 35x13 q=0.61 det=0.91 -> GJ10ER3805 0.52
+  f  164 35x14 q=0.60 det=0.92 -> GJ13EX5825 0.66
+  f  166 35x13 q=0.57 det=0.89 -> GJ15TS5725 0.58
+  f  168 35x13 q=0.57 det=0.92 -> GJ12EX3725 0.66
+  f  170 35x13 q=0.59 det=0.93 -> GJ17EX3375 0.63
+  f  172 35x13 q=0.58 det=0.93 -> - 0.00
+  f  174 35x13 q=0.59 det=0.93 -> - 0.00
+  f  176 36x13 q=0.60 det=0.94 -> GJ17SX3375 0.52
+  f  178 36x12 q=0.59 det=0.93 -> GJ17DB2375 0.64
+  f  180 36x13 q=0.58 det=0.93 -> GJ07SE2325 0.52
+  f  182 35x12 q=0.57 det=0.93 -> GJ03SK2025 0.52
+  f  184 35x12 q=0.59 det=0.93 -> GJ03TN2323 0.63
+  f  186 36x12 q=0.58 det=0.93 -> GJ05TB2383 0.54
+  f  188 36x12 q=0.59 det=0.93 -> GJ20TS2895 0.56
+  f  190 35x12 q=0.59 det=0.92 -> GJ03SB2315 0.51
+  f  192 36x12 q=0.57 det=0.92 -> GJ03TB2325 0.56
+  f  194 37x13 q=0.57 det=0.92 -> - 0.00
+  f  196 37x13 q=0.57 det=0.92 -> - 0.00
+  f  198 37x13 q=0.56 det=0.93 -> - 0.00
+FINAL: GJ10ER3805  status CANDIDATE  confidence 0.0641  second_reader_only  emitted: no
+
+[CAM12] Vehicle ID: cam12_s0_t13 (bus)
+Track duration: 0.6 s  frames 614-626
+Plate candidates: 4  best frame: 614  plate size: 51x40  quality: 0.703
+OCR (per candidate, first 40):
+  f  614 41x26 q=0.70 det=0.58 -> - 0.00
+  f  616 40x27 q=0.65 det=0.67 -> GJ19WG091 0.50
+  f  618 41x22 q=0.59 det=0.22 -> - 0.00
+  f  620 41x29 q=0.57 det=0.38 -> HP04UF6696 0.53
+FINAL: GJ11H91  status CANDIDATE  confidence 0.0005  readers_disagree  emitted: no

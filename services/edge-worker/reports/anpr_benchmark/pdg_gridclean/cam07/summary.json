@@ -1,0 +1,96 @@
+{
+ "camera": "cam07",
+ "clip": "cam07.mp4",
+ "resolution": "854x480",
+ "fps": 24.0,
+ "frames": 3602,
+ "duration_s": 150.1,
+ "device": "mps",
+ "sampler_stride": 5,
+ "max_frames": null,
+ "engine": {
+  "detector": "vigentra-anpr",
+  "version": "plate_det_grid_clean/reader_crnn",
+  "camera": "cam07",
+  "vehicle_model": "yolo11s.pt",
+  "plate_model": "plate_det_grid_clean.pt",
+  "reader_model": "reader_crnn.onnx",
+  "readers": [
+   "reader_crnn.onnx",
+   "reader_crnn_v6.onnx"
+  ],
+  "device": "mps",
+  "emit_unconfirmed": false,
+  "camera_profile": "cam07"
+ },
+ "frames_processed": 2125,
+ "frames_skipped_quality": 0,
+ "frame_quality": {
+  "low_light": 2035,
+  "normal": 90
+ },
+ "realtime": false,
+ "frames_dropped_late": 0,
+ "frames_the_sampler_wanted": 2125,
+ "sampler": {
+  "looked": 3602,
+  "processed": 2125,
+  "bursts": 13,
+  "stride": 2,
+  "paced_stride": 2,
+  "burst_frames": 24,
+  "burst_plate_px": 45.0
+ },
+ "vehicle_detections": 1177,
+ "unique_vehicle_tracks": 81,
+ "tracks_with_plate_candidates": 25,
+ "tracks_by_size_band": {
+  "VERY_SMALL": 6,
+  "SMALL": 16,
+  "EXTREMELY_TINY": 2,
+  "MEDIUM": 1
+ },
+ "plate_detections": 546,
+ "plate_candidates_banked": 546,
+ "ocr_calls": 1640,
+ "ocr_images": 1756,
+ "tracks_with_ocr_result": 23,
+ "unique_ocr_results": 23,
+ "status_counts": {
+  "UNREADABLE": 58,
+  "CANDIDATE": 15,
+  "CONFIRMED": 8
+ },
+ "confirmed_plates": [
+  "AR01R7050",
+  "GJ27TC1876",
+  "GJ32AG0416",
+  "GJ32AG4949",
+  "GJ32AG5088",
+  "GJ32B9799",
+  "GJ32K0451",
+  "GJ32K9870"
+ ],
+ "emitted": [
+  {
+   "plate": "GJ32K0451",
+   "confirmed": true,
+   "score": 1.0,
+   "track": 438
+  }
+ ],
+ "unreadable_reasons": {
+  "no_plate_detected": 56,
+  "width_below_gate": 2
+ },
+ "wall_s": 579.5,
+ "finish_s": 24.1,
+ "processed_fps": 3.67,
+ "clip_seconds_per_wall_second": 0.259,
+ "frame_latency_ms_p50": 98.1,
+ "frame_latency_ms_p95": 268.5,
+ "cpu_percent_mean": 111.2,
+ "cpu_cores": 8,
+ "rss_max_mb": 1690,
+ "gpu_mem_max_mb": 1234
+}

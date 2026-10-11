@@ -1,0 +1,52 @@
+[CAM12] Vehicle ID: cam12_s0_t1 (truck)
+Track duration: 0.5 s  frames 4-14
+Plate candidates: 1  best frame: 4  plate size: 33x23  quality: 0.521
+OCR (per candidate, first 40):
+  f    4 26x15 q=0.52 det=0.49 -> - 0.00
+FINAL: GJ01UT5341  status CANDIDATE  confidence 0.0186  readers_disagree  emitted: no
+
+[CAM12] Vehicle ID: cam12_s0_t5 (car)
+Track duration: 4.1 s  frames 120-202
+Plate candidates: 32  best frame: 144  plate size: 55x20  quality: 0.716
+OCR (per candidate, first 40):
+  f  140 37x14 q=0.56 det=0.89 -> - 0.00
+  f  142 43x14 q=0.67 det=0.87 -> JK07KZ3819 0.53
+  f  144 44x13 q=0.72 det=0.84 -> PB01UZ3718 0.58
+  f  146 36x13 q=0.57 det=0.87 -> - 0.00
+  f  148 35x13 q=0.59 det=0.87 -> - 0.00
+  f  150 36x14 q=0.59 det=0.87 -> GJ02EX7375 0.60
+  f  152 36x14 q=0.57 det=0.87 -> - 0.00
+  f  154 36x14 q=0.59 det=0.88 -> - 0.00
+  f  156 36x14 q=0.59 det=0.88 -> GJ07EX3313 0.64
+  f  158 36x14 q=0.59 det=0.87 -> - 0.00
+  f  160 36x14 q=0.61 det=0.89 -> GJ12EX3805 0.58
+  f  162 36x14 q=0.62 det=0.89 -> GJ12EX3855 0.57
+  f  164 36x15 q=0.61 det=0.90 -> GJ13EX5829 0.57
+  f  166 36x13 q=0.59 det=0.88 -> GJ13TS5725 0.57
+  f  168 36x14 q=0.60 det=0.90 -> GJ12EX3729 0.57
+  f  170 36x14 q=0.59 det=0.91 -> GJ17EX3335 0.67
+  f  172 36x14 q=0.59 det=0.90 -> GJ15TX3735 0.56
+  f  174 36x14 q=0.61 det=0.90 -> GJ15TE3359 0.51
+  f  176 36x13 q=0.60 det=0.91 -> - 0.00
+  f  178 36x13 q=0.61 det=0.91 -> GJ17TX2375 0.68
+  f  180 36x13 q=0.59 det=0.90 -> GJ07SE2325 0.57
+  f  182 36x13 q=0.58 det=0.90 -> GJ13DK3923 0.51
+  f  184 36x14 q=0.59 det=0.90 -> GJ03TK2323 0.63
+  f  186 36x14 q=0.57 det=0.90 -> GJ05TX2887 0.65
+  f  188 36x14 q=0.58 det=0.90 -> GJ03TS2877 0.65
+  f  190 36x14 q=0.58 det=0.90 -> GJ03SX2873 0.51
+  f  192 37x14 q=0.57 det=0.90 -> - 0.00
+  f  194 37x14 q=0.59 det=0.89 -> RJ03TB2877 0.53
+  f  196 37x14 q=0.57 det=0.89 -> GJ23TB2377 0.58
+  f  198 37x14 q=0.55 det=0.90 -> - 0.00
+  f  200 37x15 q=0.57 det=0.88 -> - 0.00
+  f  202 37x14 q=0.56 det=0.75 -> - 0.00
+FINAL: GJ17DB3823  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no
+
+[CAM12] Vehicle ID: cam12_s0_t13 (bus)
+Track duration: 0.6 s  frames 614-626
+Plate candidates: 2  best frame: 616  plate size: 51x35  quality: 0.677
+OCR (per candidate, first 40):
+  f  614 41x16 q=0.55 det=0.31 -> - 0.00
+  f  616 41x23 q=0.68 det=0.20 -> - 0.00
+FINAL: GJ191445  status CANDIDATE  confidence 0.0  readers_disagree  emitted: no

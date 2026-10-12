@@ -116,8 +116,8 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 *Field test*
 
 - **Story purpose.** The headline numbers.
-- **Visual.** A ring fills to 36 of 48; then 0 wrong, 12 missed with nothing saved for them, and live speed at 720p on one laptop.
-- **Speaker narration.** Across all our test footage there were forty-eight plates a person could read. Vigentra read thirty-six of them. [beat] Wrong plates: zero. [beat] The twelve it missed, it saved nothing for. It did not put a wrong number into the database to look better. [beat] And it keeps pace with a live 720p camera, in real time, on one laptop.
+- **Visual.** A ring fills to 36 of 48; then 0 wrong, 12 missed with nothing saved for them, live speed at 720p on one laptop, and the live grid: 203 different plates confirmed, 10 cameras with 4 or more reads, 1,116 frames a minute (12 Oct).
+- **Speaker narration.** Across all our test footage there were forty-eight plates a person could read. Vigentra read thirty-six of them. [beat] Wrong plates: zero. [beat] The twelve it missed, it saved nothing for. It did not put a wrong number into the database to look better. [beat] It keeps pace with a live 720p camera, in real time, on one laptop. [beat] And on the live Sentinel grid, as of this morning: two hundred and three different plates confirmed, ten cameras with four or more confirmed reads, all thirty cameras read at over a thousand frames a minute on one Mac GPU.
 - **Audience should understand.** Accurate, honest about what it misses, and fast enough.
 - **Transition.** You move on.
 - **Real asset.** final2 benchmark report; docs/anpr-optimisation.md

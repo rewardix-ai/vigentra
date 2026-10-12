@@ -58,8 +58,10 @@
           row("r1", String(F.wrong), "c-ok", "Wrong plates", "Not one, across every test clip."),
           row("r2", String(F.legible - F.read), "c-warn", "Missed", "Nothing was saved for them, rather than a wrong plate."),
           row("r3", "Live", "c-track", "Speed", `Keeps pace with a ${fast.res} camera on ${D.speed.machine}.`),
+          row("r4", String(D.live.plates), "c-track", "On the live grid",
+            `Different plates confirmed; ${D.live.cameras} cameras with 4 or more reads; ${D.live.frames} frames a minute on one Mac GPU (${D.live.asOf}).`),
         ]), { id: "op" }),
-        S.tech([`<b>Per resolution</b> ${D.speed.rows.map((r) => `${r.res} ${r.ms} ms a frame (${r.rt.toFixed(2)}× live)`).join(" · ")}`], `${F.src} · ${D.speed.src}`)
+        S.tech([`<b>Per resolution</b> ${D.speed.rows.map((r) => `${r.res} ${r.ms} ms a frame (${r.rt.toFixed(2)}× live)`).join(" · ")}`, `<b>Live grid</b> ${D.live.src}`], `${F.src} · ${D.speed.src}`)
       );
       return [
         async () => {
@@ -70,6 +72,7 @@
         async () => { await ctx.in("#op"); ctx.$("#r1").classList.add("in"); },
         () => ctx.$("#r2").classList.add("in"),
         () => ctx.$("#r3").classList.add("in"),
+        () => ctx.$("#r4").classList.add("in"),
       ];
     },
   });

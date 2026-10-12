@@ -81,6 +81,10 @@ K.DATA = {
   ],
   featuresSrc: "services/central-api · services/edge-worker · services/dashboard · scripts/collect_plates.py, scripts/launchd",
 
+  // Live on the Sentinel grid, from the platform database (results scene, row 4)
+  live: { plates: 203, cameras: 10, frames: "1,116", asOf: "12 Oct, 08:42",
+          src: "Live grid: plate_sightings, confirmed reads on GRID cameras (signboard reads archived), 12 Oct 08:42 IST" },
+
   // The console today (scene "tour"): screenshots taken 10 Oct by deliverables/tools/snap_app.py; each line says what is visible
   tour: [
     ["Operations overview", "app_v2_overview", "70 cameras registered, 50 in service, three department systems connected; onboarding and camera health on one page."],

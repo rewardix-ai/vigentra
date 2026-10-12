@@ -2,7 +2,7 @@
 
 Every model in the system, what it does, why it was chosen over the alternatives, and what it scored on
 our own footage. Numbers come from measurements in this repository (`docs/submission.md`, the research
-repo's `reports/LOOP_LOG.md`, `models/PROVENANCE.json`), not from vendors' claims. State as of 8 Oct 2026.
+repo's `reports/LOOP_LOG.md`, `models/PROVENANCE.json`), not from vendors' claims. State as of 11 Oct 2026.
 
 ## 1. The chain at a glance
 
@@ -99,6 +99,15 @@ confirmed only when the evidence agrees, so a second architecture catches the fi
 instead of repeating them. A read from a later CRNN (v8) was rejected because it produced one wrong
 confirmation on cam06.
 
+**Plate detector v2 (9 Oct), trained and not adopted.** Fine-tuned from plate_det_grid_clean on the
+live harvest: 8,000 frames, 4,891 doubtful boxes looked at by eye (91 % were not plates: overlays, bus
+lettering, barricade banners, lamps; 423 kept), plus 1,109 boxes two detectors agreed on and the
+grid_clean set. At the live threshold (0.2) it found far more of the checked grid plates (recall 0.40 to
+0.70, precision 0.90 to 1.00) but boxed more junk on new crops (precision 0.99 to 0.86) and lost one
+Delhi plate. End to end on the by-eye benchmark it read 32 of 41 plates against 30, **with one false
+confirmation** (GJ11R6061 for GJ1KR6061), and doubled the OCR work on grid clips. Rejected under the
+zero-false rule; grid_clean stays live.
+
 ## 6. The decision layer (rules, not a model)
 
 This is what turns readings into a plate the system will stand behind:
@@ -110,6 +119,17 @@ This is what turns readings into a plate the system will stand behind:
 - **Voting.** CONFIRMED needs at least 4 crops reading the string exactly, at least 40 % of the vote, a
   runner-up under half the winner's support, and a plate at least 40 px wide. Anything less is a
   CANDIDATE (shown for review) or nothing.
+- **More floors, each added after a measured false read** (`config/thresholds.yaml`): plates are
+  searched only on vehicles at least 96 px wide, and a crop under 24 px is not read at all; a
+  confirmation needs 6 independent reading variants, a best crop at least 40 px wide, at least 2
+  single frames backing the read, at least 3 glyph-shaped marks in the pixels, and the weakest
+  character at least half of its vote. Two track fragments that read the same plate within 15 s are
+  one vehicle.
+- **Scene text** (`config/scene_text.yaml`, 9 Oct): text painted in a camera's view that the readers
+  keep taking for a plate is dropped per camera; cam05's phone-number board "75750 83008" was read 58
+  times as TS57SDB3008 and variants before it was found in the by-eye review.
+- **Proof photo** (10 Oct): each reading leaves the edge with one photo of the vehicle in the frame its
+  plate was widest and surest (plate boxed, at most 480 px), shown beside it in the ANPR report.
 - **Why so strict.** A wrong plate on a traced route sends police after the wrong vehicle. The system
   would rather report fewer plates than invent one.
 
@@ -122,10 +142,10 @@ so the live shortfall is frames per camera, not reading.
 | Component | What it is | Why |
 |---|---|---|
 | On-screen clock reader | Apple Vision OCR (`scripts/osd/ocr.swift`), on-device | Each grid camera prints its own date and time; reading it puts every sighting on the footage's timeline. Runs every 30 min per camera. |
-| Helmet classifier | Four YOLO11n-cls (1.5 M parameters each) trained on 1,317 of our own grid rider crops labelled by eye (v2, v4, v7 and v8), one of them (v8) on the head band only so the head is ~1.7x larger; scores averaged over each rider's three closest views (`app/helmet.py`, `models/helmet_cls.pt`, `_v4`, `_v7`, `_v8_head`). Judged only on a vehicle the type classifier finds a two-wheeler | Flags bare-headed riders of motorcycles and scooters from 70 px wide as LOW candidates at mean >= 0.8, with the rider enlarged on the snapshot. On 221 held-out riders (50 bare-headed): 21 calls, all right, none on a helmeted rider; the set before it (with v5, v6) 23 calls, 22 right. The two cam06 riders in black helmets it had called bare now average 0.42 and 0.48. Live, checked by eye since 8 Oct 17:23: 46 calls right, 1 unsure, 1 wrong (a pedal cargo tricycle, since excluded). v2 alone scores some helmeted riders above 0.95 (a live miss on cam06, 8 Oct); the trio puts that rider below 0.75. Live audit of the first 14 calls: 10 of 11 judgeable right. A free downloaded helmet model found nothing on our footage. |
+| Helmet classifier | Four YOLO11n-cls (1.5 M parameters each) trained on 1,317 of our own grid rider crops labelled by eye (v2, v4, v7 and v8), one of them (v8) on the head band only so the head is ~1.7x larger; scores averaged over each rider's three closest views (`app/helmet.py`, `models/helmet_cls.pt`, `_v4`, `_v7`, `_v8_head`). Judged only on a vehicle the type classifier finds a two-wheeler | Flags bare-headed riders of motorcycles and scooters from 70 px wide as LOW candidates at mean >= 0.8, with the rider enlarged on the snapshot. On 221 held-out riders (50 bare-headed): 21 calls, all right, none on a helmeted rider; the set before it (with v5, v6) 23 calls, 22 right. The two cam06 riders in black helmets it had called bare now average 0.42 and 0.48. Live, checked by eye since 8 Oct 17:23: 53 right, 1 unsure, 2 wrong (a pedal cargo tricycle, since excluded, and a rider re-called after a grid restart, since fixed: calls are remembered on disk for 24 h); a later batch of 12: 10 right, 1 wrong (a white full helmet), 1 unsure (a dark head at night). v2 alone scores some helmeted riders above 0.95 (a live miss on cam06, 8 Oct); the trio puts that rider below 0.75. Live audit of the first 14 calls: 10 of 11 judgeable right. A free downloaded helmet model found nothing on our footage. |
 | Vehicle-type classifier | YOLO11n-cls v3 in Indian classes (CMVR / AIS-053), trained on 2,160 grid crops labelled by eye (`app/vehicle_type.py`, `models/vtype_cls.pt`): scooter and motorcycle (L1-L3), passenger auto-rickshaw (L5M), car/jeep/SUV (M1), minibus/Tempo Traveller (M2), bus (M3), lcv: Tata Ace, pickup, tempo (N1), truck (N2/N3), plus not-a-vehicle and unclear. Goods three-wheelers (10 crops) and tractors (none on these cameras) are too rare to learn yet | The COCO detector calls autos "truck" and sign boards, police barricades and overlays "bus"/"truck". A confident call (>= 0.7) replaces the detector's class; a confident not-a-vehicle drops the box. Held out by camera (313 vehicles): types right 158 (detector) / 236 (v2, 6 classes) / 268 (v3); confident calls right 241 of 248; 19 of 24 non-vehicles dropped, no clearly typed vehicle dropped. |
 | Incident detector | Rules over tracker boxes (`anpr/incidents.py`): wrong way, sudden stop, stopped in lane, collision candidate, person on carriageway, intrusion (sudden stop, stopped in lane and vehicle without a visible plate retired after live audits) | No incident footage exists to train a model on, so the rules are explicit and every incident carries its evidence and a snapshot. Rebuilt 8 Oct: direction learned per region of the frame, only dense continuous tracks judged; a 6-hour replay went from 416 incidents to 71. |
-| Frame quality router | Blur (Laplacian variance) and darkness checks | Skips frames nothing could be read from; brightens dark ones. |
+| Frame quality router | Blur (Laplacian variance), darkness, glare; since 9 Oct also **corrupted** (edge strength on the 16-px codec grid >= 1.8 and >= 1.4x the camera's own level) and **blackout** (mean brightness <= 8, no edges) | Skips frames nothing could be read from; brightens dark ones. Three corrupted or black frames within a minute raise a camera alert at once; the gap analysis counts each camera's bad frames. A frame scoring 2.1 was checked by eye: genuinely smeared blocks. |
 | Cross-camera matching | Confusion-weighted plate distance (`scripts/cross_camera.py`) | The same plate misread on two cameras (O/0, B/8, D/0) still links the route. |
 
 ## 8. Tried and not adopted
@@ -138,21 +158,18 @@ so the live shortfall is frames per camera, not reading.
 | YOLO26n | Vehicle detector | 89.7 % vs 90.8 % recall, slower here (section 2) | Not adopted as vehicle detector; will be tried as base for the plate-detector fine-tune. |
 | plate_det_grid, plate_det_hf_v1s | Alternative plate detectors | In a raw test on 53 missed crops they boxed 5 and 6 (grid_clean 4, mix_n 1), some of them junk; through the full chain grid_clean was checked best | Kept for labelling (they propose boxes for review). |
 | CRNN v8 | Reader | One wrong confirmation on cam06 | Rejected; v6 stays. |
+| Plate detector v2 | Plate detector | More plates found, one false confirmation end to end, 2x OCR load (section 4) | Rejected 9 Oct; grid_clean stays. |
 | Gemini Flash-Lite (free tier) | Offline judge of hard crops | 93 % plate/junk correct on 28 crops; when "certain", 10 of 10 right | Offline only (labelling, verification); not in the live path. |
 | Claude vision reader | Offline teacher | Built, never measured | No free tier; not used. |
 | Target-plate search | "Is this crop plate P?" | Adds 1 of 17 plates on grid clips | Low priority; pursuit mode comes first. |
 
-## 9. What is being trained now
+## 9. What comes next
 
-- **Data.** The live reader saves frames with a vehicle near enough to read (one per camera per 10 s,
-  8,000 at most), for training only.
-- **Labels.** Four plate detectors propose boxes on each vehicle crop; every box is checked by eye.
-  The first sheet showed why: all four agreed that GSRTC bus lettering was a plate, so such boxes become
-  hard negatives. Any crop showing a benchmark target plate is excluded.
-- **Training.** Two candidates overnight: one continuing from plate_det_grid_clean (YOLO11), one from
-  YOLO26n.
-- **Adoption.** Only if it beats the current model, first on the checked validation set and then live,
-  side by side, for an hour each.
+- **The reader.** The detector side can already find more plates (v2) than the readers can read safely,
+  so the next model to train is the reader, on plate crops checked by eye.
+- **Vehicle classes.** Goods three-wheelers, e-rickshaws and tractors, once enough are labelled.
+- **Adoption rule, unchanged.** A model goes live only if it beats the current one on checked data and
+  end to end on the benchmark with zero false plates.
 
 ## 10. Licences
 

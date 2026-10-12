@@ -15,7 +15,8 @@
 (function () {
   const K = (window.K = window.K || {});
   K.scenes = [];
-  K.scene = (def) => K.scenes.push(def);
+  // Scenes listed in K.CUT (js/data/cut.js) are left out of the talk; delete a name there to bring it back.
+  K.scene = (def) => { if (!(K.CUT && K.CUT.has(def.id))) K.scenes.push(def); };
 
   const W = 1920;
   const H = 1080;

@@ -52,67 +52,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/img/plate_1299.png, journey_fused.png, fail_tiny_plate.png, fail_motion_blur.png
 
-## 6. Find it, follow it, find its plate
-*How Vigentra reads*
-
-- **Story purpose.** Detection and tracking, live, on the real output.
-- **Visual.** CAM06 on a monitor at half speed with the deployed models' boxes: each says what kind of vehicle it is (car, motorcycle), then its ID with a trail, then the plate box. Beside it an event log prints, frame by frame, what the models saw.
-- **Speaker narration.** Now the first stages, live, with the models we deploy. [beat] First: find every vehicle and say what it is: car, motorcycle, auto, bus. [beat] Second: follow each one. Every vehicle gets an ID and a trail, so one car stays one car across frames, and we decide its plate once, not again in every frame. [beat] Third: inside that vehicle only, find the plate box. Searching inside the vehicle is what keeps shop signs and banners out. The log on the right is the system narrating what it saw, frame by frame.
-- **Audience should understand.** Vigentra finds the vehicle, follows it, then looks for its plate.
-- **Transition.** You move on (→) when you are ready.
-- **Real asset.** assets/video/cam06_1080p.mp4; K.TRACK (tools/track_evidence.py, deployed settings)
-
-## 7. One car, many frames
-*How Vigentra reads*
-
-- **Story purpose.** Many frames beat one.
-- **Visual.** An evidence buffer: the same plate in nine real frames, growing from 67 to 138 pixels; then a slider between one frame and twelve frames combined and cleaned.
-- **Speaker narration.** Here is why tracking matters. Because we follow the car, we see its plate many times: in these nine real frames it grows from sixty-seven to a hundred and thirty-eight pixels as the car comes closer. [beat] Vigentra keeps the best frames and combines them into one clearer image. Let me drag this: one frame on the left, twelve frames combined on the right. [pause] Nothing is painted in or invented. The extra detail is real: it comes from the other frames of the same plate.
-- **Audience should understand.** Following the car gives more evidence, and better evidence.
-- **Transition.** You move on.
-- **Real asset.** assets/img/plate_12xx.png (deployed detector crops), journey_best.png, journey_enhanced.png
-
-## 8. Is there enough to read?
-*How Vigentra reads*
-
-- **Story purpose.** Refusing is part of the job.
-- **Visual.** Three samples: the CAM06 plate stamped READ; a 10-pixel Delhi crop TOO SMALL; a blurred Delhi plate NOT SAVED, because the readings disagreed.
-- **Speaker narration.** Before reading, we ask an honest question: is there enough here to read? [beat] This CAM06 plate: yes, read it. [beat] This one, from the Delhi clip, is ten pixels wide. We do not even try: no reader in the world can recover characters from ten pixels. [beat] This one is a plate, but blurred. We tried, the readings disagreed, so no plate number is saved. [pause] This gate is why Vigentra makes few mistakes: when the pixels are not there, it does not guess.
-- **Audience should understand.** A refusal is better than a wrong plate.
-- **Transition.** You move on.
-- **Real asset.** assets/img/journey_best.png, fail_tiny_plate.png, fail_blurred_plate.png
-
-## 9. From pixels to characters
-*How Vigentra reads*
-
-- **Story purpose.** OCR, and the plate format.
-- **Visual.** The combined crop; under it each character flickers before it settles, with a bar for how sure Vigentra is; then the plate splits into State, RTO, Series, Number.
-- **Speaker narration.** Now the reading itself, character by character, each with a bar showing how sure the system is. [beat] Then Indian plate rules. A Gujarat plate has a pattern: two letters for the state, digits for the RTO, a series, and a number. So if a reader sees a six where only a letter can stand, the rules read it as a G. The plate splits into state, RTO, series and number, and each part must make sense.
-- **Audience should understand.** Reading uses the image and the rules of Indian plates.
-- **Transition.** You move on.
-- **Real asset.** assets/img/journey_enhanced.png; per-character confidence from the evidence pack
-
-## 10. Many readings, one answer
-*How Vigentra reads*
-
-- **Story purpose.** Many readings, one confirmed answer, one saved record.
-- **Visual.** A tally of the 136 real readings: GJ23H1546 leads with 73; the others fade; CONFIRMED. Then the saved record types out: plate, camera, status, readings, frames, format, sent as text with one proof photo.
-- **Speaker narration.** One car gave us many frames, and our readers produced a hundred and thirty-six readings of this plate. [beat] Seventy-three of them say G J 23 H 1546; the rest scatter. [beat] Only when enough frames agree is the plate confirmed. [pause] And this is everything that is saved: the plate, the camera, the time, how many frames agreed, the format, and one small photo of the vehicle in its best frame, so anyone checking the report can see the proof. Never video.
-- **Audience should understand.** Vigentra confirms by agreement and keeps the proof, never the video.
-- **Transition.** You move on.
-- **Real asset.** K.EVIDENCE.top_readings (evidence/confirmed/cam06_s0_t132.json)
-
-## 11. CAM06 and Delhi
-*Field test*
-
-- **Story purpose.** The test on real footage.
-- **Visual.** Two monitors with Vigentra's own output: CAM06 from 0:29 of its result video, where the readings start, then the Delhi street video; under each the scores count up.
-- **Speaker narration.** Then we measured it like an examiner would. A person went through these clips frame by frame and wrote down every plate a human can actually read. [beat] CAM06: sixteen readable plates. Vigentra read fifteen. Wrong: zero. [beat] The Delhi street clip, hand-held and busy: twenty readable, thirteen read. Wrong: zero. On screen is Vigentra's own output, and the counts are against that human check, not against our own guesses.
-- **Audience should understand.** On hard real footage it reads most plates and never invents one.
-- **Transition.** You move on (→) when you are ready.
-- **Real asset.** assets/video/cam06_vigentra.mp4, delhi_vigentra.mp4
-
-## 12. What Vigentra achieved
+## 6. What Vigentra achieved
 *Field test*
 
 - **Story purpose.** The headline numbers.
@@ -122,7 +62,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** final2 benchmark report; docs/anpr-optimisation.md
 
-## 13. What still doesn't work
+## 7. What still doesn't work
 *Known limits*
 
 - **Story purpose.** The honest limits.
@@ -132,17 +72,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** assets/img/journey_best.png (degraded live in the browser); docs/anpr-cam06-day.md; config/thresholds.yaml
 
-## 14. How the pieces connect
-*The system*
-
-- **Story purpose.** How the system fits together.
-- **Visual.** A schematic: Cameras (four live feeds) → Vigentra reader → Vigentra central → Console. On the watchlist? YES → Alert; NO → kept for search. A dashed lane: live video, only with the owning unit's permission. Squares travel each route; the event log explains each box.
-- **Speaker narration.** Now step back from the single car to the system. [beat] Video comes in from the department's cameras; text goes out. The reader sends the plate, its time, its camera and one proof photo of the vehicle to Vigentra central; never the video. Central checks every plate against the watchlist as it arrives: on the list means an alert, prioritised for an operator; not on the list means it is kept for search and tracing. [beat] Live video is a separate lane. Another unit sees it only when the owning department grants it.
-- **Audience should understand.** Vigentra moves plates as text with a proof photo, and video only with permission.
-- **Transition.** You move on (→) when you are ready.
-- **Real asset.** services/edge-worker/app/worker.py (the plate record); central-api access model
-
-## 15. The high-level design
+## 8. The high-level design
 *The system*
 
 - **Story purpose.** The high-level design in four tiers.
@@ -152,17 +82,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on (→) when you are ready.
 - **Real asset.** K.CHARTS.hld()
 
-## 16. The Vigentra console
-*The system*
-
-- **Story purpose.** What an operator uses.
-- **Visual.** The Vigentra console on a monitor, playing the useful parts of the recording: live detection on grid CAM06, the detection search, tracing a vehicle, the plate report, the audit log. The matching item on the right lights up as each plays.
-- **Speaker narration.** This is what an operator actually uses, recorded from the running system. Live detection on a grid feed, with boxes on every vehicle. A search across every detection. A vehicle traced across cameras. The plate report. And the audit log, where every search and every trace is written down against the person who made it.
-- **Audience should understand.** It is a working system, not just a model.
-- **Transition.** You move on (→) when you are ready.
-- **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
-
-## 17. The console today
+## 9. The console today
 *The system*
 
 - **Story purpose.** The console as it is today, page by page.
@@ -172,67 +92,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on: one press per screen, seven screens.
 - **Real asset.** assets/img/app_v2_*.jpg (deliverables/tools/snap_app.py)
 
-## 18. See every camera. Find any vehicle.
-*The system*
-
-- **Story purpose.** Every feature, part 1: seeing and finding.
-- **Visual.** Twelve cards appear row by row: camera registry and GIS, onboarding, department federation, live wall, live ANPR, plate search, vehicle trace, live pursuit, watchlist alerts, Indian vehicle types, traffic counts, ANPR report.
-- **Speaker narration.** Everything Vigentra does fits on two screens. This first one is about seeing and finding. [beat] Model 1: a camera registry with a GIS map, onboarding of new cameras one by one or by CSV, and federation, where each department's system joins through an adapter. [beat] A live wall of every camera. Live number-plate reading at the edge, plate search that tolerates the usual misreads like zero and O, a vehicle trace on the map, and a live pursuit that gives priority to the cameras a vehicle can reach next. [beat] A watchlist that raises a prioritised alert within seconds, every vehicle typed in Indian classes, traffic counts per camera and hour, and the ANPR report.
-- **Audience should understand.** The breadth of the working system.
-- **Transition.** You move on, row by row.
-- **Real asset.** js/data/project.js featuresFind
-
-## 19. Act on it, with a person in charge.
-*The system*
-
-- **Story purpose.** Every feature, part 2: acting and governing.
-- **Visual.** Twelve cards: helmet detection, wrong way and incidents, incident review, e-challan, camera health alerts, footage quality alerts, gap analysis, video access requests, role and zone access, audit log, alert push, self-healing reader.
-- **Speaker narration.** The second screen is about acting, with a person in charge. [beat] Riders without helmets, with a snapshot and one call per rider. Wrong-way vehicles, possible collisions, people in traffic and intrusions. Each one is a candidate, reviewed as a card, confirmed or dismissed by a person. A confirmed offence opens the e-challan with the plate filled in, the owner looked up, and the MV Act section and fine. [beat] Camera health alerts within about forty seconds, and footage alerts within a minute when a picture goes black or breaks up. Gap analysis of thin districts, ageing cameras and unusable footage. [beat] And governance: video access requests between units, access by role, city and zone, an append-only audit log, signed alert push to other systems, and a reader that restarts itself after crashes and grid outages.
-- **Audience should understand.** Every action has evidence and a person behind it.
-- **Transition.** You move on, row by row.
-- **Real asset.** js/data/project.js featuresAct
-
-## 20. What Vigentra is built with
-*Under the hood*
-
-- **Story purpose.** What Vigentra is built on, with one line of reason per layer.
-- **Visual.** Eight panels: capture (RTSP over TCP), vehicles (YOLO11s + ByteTrack), plates (YOLO11n inside each vehicle), reading (two CRNN readers + PaddleOCR), deciding (votes, plate rules, glyph check), central (FastAPI, PostgreSQL), console (Next.js, Leaflet, OpenStreetMap), delivery (Docker).
-- **Speaker narration.** Under the hood, every part is open source: no licence fee, no vendor account. [beat] Video comes in over RTSP, the protocol the cameras already speak. YOLO11 finds the vehicles, the larger model for the recorded results and the lighter one on the live reader, and ByteTrack gives each vehicle an identity, so its plate is decided once. The plate detector looks only inside the vehicle. Two kinds of reader read it, CRNN models and PaddleOCR, because different readers make different mistakes. [beat] Then the vote, the Indian plate rules and a check that real character shapes are present decide. The centre is FastAPI and PostgreSQL, holding no video and no camera passwords. The console is Next.js on OpenStreetMap, and it all ships in Docker.
-- **Audience should understand.** Every part is a deliberate, open choice.
-- **Transition.** You move on.
-- **Real asset.** js/data/project.js (stack) · TECHNICAL.md
-
-## 21. Why this, not that
-*Under the hood*
-
-- **Story purpose.** Why each big choice beats the obvious alternative, with its evidence.
-- **Visual.** A table of seven decisions: what Vigentra uses, instead of what, and why it is better.
-- **Speaker narration.** Every choice was made against an alternative, and here is why ours wins. The AI runs next to the video, not in one central data centre: that is forty to two hundred and fifty times less network. A plate is read once per vehicle, from all its frames: the single-frame reader we started with found one plate in sixty-seven vehicles. Only what many frames agree on is saved, which is how we keep wrong plates at zero. Two kinds of reader together read sixteen plates where one read thirteen. ByteTrack, because fixed cameras need no camera-motion correction. Watchlist matching weighted by real OCR errors, so one wrong character still raises the alert. And video is brokered, so revoking someone's access stops their stream within one segment.
-- **Audience should understand.** Each choice is measured or reasoned, not fashion.
-- **Transition.** You move on.
-- **Real asset.** js/data/project.js (choices) · TECHNICAL.md
-
-## 22. What we tested and dropped
-*Under the hood*
-
-- **Story purpose.** Engineering discipline: what we tried, measured and dropped.
-- **Visual.** Six rows: confirming on 3 crops (a wrong plate on Delhi), 20 crops (no gain), two CRNNs backing each other (shared mistakes), frames enlarged to 1920 px (half the vehicles, slower), a plate box up to 0.9 of its vehicle (a hoarding read), one frame at a time (1 plate from 67 vehicles).
-- **Speaker narration.** Just as important is what we tried and threw away, because each was measured on the same clips before we decided. Confirming a plate on three crops instead of four let a wrong plate through on Delhi, so it stays at four. Twenty crops instead of twelve found nothing more. Our two CRNN readers share mistakes, so they are not allowed to vouch for each other. Enlarging every frame to nineteen-twenty pixels halved the vehicles found and slowed everything down. A loose plate box let a hoarding be read as a plate. And reading one frame at a time found one plate in sixty-seven vehicles. Nothing went in on a hunch.
-- **Audience should understand.** Every threshold has a measured reason.
-- **Transition.** You move on.
-- **Real asset.** js/data/project.js (dropped) · docs/anpr-optimisation.md
-
-## 23. What we will do next
-*Next*
-
-- **Story purpose.** What we will do next, from today's limits.
-- **Visual.** A deployment plan: a reader for borderline plates (next); night and small plates; more Indian vehicle classes; more offences; real owner lookup (next); proven at load.
-- **Speaker narration.** What we do next, each item starting from a limit we measured ourselves. [beat] First, a better reader for borderline plates: our new plate detector already finds more plates than the reader can read safely, so the reader is the next thing to train, on labels people have checked. Second, night and small plates: camera placement and infrared guidance, and a small-plate detector trained on hard cases. Third, more Indian vehicle classes: e-rickshaws, goods autos and tractors, which are still too rare on our cameras to learn. Fourth, more offences: red light, triple riding and no seat belt, each with its evidence and a person to confirm. Fifth, the real owner lookup, from the state VAHAN registry, in place of our demo list. And sixth, proof at load, well past today's hundred and sixty-four plate reads a second.
-- **Audience should understand.** A concrete plan, grounded in what the project measured.
-- **Transition.** You move on.
-- **Real asset.** docs/scalability.md; js/data/project.js (roadmap)
-
-## 24. What becomes possible
+## 10. What becomes possible
 *80,000 cameras*
 
 - **Story purpose.** What 80,000 cameras make possible.
@@ -242,7 +102,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js possible
 
-## 25. What it needs
+## 11. What it needs
 *80,000 cameras*
 
 - **Story purpose.** What it takes, honestly sized.
@@ -252,7 +112,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js needsBig, needs · docs/scalability.md
 
-## 26. What makes Vigentra different
+## 12. What makes Vigentra different
 *Why Vigentra*
 
 - **Story purpose.** What sets Vigentra apart, as design choices with evidence.
@@ -262,7 +122,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Transition.** You move on.
 - **Real asset.** js/data/project.js (distinct, with sources)
 
-## 27. From pixels to information
+## 13. From pixels to information
 *Vigentra*
 
 - **Story purpose.** Close on the idea and the name.

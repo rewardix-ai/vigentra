@@ -36,7 +36,9 @@ def scenes() -> list[tuple[str, str, str]]:
         for m in re.finditer(pattern, path.read_text()):
             g = m.groups()
             out.append(g[:3] if g[0] else (g[3], "The system", g[5]))
-    return out
+    cut = set(re.findall(r'"([a-z-]+)"', (HERE / "js/data/cut.js").read_text().split("new Set(")[1])) \
+        if (HERE / "js/data/cut.js").exists() else set()
+    return [sc for sc in out if sc[0] not in cut]
 
 
 def main() -> int:

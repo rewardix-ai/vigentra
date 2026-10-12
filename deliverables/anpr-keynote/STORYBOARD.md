@@ -9,7 +9,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** Four real feeds glow faintly; the Vigentra mark, wordmark and tagline; a boot log types out what the system is made of: the hackathon model (Model 1 + Model 3), cameras, the vehicle detector (YOLO11s, YOLO11n on the live reader), the tracker, the plate detector, the readers, the plate rules.
 - **Speaker narration.** Good morning. This is Vigentra: vigilance, intelligence, safer roads. [pause] Gujarat already has thousands of cameras, owned by many departments, each with its own system. Our answer to this challenge is Model 1 plus Model 3. Model 1: one statewide registry, so every camera, whoever owns it, is on one map with its owner and its health. Model 3: we federate each department's video system through an adapter, instead of asking anyone to replace theirs. On top sits one console. [beat] And because a registry alone does not catch a vehicle, we read number plates, at the edge, from the CCTV that is already on the road. Over the next minutes I will show you how it reads, what it has achieved on real footage, how the whole system fits together, and what it takes to run it on eighty thousand cameras.
 - **Audience should understand.** Who we are, and that this is a working system.
-- **Transition.** 11 s, then the control room's wall. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** brand/*.png; assets/video/cam06_1080p, delhi_raw, reel_cam04, reel_cam15
 
 ## 2. Nobody can watch them all
@@ -19,7 +19,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** CAM06 full screen; the view pulls back to a wall of sixteen real feeds. Banners: 30 cameras. Nobody can watch them all. Vigentra turns this video into plates you can search.
 - **Speaker narration.** These are recordings from the Sentinel grid: real Gujarat junctions, replayed to us as live streams. Thirty cameras on the grid alone, and the event adds about fifty. [pause] No control room can watch them all. A person watching one feed misses the other twenty-nine, and a vehicle that matters passes in seconds. [pause] So the question is not how to show more video. It is how to turn video into something you can ask: was this plate seen, where, and when? That is what Vigentra does: it turns this video into plates you can search.
 - **Audience should understand.** The value is turning video into searchable records.
-- **Transition.** 19.5 s: wall 7 · count 4.5 · line 3.5 · line 4.5. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/video/wall_cam*.mp4 (grid cam01-cam16), cam06_noon, delhi_raw
 
 ## 3. This is the real input
@@ -29,7 +29,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** Six monitors power on one by one: night, headlights, far away, low resolution, a moving camera, a crowded junction. Then: This is the real input.
 - **Speaker narration.** Before the technology, the honest picture. This is what the cameras really give us. [beat] Night, when most of the frame is dark. Headlights that wash out the plate. Vehicles far away, a few pixels wide. Low-resolution streams, many at 720p or below. A camera that moves. A junction crowded with two-wheelers and autos. [pause] Any system shown on clean, close, daylight footage would look good. We built and measured ours on this. This is the real input.
 - **Audience should understand.** Real footage is hard, and every camera is different.
-- **Transition.** 12 s: monitors 8 · line 4. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/video/reel_cam07, reel_cam15, reel_cam01, cam06_noon, delhi_raw, reel_cam04
 
 ## 4. A camera sees a vehicle
@@ -39,7 +39,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** CAM06 in a viewfinder: a car comes down Madhuram Bypass Road, the frame freezes, the view moves onto the plate. A readout: 122 × 32 pixels, under 0.2% of the picture.
 - **Speaker narration.** Let me take one vehicle through the system. This is CAM06, on Madhuram Bypass Road in Bhavnagar, a real grid camera. A car comes down the road. [beat] The camera sees a vehicle. But can it tell us which vehicle? [beat] Look at the plate: about a hundred and twenty pixels wide and thirty-two high. That is less than a fifth of one percent of the picture. Everything you see next is about getting a reliable registration number out of that small a patch, and refusing when it cannot.
 - **Audience should understand.** Reading a plate means working with very few pixels.
-- **Transition.** 15 s: clip 5.5 · zoom 4.5 · readout 5. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/video/cam06_1080p.mp4, assets/img/cam06_best_frame.jpg, plate_1299.png
 
 ## 5. The signal chain
@@ -49,7 +49,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** Six numbered stages, each showing the real data at that step, two YES/NO decisions, and outcomes with real refused plates: Not read, No plate saved. A square follows one car; the event log says what each stage does as it arrives. Red squares take the NO lines.
 - **Speaker narration.** Here is the whole method on one screen, following that real car. [beat] The camera gives us video. We find the car and track it, so it keeps one identity. Inside the car, and only inside it, we look for the plate. We keep its best frames and combine them. [beat] Then the first decision: are there enough pixels? If not, it is not read at all. If yes, we read the plate. [beat] Then the second decision: do the readings agree, and is it a valid Indian format? If not, no plate is saved. [pause] Only when both answers are yes do we have a confirmed plate: the registration, the time and the camera. Never the video. The red squares you see are plates that took a NO line: that is the system declining to guess.
 - **Audience should understand.** The steps, and that Vigentra refuses rather than guesses.
-- **Transition.** 23 s, one full trip of the square. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/img/plate_1299.png, journey_fused.png, fail_tiny_plate.png, fail_motion_blur.png
 
 ## 6. Find it, follow it, find its plate
@@ -59,7 +59,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** CAM06 on a monitor at half speed with the deployed models' boxes: each says what kind of vehicle it is (car, motorcycle), then its ID with a trail, then the plate box. Beside it an event log prints, frame by frame, what the models saw.
 - **Speaker narration.** Now the first stages, live, with the models we deploy. [beat] First: find every vehicle and say what it is: car, motorcycle, auto, bus. [beat] Second: follow each one. Every vehicle gets an ID and a trail, so one car stays one car across frames, and we decide its plate once, not again in every frame. [beat] Third: inside that vehicle only, find the plate box. Searching inside the vehicle is what keeps shop signs and banners out. The log on the right is the system narrating what it saw, frame by frame.
 - **Audience should understand.** Vigentra finds the vehicle, follows it, then looks for its plate.
-- **Transition.** 29.5 s: vehicles 12.5 · tracking 8.5 · plate 8.5. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/video/cam06_1080p.mp4; K.TRACK (tools/track_evidence.py, deployed settings)
 
 ## 7. One car, many frames
@@ -109,7 +109,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** Two monitors with Vigentra's own output: CAM06 from 0:29 of its result video, where the readings start, then the Delhi street video; under each the scores count up.
 - **Speaker narration.** Then we measured it like an examiner would. A person went through these clips frame by frame and wrote down every plate a human can actually read. [beat] CAM06: sixteen readable plates. Vigentra read fifteen. Wrong: zero. [beat] The Delhi street clip, hand-held and busy: twenty readable, thirteen read. Wrong: zero. On screen is Vigentra's own output, and the counts are against that human check, not against our own guesses.
 - **Audience should understand.** On hard real footage it reads most plates and never invents one.
-- **Transition.** 52 s: CAM06 24 · Delhi 28. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/video/cam06_vigentra.mp4, delhi_vigentra.mp4
 
 ## 12. What Vigentra achieved
@@ -139,7 +139,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** A schematic: Cameras (four live feeds) → Vigentra reader → Vigentra central → Console. On the watchlist? YES → Alert; NO → kept for search. A dashed lane: live video, only with the owning unit's permission. Squares travel each route; the event log explains each box.
 - **Speaker narration.** Now step back from the single car to the system. [beat] Video comes in from the department's cameras; text goes out. The reader sends the plate, its time, its camera and one proof photo of the vehicle to Vigentra central; never the video. Central checks every plate against the watchlist as it arrives: on the list means an alert, prioritised for an operator; not on the list means it is kept for search and tracing. [beat] Live video is a separate lane. Another unit sees it only when the owning department grants it.
 - **Audience should understand.** Vigentra moves plates as text with a proof photo, and video only with permission.
-- **Transition.** 27 s: schematic 22 · line 5. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** services/edge-worker/app/worker.py (the plate record); central-api access model
 
 ## 15. The high-level design
@@ -149,7 +149,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** A live schematic: cameras, edge in the site, regional per district, central for the state, the console; a red dashed line between edge and regional marks where only metadata crosses. Squares carry video into the edge and text beyond it.
 - **Speaker narration.** Now zoom out to the state. The design has four tiers. [beat] Cameras stay with their departments, on their own video systems. The edge, inside the department's site, reads the video where it is recorded: plates, vehicle types, helmets and footage quality. Each district has a regional tier that speaks the local systems' dialects and holds records if the network to the centre drops. Central keeps the records and decides who may see what. [pause] The red line is the point of the design: only metadata crosses it, never video. And each tier grows on its own: more GPUs, more districts or more central replicas, without touching the others.
 - **Audience should understand.** Why it scales: video stays local, text travels.
-- **Transition.** 22 s, then the banner. Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** K.CHARTS.hld()
 
 ## 16. The Vigentra console
@@ -159,7 +159,7 @@ Generated from `js/data/storyboard.js` by `tools/storyboard.py`; edit the JS, no
 - **Visual.** The Vigentra console on a monitor, playing the useful parts of the recording: live detection on grid CAM06, the detection search, tracing a vehicle, the plate report, the audit log. The matching item on the right lights up as each plays.
 - **Speaker narration.** This is what an operator actually uses, recorded from the running system. Live detection on a grid feed, with boxes on every vehicle. A search across every detection. A vehicle traced across cameras. The plate report. And the audit log, where every search and every trace is written down against the person who made it.
 - **Audience should understand.** It is a working system, not just a model.
-- **Transition.** 82 s (1:16-1:24 and 1:28-2:42 of the recording; the camera wall and the closing card, which show the London feeds, are skipped). Moves on by itself (press A to hold).
+- **Transition.** You move on (→) when you are ready.
 - **Real asset.** assets/video/app_demo.mp4 (deliverables/Vigentra_Demo_Short.mp4)
 
 ## 17. The console today

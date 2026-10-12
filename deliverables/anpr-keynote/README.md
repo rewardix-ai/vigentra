@@ -37,20 +37,18 @@ then open http://127.0.0.1:8765 and press **S** for the presenter view. Press **
 | G | all scenes; click one to jump |
 | T | technical layer: models, thresholds, sources |
 | B | blackout |
-| A | auto-advance on / off (on by default; remembered in this browser) |
 
 Interactive pieces take clicks without advancing the slide: the camera wall (click a feed to
 enlarge it), the two schematics (click a stage for its line in the event log), the one-frame /
 combined slider and the signal-quality control. For rehearsal, `index.html#6.2` opens scene 6 at
 its 3rd beat.
 
-## Videos: time limits and auto-advance
+## Videos: how long each one runs
 
-Each scene that plays video moves on by itself when its video has done its job; a thin line
-above the progress bar fills while it counts down. Press → to move on sooner, or **A** to turn
-auto-advance off (for questions). Scenes without video wait for you.
+Auto-advance is off (11 Oct): no scene moves on by itself. Press → when the video has done its job;
+the times below are how long each video is worth showing.
 
-| Scene | Video | Time on screen, then moves on |
+| Scene | Video | Worth showing for |
 |---|---|---|
 | 1 Boot | four feeds behind the logo | 11 s |
 | 2 Camera wall | 16 feeds, 20-s clips | 19.5 s (wall 7 · count 4.5 · line 3.5 · line 4.5) |
@@ -65,7 +63,7 @@ auto-advance off (for questions). Scenes without video wait for you.
 
 Story edition (`lens.html`):
 
-| Scene | Video | Time on screen, then moves on |
+| Scene | Video | Worth showing for |
 |---|---|---|
 | 1 Hero | CAM06, the car arriving | 10 s |
 | 2 A day on the grid | CAM06 11:46, CAM06 18:00, grid cam15 21:00 | 21 s (7 · 7 · 7) |

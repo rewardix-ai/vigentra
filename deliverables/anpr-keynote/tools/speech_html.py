@@ -66,7 +66,7 @@ def main() -> int:
              "speaker notes (js/data/storyboard.js), which the presenter view (S) and the stage notes (N) also show.</p></div></header>",
              '<main class="in"><div class="tips">',
              '<div class="tip"><b>Start</b>python3 deliverables/anpr-keynote/tools/serve.py, open http://127.0.0.1:8765, press S for this view on your screen, F for fullscreen.</div>',
-             '<div class="tip"><b>Move</b>→ or Space for the next beat, ← to go back. Video scenes move on by themselves; A holds them.</div>',
+             '<div class="tip"><b>Move</b>→ or Space for the next beat, ← to go back. Nothing moves on by itself: every scene waits for you.</div>',
              '<div class="tip"><b>Cues</b><span class="muted">PAUSE</span> stop for a breath. <span class="muted">BEAT</span> a half-second, let the screen land.</div>',
              '<div class="tip"><b>Questions</b>G shows all scenes to jump to; T shows the models and sources behind any scene.</div>',
              "</div>"]

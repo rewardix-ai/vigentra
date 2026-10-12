@@ -107,8 +107,8 @@
 
   /* ------------------------------------------------------- auto-advance */
   let autoTimer = null;
-  K.autoOn = true;
-  try { K.autoOn = localStorage.getItem("keynote-auto") !== "off"; } catch (err) { /* private window: stay on */ }
+  // Auto-advance is switched off for good (11 Oct): every scene waits for the presenter's key.
+  K.autoOn = false;
   function clearAuto() {
     clearTimeout(autoTimer);
     autoTimer = null;
@@ -117,7 +117,7 @@
   }
   K.autoNext = (ms) => {
     clearAuto();
-    if (!K.autoOn) return;
+    if (!K.autoOn) return;   // always: auto-advance is off
     const at = `${state.index}.${state.step}`;
     const bar = document.getElementById("auto-fill");
     if (bar) { bar.getBoundingClientRect(); bar.style.transition = `width ${ms}ms linear`; bar.style.width = "100%"; }
@@ -127,13 +127,6 @@
       next();
     }, ms);
   };
-  function toggleAuto() {
-    K.autoOn = !K.autoOn;
-    try { localStorage.setItem("keynote-auto", K.autoOn ? "on" : "off"); } catch (err) { /* ignore */ }
-    if (!K.autoOn) clearAuto();
-    document.getElementById("nav-auto").classList.toggle("off", !K.autoOn);
-    document.getElementById("nav-auto").textContent = K.autoOn ? "Auto" : "Auto off";
-  }
 
   function next() {
     if (state.busy) return;
@@ -313,10 +306,6 @@
       case "B":
         document.body.classList.toggle("blackout");
         break;
-      case "a":
-      case "A":
-        toggleAuto();
-        break;
       case "Escape":
         toggleGrid(false);
         document.getElementById("notes").hidden = true;
@@ -348,14 +337,12 @@
     document.getElementById("nav-next").addEventListener("click", next);
     document.getElementById("nav-grid").addEventListener("click", () => toggleGrid());
     document.getElementById("nav-tech").addEventListener("click", () => document.body.classList.toggle("tech"));
-    document.getElementById("nav-auto").addEventListener("click", toggleAuto);
     const clock = document.getElementById("tb-clock");
     if (clock) {
       const tick = () => { clock.textContent = new Date().toLocaleTimeString("en-GB"); };
       tick();
       setInterval(tick, 1000);
     }
-    if (!K.autoOn) { K.autoOn = true; toggleAuto(); }
     try {
       channel = new BroadcastChannel("anpr-keynote");
       channel.onmessage = (msg) => {

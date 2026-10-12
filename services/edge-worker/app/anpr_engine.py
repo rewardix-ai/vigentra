@@ -316,10 +316,11 @@ class AnprEngine:
         if not plates or frame is None:
             return
         self.__dict__.setdefault("_proof", {})
-        vehicles = {str(t): box for t, box, _c, _s in getattr(self._pipeline, "last_vehicles", [])}
+        vehicles = {str(_track_number(t)): box for t, box, _c, _s in getattr(self._pipeline, "last_vehicles", [])}
         h, w = frame.shape[:2]
         for tid, pbox, _src, conf in plates:
-            key, vbox = str(tid), vehicles.get(str(tid))
+            key = str(_track_number(tid))
+            vbox = vehicles.get(key)
             if vbox is None:
                 continue
             score = float(pbox[2] - pbox[0]) * float(conf or 0.0)
@@ -347,7 +348,9 @@ class AnprEngine:
     def _take_proof(self, keys) -> bytes | None:
         """The best kept view among a vehicle's track ids (fragments of one vehicle merge)."""
         best, proof = None, self.__dict__.setdefault("_proof", {})
-        for k in {str(k) for k in keys}:
+        # a settled record keys its track "cam06_s0_t12"; the per-frame boxes say 12 (10 Oct: no photo
+        # was ever attached until both were reduced to the number)
+        for k in {str(_track_number(k)) for k in keys}:
             got = proof.pop(k, None)
             if got is not None and (best is None or got[0] > best[0]):
                 best = got

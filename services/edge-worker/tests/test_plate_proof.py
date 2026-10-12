@@ -32,3 +32,11 @@ def test_no_plate_box_no_photo():
     e._pipeline.last_vehicles = [(3, [10, 10, 200, 200], "car", 0.9)]
     e._keep_proof(np.zeros((480, 640, 3), np.uint8))
     assert e._proof == {}
+
+
+def test_a_settled_record_keyed_cam_s_t_finds_the_photo_of_its_track_number():
+    e = _engine()
+    e._pipeline.last_vehicles = [(12, [400, 300, 700, 560], "car", 0.9)]
+    e._pipeline.last_plates = [(12, [500, 480, 580, 500], "cnn", 0.9)]
+    e._keep_proof(np.full((720, 1280, 3), 90, np.uint8))
+    assert e._take_proof(["cam06_s0_t12"])[:2] == b"\xff\xd8"

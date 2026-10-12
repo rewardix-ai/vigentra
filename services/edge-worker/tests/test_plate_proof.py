@@ -40,3 +40,22 @@ def test_a_settled_record_keyed_cam_s_t_finds_the_photo_of_its_track_number():
     e._pipeline.last_plates = [(12, [500, 480, 580, 500], "cnn", 0.9)]
     e._keep_proof(np.full((720, 1280, 3), 90, np.uint8))
     assert e._take_proof(["cam06_s0_t12"])[:2] == b"\xff\xd8"
+
+
+def test_a_reading_whose_photo_is_not_a_vehicle_is_dropped(monkeypatch):
+    from app import anpr_engine, vehicle_type
+    from app.anpr_engine import PlateSighting
+
+    e = _engine()
+    e.camera_id = "GRID-cam02"
+    ok, buf = __import__("cv2").imencode(".jpg", np.full((120, 200, 3), 120, np.uint8))
+    s = lambda text: PlateSighting(track_id=1, text=text, confidence=0.6, observations=7, confirmed=True, state=None,
+                                   plate_format=None, plate_bbox=[], vehicle_bbox=[], captured_at=0.0, frame_index=0,
+                                   evidence_jpeg=buf.tobytes())
+    monkeypatch.setattr(vehicle_type, "available", lambda: True)
+    monkeypatch.setattr(vehicle_type, "_classify", lambda img: ("notvehicle", 0.59))
+    assert e._not_a_vehicle([s("GJ01AN67")]) == []                     # the barricade banner, 12 Oct
+    monkeypatch.setattr(vehicle_type, "_classify", lambda img: ("car", 0.9))
+    assert len(e._not_a_vehicle([s("GJ18BR5253")])) == 1
+    no_photo = s("GJ39CB0189"); no_photo.evidence_jpeg = None
+    assert len(e._not_a_vehicle([no_photo])) == 1                      # no photo: kept

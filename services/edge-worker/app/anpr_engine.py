@@ -95,6 +95,12 @@ class AnprUnavailable(DetectorError):
     """
 
 
+#: a reading is dropped when its proof photo is top-1 "not a vehicle" at this score or more. Lower than
+#: the classifier's usual 0.7 because a missed plate costs less than a wrong one: on 313 held-out grid
+#: crops, 0.5 drops 21 of 24 non-vehicles and 1 of 289 real vehicles; the barricade banner scored 0.59.
+PLATE_NOT_VEHICLE = 0.5
+
+
 @dataclass
 class PlateSighting:
     """One vehicle's settled plate, ready to become a detection payload."""
@@ -301,7 +307,7 @@ class AnprEngine:
             )
         self._harvest()
         settled, self._pending = self._pending, []
-        return detections, self._not_scene_text(settled)
+        return detections, self._not_a_vehicle(self._not_scene_text(settled))
 
     #: proof photos: at most this wide, kept for this many open tracks
     PROOF_WIDTH, PROOF_TRACKS = 480, 400
@@ -362,7 +368,33 @@ class AnprEngine:
         """Close the open tracks and return every plate that settled this pass."""
         self._settle()
         out, self._pending = self._pending, []
-        return self._not_scene_text(out)
+        return self._not_a_vehicle(self._not_scene_text(out))
+
+    def _not_a_vehicle(self, sightings: list[PlateSighting]) -> list[PlateSighting]:
+        """Drop a reading whose proof photo the vehicle-type classifier is sure is no vehicle at all
+        (12 Oct: the first proof photo showed a Gujarat Police barricade banner, its "GUJARAT" confirmed
+        as GJ01AN67; the detector boxes barricades as vehicles). A reading without a photo is kept."""
+        from . import vehicle_type
+
+        if not vehicle_type.available():
+            return sightings
+        keep = []
+        for s in sightings:
+            if s.evidence_jpeg:
+                try:
+                    import cv2
+                    import numpy as np
+
+                    img = cv2.imdecode(np.frombuffer(s.evidence_jpeg, np.uint8), cv2.IMREAD_COLOR)
+                    name, score = vehicle_type._classify(img) if img is not None else ("", 0.0)
+                except Exception as exc:  # pragma: no cover - a side check never costs a reading
+                    logger.debug("not-a-vehicle check failed: %s", exc)
+                    name, score = "", 0.0
+                if name == vehicle_type.NOT_VEHICLE and score >= PLATE_NOT_VEHICLE:
+                    logger.info("dropped %s on %s: its photo is not a vehicle (%.2f)", s.text, self.camera_id, score)
+                    continue
+            keep.append(s)
+        return keep
 
     def _not_scene_text(self, sightings: list[PlateSighting]) -> list[PlateSighting]:
         """Drop reads of text painted in this camera's scene (config/scene_text.yaml): a signboard the
